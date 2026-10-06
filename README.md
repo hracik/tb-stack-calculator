@@ -1,12 +1,12 @@
 # Total Battle Stack Calculator
 
-A single-file calculator for Total Battle. It works out how many troops of each type to send (Leadership = army pool, Dominance = monster pool) and in which order they should die, for the 3-, 4-, 6- and 8-stack modes and the special attacks (3-stack killshot and Renegades).
+A single-file calculator for Total Battle. It works out how many troops of each type to send (Leadership = army pool, Dominance = monster pool) and in which order they should die, for the 3-, 4-, 6- and 8-stack modes and the special modes (3-stack killshot and Renegades).
 
 Open `index.html` in a browser or use the GitHub Pages site of this repository. Nothing is installed or uploaded; everything is calculated in the page.
 
 ## Attack modes
 
-The modes are in three rows: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stack) and Special attack (3-stack killshot, Renegades).
+The modes are in three rows: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stack) and Special (3-stack killshot, Renegades).
 
 ## Tabs
 
