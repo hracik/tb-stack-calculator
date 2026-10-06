@@ -427,8 +427,8 @@ function fourSearch(P,live,mkOut){
 function killOrder(P,names,c){
   const ts=TR.filter(t=>names.has(t.name)),{rank}=ranker(P),sp=monSplit(ts,c);
   const byTier=arr=>[...new Set(arr.map(t=>t.tier))].sort((a,b)=>b-a).flatMap(tt=>[...arr.filter(t=>t.tier==tt&&t.cls=='E'),...rank(arr.filter(t=>t.tier==tt&&t.cls!='E'))]);
-  const mon=ts.filter(t=>t.pool=='M');
-  return[...byTier(ts.filter(t=>t.pool=='A')),...byTier(mon.filter(t=>sp.full.has(t.tier))),...sp.rest.flatMap(tt=>byTier(mon.filter(t=>t.tier==tt)))].map(t=>t.name);
+  const mon=ts.filter(t=>t.pool=='M'),eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier);   // all the engineers first (higher tier first), then the army tier by tier
+  return[...eng,...byTier(ts.filter(t=>t.pool=='A'&&t.cls!='E')),...byTier(mon.filter(t=>sp.full.has(t.tier))),...sp.rest.flatMap(tt=>byTier(mon.filter(t=>t.tier==tt)))].map(t=>t.name);
 }
 // Renegades: the first 16 stacks - tier 9 before 8, Guardsmen before Specialists (G9, S9, G8, S8), inside each group the weakest first.
 // Then the engineers of the tiers from the one below them upwards (E9, E8, E7), then the units of that tier, then for every lower tier

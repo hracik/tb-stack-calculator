@@ -51,4 +51,4 @@ Highest troop types die first, G before S, up to 16 stacks. Then all the rest of
 
 ### Killshot
 
-The order is changed to reflect that there is no mounted enemy. It is also changed to prioritize the deaths of top level units, to reduce the cost of training and reviving.
+The order is changed to reflect that there is no mounted enemy. It is also changed to prioritize the deaths of top level units, to reduce the cost of training and reviving. All the engineers stand first (higher tier first), then the army tier by tier from the top.
