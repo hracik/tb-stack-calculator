@@ -197,7 +197,7 @@ function load(d){
 function save(){
   if(!ready)return;
   tabs[active].data=snap();
-  try{localStorage.setItem(KEY,JSON.stringify({tabs,active,ver:2}))}catch(e){}
+  try{localStorage.setItem(KEY,JSON.stringify({tabs,active,ver:3}))}catch(e){}
 }
 function drawTabs(){
   $('tabs').innerHTML=tabs.map((t,i)=>`<button class="tab${i==active?' on':''}" data-t="${i}" title="Double-click to rename">${esc(t.name)}</button>`).join('')+'<button class="tab add" data-add="1" title="New tab">+</button>';
@@ -891,12 +891,15 @@ document.addEventListener('dblclick',e=>{const t=e.target.closest&&e.target.clos
 // start: dying order for a full enemy stack, with the default tiers
 runBest(4);
 DEF=snap();
+const START_TABS=['1 cap','3 cap','Hero','Hero+3 cap'];    // the tabs a new page starts with; they are ordinary tabs (rename, duplicate, delete)
 try{
   const r=JSON.parse(localStorage.getItem(KEY)||'null');
   if(r&&Array.isArray(r.tabs)&&r.tabs.length){tabs=r.tabs;
-    active=Math.min(Math.max(0,r.active|0),tabs.length-1)}
+    active=Math.min(Math.max(0,r.active|0),tabs.length-1);
+    // an older save with only the single default tab "Main": the four start tabs replace it, all with that tab's settings
+    if((r.ver|0)<3&&tabs.length==1&&tabs[0].name==='Main'){const base=tabs[0].data;tabs=START_TABS.map(n=>({name:n,data:clone(base)}));active=0}}
 }catch(e){}
-if(!tabs)tabs=[{name:'Main',data:clone(DEF)}];
+if(!tabs)tabs=START_TABS.map(n=>({name:n,data:clone(DEF)}));
 load(tabs[active].data);
 ready=true;
 drawTabs();

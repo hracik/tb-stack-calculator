@@ -4,6 +4,10 @@ A single-file calculator for Total Battle. It works out how many troops of each 
 
 Open `index.html` in a browser or use the GitHub Pages site of this repository. Nothing is installed or uploaded; everything is calculated in the page.
 
+## Tabs
+
+The page starts with four tabs: `1 cap`, `3 cap`, `Hero` and `Hero+3 cap`. They are ordinary tabs: rename (double-click), duplicate or delete them, or add your own with `+`. Each tab keeps its own settings, saved in your browser only.
+
 ## How the order is chosen
 
 These notes used to be shown inside the page, under "Show the dying order, troop by troop".
