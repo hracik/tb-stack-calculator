@@ -1,12 +1,12 @@
 # Total Battle Stack Calculator
 
-A single-file calculator for Total Battle. It works out how many troops of each type to send (Leadership = army pool, Dominance = monster pool) and in which order they should die, for the 3-, 4-, 6- and 8-stack modes and the special modes (3-stack killshot and Renegades).
+A single-file calculator for Total Battle. It works out how many troops of each type to send (Leadership = army pool, Dominance = monster pool) and in which order they should die, for the 3-, 4-, 6- and 8-stack modes and the special modes (Killshot v. 3 and Renegades).
 
 Open `index.html` in a browser or use the GitHub Pages site of this repository. Nothing is installed or uploaded; everything is calculated in the page.
 
 ## Attack modes
 
-The modes are in three rows: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stack) and Special (3-stack killshot, Renegades).
+The modes are in three rows: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stack) and Special (Killshot v. 3, Renegades).
 
 ## Tabs
 
@@ -57,7 +57,7 @@ The bonus is written as the troop's best bonus against a class of the enemy, for
 
 Highest troop types die first, G before S, up to 16 stacks. Then all the rest of the army is equal and dies at random. These rules maximize the damage and reduce the cost of attacks.
 
-### 3-stack killshot
+### Killshot v. 3
 
 Killshot is a special type of the 3-stack mode. The enemy is the same (3 stacks, no mounted one) and the damage is counted the same way, but a little of the total damage is sacrificed for a drastically reduced cost of training and reviving. With the default inputs it deals under 1 % less than the 3-stack mode.
 
