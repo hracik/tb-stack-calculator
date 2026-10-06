@@ -157,7 +157,7 @@ function drawSO(st,P){
   // squad bonus = the troop's own bonus against this enemy + the Double hit. "No squad bonus" = base strength x your strength multiplier only.
   const info=n=>{const t=TRN[n],m=vsRatio(t,P),dh=t.pool=='M'?P['dh'+t.type]:t.beast?P.dhBeast:0,cnt=sb[n]?sb[n].n||0:0,hpu=sb[n]?sb[n].hp:t.hp*mults(t,P)[0],
     one=t.str*mults(t,P)[1],full=one*vsFactor(t,P)*dhf(t,P);
-    return`${t.cls}${t.tier} · ${vsText(t,P)}${dh>0?' · Double hit +'+dh+'%':''}${BMOVE[n]?` · moved from place ${BMOVE[n].from} to ${BMOVE[n].to} (${P.enemy}n+1 place)`:''}<br>${[['SH',(hpu>0?one/hpu:0).toFixed(4)],['Health',num(cnt*hpu)],['Strength',num(cnt*one)],['Damage',num(cnt*full)]].map(([l,x])=>`<span style="white-space:nowrap">${l}: ${x}</span>`).join(' · ')}`};   // SH = strength without squad bonus and Double hit (only your strength multiplier) per health; Damage = strength with the squad bonus and Double hit
+    return`${t.cls}${t.tier} · ${vsText(t,P)}${dh>0?' · Double hit +'+dh+'%':''}<br>${[['SH',(hpu>0?one/hpu:0).toFixed(4)],['Health',num(cnt*hpu)],['Strength',num(cnt*one)],['Damage',num(cnt*full)]].map(([l,x])=>`<span style="white-space:nowrap">${l}: ${x}</span>`).join(' · ')}`};   // SH = strength without squad bonus and Double hit (only your strength multiplier) per health; Damage = strength with the squad bonus and Double hit
   const one=(n,lbl)=>`<div class="oi" data-n="${esc(n)}"><span class="no">${lbl}</span>${IC[n]?`<img class="ic2" src="${IC[n]}" alt="">`:''}<span class="nm">${esc(n)} <small class="mu">${info(n)}</small></span></div>`;
   let html='',pos=0,block=[];
   SOPOS={};
@@ -448,9 +448,7 @@ function renOrder(P,names){
 // Each one is moved to the nearest place BELOW that is Kn+1 = the FIRST place of a strike group (K = the number of enemy stacks): K = 4: 6 -> 5, 14 -> 13; K = 3: 5 -> 4, 14 -> 13; K = 6 or 8: 6n+1 or 8n+1
 // (a place that already is Kn+1 stays). When two of them are in the same group, the first goes down to the Kn+1 below and the second up to the next Kn+1 above (K = 4: 14 and 15 -> 13 and 17).
 // A beast never goes in front of the engineers. If the Kn+1 place above the army does not exist (second beast of a group), the first one steps one group down and the second takes the group's first place; if that is impossible too, the beast stays where it was.
-let BMOVE={};
 function placeBeasts(names,K){
-  BMOVE={};
   const isB=n=>!!TRN[n].beast,bs=[];
   names.forEach((n,i)=>{if(isB(n))bs.push([n,i+1])});
   if(!bs.length)return names;
@@ -468,10 +466,10 @@ function placeBeasts(names,K){
     used.add(t);tg.push([n,p,t]);
   });
   const out=rest.slice();
-  tg.sort((a,b)=>a[2]-b[2]).forEach(([n,p,t])=>{out.splice(t-1,0,n);if(t!==p)BMOVE[n]={from:p,to:t}});
+  tg.sort((a,b)=>a[2]-b[2]).forEach(([n,p,t])=>{out.splice(t-1,0,n)});
   return out;
 }
-function autoOrder(P,names,c){BMOVE={};return P.kill?placeBeasts(killOrder(P,names,c),P.enemy):renOrder(P,names)}      // Killshot and Renegades (the 3-, 4-, 6- and 8-stack modes use fourSearch)
+function autoOrder(P,names,c){return P.kill?placeBeasts(killOrder(P,names,c),P.enemy):renOrder(P,names)}      // Killshot and Renegades (the 3-, 4-, 6- and 8-stack modes use fourSearch)
 // Cost of a solved order = the health gaps (the biggest drop from one stack to the next plus the sum of all drops > 0.1%) + 5 x the share of the Leadership left unspent
 // + 0.3 x the share of the Dominance left unspent. The smaller the better.
 function gapCost(P,r,so){
@@ -492,7 +490,7 @@ function buildStacks(P,order,X,so){
     const mt=monTiers([...live].map(n=>TRN[n])),nT=mt.length;
     let out;
     if(rgm(P)){                      // 3-, 4-, 6- and 8-stack: troops of the same ratio stay together, the smaller squad bonus first; the group order with the most damage wins
-      BMOVE={};const fs=fourSearch(P,live,mkOut);so=fs.names;out=mkOut(so,fs.cc);
+      const fs=fourSearch(P,live,mkOut);so=fs.names;out=mkOut(so,fs.cc);
     }else if(P.kill){                // Killshot: the Dominance decides how many monster tiers are full - every choice is solved and the one with the most damage is kept
       let best=null;
       for(let c=nT;c>=1;c--){
