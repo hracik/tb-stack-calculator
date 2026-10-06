@@ -55,4 +55,6 @@ Highest troop types die first, G before S, up to 16 stacks. Then all the rest of
 
 ### Killshot
 
-The order is changed to reflect that there is no mounted enemy. It is also changed to prioritize the deaths of top level units, to reduce the cost of training and reviving. All the engineers stand first (higher tier first), then the army tier by tier from the top.
+Killshot is a special type of the 3-stack mode. The enemy is the same (3 stacks, no mounted one) and the damage is counted the same way, but a little of the total damage is sacrificed for a drastically reduced cost of training and reviving. With the default inputs it deals under 1 % less than the 3-stack mode.
+
+To get that, the order does not come from the damage search. All the engineers stand first (higher tier first), then the army tier by tier from the top, so the top level units die first. Inside a tier the weaker troops die first. The monsters stand after the army, the fully used tiers first. Royal Lion and Battle Griffin stand on the places 4, 7, 10 ... as in the 3-stack mode.
