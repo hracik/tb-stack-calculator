@@ -13,9 +13,8 @@ These notes used to be shown inside the page, under "Show the dying order, troop
 All four modes use the same logic. They differ only in K, the number of enemy stacks, and in whether the enemy has a mounted stack.
 
 - **Goal:** maximum damage. A troop in place `p` strikes `ceil(p / K)` times, so the strongest squad bonuses belong among the last places.
-- **Engineers** stand first (higher tier first).
-- **Ratio groups:** all other troops (army and monsters together) are grouped by strength / health. Troops with the same or nearly the same ratio (within 2.5 %) stay together in one group.
-- **Inside a group** the smaller squad bonus dies first, so the strongest bonuses are among the last. Tiers are mixed.
+- **Ratio groups:** all troops (engineers, army and monsters together) are grouped by strength / health (SH). Troops with the same or nearly the same ratio (within 2.5 %) stay together in one group. Engineers are ordinary troops: they usually come first only because they almost always have the lowest ratio.
+- **Inside a group** the smaller squad bonus dies first, so the strongest bonuses are among the last. Tiers are mixed. When troops have the same ratio and the same bonus, the higher tier dies first (for example E9 before E8).
 - **Order of the groups:** the order that gives the most damage with all the Leadership spent. Lowest ratio first is tried first; the monsters usually have the highest ratio, so they usually come after the army, but there is no fixed rule.
 - **Outliers:** the places `Kn+1` are exempt from the strength rule, so a small group of outliers (for example Royal Lion and Battle Griffin, or a group with a very different ratio) may stand there, each on the place that suits its squad bonus. Not every `Kn+1` place has to be used.
 
@@ -39,6 +38,10 @@ In the 3- and 6-stack modes the squad bonus is counted against melee, ranged and
 - Every stack aims for about the same total health, stepping down slightly along the order.
 - Total strength (without squad bonus) must not rise along the order, so a health gap shows only where the strength rule forces it, for example where the strength / health ratio rises.
 - The `Kn+1` places and the engineers are exempt from the strength rule; they only follow the health of the stack before them.
+
+### Dying order list
+
+Each row of "Show the dying order, troop by troop" shows the troop, its squad bonus and: SH (strength / health), Health, Strength (without squad bonus) and Damage (strength with the squad bonus and the other damage modifiers applied).
 
 ### Renegades
 

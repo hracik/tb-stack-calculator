@@ -148,7 +148,7 @@ function drawSO(st,P){
   // squad bonus = the troop's own bonus against this enemy + the Double hit. "No squad bonus" = base strength x your strength multiplier only.
   const info=n=>{const t=TRN[n],m=vsRatio(t,P),dh=t.pool=='M'?P['dh'+t.type]:t.beast?P.dhBeast:0,cnt=sb[n]?sb[n].n||0:0,hpu=sb[n]?sb[n].hp:t.hp*mults(t,P)[0],
     one=t.str*mults(t,P)[1],full=one*vsFactor(t,P)*dhf(t,P);
-    return`${t.cls}${t.tier} · ${m>0?'+'+pct(m)+' against this enemy':'no usable bonus'+(Math.max(...t.vs)>0?' (unused +'+pct(Math.max(...t.vs))+')':'')}${dh>0?' · Double hit +'+dh+'%'+(rgm(P)?` = squad double hit bonus +${pct(sqb(t,P).dd)} · squad bonus total +${pct(sqb(t,P).tot)}`:''):''}${BMOVE[n]?` · moved from place ${BMOVE[n].from} to ${BMOVE[n].to} (${P.enemy}n+1 place)`:''}<br>${[['Units',num(cnt)],['Health',num(cnt*hpu)],['Strength',num(cnt*one)],['Strength / Health',(hpu>0?one/hpu:0).toFixed(4)],['Strength+Bonus',num(cnt*full)]].map(([l,x])=>`<span style="white-space:nowrap">${l}: ${x}</span>`).join(' · ')}`};   // Strength / Health = strength without squad bonus and Double hit (only your strength multiplier) per health
+    return`${t.cls}${t.tier} · ${m>0?'+'+pct(m)+' against this enemy':'no usable bonus'+(Math.max(...t.vs)>0?' (unused +'+pct(Math.max(...t.vs))+')':'')}${dh>0?' · Double hit +'+dh+'%'+(rgm(P)?` = squad double hit bonus +${pct(sqb(t,P).dd)} · squad bonus total +${pct(sqb(t,P).tot)}`:''):''}${BMOVE[n]?` · moved from place ${BMOVE[n].from} to ${BMOVE[n].to} (${P.enemy}n+1 place)`:''}<br>${[['SH',(hpu>0?one/hpu:0).toFixed(4)],['Health',num(cnt*hpu)],['Strength',num(cnt*one)],['Damage',num(cnt*full)]].map(([l,x])=>`<span style="white-space:nowrap">${l}: ${x}</span>`).join(' · ')}`};   // SH = strength without squad bonus and Double hit (only your strength multiplier) per health; Damage = strength with the squad bonus and Double hit
   const one=(n,lbl)=>`<div class="oi" data-n="${esc(n)}"><span class="no">${lbl}</span>${IC[n]?`<img class="ic2" src="${IC[n]}" alt="">`:''}<span class="nm">${esc(n)} <small class="mu">${info(n)}</small></span></div>`;
   let html='',pos=0,block=[];
   SOPOS={};
@@ -327,7 +327,7 @@ function placeOutliers(P,rsv,rest,slots){
 const RTOL=0.025;
 function ratioGroups(P,arr,split){                                                    // split: army and monsters never share a group
   const q6=x=>Math.round(x*1e6),ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(...t.vs);
-  const byB=(a,b)=>q6(sqb(a,P).tot)-q6(sqb(b,P).tot)||nom(a)-nom(b)||ci(a)-ci(b)||a.tier-b.tier;           // smaller squad bonus first
+  const byB=(a,b)=>q6(sqb(a,P).tot)-q6(sqb(b,P).tot)||nom(a)-nom(b)||ci(a)-ci(b)||b.tier-a.tier;           // smaller squad bonus first; the same bonus: the higher tier first
   const mk1=list=>{const gs=[];list.slice().sort((a,b)=>ratioOf(a,P)-ratioOf(b,P)||byB(a,b)).forEach(t=>{const r=ratioOf(t,P),g=gs[gs.length-1];if(g&&r<=g.lo*(1+RTOL))g.u.push(t);else gs.push({lo:r,u:[t]})});return gs};
   const mk=list=>[...mk1(list.filter(t=>!t.beast)),...mk1(list.filter(t=>t.beast))].sort((a,b)=>a.lo-b.lo);   // the Beast units (Royal Lion, Battle Griffin) are always outliers: their own group
   const gs=split?[...mk(arr.filter(t=>t.pool!='M')),...mk(arr.filter(t=>t.pool=='M'))].sort((a,b)=>a.lo-b.lo):mk(arr);
@@ -337,11 +337,11 @@ function ratioGroups(P,arr,split){                                              
 const permsOf=a=>a.length<2?[a]:a.flatMap((x,i)=>permsOf([...a.slice(0,i),...a.slice(i+1)]).map(p=>[x,...p]));
 function fourSearch(P,live,mkOut){
   const ts=TR.filter(t=>live.has(t.name));
-  const eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier),rest=ts.filter(t=>t.cls!='E');
+  const rest=ts;                                                                     // the engineers are ordinary troops: they stand first only because their strength / health is (almost) always the lowest
   const flat=g=>g.flatMap(x=>x.u);
   const mons=rest.filter(t=>t.pool=='M'),mt=monTiers(mons),nT=mt.length;
-  const slots=[];for(let p=1;p<=eng.length+rest.length;p++)if((p-1)%P.enemy==0&&p>eng.length)slots.push(p-eng.length-1);   // the places Kn+1 (K = the number of enemy stacks), counted behind the engineers
-  const ev=(units,cc)=>{const names=[...eng,...units].map(t=>t.name),o=mkOut(names,cc),r=allocate(P,o);
+  const slots=[];for(let p=1;p<=rest.length;p++)if((p-1)%P.enemy==0)slots.push(p-1);   // the places Kn+1 (K = the number of enemy stacks)
+  const ev=(units,cc)=>{const names=units.map(t=>t.name),o=mkOut(names,cc),r=allocate(P,o);
     return{d:score(P,[...r.A,...r.Mo],names).dmg,names,cc,dom:r.dom!==false,full:!(P.capA>0)?2:(ua=>ua>=0.999?2:ua>=0.97?1:0)(usedOf(r.A)/P.capA)}};     // full: 2 = all the Leadership is spent (99.9 %), 1 = nearly (97 %) - an order that leaves more of it unused only wins when no other one spends it
   const better=(a,b)=>!b||(a.full!==b.full?a.full>b.full:(a.k==null?a.d:a.k)>(b.k==null?b.d:b.k)*(1+5e-4));
   // DOMINANCE, tier by tier from the top: the strongest monster tiers are used FULLY (on the army's health level) as long as the Dominance reaches for it, the next tier is the PARTIAL one
@@ -525,8 +525,8 @@ function weights(arr,eq,d,c0){
 // 3-, 4-, 6- and 8-stack: the stacks on the places Kn+1 (5, 9, 13 ... counted from the first place of the whole order, after the engineers) are EXEMPT from the strength rule: their total strength may be
 // anything and the next stack does not look at it. They only follow the health of the stack before them (as closely as the units allow). s.rs marks them.
 function markEx(P,arr){
-  const four=rgm(P),K=P.enemy,E=arr.filter(s=>s.cat=='Engineer').length;                                      // places Kn+1: Kn+1, K = the number of enemy stacks (3, 4, 6, 8)
-  arr.forEach((s,i)=>{s.rs=!!(four&&i>=E&&i%K==0)});
+  const four=rgm(P),K=P.enemy;                                                                              // places Kn+1, K = the number of enemy stacks (3, 4, 6, 8), counted from the first place of the whole order
+  arr.forEach((s,i)=>{s.rs=!!(four&&s.cat!='Engineer'&&i%K==0)});
 }
 function profile(live,d){
   let pH=null,qT=null;
