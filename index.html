@@ -142,13 +142,22 @@ const MODE_NAME=e=>e+'-stack';   // e = enemy stacks (3, 4, 6 or 8)
 const pct=m=>Math.round(m*100).toLocaleString('en-US')+'%';   // bonus ratio -> percent text (6.67 -> 667%)
 const num=x=>Math.round(x).toLocaleString('en-US');                // whole number with thousands separators
 let SOPOS={};
+// the bonus text of an order row: "+333% vs. mounted" = the troop's best bonus against a class of the enemy (the best one that counts in this mode; when none counts, its best one anyway)
+function vsText(t,P){
+  const CL=['melee','ranged','mounted','flying'],use=NOMT(P)?[0,1,3]:[0,1,2,3];
+  let m=0;use.forEach(i=>{if(t.vs[i]>m)m=t.vs[i]});
+  const idx=m>0?use:[0,1,2,3];
+  if(!(m>0))idx.forEach(i=>{if(t.vs[i]>m)m=t.vs[i]});
+  if(!(m>0))return'no bonus';
+  return'+'+pct(m)+' vs. '+idx.filter(i=>Math.abs(t.vs[i]-m)<1e-9).map(i=>CL[i]).join('/');
+}
 function drawSO(st,P){
   const grp={};st.forEach(x=>grp[x.name]=x.grp);
   const sb={};st.forEach(x=>sb[x.name]=x);
   // squad bonus = the troop's own bonus against this enemy + the Double hit. "No squad bonus" = base strength x your strength multiplier only.
   const info=n=>{const t=TRN[n],m=vsRatio(t,P),dh=t.pool=='M'?P['dh'+t.type]:t.beast?P.dhBeast:0,cnt=sb[n]?sb[n].n||0:0,hpu=sb[n]?sb[n].hp:t.hp*mults(t,P)[0],
     one=t.str*mults(t,P)[1],full=one*vsFactor(t,P)*dhf(t,P);
-    return`${t.cls}${t.tier} · ${m>0?'+'+pct(m)+' against this enemy':'no usable bonus'+(Math.max(...t.vs)>0?' (unused +'+pct(Math.max(...t.vs))+')':'')}${dh>0?' · Double hit +'+dh+'%'+(rgm(P)?` = squad double hit bonus +${pct(sqb(t,P).dd)} · squad bonus total +${pct(sqb(t,P).tot)}`:''):''}${BMOVE[n]?` · moved from place ${BMOVE[n].from} to ${BMOVE[n].to} (${P.enemy}n+1 place)`:''}<br>${[['SH',(hpu>0?one/hpu:0).toFixed(4)],['Health',num(cnt*hpu)],['Strength',num(cnt*one)],['Damage',num(cnt*full)]].map(([l,x])=>`<span style="white-space:nowrap">${l}: ${x}</span>`).join(' · ')}`};   // SH = strength without squad bonus and Double hit (only your strength multiplier) per health; Damage = strength with the squad bonus and Double hit
+    return`${t.cls}${t.tier} · ${vsText(t,P)}${dh>0?' · Double hit +'+dh+'%'+(rgm(P)?` = squad double hit bonus +${pct(sqb(t,P).dd)} · squad bonus total +${pct(sqb(t,P).tot)}`:''):''}${BMOVE[n]?` · moved from place ${BMOVE[n].from} to ${BMOVE[n].to} (${P.enemy}n+1 place)`:''}<br>${[['SH',(hpu>0?one/hpu:0).toFixed(4)],['Health',num(cnt*hpu)],['Strength',num(cnt*one)],['Damage',num(cnt*full)]].map(([l,x])=>`<span style="white-space:nowrap">${l}: ${x}</span>`).join(' · ')}`};   // SH = strength without squad bonus and Double hit (only your strength multiplier) per health; Damage = strength with the squad bonus and Double hit
   const one=(n,lbl)=>`<div class="oi" data-n="${esc(n)}"><span class="no">${lbl}</span>${IC[n]?`<img class="ic2" src="${IC[n]}" alt="">`:''}<span class="nm">${esc(n)} <small class="mu">${info(n)}</small></span></div>`;
   let html='',pos=0,block=[];
   SOPOS={};
