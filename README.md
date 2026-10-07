@@ -44,10 +44,10 @@ The chosen view is one setting for the whole page (saved in the browser, not per
 
 ### Hits the food production pays for
 
-The **Food production** box (Capacity & settings, saved per tab, default 0) sets how much food you have. The food consumption of the calculated army (all the units of one hit, the number shown in the summary line) is divided into it: `hits = food production / food consumption`, rounded down. Only when the production is above 0 and the hits are more than 1 the result shows it:
+The **Food production** box (Capacity & settings, saved per tab, default 0) sets how much food you have. The food consumption of the calculated army (all the units of one hit, the number shown in the summary line) is divided into it: `hits = food production / food consumption`, **rounded down to 2 decimals** (20,000,000 / 15,990,240 = 1.2507... shows as 1.25). Only when the production is above 0 and the hits are more than 1 (1.01 or more) the result shows it:
 
-- the summary line says `the food production pays for 8 hits` and gives the estimated damage a second time, multiplied by the hits: `estimated damage 5.36 T (×8: 42.90 T)`;
-- every troop card (Grouped) and every line (Mobile, Computer), mercenaries too, shows the number of units multiplied by the hits as a second, smaller number: `334` with `×8: 2,672` under it.
+- the summary line says `the food production pays for 1.25 hits` and gives the estimated damage a second time, multiplied by the hits: `estimated damage 5.36 T (×1.25: 6.70 T)`;
+- every troop card (Grouped) and every line (Mobile, Computer), mercenaries too, shows the number of units multiplied by the hits as a second, smaller number, **rounded up to a whole piece**: `334` with `×1.25: 418` under it (334 x 1.25 = 417.5).
 
 The 1x numbers always stay the main ones. With the production at 0, or when it pays for one hit or less, nothing extra is shown. The Leadership / Dominance / Authority used, the number of stacks and strikes and the `#` kill order are not multiplied; a troop that is turned off shows no second number.
 

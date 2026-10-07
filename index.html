@@ -145,8 +145,8 @@ document.addEventListener('click',e=>{
 });
 
 let VIEW='grouped';try{const sv=localStorage.getItem('sc_view');if(sv=='mobile'||sv=='computer')VIEW=sv}catch(e){}      // result view: Grouped (cards in groups), Mobile (one unit per line) or Computer (two units per line, same order as Mobile). One setting for all tabs.
-let MUL=1;      // the number of hits the Food production pays for (food production / food consumption of one hit, rounded down); above 1 the numbers x MUL are shown as the second number
-const mulTxt=(x,f)=>MUL>1?`×${MUL}: ${(f||(y=>Math.round(y).toLocaleString()))(x*MUL)}`:'';
+let MUL=1;      // the hits the Food production pays for (food production / food consumption of one hit, rounded DOWN to 2 decimals); above 1 the numbers x MUL are shown as the second number (units rounded UP to a whole piece)
+const mulTxt=(x,f)=>MUL>1?`×${MUL.toFixed(2)}: ${(f||(y=>Math.ceil(y-1e-7).toLocaleString()))(x*MUL)}`:'';
 let EBINFO='';   // the stack split (army / full monster / partial monster / engineer), part of the result summary line
 const MODE_NAME=e=>e+'-stack';   // e = enemy stacks (3, 4, 6 or 8)
 const pct=m=>Math.round(m*100).toLocaleString('en-US')+'%';   // bonus ratio -> percent text (6.67 -> 667%)
@@ -1006,7 +1006,7 @@ function calc(){
   document.querySelectorAll('.cm').forEach(b=>b.classList.toggle('on',(P.kill&&b.dataset.m=='kill')||(P.ren&&b.dataset.m=='ren')));
   const sc=score(P,[...A,...Mo,...U.list],[...(st.so||[]),...U.ord]);
   const food=[...A,...Mo,...U.list].reduce((q,s)=>q+(s.n||0)*(TRN[s.name].food||0),0);      // total food consumption of all the units (mercenaries use none)
-  MUL=v('foodP')>0&&food>0?Math.max(1,Math.floor(v('foodP')/food)):1;      // hits the Food production pays for (1 = nothing extra to show)
+  MUL=v('foodP')>0&&food>0?Math.max(1,Math.floor(v('foodP')/food*100+1e-9)/100):1;      // hits the Food production pays for, rounded down to 2 decimals (1 = nothing extra to show)
   {const live=[...A,...Mo].filter(x=>x.n>0),eng=live.filter(x=>x.cat=='Engineer').length,mon=live.filter(x=>x.p=='M'),army=live.filter(x=>x.p=='A'&&x.cat!='Engineer').length;
    const full=mon.filter(x=>!x.pt).length;    // full = the monster tiers that are used completely; partial = the tier where the Dominance runs out and whatever is left below it
    EBINFO=rgm(P)?(mon.length-full?`${army} army + ${full} full monster + ${mon.length-full} partial monster + ${eng} engineer`:`${army} army + ${mon.length} monster + ${eng} engineer`):`${army} army + ${full} full monster + ${mon.length-full} partial monster + ${eng} engineer`;if(U.list.length)EBINFO+=` + ${U.list.length} mercenary`}
@@ -1023,7 +1023,7 @@ function calc(){
   const secs=[...(P.capU>0?[[`Mercenaries — Authority ${U.used.toLocaleString()} / ${P.capU.toLocaleString()}`,!mItems.length?'<p class="mu">No mercenary gets a unit with this Authority.</p>':mob?mobList(ord(mItems,COMPM)):mercTable(U.all)]]:[]),   // no Authority: no Mercenaries section
     [`Monsters — Dominance ${usedOf(Mo).toLocaleString()} / ${P.capM.toLocaleString()}`,Mall.length?(mob?mobList(mobOrder(flatOrder(Mall))):table(Mall)):'<p class="mu">No monster tiers selected.</p>'],
     [`Army — Leadership ${usedOf(A).toLocaleString()} / ${P.capA.toLocaleString()}`,Aall.length?(mob?mobList(ord(flatOrder(Aall),COMPA)):table(Aall)):'<p class="mu">No army tiers selected.</p>']].map(([t,b],k)=>`<h2${k?' style="margin-top:26px"':''}>${t}</h2>${b}`).join('');
-  $('res').innerHTML=`<p class="mu" style="margin:0 0 8px">${sc.stacks} stacks · ${EBINFO} · ${sc.hits} strikes against ${P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks'} · food consumption ${num(food)}${MUL>1?` · the food production pays for <b>${MUL} hits</b>`:''} · <b>estimated damage ${fmt(sc.dmg)}</b>${MUL>1?` (${mulTxt(sc.dmg,fmt)})`:''}</p>
+  $('res').innerHTML=`<p class="mu" style="margin:0 0 8px">${sc.stacks} stacks · ${EBINFO} · ${sc.hits} strikes against ${P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks'} · food consumption ${num(food)}${MUL>1?` · the food production pays for <b>${MUL.toFixed(2)} hits</b>`:''} · <b>estimated damage ${fmt(sc.dmg)}</b>${MUL>1?` (${mulTxt(sc.dmg,fmt)})`:''}</p>
   ${secs}`;
   save();
 }
