@@ -509,34 +509,35 @@ function renOrder(P,names){
 }
 // CP kill (PvP, one flying enemy): a FIXED order, nothing is ranked by strength. All the engineers first (higher tier first), then the army tier by tier from the top,
 // Guardsmen before Specialists (G9, S9, G8, S8 ...), the monsters last, tier by tier from the top. Inside a class and tier the troops with the SMALLER squad bonus against
-// flying come first. Troops with the same class, tier and squad bonus (for example every G9 without a bonus) are ONE GROUP of equals: the game picks their order at random,
+// flying come first (then the declining SH ratio). Troops with the same class, tier, squad bonus and SH ratio (for example every G9 without a bonus) are ONE GROUP of equals: the game picks their order at random,
 // so they get the same health and share the places of the group (see cpGroup, allocTight and score).
 // The squad bonus is the bonus against flying ONLY. The Double hit is unused in the CP modes (one enemy stack, no second enemy to hit - see dhf), so the Beast units
 // (Royal Lion, Battle Griffin) and the monsters count as troops without a bonus when they have none against flying.
 const cpBonus=(t,P)=>vsRatio(t,P);
 const cpSH=(t,P)=>Math.round(ratioOf(t,P)*1e9);       // strength per health with your multipliers only (no squad bonus, no Double hit)
-// Group of equals. CP kill: class + tier + bonus. CP death: no class split between the Guardsmen and the monsters and no tier (G and M count as one kind), the bonus decides:
-// all the G and M without a bonus are ONE group, the S (Specialists) are their own kind, an Engineer is a group of its own (its SH ratio differs per tier).
-const cpGroup=(t,P)=>{const b=Math.round(cpBonus(t,P)*1e6);return P.cpd?(t.cls=='G'||t.cls=='M'?'GM':t.cls)+'|'+b+(t.cls=='E'?'|'+cpSH(t,P):''):t.cls+'|'+b+'|'+t.tier};
+// Group of equals = the troops with the same squad bonus AND the same SH ratio (strength per health): they get about the same health and share their places. The troops with a different
+// SH ratio are NOT forced to the same health - the SH ratio decides the order first (the declining SH ratio, see cpdOrder), only the troops with the same ratio form a group.
+// CP kill: class + tier + bonus + SH ratio. CP death: Guardsmen and monsters count as one kind, no tier: kind + bonus + SH ratio (G9 and G8 without a bonus: the same SH ratio, one group).
+const cpGroup=(t,P)=>{const b=Math.round(cpBonus(t,P)*1e6),h=cpSH(t,P);return P.cpd?(t.cls=='G'||t.cls=='M'?'GM':t.cls)+'|'+b+'|'+h:t.cls+'|'+b+'|'+t.tier+'|'+h};
 function cpOrder(P,names){
   const ts=TR.filter(t=>names.has(t.name)),ci=t=>DEFCAT.indexOf(t.cat);
   const eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier),army=ts.filter(t=>t.pool=='A'&&t.cls!='E'),mon=ts.filter(t=>t.pool=='M');
   const tiers=a=>[...new Set(a.map(t=>t.tier))].sort((x,y)=>y-x);
-  const grp=a=>a.slice().sort((x,y)=>cpBonus(x,P)-cpBonus(y,P)||ci(x)-ci(y)||x.name.localeCompare(y.name));      // smaller squad bonus first; equal ones stay together
+  const grp=a=>a.slice().sort((x,y)=>cpBonus(x,P)-cpBonus(y,P)||cpSH(y,P)-cpSH(x,P)||ci(x)-ci(y)||x.name.localeCompare(y.name));      // smaller squad bonus first, then the declining SH ratio; equal ones stay together
   return[...eng,...tiers(army).flatMap(tt=>['G','S'].flatMap(c=>grp(army.filter(t=>t.tier==tt&&t.cls==c)))),...tiers(mon).flatMap(tt=>grp(mon.filter(t=>t.tier==tt)))].map(t=>t.name);
 }
 // CP death (PvP, one flying enemy, the most damage): the troops that strike last strike the most, so the Specialists (double damage) stand near the end. The order:
-// all the engineers (higher tier first); the Guardsmen and the FULL monster tiers WITHOUT a squad bonus against flying - ONE group of equals (every tier, G and M together, the same health);
-// the Guardsmen and the full monsters WITH a bonus, mixed, the LOWEST bonus first (it dies first); the Specialists without a bonus (one group) and then with a bonus, the lowest bonus first;
-// and behind all of them the PARTIAL monster tier (the tier where the Dominance runs out, and the tiers below it; without a bonus first, then the lowest bonus first): it has the lowest health,
-// so it stands last and cannot pull the Specialists down; it is what spends the Dominance that is left. A troop "has a bonus" when it has a squad bonus against flying (the Double hit is unused).
-// c = the number of full monster tiers (the top c tiers); the damage decides which c is used (see buildStacks). Every tier from 9 down to 1 follows the same rule.
+// all the engineers (higher tier first); the Guardsmen and the FULL monster tiers WITHOUT a squad bonus against flying, by the DECLINING SH ratio (the troops with exactly the same ratio - G9, G8 ...
+// down to tier 1 - stand together and are one group with about the same health); the Guardsmen and the full monsters WITH a bonus, mixed, the LOWEST bonus first (it dies first; the same bonus: the declining SH ratio);
+// the Specialists the same way (no bonus by the declining SH ratio, then with a bonus, the lowest first); and behind all of them the PARTIAL monster tier (the tier where the Dominance runs out, and the tiers below it;
+// the same rules inside): it has the lowest health, so it stands last and cannot pull the Specialists down; it is what spends the Dominance that is left.
+// A troop "has a bonus" when it has a squad bonus against flying (the Double hit is unused). c = the number of full monster tiers (the top c tiers); the damage decides which c is used (see buildStacks).
 function cpdOrder(P,names,c){
   const ts=TR.filter(t=>names.has(t.name)),ci=t=>DEFCAT.indexOf(t.cat),bon=t=>vsRatio(t,P)>0,sp=monSplit(ts,c);
   const eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier),army=ts.filter(t=>t.pool=='A'&&t.cls!='E'),mon=ts.filter(t=>t.pool=='M');
-  const tie=(x,y)=>y.tier-x.tier||(x.cls=='M')-(y.cls=='M')||ci(x)-ci(y)||x.name.localeCompare(y.name);              // same bonus: the higher tier first, Guardsmen before monsters
-  const noB=a=>a.filter(t=>!bon(t)).sort(tie);                                                                    // no bonus: one group, the higher tier first
-  const withB=a=>a.filter(bon).sort((x,y)=>cpBonus(x,P)-cpBonus(y,P)||tie(x,y));                                  // with a bonus: the lowest bonus first
+  const tie=(x,y)=>y.tier-x.tier||(x.cls=='M')-(y.cls=='M')||ci(x)-ci(y)||x.name.localeCompare(y.name);              // same ratio: the higher tier first, Guardsmen before monsters
+  const noB=a=>a.filter(t=>!bon(t)).sort((x,y)=>cpSH(y,P)-cpSH(x,P)||tie(x,y));                                    // no bonus: the declining SH ratio
+  const withB=a=>a.filter(bon).sort((x,y)=>cpBonus(x,P)-cpBonus(y,P)||cpSH(y,P)-cpSH(x,P)||tie(x,y));             // with a bonus: the lowest bonus first, then the declining SH ratio
   const both=a=>[...noB(a),...withB(a)];
   return[...eng,...both([...army.filter(t=>t.cls=='G'),...mon.filter(t=>sp.full.has(t.tier))]),...both(army.filter(t=>t.cls=='S')),...both(mon.filter(t=>!sp.full.has(t.tier)))].map(t=>t.name);
 }
@@ -711,7 +712,7 @@ function topUp(seq,A,cap,tmode,meas=x=>x.hp,grp){
       if(!(s.n>0)||!(s.hp>0)||s.cost>left)continue;
       let i=ix.get(s)-1;while(i>=0&&!(seq[i].n>0))i--;           // the stack before it that is really in the army
       if(s.tgt!==undefined&&s.n*s.hp>s.tgt*TOPTOL)continue;         // 4-stack: no stack goes more than 0.5 % above its target level: the leftover must not make a tall stack at the head of the order
-      if(grp){if(s.lk||(s.n+1)*s.hp>bnd.get(s))continue}                // inside a group nobody has to stay below another stack (the order there is equal / random)
+      if(grp){if((s.n+1)*s.hp>bnd.get(s))continue}                // inside a group nobody has to stay below another stack (the order there is equal / random)
       else if(i>=0&&(s.n+1)*s.hp>seq[i].n*seq[i].hp*qs)continue                      // the total health must not rise along the order (Max damage family: it must fall by the step)
       if(tmode&&!HO&&s.cat!='Engineer'&&!s.rs){let j=i;while(j>=0&&(seq[j].cat=='Engineer'||seq[j].bst||seq[j].rs||!(seq[j].n>0)))j--;if(j>=0&&(s.n+1)*s.str>seq[j].n*seq[j].str*qs)continue}   // Max damage: nor the total strength
       const r=s.n*meas(s)/s.w;
@@ -831,48 +832,6 @@ function lpAlloc(P,live){
 // 3-, 4-, 6- and 8-stack: the counts are NOT chosen for damage. Every stack aims for the same health level (a share w of it: a tiny step down along the order, and further down only where the
 // total strength would otherwise rise - the places Kn+1 are exempt and just follow the health before them). The level is as high as the Leadership allows (all of it is spent);
 // the monsters get ONE common level, the army's level at most - lower when the Dominance is the smaller pool, so there is a single step between the army and the monsters. Rounding is repaired and the leftover is spent troop by troop.
-// CP kill / CP death: the stacks of one group should have the SAME total health, as equal as whole units allow. A stack with big units (a monster: a few units per stack) can only
-// stand on its own steps (n units x health of a unit), the stacks with small units can match any level. So for every group the common level T is searched (a fine grid and the steps of the
-// big units): every stack takes the number of units nearest to T, and the T with the smallest gap between the biggest and the smallest stack wins - as long as the group stays below the smallest stack of
-// the group before, and each pool (Leadership, Dominance) stays inside its budget. A tiny price is put on lowering the group (it leaves capacity unspent), so a hair of equality never costs a lot of units.
-// The stacks of a group that has been levelled are locked (s.lk): the final top-up does not touch them, it only spends what is left on the single stacks.
-function equalGroups(P,cur){
-  const cap={A:P.capA,M:P.capM};
-  cur.forEach(s=>{s.lk=false});
-  let i=0;
-  while(i<cur.length){
-    chainT(cur);                                               // the stacks behind the group before are cut to its new smallest stack
-    const g=cur[i].grp||cur[i].r;let j=i+1;while(j<cur.length&&(cur[j].grp||cur[j].r)===g)j++;
-    const gs=cur.slice(i,j).filter(s=>s.n>0);
-    if(gs.length>1){
-      let lim=Infinity,pg=null,pmin=Infinity;                  // the limit = (the smallest stack of the group before) x QS, as in chainT
-      for(let k=0;k<i;k++){const q=cur[k],gq=q.grp||q.r;if(gq!==pg){if(isFinite(pmin))lim=pmin*QS;pg=gq;pmin=Infinity}if(q.n>0)pmin=Math.min(pmin,q.n*q.hp)}
-      if(pg!==null&&pg!==g&&isFinite(pmin))lim=pmin*QS;
-      const used={A:usedOf(cur.filter(q=>q.p=='A')),M:usedOf(cur.filter(q=>q.p=='M'))};
-      const hs=gs.map(q=>q.n*q.hp),hmax=Math.max(...hs),hmin=Math.min(...hs),cur0=(hmax-hmin)/hmax;
-      const ev=T=>{let mx=0,mn=Infinity,sum=0,dA=0,dM=0;const ns=[];
-        for(const q of gs){let n=Math.round(T/q.hp);if(n<1)n=1;if(n*q.hp>lim)n--;if(n<1)return null;
-          const h=n*q.hp;mx=Math.max(mx,h);mn=Math.min(mn,h);sum+=h;const d=(n-q.n)*q.cost;if(q.p=='A')dA+=d;else dM+=d;ns.push(n)}
-        if(used.A+dA>cap.A+1e-6||used.M+dM>cap.M+1e-6)return null;
-        const spread=(mx-mn)/mx;return{ns,spread,sum,score:spread+0.1*Math.max(0,(hmax-T)/hmax)}};
-      const lo=hmax*0.97,hi=Math.min(lim,hmax*1.02),Ts=[];
-      if(hi>=lo){
-        for(let k=0;k<=300;k++)Ts.push(lo+(hi-lo)*k/300);
-        gs.forEach(q=>{if(q.hp>hmax*3e-4)for(let n=Math.ceil(lo/q.hp);n*q.hp<=hi;n++)Ts.push(n*q.hp)});          // the steps of the big units
-      }
-      let best=null;
-      for(const T of Ts){const r=ev(T);if(r&&(!best||r.score<best.score-1e-12||(Math.abs(r.score-best.score)<=1e-12&&r.sum>best.sum)))best=r}
-      if(best&&best.spread<cur0-1e-9)gs.forEach((q,k)=>{q.n=best.ns[k]});
-    }
-    i=j;
-  }
-  chainT(cur);
-  for(let a=0;a<cur.length;){                                  // lock the stacks of every group that has more than one stack
-    const g=cur[a].grp||cur[a].r;let b=a+1;while(b<cur.length&&(cur[b].grp||cur[b].r)===g)b++;
-    if(cur.slice(a,b).filter(q=>q.n>0).length>1)for(let k=a;k<b;k++)cur[k].lk=true;
-    a=b;
-  }
-}
 function allocTight(P,live){
   const d=P.d,meas=x=>x.hp;
   let cur=live.slice(),dom=true,free=null;      // free: the army's level is too low for the monsters to spend the Dominance (or there is no army) - then the whole Dominance goes to the monsters, above the army's level
@@ -910,11 +869,10 @@ function allocTight(P,live){
     }
     TOPTOL=1.005;topUp(cur,A,P.capA,true,meas,HO);topUp(cur,Mo,P.capM,true,meas,HO);
     if(P.capM-usedOf(Mo)>0.003*P.capM){TOPTOL=1.03;topUp(cur,Mo,P.capM,true,meas,HO);TOPTOL=1.005}      // Dominance left over: the monsters may go up to 3 % above the level (the first monster stands far below the army anyway)
-    if(HO){equalGroups(P,cur);TOPTOL=1.005;topUp(cur,A,P.capA,true,meas,HO);topUp(cur,Mo,P.capM,true,meas,HO)}      // CP kill / CP death: the stacks of a group as equal as possible, then the rest is spent on the single stacks only
     if(!cur.some(s=>!(s.n>0)))break;
     cur=cur.filter(s=>s.n>0);                      // a stack that got no troop leaves the order: the places Kn+1 move up
   }
-  live.forEach(s=>{delete s.tgt;delete s.lk;if(!(s.n>0)){s.n=0;s.rs=false}});
+  live.forEach(s=>{delete s.tgt;if(!(s.n>0)){s.n=0;s.rs=false}});
   return{A:live.filter(s=>s.p=='A'),Mo:live.filter(s=>s.p=='M'),dom,free:!!free};
 }
 function allocWhole(P,live){                         // Killshot: the exact solution (health AND total strength step down along the order)
