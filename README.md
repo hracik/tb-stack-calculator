@@ -16,9 +16,9 @@ Every unit eats **25 % less** than the stored food value (the constant `FOODCUT`
 
 Every troop also stores its **revival cost in gold** (the attack figure of the troop JSON; the silver cost of defending is always 10 times it and is not stored). It is only stored - nothing shows or uses it yet.
 
-## Capacity & settings
+## Army capacity, Food capacity & settings
 
-The boxes are in two framed groups. **Hitting** holds Leadership, Dominance and Authority (the capacities the hit is made with); **Preparing** holds **Food production** (default 0) and the **Revive** select (90 % of a revived stack comes back; none / top line / monsters only / monsters and top line / all, default top line). The group names match the Hitting / Preparing buttons of the Action row in the Result. All the boxes are saved per tab like the other boxes. Food production and Revive only decide how many hits (and how many units to prepare) are shown (see Result views - Hits the food production pays for); they change no troop number.
+Two cards at the top. **Army capacity** holds Leadership, Dominance and Authority. **Food capacity & settings** holds **Food production** (default 0) and the **Revive** select (90 % of a revived stack comes back; none / top line / monsters only / monsters and top line / all, default top line). All the boxes are saved per tab like the other boxes. Food production and Revive only decide how many hits (and how many units to prepare) are shown (see Result views - Hits the food production pays for)
 
 ## Mercenaries
 
@@ -38,7 +38,7 @@ Mercenaries are hired troops. They use Authority only (not Leadership or Dominan
 
 The Result section only shows what there is a capacity for: with **Leadership, Dominance and Authority all 0** the whole Result section is hidden (a new tab starts that way); the **Army** section is not shown while Leadership is 0, the **Monsters** section while Dominance is 0 and the **Mercenaries** section while Authority is 0.
 
-Above the result there is a View switch: **Grouped**, **Mobile** and **Computer**.
+Above the result there is a View switch: **Grouped**, **Mobile** and **Computer**. The View and Action rows (and the Monsters Boost research buttons) each have their label on a line of its own with the buttons below it, all the buttons the same size (three equal columns).
 
 - **Grouped** (the default) is the cards in groups, 5 per row, with the label of a group (for example Guardsmen 9) in one row above its cards, one block for the Mercenaries, one for the Monsters and one for the Army (in this order, in every view).
 - **Mobile**: one unit per line. The line starts with the picture; to the right of it is the name of the unit and below the name the number of units. The three sections (Mercenaries - Authority, Monsters - Dominance, Army - Leadership) keep their headings. A line can be clicked to turn the troop off or on, like a card, and it shows the `#` number (the place in the kill order) at the right edge, as the Grouped cards do. Inside every section the units stand by the **original health of one unit, the biggest first** (Mercenaries: Wyvern, Warden, Eternal Cannoneer, Demonic Salamander, Warregal, Jago, Ariel, Superior Epic Monster Hunter, Quicksand, Galloper, Highlander, Slavic Warrior, Pounder, Scarface, Grace; Monsters: Kraken, Fire Phoenix, Devastator, Trickster of tier 9, then 8, then Wind Lord, Black Dragon, Destructive Colossus, Ancient Terror, then the lower tiers the same way; Army: Corax II, Royal Lion II, Corax I, Royal Lion I, Josephine II, Josephine I, ...). Units with the same health: the mercenary list order, then the higher tier, Guardsmen before Specialists, then ranged before melee (the full order: flying, mounted, ranged, melee), then the order of the Grouped cards. The Grouped view keeps its own order. In the Mobile and Computer lines the `#` badge sits at the right edge and the name keeps a gap for it, so the badge never covers the name or the numbers (on narrow phones the Computer lines get a smaller icon and the badge moves to the top-right corner).
@@ -48,7 +48,7 @@ The chosen view is one setting for the whole page (saved in the browser, not per
 
 ### Hits the food production pays for
 
-The **Food production** box (Capacity & settings, saved per tab, default 0) sets how much food you have. The preparing calculations use the box **plus 0.9 %** (`production x 1.009`, the constant `FOODADD` in the page); the box itself shows what you typed. The food consumption of the calculated army (all the units of one hit, after the 25 % cut, the number shown in the summary line) is the food one hit costs when every unit has to be prepared. The hits are rounded **down to 2 decimals** and shown with 2 decimals.
+The **Food production** box (Food capacity & settings, saved per tab, default 0) sets how much food you have. The preparing calculations use the box **plus 0.9 %** (`production x 1.009`, the constant `FOODADD` in the page); the box itself shows what you typed. The food consumption of the calculated army (all the units of one hit, after the 25 % cut, the number shown in the summary line) is the food one hit costs when every unit has to be prepared. The hits are rounded **down to 2 decimals** and shown with 2 decimals.
 
 **Without revival** (all the units are gone after the hit): `hits = food production / food consumption` (20,000,000 / 15,990,240 = 1.2507... shows as 1.25).
 
@@ -58,7 +58,7 @@ The **Food production** box (Capacity & settings, saved per tab, default 0) sets
 
 (when the production is smaller than one army, it is `production / food of the army` as above).
 
-**Revive** (the select in Capacity & settings, saved per tab, default **top line**) chooses which stacks come back, from the least revival to the most:
+**Revive** (the select in Food capacity & settings, saved per tab, default **top line**) chooses which stacks come back, from the least revival to the most:
 
 - **none**: nothing comes back, `units x hits`.
 - **top line**: only the top line stacks. The *top line* is the highest tier in use, taken separately for the Army (with the engineers), the Monsters and the Mercenaries - with the army and monsters on tiers 8 and 9 it is the 9s, with units 7 + 8 only it is the 8s (the tooltip of the select names the tiers); all the lower tiers are lost every hit.
@@ -68,7 +68,7 @@ The **Food production** box (Capacity & settings, saved per tab, default 0) sets
 
 The second line under the summary starts with the food consumption of the calculated army and, when at least one revive mode pays for more than 1 hit (1.01 or more), goes on with the hits for all five: `food consumption 11,990,595 · hits per revive mode - 10.66 none - 14.25 top line - 16.38 monsters - 22.98 monsters + top line - 97.26 all` (the chosen one in bold). Without such hits only the food consumption is shown. The estimated damage in the first line is always the damage of one hit.
 
-**Action: Hitting / Preparing** (Result, under View, saved per tab, default **Hitting**) choose which number the cards and lines show. While the **Food production is 0** there is nothing to prepare for: the Preparing button is disabled (greyed out), Hitting is shown, and the line `To see the preparing numbers, fill in the Food production (Capacity & settings).` appears under the buttons. The Preparing choice itself stays saved and is active again as soon as the production is filled in:
+**Action: Hitting / Preparing** (Result, under View, saved per tab, default **Hitting**) choose which number the cards and lines show. While the **Food production is 0** there is nothing to prepare for: the Preparing button is disabled (greyed out), Hitting is shown, and the line `To see the preparing numbers, fill in the Food production (Food capacity & settings).` appears under the buttons. The Preparing choice itself stays saved and is active again as soon as the production is filled in:
 
 - **Hitting**: the units of one hit - the number to hit with (the 1x number, as always).
 - **Preparing**: only the units to **prepare** for the hits the chosen Revive pays for, as a range, `380 – 400`: **from** the units for the whole hits the Food production pays for **to** the units for all the hits. With 2.09 hits that is the units for 2.00 hits (for example 360 + 1 x lost units = 380) up to the units for 2.09 hits (360 + 1.09 x lost units = 400), so the lower number is what you need for at least 2 hits. Every number is **rounded up to a whole piece**: the whole stack for the first hit plus the lost units for every next hit, `units + (hits - 1) x lost units`. Without revival the lost units are the whole stack, so it is `units x hits`. With 1.25 hits the lower number is the stack itself (the units for 1.00 hit), for example `400 – 418`. A single number is shown only when the two ends are the same (a whole number of hits, such as 8.00, or nothing is lost when a stack is revived) and when the food pays for 1 hit or less (then it is the stack itself). On a narrow card the range breaks into two lines in front of the dash. A **mercenary** eats no food, so it gets no upper end: where the other troops show a range, a mercenary shows only the lower number and a plus (`240+`, not `240 – 246`); a mercenary with a single number shows it as it is. A troop that is turned off shows `off`.
