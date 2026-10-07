@@ -862,6 +862,11 @@ function mobList(items){
 const MOBM=['Wyvern','Warden','Eternal Cannoneer','Demonic Salamander','Warregal','Jago','Ariel','Superior Epic Monster Hunter','Quicksand','Galloper','Highlander','Slavic Warrior','Pounder','Scarface','Grace'];
 const mobOrder=list=>{const cr={G:0,S:1,E:2,M:3},mi=n=>{const i=MOBM.indexOf(n);return i<0?999:i};
   return list.map((s,i)=>[s,i]).sort(([a,i],[b,j])=>TRN[b.name].hp-TRN[a.name].hp||mi(a.name)-mi(b.name)||+b.r.slice(1)-+a.r.slice(1)||cr[a.r[0]]-cr[b.r[0]]||DISP.indexOf(a.cat)-DISP.indexOf(b.cat)||i-j).map(x=>x[0])};
+// COMPUTER order: the Mobile order with a few units moved by hand (the Monsters stay as in Mobile). A unit that is not listed keeps its place; the listed ones that are present take the places they have in the
+// Mobile order, in the order of the list.
+const COMPM=['Wyvern','Warden','Eternal Cannoneer','Demonic Salamander','Warregal','Jago','Ariel','Superior Epic Monster Hunter','Quicksand','Galloper','Highlander','Scarface','Pounder','Slavic Warrior','Grace'];
+const COMPA=['Royal Lion II','Corax II','Corax I','Royal Lion I','Josephine II','Josephine I','Smiter II','Whitemane II','Smiter I','Whitemane I','Purifier II','Punisher II','Legitimist II','Duelist II','Legitimist I','Punisher I','Duelist I','Purifier I'];
+const compOrder=(list,pri)=>{const o=list.slice(),sl=[];o.forEach((s,i)=>{if(pri.includes(s.name))sl.push(i)});const it=sl.map(i=>o[i]).sort((a,b)=>pri.indexOf(a.name)-pri.indexOf(b.name));sl.forEach((i,k)=>{o[i]=it[k]});return o};
 // MERCENARIES: hired troops, they use Authority only (not Leadership / Dominance) and every one of them lasts 7 days. [class, tier, name, category, health, strength, Authority per unit, vs melee/ranged/mounted/flying, jungle guardian 1/0] - straight from the troop JSON; the swarm bonus of a jungle guardian sits in the same vs column as a regular bonus.
 // All of them are listed; the result shows only the ones we have a picture for.
 const MERC=[["E",9,"Ariel","Engineer",330000,55000,10,[0,0,0,0],0,""],
@@ -996,14 +1001,14 @@ function calc(){
   else [...A,...Mo].filter(x=>x.n>0).sort((a,b)=>b.n*b.hp-a.n*a.hp).forEach((x,i)=>KP[x.name]=i+1);
   if(tabs){const t=$('rtitle');if(t)t.textContent='Result — '+tabs[active].name}
   if(!['grouped','mobile','computer'].includes(VIEW))VIEW='grouped';
-  const mob=VIEW!='grouped';                      // Mobile and Computer: one list per section, one unit per card-line; Computer in two columns
+  const mob=VIEW!='grouped',ord=(l,pri)=>VIEW=='computer'?compOrder(mobOrder(l),pri):mobOrder(l);                      // Mobile and Computer: one list per section, one unit per card-line; Computer in two columns
   document.querySelectorAll('.vb').forEach(b=>b.classList.toggle('on',b.dataset.v==VIEW));
   const gk=r=>r[0]=='E'?-100+ +r.slice(1):-(+r.slice(1))*2+(r[0]=='S'?1:0);
   const Aall=st.filter(s=>s.p=='A').sort((a,b)=>gk(a.r)-gk(b.r)),Mall=st.filter(s=>s.p=='M').sort((a,b)=>(+b.r.slice(1))-(+a.r.slice(1)));
   const mItems=['E','G','S','M'].flatMap(c=>mercSorted(c).map(m=>U.all.find(s=>s.name==m[2]))).filter(mercVis);
-  const secs=[...(P.capU>0?[[`Mercenaries — Authority ${U.used.toLocaleString()} / ${P.capU.toLocaleString()}`,!mItems.length?'<p class="mu">No mercenary gets a unit with this Authority.</p>':mob?mobList(mobOrder(mItems)):mercTable(U.all)]]:[]),   // no Authority: no Mercenaries section
+  const secs=[...(P.capU>0?[[`Mercenaries — Authority ${U.used.toLocaleString()} / ${P.capU.toLocaleString()}`,!mItems.length?'<p class="mu">No mercenary gets a unit with this Authority.</p>':mob?mobList(ord(mItems,COMPM)):mercTable(U.all)]]:[]),   // no Authority: no Mercenaries section
     [`Monsters — Dominance ${usedOf(Mo).toLocaleString()} / ${P.capM.toLocaleString()}`,Mall.length?(mob?mobList(mobOrder(flatOrder(Mall))):table(Mall)):'<p class="mu">No monster tiers selected.</p>'],
-    [`Army — Leadership ${usedOf(A).toLocaleString()} / ${P.capA.toLocaleString()}`,Aall.length?(mob?mobList(mobOrder(flatOrder(Aall))):table(Aall)):'<p class="mu">No army tiers selected.</p>']].map(([t,b],k)=>`<h2${k?' style="margin-top:26px"':''}>${t}</h2>${b}`).join('');
+    [`Army — Leadership ${usedOf(A).toLocaleString()} / ${P.capA.toLocaleString()}`,Aall.length?(mob?mobList(ord(flatOrder(Aall),COMPA)):table(Aall)):'<p class="mu">No army tiers selected.</p>']].map(([t,b],k)=>`<h2${k?' style="margin-top:26px"':''}>${t}</h2>${b}`).join('');
   $('res').innerHTML=`<p class="mu" style="margin:0 0 8px">${sc.stacks} stacks · ${EBINFO} · ${sc.hits} strikes against ${P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks'} · <b>estimated damage ${fmt(sc.dmg)}</b></p>
   ${secs}`;
   save();
