@@ -966,7 +966,9 @@ function allocMerc(P,ld,so,X){
   };
   // ORDER: simply by the squad bonus, the smaller one dies first (the strongest bonuses die last and strike the most). The same bonus: nominal bonus, category, higher tier first.
   const q6=x=>Math.round(x*1e6),ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(...t.vs);
-  const seq=act.slice().sort((a,b)=>q6(sqb(a,P).tot)-q6(sqb(b,P).tot)||nom(a)-nom(b)||ci(a)-ci(b)||b.tier-a.tier).map(t=>by[t.name]);
+  // The bonus against epic enemies counts against EVERY enemy stack, a class bonus only against the stacks of that class: at the same size the epic one is the better one and dies later.
+  const bk=t=>q6(sqb(t,P).tot+(P.epic&&t.ve>0?1e-3:0));
+  const seq=act.slice().sort((a,b)=>bk(a)-bk(b)||nom(a)-nom(b)||ci(a)-ci(b)||b.tier-a.tier).map(t=>by[t.name]);
   const best=evalSeq(seq);
   best.seq.forEach((s,i)=>{if(best.ns[i]>0){s.n=best.ns[i];res.list.push(s);res.ord.push(s.name);res.used+=s.n*s.cost}});
   return res;
