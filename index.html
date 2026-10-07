@@ -513,17 +513,19 @@ function cpOrder(P,names){
   const grp=a=>a.slice().sort((x,y)=>sqb(x,P).tot-sqb(y,P).tot||ci(x)-ci(y)||x.name.localeCompare(y.name));      // smaller squad bonus first; equal ones stay together
   return[...eng,...tiers(army).flatMap(tt=>['G','S'].flatMap(c=>grp(army.filter(t=>t.tier==tt&&t.cls==c)))),...tiers(mon).flatMap(tt=>grp(mon.filter(t=>t.tier==tt)))].map(t=>t.name);
 }
-// CP death (PvP, one flying enemy, the most damage): the troops that strike last strike the most, so the Specialists (double damage) stand at the very end. The order:
-// all the engineers (higher tier first), the Guardsmen WITHOUT a squad bonus against flying (tier 9 first), the Guardsmen WITH one, all the monsters without a bonus, the monsters with
-// one (tier by tier from the top), then the Specialists without a bonus and at last the Specialists with a bonus. A troop "has a bonus" when it has a squad bonus against flying.
+// CP death (PvP, one flying enemy, the most damage): the troops that strike last strike the most, so the Specialists (double damage) stand near the end. The order:
+// all the engineers (higher tier first), the Guardsmen WITHOUT a squad bonus against flying (the top tier first, down to tier 1), the Guardsmen WITH one, the FULL monster tiers without
+// a bonus and with one, the Specialists without a bonus and at last with a bonus - and behind all of them the PARTIAL monster tier (the tier where the Dominance runs out, and the tiers below it):
+// it has the lowest health, so it stands last and cannot pull the Specialists down; it is what spends the Dominance that is left. A troop "has a bonus" when it has a squad bonus against flying.
+// c = the number of full monster tiers (the top c tiers); the damage decides which c is used (see buildStacks). Every tier from 9 down to 1 follows the same rule.
 // Inside a class and tier the smaller squad bonus first; troops with the same class, tier and bonus are one group of equals, as in CP kill.
-function cpdOrder(P,names){
-  const ts=TR.filter(t=>names.has(t.name)),ci=t=>DEFCAT.indexOf(t.cat),bon=t=>vsRatio(t,P)>0;
+function cpdOrder(P,names,c){
+  const ts=TR.filter(t=>names.has(t.name)),ci=t=>DEFCAT.indexOf(t.cat),bon=t=>vsRatio(t,P)>0,sp=monSplit(ts,c);
   const eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier),army=ts.filter(t=>t.pool=='A'&&t.cls!='E'),mon=ts.filter(t=>t.pool=='M');
   const tiers=a=>[...new Set(a.map(t=>t.tier))].sort((x,y)=>y-x);
   const grp=a=>a.slice().sort((x,y)=>sqb(x,P).tot-sqb(y,P).tot||ci(x)-ci(y)||x.name.localeCompare(y.name));
   const blk=a=>[false,true].flatMap(b=>tiers(a).flatMap(tt=>grp(a.filter(t=>t.tier==tt&&bon(t)==b))));      // no bonus (all tiers, the top one first), then with a bonus
-  return[...eng,...blk(army.filter(t=>t.cls=='G')),...blk(mon),...blk(army.filter(t=>t.cls=='S'))].map(t=>t.name);
+  return[...eng,...blk(army.filter(t=>t.cls=='G')),...blk(mon.filter(t=>sp.full.has(t.tier))),...blk(army.filter(t=>t.cls=='S')),...blk(mon.filter(t=>!sp.full.has(t.tier)))].map(t=>t.name);
 }
 // 4-, 3-, 6- and 8-stack modes and Killshot: Royal Lion and Battle Griffin (the Beast units) carry the Beast health bonus, so they deal less strength per health than the rest of the army.
 // Each one is moved to the nearest place BELOW that is Kn+1 = the FIRST place of a strike group (K = the number of enemy stacks): K = 4: 6 -> 5, 14 -> 13; K = 3: 5 -> 4, 14 -> 13; K = 6 or 8: 6n+1 or 8n+1
@@ -573,12 +575,12 @@ function buildStacks(P,order,X,so){
     if(rgm(P)){                      // 3-, 4-, 6- and 8-stack: troops of the same ratio stay together, the smaller squad bonus first; the group order with the most damage wins
       const fs=fourSearch(P,live,mkOut);so=fs.names;out=mkOut(so,fs.cc);
     }else if(P.cp){                  // CP kill: the order is fixed; the Dominance decides how many monster tiers are full - every choice is solved and the one with the most damage is kept
-      const s2=P.cpd?cpdOrder(P,live):cpOrder(P,live),mkCP=c=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)});return o};let best=null;
+      const ordOf=c=>P.cpd?cpdOrder(P,live,c):cpOrder(P,live),mkCP=(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)});return o};let best=null;
       for(let c=nT;c>=1;c--){
-        const r=allocate(P,mkCP(c)),dmg=score(P,[...r.A,...r.Mo],s2).dmg;
+        const s2=ordOf(c),r=allocate(P,mkCP(s2,c)),dmg=score(P,[...r.A,...r.Mo],s2).dmg;
         if(!best||dmg>best.dmg*(1+1e-9))best={dmg,c};
       }
-      so=s2;out=mkCP(best?best.c:nT);
+      const cB=best?best.c:nT;so=ordOf(cB);out=mkCP(so,cB);
     }else if(P.kill){                // Killshot: the Dominance decides how many monster tiers are full - every choice is solved and the one with the most damage is kept
       let best=null;
       for(let c=nT;c>=1;c--){
@@ -833,6 +835,12 @@ function allocTight(P,live){
     }
     cur.forEach(s=>{s.tgt=(s.p=='A'?X:s.pt?(+s.r.slice(1)==tp?XP:0):XF)*s.w});
     for(let g=0;g<30;g++){const before=cur.map(x=>x.n).join();chainT(cur);if(cur.map(x=>x.n).join()==before)break}
+    if(HO&&isFinite(X)&&A.length){      // CP kill / CP death: the chain cuts down the stacks behind a smaller stack (the monsters before the Specialists) and the Leadership it frees is left over: it raises the level of the whole army instead (the highest level the chain and the budget allow)
+      const mn=Mo.map(s=>s.n),run=x=>{A.forEach(s=>{s.n=Math.floor(x*s.w/meas(s))});Mo.forEach((s,i)=>{s.n=mn[i]});for(let g=0;g<30;g++){const b=cur.map(q=>q.n).join();chainT(cur);if(cur.map(q=>q.n).join()==b)break}return usedOf(A)};
+      let lo=X,hi=X*1.1;
+      if(run(hi)<=P.capA)lo=hi;else for(let k=0;k<45;k++){const mid=(lo+hi)/2;if(run(mid)<=P.capA)lo=mid;else hi=mid}
+      run(lo);A.forEach(s=>{s.tgt=lo*s.w});
+    }
     TOPTOL=1.005;topUp(cur,A,P.capA,true,meas,HO);topUp(cur,Mo,P.capM,true,meas,HO);
     if(P.capM-usedOf(Mo)>0.003*P.capM){TOPTOL=1.03;topUp(cur,Mo,P.capM,true,meas,HO);TOPTOL=1.005}      // Dominance left over: the monsters may go up to 3 % above the level (the first monster stands far below the army anyway)
     if(!cur.some(s=>!(s.n>0)))break;

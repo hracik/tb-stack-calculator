@@ -92,14 +92,15 @@ The two buttons are in the PvP row (CP kill was called CP run before). In both m
 - **Tight by health only.** Between the groups there is the same small step down along the order as in the other modes; the total strength is **not** kept falling along the order, because the strength order does not matter here. As everywhere, the monsters stay below the army's health level, so a Dominance that is far bigger than that level allows partly stays unused. The mercenaries start below the smallest stack of the last group.
 - The number of full monster tiers is chosen by the damage, like in Killshot. The estimated damage counts one enemy stack: the stack in place p of the order strikes p times (one strike for the first, two for the second ...).
 
-**CP kill** is the order described above (E, G9, S9, G8, S8 ..., the monsters last). **CP death** is the same enemy and the same rules (no epic bonuses, Specialists double damage, only the bonus against flying, groups of equals, stacks tight by health), but the order is the one that gives the most damage - the Specialists deal double damage, so they stand last and strike the most. A troop "has a bonus" when it has a squad bonus against flying. The order is:
+**CP kill** is the order described above (E, G9, S9, G8, S8 ..., the monsters last). **CP death** is the same enemy and the same rules (no epic bonuses, Specialists double damage, only the bonus against flying, groups of equals, stacks tight by health), but the order is the one that gives the most damage - the Specialists deal double damage, so they stand near the end and strike the most. A troop "has a bonus" when it has a squad bonus against flying. The order is:
 
 1. all the **Engineers** (higher tier first)
-2. the **Guardsmen without a bonus**, tier 9 first (G9, G8 ...), then the **Guardsmen with a bonus** (G9, G8 ...)
-3. the **monsters without a bonus**, tier 9 first, then the **monsters with a bonus**
-4. the **Specialists without a bonus** (S9, S8 ...), and at last the **Specialists with a bonus** (S9, S8 ...)
+2. the **Guardsmen without a bonus**, the top tier first (G9, G8 ... down to G1), then the **Guardsmen with a bonus** (G9, G8 ...)
+3. the **full monster tiers**: without a bonus (M9, M8 ...), then with a bonus
+4. the **Specialists without a bonus** (S9, S8 ...), then the **Specialists with a bonus** (S9, S8 ...)
+5. at the very end the **partial monster tier** (the tier where the Dominance runs out, without a bonus first, then with a bonus). It stands last because it has the lowest health: placed before the Specialists it would pull their stacks down. It is what spends the Dominance that is left (with the default numbers M9 and M8 are full and M7 is the partial tier).
 
-Inside a class and tier the troop with the smaller squad bonus comes first, and troops with the same class, tier and bonus are one group of equals. The total health still never rises along the order, and the Specialists come after the monsters, so a monster tier that gets only a little of the Dominance (a low health level) would pull every stack behind it down. The calculator solves the number of full monster tiers by the damage, so such a tier is left out, and part of the Dominance can stay unused (with the default numbers the third monster tier gets nothing).
+Every rule works for all the tiers you tick, down to tier 1 (the order is built from the ticked tiers, nothing is fixed to tiers 8 and 9). Inside a class and tier the troop with the smaller squad bonus comes first, and troops with the same class, tier and bonus are one group of equals. The number of full monster tiers is chosen by the damage (every choice is solved, the most damage wins). The total health never rises along the order. In both modes the Leadership that the chain cuts away (a stack that has to stay below a smaller stack before it) is given back to the whole army: the level of all the army stacks is raised as far as the chain and the Leadership allow, so only a few units stay unspent. With many tiers ticked (all 1-9) the calculation takes a few seconds.
 
 ## How the order is chosen
 
