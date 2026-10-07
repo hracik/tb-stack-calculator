@@ -14,12 +14,15 @@ h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;margin:0 0 10px;color:var(--a
 .sc{overflow-x:auto}table{border-collapse:collapse;width:100%}
 th,td{padding:4px 8px;text-align:left;font-size:14px;white-space:nowrap}th{color:var(--mu);font-weight:600}
 input[type=number],input[inputmode],select{width:90px;padding:5px;background:#e2cf9e;color:#2a2012;border:1px solid #8a6a2c;border-radius:4px;text-align:center;font:inherit}
-select{width:auto}.mu{color:var(--mu);font-size:13px}.g{display:flex;gap:14px;flex-wrap:wrap}
-.bg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+select{width:auto}.mu{color:var(--mu);font-size:13px}
+.bg{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:10px}
 .bc{border:1px solid var(--bd);border-radius:8px;padding:8px 10px;background:var(--bg)}
 .bc b{display:block;margin-bottom:6px;color:var(--ac);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bi{display:grid;grid-template-columns:20px 1fr;align-items:center;gap:8px;margin:5px 0}
-.bi span{color:var(--mu);text-align:center}.bi input,.bi select{width:100%;box-sizing:border-box}.bc.ep{align-self:start}.bi.dh{grid-template-columns:auto 1fr}.bi.dh span{text-align:left;white-space:nowrap}
+/* every input of the page is one row: the label (fixed width) and the box (fixed width), side by side */
+.bi{display:grid;grid-template-columns:var(--lw) minmax(0,1fr);align-items:center;gap:var(--rg);margin:5px 0}
+:root{--lw:78px;--rg:8px}      /* the label column is the same width everywhere, the box takes the whole rest of the row */
+.fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));column-gap:24px}
+.bi>span{color:var(--tx);text-align:left;white-space:nowrap}.bi input,.bi select{width:100%;min-width:0;box-sizing:border-box;height:32px;padding:3px 6px}.bc.ep{align-self:start}
 .tt{table-layout:fixed;min-width:620px}.tt td:first-child{width:130px}.tt td,.tt th{text-align:center}.tt td:first-child{text-align:left}
 .tt label{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
 .ol{max-width:440px}
@@ -57,16 +60,16 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 
 <div class="tabs" id="tabs"></div>
 <div class="tabtools" id="tabtools"></div>
-<div class="card"><h2>Army capacity</h2><div class="g">
-<label>Leadership<br><input id="capA" type="text" inputmode="decimal" value="1875508"></label>
-<label>Dominance<br><input id="capM" type="text" inputmode="decimal" value="330943"></label>
-<label>Authority<br><input id="capU" type="text" inputmode="decimal" value="0"></label>
+<div class="card"><h2>Army capacity</h2><div class="fg">
+<label class="bi"><span>Leadership</span><input id="capA" type="text" inputmode="decimal" value="1875508"></label>
+<label class="bi"><span>Dominance</span><input id="capM" type="text" inputmode="decimal" value="330943"></label>
+<label class="bi"><span>Authority</span><input id="capU" type="text" inputmode="decimal" value="0"></label>
 </div></div>
-<div class="card"><h2>Food capacity &amp; settings</h2><div class="g">
-<label>Food production<br><input id="foodP" type="text" inputmode="decimal" value="0"></label>
-<label id="revl" title="After a hit 90 % of a revived stack (rounded down per stack) comes back, so only the rest has to be prepared again.">Revive<br><select id="revm"><option value="none">none</option><option value="top" selected>top line</option><option value="mon">monsters only</option><option value="montop">monsters and top line</option><option value="all">all</option></select></label></div></div>
+<div class="card"><h2>Food capacity &amp; settings</h2><div class="fg">
+<label class="bi"><span>Food prod.</span><input id="foodP" type="text" inputmode="decimal" value="0"></label>
+<label class="bi" id="revl" title="After a hit 90 % of a revived stack (rounded down per stack) comes back, so only the rest has to be prepared again."><span>Revive</span><select id="revm"><option value="none">none</option><option value="top" selected>top line</option><option value="mon">monsters only</option><option value="montop">monsters and top line</option><option value="all">all</option></select></label></div></div>
 
-<div class="card"><h2>Basic bonuses (%)<button type="button" class="ib" data-tip="tipB" aria-expanded="false" aria-controls="tipB" title="What do H and S mean?">i</button></h2><p class="tip" id="tipB" role="tooltip" hidden>H = health, S = strength. Epic strength applies vs. Epic Monsters.</p><div class="bg" id="bon"></div></div>
+<div class="card"><h2>Basic bonuses (%)<button type="button" class="ib" data-tip="tipB" aria-expanded="false" aria-controls="tipB" title="About the Epic strength">i</button></h2><p class="tip" id="tipB" role="tooltip" hidden>Epic strength applies vs. Epic Monsters.</p><div class="bg" id="bon"></div></div>
 
 <details class="card" open><summary><h2>Monster bonuses (%)</h2><button type="button" class="ib" data-tip="tipM" aria-expanded="false" aria-controls="tipM" title="About the Beast bonus">i</button></summary><p class="tip" id="tipM" role="tooltip" hidden>Beast army units (Royal Lion, Battle Griffin) get the full Beast bonus.</p>
 <div style="margin:0 0 10px"><div class="mu" style="margin:0 0 6px">Monsters Boost research:</div>
@@ -109,13 +112,13 @@ Object.keys(BYG).forEach(g=>{if(g[0]=='M')BYG[g].sort((a,b)=>CO.indexOf(a.cat)-C
 
 // bonuses
 const row=(l,id,val=0)=>`<div class="bi"><span>${l}</span><input id="${id}" type="text" inputmode="decimal" step="0.5" value="${val}"></div>`;
-const card=(n,k,h=0,sv=h)=>`<div class="bc"><b>${n}</b>${row('H','bh_'+k,h)}${row('S','bs_'+k,sv)}</div>`;
+const card=(n,k,h=0,sv=h)=>`<div class="bc"><b>${n}</b>${row('Health','bh_'+k,h)}${row('Strength','bs_'+k,sv)}</div>`;
 $('bon').innerHTML=[['Guardsmen','G',3466,6304],['Specialists','S',3466,6304],['Monsters','M',3461,6404],['Siege Engines','E',3466,6304]].map(([n,k,h,sv])=>card(n,k,h,sv)).join('')+
- `<div class="bc ep"><b>Epic strength</b>${row('S','bs_Epic',3747)}</div>`;
+ `<div class="bc ep"><b>Epic strength</b>${row('Strength','bs_Epic',3747)}</div>`;
 const STEP=0.001/100;                                     // the step down per rank in the dying order: 0.001 % (practically none, no setting)
 const DHV=Array.from({length:11},(_,i)=>i/2);                // Double hit: 0 - 5 % in steps of 0.5
 const snapDH=x=>{x=parseFloat(String(x).replace(',','.'));if(!isFinite(x))x=0;return Math.min(5,Math.max(0,Math.round(x*2)/2))};
-$('mb').innerHTML=TY.map(n=>`<div class="bc"><b>${n}</b>${row('H','bh_'+n,100)}${row('S','bs_'+n,100)}<div class="bi dh"><span>Double hit</span><select id="dh_${n}">${DHV.map(x=>`<option value="${x}"${x==5?' selected':''}>${x} %</option>`).join('')}</select></div></div>`).join('');
+$('mb').innerHTML=TY.map(n=>`<div class="bc"><b>${n}</b>${row('Health','bh_'+n,100)}${row('Strength','bs_'+n,100)}<div class="bi"><span>Double hit</span><select id="dh_${n}">${DHV.map(x=>`<option value="${x}"${x==5?' selected':''}>${x} %</option>`).join('')}</select></div></div>`).join('');
 $('sb').innerHTML=CO.map(n=>card(n,n)).join('');
 
 // tier checkboxes, aligned in a grid

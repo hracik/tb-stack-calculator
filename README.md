@@ -18,7 +18,7 @@ Every troop also stores its **revival cost in gold** (the attack figure of the t
 
 ## Army capacity, Food capacity & settings
 
-Two cards at the top. **Army capacity** holds Leadership, Dominance and Authority. **Food capacity & settings** holds **Food production** (default 0) and the **Revive** select (90 % of a revived stack comes back; none / top line / monsters only / monsters and top line / all, default top line). All the boxes are saved per tab like the other boxes. Food production and Revive only decide how many hits (and how many units to prepare) are shown (see Result views - Hits the food production pays for)
+Two cards at the top. **Army capacity** holds Leadership, Dominance and Authority. **Food capacity & settings** holds **Food production** (default 0) and the **Revive** select (90 % of a revived stack comes back; none / top line / monsters only / monsters and top line / all, default top line). All the boxes are saved per tab like the other boxes. **Every input of the page looks the same**: one row with the label on the left (the same width everywhere, 78 px) and the box taking the whole rest of the row, the same height (32 px) for the number boxes and the selects. The labels are written out: `Health`, `Strength` and `Double hit` in the bonus cards, and `Food prod.` for the Food production box (the long name did not fit). On a phone every card is one column, so every box is as wide as its card; on a wide screen the Army capacity and Food capacity cards put their boxes side by side and the bonus cards stand four in a row (equal widths). Food production and Revive only decide how many hits (and how many units to prepare) are shown (see Result views - Hits the food production pays for)
 
 ## Mercenaries
 
