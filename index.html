@@ -159,7 +159,6 @@ const hitsFor=(F,fp,list,mode)=>{      // hits the food production fp pays for: 
   if(fp<F)return Math.floor(fp/F*100+1e-9)/100;
   const R=list.reduce((q,s)=>q+lossOf(s,mode)*foodOf(s.name),0);
   return R>0?Math.floor((1+(fp-F)/R)*100+1e-9)/100:0};
-const mulTxt=(x,f)=>MUL>1?`×${MUL.toFixed(2)}: ${f(x*MUL)}`:'';      // damage etc.: simply x MUL
 const cnt=(s,n)=>!s.off&&MUL>1?`<span class="nw"><span class="n">${n}</span> <span class="n2">/ ${unitsTxt(s)}</span></span>`:`<br><span class="n">${s.off?'off':n}</span>`;      // the number on a card: 1x, and "/ units to train" when a Training case is chosen (the second number drops to its own line when the card is too narrow)
 const unitsTxt=s=>MUL>1?Math.ceil((s.n||0)+(MUL-1)*lossOf(s,REVM)-1e-7).toLocaleString():'';      // units to train for MUL hits: the first hit all of them, every next hit only the ones not revived
 let EBINFO='';   // the stack split (army / full monster / partial monster / engineer), part of the result summary line
@@ -1044,7 +1043,7 @@ function calc(){
   const secs=[...(P.capU>0?[[`Mercenaries — Authority ${U.used.toLocaleString()} / ${P.capU.toLocaleString()}`,!mItems.length?'<p class="mu">No mercenary gets a unit with this Authority.</p>':mob?mobList(ord(mItems,COMPM)):mercTable(U.all)]]:[]),   // no Authority: no Mercenaries section
     [`Monsters — Dominance ${usedOf(Mo).toLocaleString()} / ${P.capM.toLocaleString()}`,Mall.length?(mob?mobList(mobOrder(flatOrder(Mall))):table(Mall)):'<p class="mu">No monster tiers selected.</p>'],
     [`Army — Leadership ${usedOf(A).toLocaleString()} / ${P.capA.toLocaleString()}`,Aall.length?(mob?mobList(ord(flatOrder(Aall),COMPA)):table(Aall)):'<p class="mu">No army tiers selected.</p>']].map(([t,b],k)=>`<h2${k?' style="margin-top:26px"':''}>${t}</h2>${b}`).join('');
-  $('res').innerHTML=`<p class="mu" style="margin:0 0 8px">${sc.stacks} stacks · ${EBINFO} · ${sc.hits} strikes against ${P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks'} · food consumption ${num(food)}${Math.max(...REVCASES.map(c=>HIT[c[0]]))>1?` · the food production pays for ${REVCASES.map(([k,l])=>k==REVM?`<b>${HIT[k].toFixed(2)} hits ${l}</b>`:`${HIT[k].toFixed(2)} hits ${l}`).join(' · ')}`:''} · <b>estimated damage ${fmt(sc.dmg)}</b>${MUL>1?` (${mulTxt(sc.dmg,fmt)})`:''}</p>
+  $('res').innerHTML=`<p class="mu" style="margin:0 0 8px">${sc.stacks} stacks · ${EBINFO} · ${sc.hits} strikes against ${P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks'} · food consumption ${num(food)}${Math.max(...REVCASES.map(c=>HIT[c[0]]))>1?` · the food production pays for ${REVCASES.map(([k,l])=>k==REVM?`<b>${HIT[k].toFixed(2)} hits ${l}</b>`:`${HIT[k].toFixed(2)} hits ${l}`).join(' · ')}`:''} · <b>estimated damage ${fmt(sc.dmg)}</b></p>
   ${secs}`;
   save();
 }

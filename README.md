@@ -65,11 +65,10 @@ The **Food production** box (Capacity & settings, saved per tab, default 0) sets
 - **Revive monsters and top line**: the monster stacks (all tiers) and the top line of the Army and of the Mercenaries.
 - **Revive none**: nothing comes back, `units x hits`.
 
-The chosen case's hits drive the second numbers and the multiplied damage (its hits are in bold in the summary line).
+The chosen case's hits drive the second numbers on the units (its hits are in bold in the summary line). The estimated damage in the summary line is always the damage of one hit.
 
 Only when at least one of the cases pays for more than 1 hit (1.01 or more) the summary line lists the hits. With a case chosen that pays for more than 1 hit:
 
-- the summary line gives the estimated damage a second time, multiplied by the case's hits: `estimated damage 5.36 T (×14.25: 76.41 T)`;
 - every troop card (Grouped) and every line (Mobile, Computer), mercenaries too, shows the units **to train** for the case's hits after the 1x number, as `179 / 992` (the number of hits is not repeated there, the summary line says it; on a narrow card the second number drops to its own line). It is **rounded up to a whole piece**: the whole stack for the first hit plus the lost units for every next hit, `units + (hits - 1) x lost units`. Without revival that is simply `units x hits` (`334 / 418` with 1.25 hits); when the stack is revived, much less (a revived stack of 334 units with 14.25 hits: 334 + 13.25 x 34 = 784.5, shown as `334 / 785`; the stacks that are not revived still `units x hits`).
 
 The 1x numbers always stay the main ones. With the production at 0 nothing extra is shown, and a case that pays for 1 hit or less shows no second numbers. The Leadership / Dominance / Authority used, the number of stacks and strikes and the `#` kill order are not multiplied; a troop that is turned off shows no second number. The 90 % is the constant `REV` in the page.
