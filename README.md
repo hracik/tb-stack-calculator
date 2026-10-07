@@ -6,7 +6,7 @@ Open `index.html` in a browser or use the GitHub Pages site of this repository. 
 
 ## Attack modes
 
-The modes are in four rows, each with its own icon: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stack), Special (Killshot v. 3) and **PvP** (two emoji shooting each other): CP run, Max damage and Renegades. In the PvP row all three buttons are greyed out for now: CP run and Max damage are only placeholders (their rules are not defined yet) and Renegades is switched off (see Renegades below).
+The modes are in three rows, each with its own icon: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stack, Killshot v. 3) and **PvP** (two emoji shooting each other): CP run, Max damage and Renegades. In the PvP row all three buttons are greyed out for now: CP run and Max damage are only placeholders (their rules are not defined yet) and Renegades is switched off (see Renegades below).
 
 ## Troop data
 
