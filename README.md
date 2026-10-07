@@ -75,7 +75,7 @@ The Leadership / Dominance / Authority used, the number of stacks and strikes an
 
 ## Tabs
 
-The page starts with four tabs: `1 cap`, `3 cap`, `Hero` and `Hero+3 cap`. They are ordinary tabs: rename (double-click), duplicate or delete them, or add your own with `+`. Each tab keeps its own settings, saved in your browser only.
+The page starts with four tabs: `1 cap`, `3 cap`, `Hero` and `Hero+3 cap`. They are ordinary tabs: rename (double-click), duplicate or delete them, or add your own with `+`. Each tab keeps its own settings, saved in your browser only. A **new tab** (the four start tabs and every `+`) starts blank: Leadership, Dominance, all the basic bonuses, all the monster bonuses (health, strength and Double hit) and the Food production are 0 (the constant `BLANK` in the page); the special bonuses, Authority, the tiers and the Revive choice start as before. Tabs you already have keep their numbers.
 
 ## How the order is chosen
 

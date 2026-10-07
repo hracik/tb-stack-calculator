@@ -238,7 +238,7 @@ function drawTabs(){
 }
 function newName(){let n=tabs.length+1;while(tabs.some(t=>t.name==='Tab '+n))n++;return 'Tab '+n}
 function switchTab(i){if(i==active)return;save();active=i;delPending=false;load(tabs[i].data);drawTabs();refresh()}
-function addTab(){save();tabs.push({name:newName(),data:clone(DEF)});active=tabs.length-1;delPending=false;load(tabs[active].data);$('mode').value='max';$('enemy').value=4;drawTabs();refresh();rename(active)}
+function addTab(){save();tabs.push({name:newName(),data:clone(BLANK)});active=tabs.length-1;delPending=false;load(tabs[active].data);$('mode').value='max';$('enemy').value=4;drawTabs();refresh();rename(active)}
 function dupTab(){save();const src=tabs[active];tabs.splice(active+1,0,{name:src.name+' copy',data:clone(src.data)});active++;delPending=false;drawTabs();refresh()}
 function delTab(){tabs.splice(active,1);active=Math.min(active,tabs.length-1);delPending=false;load(tabs[active].data);drawTabs();refresh()}
 function rename(i){
@@ -1087,6 +1087,9 @@ document.addEventListener('dblclick',e=>{const t=e.target.closest&&e.target.clos
 // start: dying order for a full enemy stack, with the default tiers
 runBest(4);
 DEF=snap();
+// A NEW tab (the start tabs and the + button) starts blank: Leadership, Dominance, the basic bonuses, the monster bonuses (with the Double hit) and the Food production are all 0. DEF (the values above) stays the fallback for a saved tab that lacks a box, so tabs saved earlier keep every number.
+const BLANK=clone(DEF);
+['capA','capM','foodP','bh_G','bs_G','bh_S','bs_S','bh_M','bs_M','bh_E','bs_E','bs_Epic',...['Giant','Elemental','Dragon','Beast'].flatMap(k=>['bh_'+k,'bs_'+k,'dh_'+k])].forEach(id=>{if(id in BLANK.vals)BLANK.vals[id]='0'});
 const START_TABS=['1 cap','3 cap','Hero','Hero+3 cap'];    // the tabs a new page starts with; they are ordinary tabs (rename, duplicate, delete)
 try{
   const r=JSON.parse(localStorage.getItem(KEY)||'null');
@@ -1095,7 +1098,7 @@ try{
     // an older save with only the single default tab "Main": the four start tabs replace it, all with that tab's settings
     if((r.ver|0)<3&&tabs.length==1&&tabs[0].name==='Main'){const base=tabs[0].data;tabs=START_TABS.map(n=>({name:n,data:clone(base)}));active=0}}
 }catch(e){}
-if(!tabs)tabs=START_TABS.map(n=>({name:n,data:clone(DEF)}));
+if(!tabs)tabs=START_TABS.map(n=>({name:n,data:clone(BLANK)}));
 load(tabs[active].data);
 ready=true;
 drawTabs();
