@@ -12,7 +12,7 @@ The modes are in three rows: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stac
 
 The troop lists are written inside the page. For every troop (army, monsters, engineers, mercenaries) they store the health, the strength, the food consumption (all mercenaries use no food), the Leadership / Dominance / Authority cost and the vs melee / ranged / mounted / flying bonuses exactly as in the troop JSON. The strength is stored, not calculated from the health. The summary line above the result shows the **food consumption** of all the units together (number of units x food per unit), before the estimated damage.
 
-Every unit eats **25 % less** than the stored food value (the constant `FOODCUT` in the page): the food consumption in the summary line and everything that is counted from it (the hits the Food production pays for) use the reduced value. The stored values stay the plain JSON ones, so the cut can be changed in one place.
+Every unit eats **25 % less** than the stored food value (the constant `FOODCUT` in the page): the food consumption in the second summary line and everything that is counted from it (the hits the Food production pays for) use the reduced value. The stored values stay the plain JSON ones, so the cut can be changed in one place.
 
 Every troop also stores its **revival cost in gold** (the attack figure of the troop JSON; the silver cost of defending is always 10 times it and is not stored). It is only stored - nothing shows or uses it yet.
 
@@ -64,7 +64,7 @@ The **Food production** box (Capacity & settings, saved per tab, default 0) sets
 - **monsters and top line**: the monster stacks (all tiers) and the top line of the Army and of the Mercenaries.
 - **all**: every stack comes back (90 %).
 
-A row under the summary line gives the hits for all five: `Hits per revive mode: 10.66 none · 14.25 top line · 16.38 monsters · 22.98 monsters + top line · 97.26 all` (the chosen one in bold). It is shown only when at least one of them pays for more than 1 hit (1.01 or more). The estimated damage in the summary line is always the damage of one hit.
+The second line under the summary starts with the food consumption of the calculated army and, when at least one revive mode pays for more than 1 hit (1.01 or more), goes on with the hits for all five: `food consumption 11,990,595 · Hits per revive mode: 10.66 none · 14.25 top line · 16.38 monsters · 22.98 monsters + top line · 97.26 all` (the chosen one in bold). Without such hits only the food consumption is shown. The estimated damage in the first line is always the damage of one hit.
 
 **Action: Hitting / Training** (Result, under View, saved per tab, default **Hitting**) choose which number the cards and lines show:
 
