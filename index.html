@@ -15,6 +15,7 @@ h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;margin:0 0 10px;color:var(--a
 th,td{padding:4px 8px;text-align:left;font-size:14px;white-space:nowrap}th{color:var(--mu);font-weight:600}
 input[type=number],input[inputmode],select{width:90px;padding:5px;background:#e2cf9e;color:#2a2012;border:1px solid #8a6a2c;border-radius:4px;text-align:center;font:inherit}
 select{width:auto}.mu{color:var(--mu);font-size:13px}.g{display:flex;gap:14px;flex-wrap:wrap}
+.gg{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start}.gp{margin:0;min-width:0;max-width:100%;box-sizing:border-box;border:1px solid var(--bd);border-radius:8px;padding:2px 12px 10px;background:var(--bg)}.gp legend{font-family:'Cinzel',Georgia,serif;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ac);padding:0 6px}      /* the two groups of the Capacity & settings card: Hitting (Leadership, Dominance, Authority) and Preparing (Food production, Revive) */
 .bg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
 .bc{border:1px solid var(--bd);border-radius:8px;padding:8px 10px;background:var(--bg)}
 .bc b{display:block;margin-bottom:6px;color:var(--ac);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -57,12 +58,15 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 
 <div class="tabs" id="tabs"></div>
 <div class="tabtools" id="tabtools"></div>
-<div class="card"><h2>Capacity &amp; settings</h2><div class="g">
+<div class="card"><h2>Capacity &amp; settings</h2><div class="gg">
+<fieldset class="gp"><legend>Hitting</legend><div class="g">
 <label>Leadership<br><input id="capA" type="text" inputmode="decimal" value="1875508"></label>
 <label>Dominance<br><input id="capM" type="text" inputmode="decimal" value="330943"></label>
 <label>Authority<br><input id="capU" type="text" inputmode="decimal" value="0"></label>
+</div></fieldset>
+<fieldset class="gp"><legend>Preparing</legend><div class="g">
 <label>Food production<br><input id="foodP" type="text" inputmode="decimal" value="0"></label>
-<label id="revl" title="After a hit 90 % of a revived stack (rounded down per stack) comes back, so only the rest has to be prepared again.">Revive<br><select id="revm"><option value="none">none</option><option value="top" selected>top line</option><option value="mon">monsters only</option><option value="montop">monsters and top line</option><option value="all">all</option></select></label></div></div>
+<label id="revl" title="After a hit 90 % of a revived stack (rounded down per stack) comes back, so only the rest has to be prepared again.">Revive<br><select id="revm"><option value="none">none</option><option value="top" selected>top line</option><option value="mon">monsters only</option><option value="montop">monsters and top line</option><option value="all">all</option></select></label></div></fieldset></div></div>
 
 <div class="card"><h2>Basic bonuses (%)<button type="button" class="ib" data-tip="tipB" aria-expanded="false" aria-controls="tipB" title="What do H and S mean?">i</button></h2><p class="tip" id="tipB" role="tooltip" hidden>H = health, S = strength. Epic strength applies vs. Epic Monsters.</p><div class="bg" id="bon"></div></div>
 

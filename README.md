@@ -18,7 +18,7 @@ Every troop also stores its **revival cost in gold** (the attack figure of the t
 
 ## Capacity & settings
 
-Leadership, Dominance, Authority, **Food production** (default 0) and the **Revive** select (90 % of a revived stack comes back; none / top line / monsters only / monsters and top line / all, default top line), all saved per tab like the other boxes. Food production and Revive only decide how many hits (and how many units to prepare) are shown (see Result views - Hits the food production pays for); they change no troop number.
+The boxes are in two framed groups. **Hitting** holds Leadership, Dominance and Authority (the capacities the hit is made with); **Preparing** holds **Food production** (default 0) and the **Revive** select (90 % of a revived stack comes back; none / top line / monsters only / monsters and top line / all, default top line). The group names match the Hitting / Preparing buttons of the Action row in the Result. All the boxes are saved per tab like the other boxes. Food production and Revive only decide how many hits (and how many units to prepare) are shown (see Result views - Hits the food production pays for); they change no troop number.
 
 ## Mercenaries
 
