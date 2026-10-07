@@ -10,7 +10,7 @@ The modes are in three rows: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stac
 
 ## Troop data
 
-The troop lists are written inside the page. For every troop (army, monsters, engineers, mercenaries) they store the health, the strength, the Leadership / Dominance / Authority cost and the vs melee / ranged / mounted / flying bonuses exactly as in the troop JSON. The strength is stored, not calculated from the health.
+The troop lists are written inside the page. For every troop (army, monsters, engineers, mercenaries) they store the health, the strength, the food consumption (all mercenaries use no food), the Leadership / Dominance / Authority cost and the vs melee / ranged / mounted / flying bonuses exactly as in the troop JSON. The strength is stored, not calculated from the health. The summary line above the result shows the **food consumption** of all the units together (number of units x food per unit), before the estimated damage.
 
 ## Mercenaries
 
