@@ -186,12 +186,12 @@ function drawSO(st,P){
 // ---- tabs: each tab stores every input, the tier checkboxes and the kill order ----
 const KEY='sc_tabs_v6';
 const DEFCAT=['Melee','Ranged','Mounted','Flying'];
-let tabs=null,active=0,ready=false,delPending=false,DEF=null,XS=new Set(['Grace']),SO=[];      // troops that are turned off: Grace (a mercenary) starts off in every new tab
+let tabs=null,active=0,ready=false,delPending=false,DEF=null,XS=new Set(),SO=[];
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const clone=o=>JSON.parse(JSON.stringify(o));
 const MODE_IDS=['mode','enemy'];                       // the mode is not stored in a tab: the page always opens in 4-stack
 function snap(){
-  const d={vals:{},chk:{},O:O.slice(),X:[...XS],S:SO.slice(),mv:1};      // mv: the tab already has the mercenary defaults (Grace off)
+  const d={vals:{},chk:{},O:O.slice(),X:[...XS],S:SO.slice()};
   document.querySelectorAll('input[id],select[id]').forEach(el=>{if(MODE_IDS.includes(el.id))return;if(el.type=='checkbox')d.chk[el.id]=el.checked;else d.vals[el.id]=el.value});
   return d;
 }
@@ -200,7 +200,6 @@ function load(d){
   Object.entries(vals).forEach(([id,val])=>{const el=$(id);if(el&&!MODE_IDS.includes(id))el.value=id.startsWith('dh_')?snapDH(val):val});
   Object.entries(chk).forEach(([id,c])=>{const el=$(id);if(el)el.checked=c});
   O=(d.O||[]).slice();XS=new Set(d.X||[]);SO=(d.S||[]).slice();
-  if(!d.mv)XS.add('Grace');                          // a tab saved before the mercenary defaults existed: Grace is turned off once (it can be turned on again, that is kept)
 }
 function save(){
   if(!ready)return;
