@@ -8,9 +8,13 @@ Open `index.html` in a browser or use the GitHub Pages site of this repository. 
 
 The modes are in three rows: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stack) and Special (Killshot v. 3, Renegades).
 
+## Troop data
+
+The troop lists are written inside the page. For every troop (army, monsters, engineers, mercenaries) they store the health, the strength, the Leadership / Dominance / Authority cost and the vs melee / ranged / mounted / flying bonuses exactly as in the troop JSON. The strength is stored, not calculated from the health.
+
 ## Mercenaries
 
-Mercenaries are hired troops. They use Authority only (not Leadership or Dominance), and all of them last 7 days. The Authority box is next to Leadership and Dominance. All 46 mercenaries from the troop JSON are stored in the page with their stats (class, tier, category, health, strength, Authority per unit, the vs melee / ranged / mounted / flying bonuses and the swarm bonuses of the jungle guardians), exactly as in the JSON. The result has a Mercenaries section that shows the ones we have a picture for; their numbers are still 0 and are not part of the calculation yet.
+Mercenaries are hired troops. They use Authority only (not Leadership or Dominance), and all of them last 7 days. The Authority box is next to Leadership and Dominance. All 46 mercenaries from the troop JSON are stored in the page with their stats (class, tier, category, health, strength, Authority per unit and the vs melee / ranged / mounted / flying bonuses). The swarm bonus of a jungle guardian is stored in the same vs column as a regular bonus, and a flag marks the 8 jungle guardians. The result has a Mercenaries section that shows the ones we have a picture for; their numbers are still 0 and are not part of the calculation yet.
 
 ## Tabs
 

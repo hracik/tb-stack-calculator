@@ -87,14 +87,14 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 const $=id=>document.getElementById(id),v=id=>parseFloat(String($(id).value).replace(/,/g,''))||0;
 const CO=['Melee','Mounted','Ranged','Flying'],TY=['Giant','Elemental','Dragon','Beast'];
 const NM={G:'Guardsmen',S:'Specialists',E:'Engineer Corps',M:'Monsters'};
-// ---------- troop catalog: [class, tier, name, category, health, cost, vs melee/ranged/mounted/flying in percent, beast] ----------
-const ARMY=[["G",1,"Spearman I","Melee",150,1,[0,0,0.39,0],0],["G",1,"Rider I","Mounted",300,2,[0,0.65,0,0],0],["G",1,"Archer I","Ranged",150,1,[0.52,0,0,0.67],0],["G",2,"Spearman II","Melee",270,1,[0,0,0.59,0],0],["G",2,"Rider II","Mounted",540,2,[0,0.98,0,0],0],["G",2,"Archer II","Ranged",270,1,[0.78,0,0,1.01],0],["G",3,"Spearman III","Melee",480,1,[0,0,0.88,0],0],["G",3,"Rider III","Mounted",960,2,[0,1.46,0,0],0],["G",3,"Archer III","Ranged",480,1,[1.17,0,0,1.51],0],["G",4,"Spearman IV","Melee",870,1,[0,0,1.32,0],0],["G",4,"Rider IV","Mounted",1740,2,[0,2.19,0,0],0],["G",4,"Archer IV","Ranged",870,1,[1.76,0,0,2.26],0],["G",5,"Spearman V","Melee",1560,1,[0,0,1.97,0],0],["G",5,"Rider V","Mounted",3150,2,[0,3.29,0,0],0],["G",5,"Archer V","Ranged",1560,1,[2.63,0,0,3.39],0],["G",5,"Battle Griffin V","Flying",30000,20,[0,0,3.95,0],1],["G",6,"Heavy Halberdier VI","Melee",2820,1,[0,0,2.96,0],0],["G",6,"Mounted Knight VI","Mounted",5700,2,[0,4.94,0,0],0],["G",6,"Heavy Arbalester VI","Ranged",2820,1,[3.95,0,0,5.09],0],["G",6,"Battle Griffin VI","Flying",57000,20,[0,0,5.92,0],1],["G",7,"Heavy Halberdier VII","Melee",5100,1,[0,0,4.44,0],0],["G",7,"Mounted Knight VII","Mounted",10200,2,[0,7.4,0,0],0],["G",7,"Heavy Arbalester VII","Ranged",5100,1,[5.92,0,0,7.63],0],["G",7,"Battle Griffin VII","Flying",102000,20,[0,0,8.88,0],1],["G",8,"Punisher I","Melee",9180,1,[0,0,6.67,0],0],["G",8,"Smiter I","Mounted",18360,2,[0,11.11,0,0],0],["G",8,"Purifier I","Ranged",9180,1,[8.88,0,0,11.45],0],["G",8,"Corax I","Flying",183600,20,[0,0,13.33,0],0],["G",9,"Punisher II","Melee",16530,1,[0,0,10.0,0],0],["G",9,"Smiter II","Mounted",33060,2,[0,16.67,0,0],0],["G",9,"Purifier II","Ranged",16530,1,[13.33,0,0,17.17],0],["G",9,"Corax II","Flying",330600,20,[0,0,19.99,0],0],["S",1,"Swordsman I","Melee",150,1,[0,0,0.2,0],0],["S",2,"Swordsman II","Melee",270,1,[0,0,0.29,0],0],["S",3,"Swordsman III","Melee",480,1,[0,0,0.44,0],0],["S",4,"Swordsman IV","Melee",870,1,[0,0,0.66,0],0],["S",5,"Swordsman V","Melee",1560,1,[0,0,0.99,0],0],["S",5,"Lion Rider V","Mounted",3150,2,[0,1.65,0,0],0],["S",5,"Deadshot V","Ranged",1560,1,[1.32,0,0,1.7],0],["S",5,"Vulture V","Flying",1560,1,[0,0,1.97,0],0],["S",6,"Heavy Knight VI","Melee",2820,1,[0,0,1.48,0],0],["S",6,"Lion Rider VI","Mounted",5700,2,[0,2.47,0,0],0],["S",6,"Deadshot VI","Ranged",2820,1,[1.97,0,0,2.54],0],["S",6,"Vulture VI","Flying",2820,1,[0,0,2.96,0],0],["S",7,"Heavy Knight VII","Melee",5100,1,[0,0,2.22,0],0],["S",7,"Lion Rider VII","Mounted",10200,2,[0,3.7,0,0],0],["S",7,"Deadshot VII","Ranged",5100,1,[2.96,0,0,3.82],0],["S",7,"Vulture VII","Flying",5100,1,[0,0,4.44,0],0],["S",8,"Duelist I","Melee",9180,1,[0,0,3.33,0],0],["S",8,"Whitemane I","Mounted",18360,2,[0,5.55,0,0],0],["S",8,"Legitimist I","Ranged",9180,1,[4.44,0,0,5.72],0],["S",8,"Royal Lion I","Flying",183600,20,[0,0,6.67,0],1],["S",9,"Duelist II","Melee",16530,1,[0,0,5.0,0],0],["S",9,"Whitemane II","Mounted",33060,2,[0,8.33,0,0],0],["S",9,"Legitimist II","Ranged",16530,1,[6.67,0,0,8.59],0],["S",9,"Royal Lion II","Flying",330600,20,[0,0,10.0,0],1]];
-const MONS=[[3,"Stone Gargoyle","Giant","Flying",15600,8,[1.85,0,0,0]],[3,"Water Elemental","Elemental","Ranged",5700,3,[1.13,0,0,1.44]],[3,"Emerald Dragon","Dragon","Flying",13500,7,[0,0,1.85,0]],[3,"Battle Boar","Beast","Mounted",11700,6,[0,1.13,1.44,0]],[4,"Many-Armed Guardian","Giant","Melee",39000,11,[0,0,1.15,0]],[4,"Ice Phoenix","Elemental","Flying",51000,15,[0,0,0,2.23]],[4,"Magic Dragon","Dragon","Ranged",45000,13,[1.69,2.16,0,0]],[4,"Gorgon Medusa","Beast","Ranged",36000,10,[2.77,0,0,1.08]],[5,"Ettin","Giant","Melee",144000,23,[0,0,3.34,0]],[5,"Flaming Centaur","Elemental","Mounted",132000,21,[0,4.15,0,0]],[5,"Desert Vanquisher","Dragon","Mounted",126000,20,[0,2.53,0,0]],[5,"Fearsome Manticore","Beast","Flying",138000,22,[0,0,0,2.53]],[6,"Troll Rider","Giant","Mounted",330000,30,[0,3.8,0,0]],[6,"Ruby Golem","Elemental","Melee",390000,35,[4.86,0,3.8,0]],[6,"Crystal Dragon","Dragon","Melee",360000,33,[0,0,2.58,0]],[6,"Jungle Destroyer","Beast","Melee",390000,34,[0,0,6.23,0]],[7,"Destructive Colossus","Giant","Ranged",870000,43,[7.52,0,0,5.47]],[7,"Wind Lord","Elemental","Melee",930000,45,[0,0,3.87,0]],[7,"Black Dragon","Dragon","Flying",900000,44,[5.7,0,0,0]],[7,"Ancient Terror","Beast","Mounted",840000,41,[0,7.52,0,0]],[8,"Kraken I","Giant","Melee",2010000,55,[0,0,9.91,0]],[8,"Fire Phoenix I","Elemental","Flying",1980000,54,[7.01,0,0,0]],[8,"Devastator I","Dragon","Mounted",1950000,53,[0,12.81,0,0]],[8,"Trickster I","Beast","Ranged",1920000,52,[0,0,0,9.4]],[9,"Kraken II","Giant","Melee",3630000,55,[0,0,14.87,0]],[9,"Fire Phoenix II","Elemental","Flying",3570000,54,[10.52,0,0,0]],[9,"Devastator II","Dragon","Mounted",3510000,53,[0,19.22,0,0]],[9,"Trickster II","Beast","Ranged",3450000,52,[0,0,0,14.1]]];
-const ENGN=["Catapult I", "Catapult II", "Catapult III", "Catapult IV", "Catapult V", "Siege Ballistae VI", "Siege Ballistae VII", "Josephine I", "Josephine II"],ENGH=[1500, 2700, 4860, 8750, 15800, 28400, 51000, 91800, 165300];
+// ---------- troop catalog (straight from the troop JSON): army [class, tier, name, category, health, strength, cost, vs melee/ranged/mounted/flying, beast]; monsters [tier, name, type, category, health, strength, cost, vs melee/ranged/mounted/flying]; engineers ENGN/ENGH/ENGS = name/health/strength ----------
+const ARMY=[["G",1,"Spearman I","Melee",150,50,1,[0,0,0.39,0],0],["G",1,"Rider I","Mounted",300,100,2,[0,0.65,0,0],0],["G",1,"Archer I","Ranged",150,50,1,[0.52,0,0,0.67],0],["G",2,"Spearman II","Melee",270,90,1,[0,0,0.59,0],0],["G",2,"Rider II","Mounted",540,180,2,[0,0.98,0,0],0],["G",2,"Archer II","Ranged",270,90,1,[0.78,0,0,1.01],0],["G",3,"Spearman III","Melee",480,160,1,[0,0,0.88,0],0],["G",3,"Rider III","Mounted",960,320,2,[0,1.46,0,0],0],["G",3,"Archer III","Ranged",480,160,1,[1.17,0,0,1.51],0],["G",4,"Spearman IV","Melee",870,290,1,[0,0,1.32,0],0],["G",4,"Rider IV","Mounted",1740,580,2,[0,2.19,0,0],0],["G",4,"Archer IV","Ranged",870,290,1,[1.76,0,0,2.26],0],["G",5,"Spearman V","Melee",1560,520,1,[0,0,1.97,0],0],["G",5,"Rider V","Mounted",3150,1050,2,[0,3.29,0,0],0],["G",5,"Archer V","Ranged",1560,520,1,[2.63,0,0,3.39],0],["G",5,"Battle Griffin V","Flying",30000,10000,20,[0,0,3.95,0],1],["G",6,"Heavy Halberdier VI","Melee",2820,940,1,[0,0,2.96,0],0],["G",6,"Mounted Knight VI","Mounted",5700,1900,2,[0,4.94,0,0],0],["G",6,"Heavy Arbalester VI","Ranged",2820,940,1,[3.95,0,0,5.09],0],["G",6,"Battle Griffin VI","Flying",57000,19000,20,[0,0,5.92,0],1],["G",7,"Heavy Halberdier VII","Melee",5100,1700,1,[0,0,4.44,0],0],["G",7,"Mounted Knight VII","Mounted",10200,3400,2,[0,7.4,0,0],0],["G",7,"Heavy Arbalester VII","Ranged",5100,1700,1,[5.92,0,0,7.63],0],["G",7,"Battle Griffin VII","Flying",102000,34000,20,[0,0,8.88,0],1],["G",8,"Punisher I","Melee",9180,3060,1,[0,0,6.67,0],0],["G",8,"Smiter I","Mounted",18360,6120,2,[0,11.11,0,0],0],["G",8,"Purifier I","Ranged",9180,3060,1,[8.88,0,0,11.45],0],["G",8,"Corax I","Flying",183600,61200,20,[0,0,13.33,0],0],["G",9,"Punisher II","Melee",16530,5510,1,[0,0,10.0,0],0],["G",9,"Smiter II","Mounted",33060,11020,2,[0,16.67,0,0],0],["G",9,"Purifier II","Ranged",16530,5510,1,[13.33,0,0,17.17],0],["G",9,"Corax II","Flying",330600,110200,20,[0,0,19.99,0],0],["S",1,"Swordsman I","Melee",150,50,1,[0,0,0.2,0],0],["S",2,"Swordsman II","Melee",270,90,1,[0,0,0.29,0],0],["S",3,"Swordsman III","Melee",480,160,1,[0,0,0.44,0],0],["S",4,"Swordsman IV","Melee",870,290,1,[0,0,0.66,0],0],["S",5,"Swordsman V","Melee",1560,520,1,[0,0,0.99,0],0],["S",5,"Lion Rider V","Mounted",3150,1050,2,[0,1.65,0,0],0],["S",5,"Deadshot V","Ranged",1560,520,1,[1.32,0,0,1.7],0],["S",5,"Vulture V","Flying",1560,520,1,[0,0,1.97,0],0],["S",6,"Heavy Knight VI","Melee",2820,940,1,[0,0,1.48,0],0],["S",6,"Lion Rider VI","Mounted",5700,1900,2,[0,2.47,0,0],0],["S",6,"Deadshot VI","Ranged",2820,940,1,[1.97,0,0,2.54],0],["S",6,"Vulture VI","Flying",2820,940,1,[0,0,2.96,0],0],["S",7,"Heavy Knight VII","Melee",5100,1700,1,[0,0,2.22,0],0],["S",7,"Lion Rider VII","Mounted",10200,3400,2,[0,3.7,0,0],0],["S",7,"Deadshot VII","Ranged",5100,1700,1,[2.96,0,0,3.82],0],["S",7,"Vulture VII","Flying",5100,1700,1,[0,0,4.44,0],0],["S",8,"Duelist I","Melee",9180,3060,1,[0,0,3.33,0],0],["S",8,"Whitemane I","Mounted",18360,6120,2,[0,5.55,0,0],0],["S",8,"Legitimist I","Ranged",9180,3060,1,[4.44,0,0,5.72],0],["S",8,"Royal Lion I","Flying",183600,61200,20,[0,0,6.67,0],1],["S",9,"Duelist II","Melee",16530,5510,1,[0,0,5.0,0],0],["S",9,"Whitemane II","Mounted",33060,11020,2,[0,8.33,0,0],0],["S",9,"Legitimist II","Ranged",16530,5510,1,[6.67,0,0,8.59],0],["S",9,"Royal Lion II","Flying",330600,110200,20,[0,0,10.0,0],1]];
+const MONS=[[3,"Stone Gargoyle","Giant","Flying",15600,5200,8,[1.85,0,0,0]],[3,"Water Elemental","Elemental","Ranged",5700,1900,3,[1.13,0,0,1.44]],[3,"Emerald Dragon","Dragon","Flying",13500,4500,7,[0,0,1.85,0]],[3,"Battle Boar","Beast","Mounted",11700,3900,6,[0,1.13,1.44,0]],[4,"Many-Armed Guardian","Giant","Melee",39000,13000,11,[0,0,1.15,0]],[4,"Ice Phoenix","Elemental","Flying",51000,17000,15,[0,0,0,2.23]],[4,"Magic Dragon","Dragon","Ranged",45000,15000,13,[1.69,2.16,0,0]],[4,"Gorgon Medusa","Beast","Ranged",36000,12000,10,[2.77,0,0,1.08]],[5,"Ettin","Giant","Melee",144000,48000,23,[0,0,3.34,0]],[5,"Flaming Centaur","Elemental","Mounted",132000,44000,21,[0,4.15,0,0]],[5,"Desert Vanquisher","Dragon","Mounted",126000,42000,20,[0,2.53,0,0]],[5,"Fearsome Manticore","Beast","Flying",138000,46000,22,[0,0,0,2.53]],[6,"Troll Rider","Giant","Mounted",330000,110000,30,[0,3.8,0,0]],[6,"Ruby Golem","Elemental","Melee",390000,130000,35,[4.86,0,3.8,0]],[6,"Crystal Dragon","Dragon","Melee",360000,120000,33,[0,0,2.58,0]],[6,"Jungle Destroyer","Beast","Melee",390000,130000,34,[0,0,6.23,0]],[7,"Destructive Colossus","Giant","Ranged",870000,290000,43,[7.52,0,0,5.47]],[7,"Wind Lord","Elemental","Melee",930000,310000,45,[0,0,3.87,0]],[7,"Black Dragon","Dragon","Flying",900000,300000,44,[5.7,0,0,0]],[7,"Ancient Terror","Beast","Mounted",840000,280000,41,[0,7.52,0,0]],[8,"Kraken I","Giant","Melee",2010000,670000,55,[0,0,9.91,0]],[8,"Fire Phoenix I","Elemental","Flying",1980000,660000,54,[7.01,0,0,0]],[8,"Devastator I","Dragon","Mounted",1950000,650000,53,[0,12.81,0,0]],[8,"Trickster I","Beast","Ranged",1920000,640000,52,[0,0,0,9.4]],[9,"Kraken II","Giant","Melee",3630000,1210000,55,[0,0,14.87,0]],[9,"Fire Phoenix II","Elemental","Flying",3570000,1190000,54,[10.52,0,0,0]],[9,"Devastator II","Dragon","Mounted",3510000,1170000,53,[0,19.22,0,0]],[9,"Trickster II","Beast","Ranged",3450000,1150000,52,[0,0,0,14.1]]];
+const ENGN=["Catapult I","Catapult II","Catapult III","Catapult IV","Catapult V","Siege Ballistae VI","Siege Ballistae VII","Josephine I","Josephine II"],ENGH=[1500,2700,4860,8750,15800,28400,51000,91800,165300],ENGS=[250,450,810,1460,2630,4730,8500,15310,27550];
 const TR=[];
-ARMY.forEach(r=>TR.push({cls:r[0],tier:r[1],name:r[2],cat:r[3],hp:r[4],str:r[4]/3,cost:r[5],vs:r[6],beast:!!r[7],pool:'A'}));
-ENGN.forEach((n,i)=>TR.push({cls:'E',tier:i+1,name:n,cat:'Engineer',hp:ENGH[i],str:ENGH[i]/6,cost:10,vs:[0,0,0,0],beast:false,pool:'A'}));
-MONS.forEach(r=>TR.push({cls:'M',tier:r[0],name:r[1],type:r[2],cat:r[3],hp:r[4],str:r[4]/3,cost:r[5],vs:r[6],beast:false,pool:'M'}));
+ARMY.forEach(r=>TR.push({cls:r[0],tier:r[1],name:r[2],cat:r[3],hp:r[4],str:r[5],cost:r[6],vs:r[7],beast:!!r[8],pool:'A'}));
+ENGN.forEach((n,i)=>TR.push({cls:'E',tier:i+1,name:n,cat:'Engineer',hp:ENGH[i],str:ENGS[i],cost:10,vs:[0,0,0,0],beast:false,pool:'A'}));
+MONS.forEach(r=>TR.push({cls:'M',tier:r[0],name:r[1],type:r[2],cat:r[3],hp:r[4],str:r[5],cost:r[6],vs:r[7],beast:false,pool:'M'}));
 const BYG={},N2G={};
 TR.forEach(t=>{const g=t.cls+t.tier;(BYG[g]=BYG[g]||[]).push(t);N2G[t.name]=g});
 Object.keys(BYG).forEach(g=>{if(g[0]=='M')BYG[g].sort((a,b)=>CO.indexOf(a.cat)-CO.indexOf(b.cat))});
@@ -844,54 +844,54 @@ function table(st){
   });
   return o+'</table></div>';
 }
-// MERCENARIES: hired troops, they use Authority only (not Leadership / Dominance) and every one of them lasts 7 days. [class, tier, name, category, health, strength, Authority per unit, vs melee/ranged/mounted/flying, swarm bonus vs melee/ranged/mounted/flying] - all straight from the troop JSON.
+// MERCENARIES: hired troops, they use Authority only (not Leadership / Dominance) and every one of them lasts 7 days. [class, tier, name, category, health, strength, Authority per unit, vs melee/ranged/mounted/flying, jungle guardian 1/0] - straight from the troop JSON; the swarm bonus of a jungle guardian sits in the same vs column as a regular bonus.
 // All of them are listed; the result shows only the ones we have a picture for.
-const MERC=[["E",9,"Ariel","Engineer",330000,55000,10,[0,0,0,0],[0,0,0,0]],
-  ["G",9,"Chitinous Defender Leader","Melee",33600,11200,1,[0,0,0,0],[40.0,0,0,0]],
-  ["G",9,"Combat Anteater Leader","Mounted",34200,11400,1,[0,0,0,0],[0,0,40.0,0]],
-  ["G",9,"Grim Stalker Leader","Ranged",31800,10600,1,[0,0,0,0],[0,40.0,0,0]],
-  ["G",9,"Highlander","Ranged",33000,11000,1,[13.33,0,0,17.17],[0,0,0,0]],
-  ["G",9,"Quicksand","Mounted",66000,22000,2,[0,16.67,0,0],[0,0,0,0]],
-  ["G",9,"Slavic Warrior","Melee",33000,11000,1,[0,0,10.0,0],[0,0,0,0]],
-  ["G",9,"Superior Epic Monster Hunter","Epic Monster Hunter",75000,25000,1,[0,0,0,0],[0,0,0,0]],
-  ["G",9,"Warregal","Flying",660000,220000,20,[0,0,19.99,0],[0,0,0,0]],
-  ["G",9,"Wasp-Man Leader","Flying",32400,10800,1,[0,0,0,0],[0,0,0,40.0]],
-  ["G",7,"Arbalester VII","Ranged",10200,3400,1,[5.7,0,0,7.29],[0,0,0,0]],
-  ["G",7,"Chariot VII","Mounted",20400,6800,2,[0,7.52,0,0],[0,0,0,0]],
-  ["G",7,"Chitinous Defender VII","Melee",10500,3500,1,[0,0,0,0],[11.21,0,0,0]],
-  ["G",7,"Combat Anteater VII","Mounted",10800,3600,1,[0,0,0,0],[0,0,11.21,0]],
-  ["G",7,"Epic Monster Hunter VII","Epic Monster Hunter",11220,3740,1,[0,0,0,0],[0,0,0,0]],
-  ["G",7,"Grim Stalker VII","Ranged",9600,3200,1,[0,0,0,0],[0,11.21,0,0]],
-  ["G",7,"Legionary VII","Melee",10200,3400,1,[0,0,3.87,0],[0,0,0,0]],
-  ["G",7,"Sphynx VII","Flying",408000,136000,40,[0,0,9.34,0],[0,0,0,0]],
-  ["G",7,"Wasp-Man VII","Flying",9900,3300,1,[0,0,0,0],[0,0,0,11.21]],
-  ["G",6,"Arbalester VI","Ranged",5700,1900,1,[4.94,0,0,6.09],[0,0,0,0]],
-  ["G",6,"Chariot VI","Mounted",11400,3800,2,[0,5.93,0,0],[0,0,0,0]],
-  ["G",6,"Epic Monster Hunter VI","Epic Monster Hunter",6090,2030,1,[0,0,0,0],[0,0,0,0]],
-  ["G",6,"Legionary VI","Melee",5700,1900,1,[0,0,3.95,0],[0,0,0,0]],
-  ["G",6,"Sphynx VI","Flying",56700,18900,10,[0,0,6.92,0],[0,0,0,0]],
-  ["S",9,"Galloper","Mounted",66000,22000,2,[0,8.33,0,0],[0,0,0,0]],
-  ["S",9,"Grace","Scout",16530,5510,5,[0,0,0,0],[0,0,0,0]],
-  ["S",9,"Jago","Flying",660000,220000,20,[0,0,10.0,0],[0,0,0,0]],
-  ["S",9,"Pounder","Ranged",33000,11000,1,[6.67,0,0,8.59],[0,0,0,0]],
-  ["S",9,"Scarface","Melee",33000,11000,1,[0,0,5.0,0],[0,0,0,0]],
-  ["S",7,"Knight","Melee",10200,3400,1,[0,0,1.94,0],[0,0,0,0]],
-  ["S",7,"Rhino Rider","Mounted",20400,6800,2,[0,3.77,0,0],[0,0,0,0]],
-  ["S",7,"Shedu","Flying",408000,136000,40,[0,0,4.67,0],[0,0,0,0]],
-  ["S",7,"Trailseeker VII","Ranged",10200,3400,1,[2.86,0,0,3.64],[0,0,0,0]],
-  ["M",9,"Demonic Salamander","Melee",1230000,410000,38,[0,0,0.65,0],[0,0,0,0]],
-  ["M",9,"Eternal Cannoneer","Ranged",1320000,440000,40,[0,0,0,0.65],[0,0,0,0]],
-  ["M",9,"Warden","Mounted",1410000,470000,43,[0,0.7,0,0],[0,0,0,0]],
-  ["M",9,"Wyvern","Flying",2070000,690000,63,[0.75,0,0,0],[0,0,0,0]],
-  ["M",7,"Cursed Dragon","Flying",960000,320000,93,[0,0,0.5,0],[0,0,0,0]],
-  ["M",7,"Fire Lord","Ranged",1680000,560000,164,[0.8,0,0,0],[0,0,0,0]],
-  ["M",7,"Golden Dragon","Flying",510000,170000,40,[0,0,9.34,0],[0,0,0,0]],
-  ["M",7,"Jungle King","Melee",330000,110000,33,[0,0,3.87,0],[0,0,0,0]],
-  ["M",7,"Life Dragon","Flying",720000,240000,70,[0,0,0.6,0],[0,0,0,0]],
-  ["M",7,"Lightning Lord","Ranged",460000,153000,45,[5.7,0,0,0],[0,0,0,0]],
-  ["M",7,"Overlord","Ranged",600000,200000,60,[0.6,0,0,0],[0,0,0,0]],
-  ["M",7,"Sandworm","Melee",1290000,430000,128,[0,0,0.75,0],[0,0,0,0]],
-  ["M",7,"Sea Lord","Mounted",420000,140000,40,[0,7.52,0,0],[0,0,0,0]]];
+const MERC=[["E",9,"Ariel","Engineer",330000,55000,10,[0,0,0,0],0],
+  ["G",9,"Chitinous Defender Leader","Melee",33600,11200,1,[40.0,0,0,0],1],
+  ["G",9,"Combat Anteater Leader","Mounted",34200,11400,1,[0,0,40.0,0],1],
+  ["G",9,"Grim Stalker Leader","Ranged",31800,10600,1,[0,40.0,0,0],1],
+  ["G",9,"Highlander","Ranged",33000,11000,1,[13.33,0,0,17.17],0],
+  ["G",9,"Quicksand","Mounted",66000,22000,2,[0,16.67,0,0],0],
+  ["G",9,"Slavic Warrior","Melee",33000,11000,1,[0,0,10.0,0],0],
+  ["G",9,"Superior Epic Monster Hunter","Epic Monster Hunter",75000,25000,1,[0,0,0,0],0],
+  ["G",9,"Warregal","Flying",660000,220000,20,[0,0,19.99,0],0],
+  ["G",9,"Wasp-Man Leader","Flying",32400,10800,1,[0,0,0,40.0],1],
+  ["G",7,"Arbalester VII","Ranged",10200,3400,1,[5.7,0,0,7.29],0],
+  ["G",7,"Chariot VII","Mounted",20400,6800,2,[0,7.52,0,0],0],
+  ["G",7,"Chitinous Defender VII","Melee",10500,3500,1,[11.21,0,0,0],1],
+  ["G",7,"Combat Anteater VII","Mounted",10800,3600,1,[0,0,11.21,0],1],
+  ["G",7,"Epic Monster Hunter VII","Epic Monster Hunter",11220,3740,1,[0,0,0,0],0],
+  ["G",7,"Grim Stalker VII","Ranged",9600,3200,1,[0,11.21,0,0],1],
+  ["G",7,"Legionary VII","Melee",10200,3400,1,[0,0,3.87,0],0],
+  ["G",7,"Sphynx VII","Flying",408000,136000,40,[0,0,9.34,0],0],
+  ["G",7,"Wasp-Man VII","Flying",9900,3300,1,[0,0,0,11.21],1],
+  ["G",6,"Arbalester VI","Ranged",5700,1900,1,[4.94,0,0,6.09],0],
+  ["G",6,"Chariot VI","Mounted",11400,3800,2,[0,5.93,0,0],0],
+  ["G",6,"Epic Monster Hunter VI","Epic Monster Hunter",6090,2030,1,[0,0,0,0],0],
+  ["G",6,"Legionary VI","Melee",5700,1900,1,[0,0,3.95,0],0],
+  ["G",6,"Sphynx VI","Flying",56700,18900,10,[0,0,6.92,0],0],
+  ["S",9,"Galloper","Mounted",66000,22000,2,[0,8.33,0,0],0],
+  ["S",9,"Grace","Scout",16530,5510,5,[0,0,0,0],0],
+  ["S",9,"Jago","Flying",660000,220000,20,[0,0,10.0,0],0],
+  ["S",9,"Pounder","Ranged",33000,11000,1,[6.67,0,0,8.59],0],
+  ["S",9,"Scarface","Melee",33000,11000,1,[0,0,5.0,0],0],
+  ["S",7,"Knight","Melee",10200,3400,1,[0,0,1.94,0],0],
+  ["S",7,"Rhino Rider","Mounted",20400,6800,2,[0,3.77,0,0],0],
+  ["S",7,"Shedu","Flying",408000,136000,40,[0,0,4.67,0],0],
+  ["S",7,"Trailseeker VII","Ranged",10200,3400,1,[2.86,0,0,3.64],0],
+  ["M",9,"Demonic Salamander","Melee",1230000,410000,38,[0,0,0.65,0],0],
+  ["M",9,"Eternal Cannoneer","Ranged",1320000,440000,40,[0,0,0,0.65],0],
+  ["M",9,"Warden","Mounted",1410000,470000,43,[0,0.7,0,0],0],
+  ["M",9,"Wyvern","Flying",2070000,690000,63,[0.75,0,0,0],0],
+  ["M",7,"Cursed Dragon","Flying",960000,320000,93,[0,0,0.5,0],0],
+  ["M",7,"Fire Lord","Ranged",1680000,560000,164,[0.8,0,0,0],0],
+  ["M",7,"Golden Dragon","Flying",510000,170000,40,[0,0,9.34,0],0],
+  ["M",7,"Jungle King","Melee",330000,110000,33,[0,0,3.87,0],0],
+  ["M",7,"Life Dragon","Flying",720000,240000,70,[0,0,0.6,0],0],
+  ["M",7,"Lightning Lord","Ranged",460000,153000,45,[5.7,0,0,0],0],
+  ["M",7,"Overlord","Ranged",600000,200000,60,[0.6,0,0,0],0],
+  ["M",7,"Sandworm","Melee",1290000,430000,128,[0,0,0.75,0],0],
+  ["M",7,"Sea Lord","Mounted",420000,140000,40,[0,7.52,0,0],0]];
 function mercTable(){
   const cell=m=>`<td title="${esc(m[2])} - ${m[0]=='E'?'Engineer':m[0]=='G'?'Guardsman':m[0]=='S'?'Specialist':'Monster'} ${m[1]}${m[0]=='E'?'':', '+m[3]}, Authority ${m[6]} per unit"><img class="ic" src="${IC[m[2]]}" alt=""><span class="kp"></span><span class="mu">${esc(m[2])}</span><br><span class="n">0</span></td>`;
   let o='<div class="sc"><table><colgroup><col><col><col><col><col></colgroup>';
