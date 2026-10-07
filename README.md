@@ -6,7 +6,7 @@ Open `index.html` in a browser or use the GitHub Pages site of this repository. 
 
 ## Attack modes
 
-The modes are in three rows: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stack) and Special (Killshot v. 3, Renegades - **switched off for now**: the button is greyed out, see Renegades below).
+The modes are in four rows, each with its own icon: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stack), Special (Killshot v. 3) and **PvP** (two emoji shooting each other): CP run, Max damage and Renegades. In the PvP row all three buttons are greyed out for now: CP run and Max damage are only placeholders (their rules are not defined yet) and Renegades is switched off (see Renegades below).
 
 ## Troop data
 
@@ -120,7 +120,7 @@ The bonus is written as the troop's best bonus against a class of the enemy, for
 
 ### Renegades
 
-**Switched off for now** (the constant `RENEGADES = false` in the page): the button is greyed out and does nothing, and a tab that was saved in Renegades opens in Max damage instead. Nothing else was removed - set the constant to `true` to bring it back.
+The button is in the PvP row. **Switched off for now** (the constant `RENEGADES = false` in the page): the button is greyed out and does nothing, and a tab that was saved in Renegades opens in Max damage instead. Nothing else was removed - set the constant to `true` to bring it back.
 
 Highest troop types die first, G before S, up to 16 stacks. Then all the rest of the army is equal and dies at random. These rules maximize the damage and reduce the cost of attacks.
 
