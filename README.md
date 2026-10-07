@@ -25,6 +25,16 @@ Mercenaries are hired troops. They use Authority only (not Leadership or Dominan
 - **Order.** The same rule as for the rest: troops with the same or nearly the same strength / health ratio are one group, inside a group the smaller squad bonus dies first (ties: higher tier first), the group order with the most damage wins (an order only wins when it is clearly better, 0.05 %). The outlier places are not used for the mercenaries.
 - **Short Authority.** When the Authority does not reach for all stacks, the stacks that die first are the weakest ones and they take the Authority first. The calculation also tries leaving the first few stacks out (their Authority then goes to the stronger ones) and keeps that only when the damage is clearly higher. Turn cards off yourself to choose differently.
 
+## Result views
+
+Above the result there is a View switch: **Grouped**, **Mobile** and **Computer**.
+
+- **Grouped** (the default) is the cards in groups, 5 per row, one block for the Army, one for the Monsters and one for the Mercenaries.
+- **Mobile**: one unit per line. The line starts with the picture; to the right of it is the name of the unit and below the name the number of units. The three sections (Army - Leadership, Monsters - Dominance, Mercenaries - Authority) keep their headings. A line can be clicked to turn the troop off or on, like a card. For now the units stand in the same order as the Grouped cards (the order for Mobile is still to be set).
+- **Computer** is not ready yet (the button is disabled).
+
+The chosen view is one setting for the whole page (saved in the browser, not per tab).
+
 ## Tabs
 
 The page starts with four tabs: `1 cap`, `3 cap`, `Hero` and `Hero+3 cap`. They are ordinary tabs: rename (double-click), duplicate or delete them, or add your own with `+`. Each tab keeps its own settings, saved in your browser only.

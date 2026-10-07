@@ -41,6 +41,8 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 .pb{padding:3px 10px;margin:0 6px 0 0}.pb.on{background:var(--ac);color:#000}
 .ib{display:inline-block;width:18px;height:18px;border-radius:50%;border:1px solid var(--ac);background:transparent;color:var(--ac);font:italic 700 12px/16px Georgia,serif;padding:0;margin:0 0 0 10px;cursor:pointer;text-transform:none;letter-spacing:0;vertical-align:middle;position:relative;top:-2px;text-align:center}.ib:hover,.ib[aria-expanded=true]{background:var(--ac);color:#000}.tip{position:absolute;z-index:50;width:max-content;max-width:min(320px,calc(100vw - 16px));box-sizing:border-box;margin:0;padding:10px 13px;background:#2b2415;color:var(--tx);border:1px solid var(--ac);border-radius:8px;box-shadow:0 8px 22px rgba(0,0,0,.6);font-size:14px;line-height:1.4;font-weight:400;letter-spacing:0;text-transform:none;text-align:left}.tip::before{content:"";position:absolute;top:-6px;left:var(--ax,16px);width:10px;height:10px;background:#2b2415;border-left:1px solid var(--ac);border-top:1px solid var(--ac);transform:rotate(45deg)}.eb{padding:6px 16px;margin:0 8px 8px 0;font:inherit}.eb.on{background:var(--ac);color:#000}
 #res td[data-troop]{cursor:pointer}.cm{padding:6px 16px;margin:0 8px 8px 0;font:inherit}.cm.on{background:var(--ac);color:#000}.mrow{display:flex;align-items:center;flex-wrap:wrap}.mrow>.mu{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;width:126px;margin-right:8px;margin-bottom:8px;font-size:13px}.mrow>.mu b{font-weight:600;color:var(--ac);margin:0 0 0 8px;font-size:14px;letter-spacing:.3px}.mi{width:60px;height:auto;display:block;flex:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}.mrow button{width:128px;padding-left:4px;padding-right:4px;text-align:center;white-space:nowrap}@media(max-width:520px){.mrow+.mrow{border-top:1px solid var(--bd);margin-top:6px;padding-top:12px}.mrow>.mu{flex:0 0 100%;width:auto;margin:0 0 4px}.mrow button{width:calc((100% - 8px)/2);margin-right:8px}.mrow button:last-child{margin-right:0}}.cm:disabled{opacity:.4;cursor:not-allowed}#osd summary{cursor:pointer;color:var(--ac);padding:4px 0}#os .oi{cursor:default}.lock{opacity:.4;pointer-events:none}.ic2{width:30px;height:30px;border-radius:4px;vertical-align:middle}.oi small{display:block;line-height:1.1}#res td{position:relative}.kp{position:absolute;top:3px;right:7px;font-size:11px;color:#5b4721}#res td.off{opacity:.35}
+.vb{padding:6px 10px;margin:0 6px 8px 0;font:inherit;min-width:84px}.vb.on{background:var(--ac);color:#000}.vb:disabled{opacity:.4;cursor:not-allowed}
+.vwl{max-width:460px}.vwr{display:flex;align-items:center;gap:12px;background:#dcc791;color:#2a2012;border:1px solid #8a6a2c;border-radius:6px;padding:6px 12px;margin:0 0 6px;cursor:pointer}.vwr .ic{margin:0;flex:none;width:48px;height:48px}.vwt{min-width:0}.vwn{font-size:14px;color:#5b4721;line-height:1.2}.vwc{font-size:17px;font-weight:700;line-height:1.3}.vwr.off{opacity:.35}
 .tabs{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 6px}
 .tab{background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:6px 8px;margin:0;font:inherit;cursor:pointer;width:108px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tab.on{background:#dcc791;color:#2a2012;border-color:#8a6a2c;font-weight:600}.tab.add{width:auto;padding:6px 14px;color:var(--ac)}
@@ -81,7 +83,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <details id="osd" style="margin-top:12px"><summary>Show the dying order, troop by troop</summary><div class="ol" id="os" style="max-width:560px;margin-top:8px"></div></details>
 </div>
 
-<div class="card"><h2><span id="rtitle">Result</span><button type="button" class="ib" data-tip="rtip" aria-expanded="false" aria-controls="rtip" title="How to read the result">i</button></h2><p class="tip" id="rtip" role="tooltip" hidden>Click a troop card to turn it off or on. <b>#</b> = position in the kill order (#1 dies first). The Mercenaries (hired with Authority) are added behind the last Leadership / Dominance stack; Authority is only a cap, what is left over stays unused.</p><div id="res"></div></div>
+<div class="card"><h2><span id="rtitle">Result</span><button type="button" class="ib" data-tip="rtip" aria-expanded="false" aria-controls="rtip" title="How to read the result">i</button></h2><p class="tip" id="rtip" role="tooltip" hidden>Click a troop card to turn it off or on. <b>#</b> = position in the kill order (#1 dies first). The Mercenaries (hired with Authority) are added behind the last Leadership / Dominance stack; Authority is only a cap, what is left over stays unused.</p><div style="margin:0 0 12px"><span class="mu" style="margin-right:8px">View:</span><button type="button" class="vb" data-v="grouped" title="The cards in groups, 5 per row">Grouped</button><button type="button" class="vb" data-v="mobile" title="One unit per line: picture, name, number of units">Mobile</button><button type="button" class="vb" data-v="computer" disabled title="Not ready yet">Computer</button></div><div id="res"></div></div>
 
 <script>
 const $=id=>document.getElementById(id),v=id=>parseFloat(String($(id).value).replace(/,/g,''))||0;
@@ -132,13 +134,15 @@ function sync(){
 }
 document.addEventListener('click',e=>{
   if(tabClick(e))return;
+  const vb=e.target.closest('.vb');if(vb){if(!vb.disabled&&vb.dataset.v!=VIEW){VIEW=vb.dataset.v;try{localStorage.setItem('sc_view',VIEW)}catch(x){}calc()}return}
   const cm=e.target.closest('.cm');if(cm){if(!cm.disabled){if(cm.dataset.m=='kill')runKill();else if(cm.dataset.m=='ren')runRen()}return}
   const eb=e.target.closest('.eb');if(eb){runBest(+eb.dataset.e);return}
-  const tc=e.target.closest('td[data-troop]');if(tc){const nm=tc.dataset.troop;if(XS.has(nm))XS.delete(nm);else XS.add(nm);calc();return}
+  const tc=e.target.closest('[data-troop]');if(tc){const nm=tc.dataset.troop;if(XS.has(nm))XS.delete(nm);else XS.add(nm);calc();return}
   const pb=e.target.closest('.pb');
   if(pb){TY.forEach(t=>{$('bh_'+t).value=pb.dataset.p;$('bs_'+t).value=pb.dataset.p;if(pb.dataset.dh!==undefined)$('dh_'+t).value=pb.dataset.dh});calc();return}   // research I and II set Double hit to 0, III to 5 % for every group
 });
 
+let VIEW='grouped';try{if(localStorage.getItem('sc_view')=='mobile')VIEW='mobile'}catch(e){}      // result view: Grouped (cards in groups) or Mobile (one unit per line); Computer is not ready yet. One setting for all tabs.
 let EBINFO='';   // the stack split (army / full monster / partial monster / engineer), part of the result summary line
 const MODE_NAME=e=>e+'-stack';   // e = enemy stacks (3, 4, 6 or 8)
 const pct=m=>Math.round(m*100).toLocaleString('en-US')+'%';   // bonus ratio -> percent text (6.67 -> 667%)
@@ -844,6 +848,15 @@ function table(st){
   });
   return o+'</table></div>';
 }
+// the order the cards of table() are shown in, as one list
+function flatOrder(st){
+  const keys=[];st.forEach(s=>{const k=s.cat=='Engineer'?'E*':s.r;if(!keys.includes(k))keys.push(k)});
+  return keys.flatMap(k=>k=='E*'?st.filter(s=>s.cat=='Engineer').sort((a,b)=>+b.r.slice(1)-+a.r.slice(1)):st.filter(x=>x.r==k).sort((a,b)=>DISP_KEY(a)-DISP_KEY(b)));
+}
+// MOBILE view: one unit per line - the picture, to the right the name and below it the number of units (click = turn off / on, like a card)
+function mobList(items){
+  return'<div class="vwl">'+items.map(s=>`<div class="vwr${s.off?' off':''}" data-troop="${esc(s.name)}" title="${s.off?'Click to turn this troop on':'Click to turn this troop off'}">${IC[s.name]?`<img class="ic" src="${IC[s.name]}" alt="">`:'<div class="ic ph"></div>'}<div class="vwt"><div class="vwn">${esc(s.name)}</div><div class="vwc">${s.off?'off':(s.n||0).toLocaleString()}</div></div></div>`).join('')+'</div>';
+}
 // MERCENARIES: hired troops, they use Authority only (not Leadership / Dominance) and every one of them lasts 7 days. [class, tier, name, category, health, strength, Authority per unit, vs melee/ranged/mounted/flying, jungle guardian 1/0] - straight from the troop JSON; the swarm bonus of a jungle guardian sits in the same vs column as a regular bonus.
 // All of them are listed; the result shows only the ones we have a picture for.
 const MERC=[["E",9,"Ariel","Engineer",330000,55000,10,[0,0,0,0],0,""],
@@ -945,13 +958,13 @@ function allocMerc(P,ld,so,X){
 }
 // the order of the cards in the Mercenaries section (the ones not listed come after them, by name)
 const MORD=['Ariel','Warregal','Quicksand','Highlander','Slavic Warrior','Superior Epic Monster Hunter','Jago','Galloper','Pounder','Scarface','Grace','Wyvern','Warden','Eternal Cannoneer','Demonic Salamander'];
+const mercSorted=c=>{const rk=m=>{const i=MORD.indexOf(m[2]);return i<0?999:i};return MERC.filter(m=>m[0]==c&&IC[m[2]]).sort((a,b)=>rk(a)-rk(b)||a[2].localeCompare(b[2]))};
 function mercTable(all){
   const by={};all.forEach(s=>by[s.name]=s);
   const cell=m=>{const s=by[m[2]];return`<td class="${s.off?'off':''}" data-troop="${esc(m[2])}" title="${esc(m[2])} - ${m[0]=='E'?'Engineer':m[0]=='G'?'Guardsman':m[0]=='S'?'Specialist':'Monster'} ${m[1]}${m[0]=='E'?'':', '+m[3]}, Authority ${m[6]} per unit. ${s.off?'Click to turn this mercenary on':'Click to turn this mercenary off'}"><img class="ic" src="${IC[m[2]]}" alt=""><span class="kp">${KP[m[2]]?'#'+KP[m[2]]:''}</span><span class="mu">${esc(m[2])}</span><br><span class="n">${s.off?'off':s.n.toLocaleString()}</span></td>`};
   let o='<div class="sc"><table><colgroup><col><col><col><col><col><col></colgroup>';    // 5 cards per row
   [['E','Engineer Corps'],['G','Guardsmen'],['S','Specialists'],['M','Monsters']].forEach(([c,label])=>{
-    const rk=m=>{const i=MORD.indexOf(m[2]);return i<0?999:i};
-    const list=MERC.filter(m=>m[0]==c&&IC[m[2]]).sort((a,b)=>rk(a)-rk(b)||a[2].localeCompare(b[2]));
+    const list=mercSorted(c);
     for(let i=0;i<list.length;i+=5){
       const row=list.slice(i,i+5).map(cell);while(row.length<5)row.push('<td></td>');
       o+=`<tr><th>${i?'':label}</th>${row.join('')}</tr>`;
@@ -976,12 +989,15 @@ function calc(){
   if(P.mode=='2')[...A,...Mo,...U.list].filter(x=>x.n>0).forEach(x=>{if(SOPOS[x.name]!=null)KP[x.name]=SOPOS[x.name]});   // the same numbers as the dying-order list
   else [...A,...Mo].filter(x=>x.n>0).sort((a,b)=>b.n*b.hp-a.n*a.hp).forEach((x,i)=>KP[x.name]=i+1);
   if(tabs){const t=$('rtitle');if(t)t.textContent='Result — '+tabs[active].name}
+  if(VIEW!='grouped'&&VIEW!='mobile')VIEW='grouped';
+  const mob=VIEW=='mobile';
+  document.querySelectorAll('.vb').forEach(b=>b.classList.toggle('on',b.dataset.v==VIEW));
   const gk=r=>r[0]=='E'?-100+ +r.slice(1):-(+r.slice(1))*2+(r[0]=='S'?1:0);
   const Aall=st.filter(s=>s.p=='A').sort((a,b)=>gk(a.r)-gk(b.r)),Mall=st.filter(s=>s.p=='M').sort((a,b)=>(+b.r.slice(1))-(+a.r.slice(1)));
   $('res').innerHTML=`<p class="mu" style="margin:0 0 8px">${sc.stacks} stacks · ${EBINFO} · ${sc.hits} strikes against ${P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks'} · <b>estimated damage ${fmt(sc.dmg)}</b></p>
-  <h2>Army — Leadership ${usedOf(A).toLocaleString()} / ${P.capA.toLocaleString()}</h2>${Aall.length?table(Aall):'<p class="mu">No army tiers selected.</p>'}
-  <h2 style="margin-top:26px">Monsters — Dominance ${usedOf(Mo).toLocaleString()} / ${P.capM.toLocaleString()}</h2>${Mall.length?table(Mall):'<p class="mu">No monster tiers selected.</p>'}
-  <h2 style="margin-top:26px">Mercenaries — Authority ${U.used.toLocaleString()} / ${P.capU.toLocaleString()}</h2>${mercTable(U.all)}`;
+  <h2>Army — Leadership ${usedOf(A).toLocaleString()} / ${P.capA.toLocaleString()}</h2>${Aall.length?(mob?mobList(flatOrder(Aall)):table(Aall)):'<p class="mu">No army tiers selected.</p>'}
+  <h2 style="margin-top:26px">Monsters — Dominance ${usedOf(Mo).toLocaleString()} / ${P.capM.toLocaleString()}</h2>${Mall.length?(mob?mobList(flatOrder(Mall)):table(Mall)):'<p class="mu">No monster tiers selected.</p>'}
+  <h2 style="margin-top:26px">Mercenaries — Authority ${U.used.toLocaleString()} / ${P.capU.toLocaleString()}</h2>${mob?mobList(['E','G','S','M'].flatMap(c=>mercSorted(c).map(m=>U.all.find(s=>s.name==m[2])))):mercTable(U.all)}`;
   save();
 }
 function refresh(){sync();calc()}
