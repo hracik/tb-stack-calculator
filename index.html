@@ -201,18 +201,21 @@ function drawSO(st,P){
   const info=n=>{const t=TRN[n],m=vsRatio(t,P),dh=t.cls=='M'?(P['dh'+t.type]||0):t.beast?P.dhBeast:0,cnt=sb[n]?sb[n].n||0:0,hpu=sb[n]?sb[n].hp:t.hp*mults(t,P)[0],
     one=t.str*mults(t,P)[1],full=one*vsFactor(t,P)*dhf(t,P);
     return`${t.cls}${t.tier} · ${vsText(t,P)}${dh>0?' · Double hit +'+dh+'%':''}<br>${[['SH',(hpu>0?one/hpu:0).toFixed(4)],['Health',num(cnt*hpu)],['Strength',num(cnt*one)],['Damage',num(cnt*full)]].map(([l,x])=>`<span style="white-space:nowrap">${l}: ${x}</span>`).join(' · ')}`};   // SH = strength without squad bonus and Double hit (only your strength multiplier) per health; Damage = strength with the squad bonus and Double hit
-  const one=(n,lbl)=>`<div class="oi" data-n="${esc(n)}"><span class="no">${lbl}</span>${IC[n]?`<img class="ic2" src="${IC[n]}" alt="">`:''}<span class="nm">${esc(n)} <small class="mu">${info(n)}</small></span></div>`;
+  const one=(n,lbl)=>`<div class="oi" data-n="${esc(n)}"><span class="no"${String(lbl).includes('–')?' style="width:auto;padding:0 9px;border-radius:11px"':''}>${lbl}</span>${IC[n]?`<img class="ic2" src="${IC[n]}" alt="">`:''}<span class="nm">${esc(n)} <small class="mu">${info(n)}</small></span></div>`;
   let html='',pos=0,block=[];
   SOPOS={};
+  let blockG=null;
   const flush=()=>{
     if(!block.length)return;
     const first=pos+1,last=pos+block.length;pos=last;
+    if(P.cp){block.forEach(n=>{const lb=block.length>1?first+'–'+last:first;SOPOS[n]=lb;html+=one(n,lb)});block=[];return}      // CP run: a group of equals - every troop of it carries the same range of places (the game picks the order)
     block.forEach(n=>SOPOS[n]=block.length>1?first+'–'+last:first);
     html+=`<div class="oi"><span class="no" style="width:auto;padding:0 9px;border-radius:11px">${block.length>1?first+'–'+last:first}</span><span class="nm">Everything else - one block, random order <small class="mu">${block.length} stacks: ${block.map(esc).join(', ')}</small></span></div>`;
     block=[];
   };
   st.so.forEach(n=>{
     if(P.ren&&grp[n]=='REST'){block.push(n);return}
+    if(P.cp&&grp[n]){if(block.length&&blockG!==grp[n])flush();blockG=grp[n];block.push(n);return}
     flush();pos++;SOPOS[n]=pos;html+=one(n,pos);
   });
   flush();
@@ -498,13 +501,16 @@ function renOrder(P,names){
   return[...head,...seq,...ts.filter(t=>t.pool=='M').sort((a,b)=>b.tier-a.tier||cat(a,b))].map(t=>t.name);
 }
 // CP run (PvP, one flying enemy): a FIXED order, nothing is ranked by strength. All the engineers first (higher tier first), then the army tier by tier from the top,
-// Guardsmen before Specialists (G9, S9, G8, S8 ...), the monsters last, tier by tier from the top. Inside one group (the same class and tier, or the same monster tier)
-// the weakest damage per health dies first, as everywhere (squad bonus against flying only). The stacks stand tight by health alone (see HO).
+// Guardsmen before Specialists (G9, S9, G8, S8 ...), the monsters last, tier by tier from the top. Inside a class and tier the troops with the SMALLER squad bonus (against
+// flying, Double hit included) come first. Troops with the same class, tier and squad bonus (for example every G9 without a bonus) are ONE GROUP of equals: the game picks their
+// order at random, so they get the same health and share the places of the group (see cpGroup, allocTight and score).
+const cpGroup=(t,P)=>t.cls+t.tier+'|'+Math.round(sqb(t,P).tot*1e6);
 function cpOrder(P,names){
-  const ts=TR.filter(t=>names.has(t.name)),{rank}=ranker(P);
+  const ts=TR.filter(t=>names.has(t.name)),ci=t=>DEFCAT.indexOf(t.cat);
   const eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier),army=ts.filter(t=>t.pool=='A'&&t.cls!='E'),mon=ts.filter(t=>t.pool=='M');
   const tiers=a=>[...new Set(a.map(t=>t.tier))].sort((x,y)=>y-x);
-  return[...eng,...tiers(army).flatMap(tt=>['G','S'].flatMap(c=>rank(army.filter(t=>t.tier==tt&&t.cls==c)))),...tiers(mon).flatMap(tt=>rank(mon.filter(t=>t.tier==tt)))].map(t=>t.name);
+  const grp=a=>a.slice().sort((x,y)=>sqb(x,P).tot-sqb(y,P).tot||ci(x)-ci(y)||x.name.localeCompare(y.name));      // smaller squad bonus first; equal ones stay together
+  return[...eng,...tiers(army).flatMap(tt=>['G','S'].flatMap(c=>grp(army.filter(t=>t.tier==tt&&t.cls==c)))),...tiers(mon).flatMap(tt=>grp(mon.filter(t=>t.tier==tt)))].map(t=>t.name);
 }
 // 4-, 3-, 6- and 8-stack modes and Killshot: Royal Lion and Battle Griffin (the Beast units) carry the Beast health bonus, so they deal less strength per health than the rest of the army.
 // Each one is moved to the nearest place BELOW that is Kn+1 = the FIRST place of a strike group (K = the number of enemy stacks): K = 4: 6 -> 5, 14 -> 13; K = 3: 5 -> 4, 14 -> 13; K = 6 or 8: 6n+1 or 8n+1
@@ -554,12 +560,12 @@ function buildStacks(P,order,X,so){
     if(rgm(P)){                      // 3-, 4-, 6- and 8-stack: troops of the same ratio stay together, the smaller squad bonus first; the group order with the most damage wins
       const fs=fourSearch(P,live,mkOut);so=fs.names;out=mkOut(so,fs.cc);
     }else if(P.cp){                  // CP run: the order is fixed; the Dominance decides how many monster tiers are full - every choice is solved and the one with the most damage is kept
-      const s2=cpOrder(P,live);let best=null;
+      const s2=cpOrder(P,live),mkCP=c=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)});return o};let best=null;
       for(let c=nT;c>=1;c--){
-        const r=allocate(P,mkOut(s2,c)),dmg=score(P,[...r.A,...r.Mo],s2).dmg;
+        const r=allocate(P,mkCP(c)),dmg=score(P,[...r.A,...r.Mo],s2).dmg;
         if(!best||dmg>best.dmg*(1+1e-9))best={dmg,c};
       }
-      so=s2;out=mkOut(so,best?best.c:nT);
+      so=s2;out=mkCP(best?best.c:nT);
     }else if(P.kill){                // Killshot: the Dominance decides how many monster tiers are full - every choice is solved and the one with the most damage is kept
       let best=null;
       for(let c=nT;c>=1;c--){
@@ -616,6 +622,16 @@ function profile(live,d){
 // rounding fix for the same rule: a unit is trimmed only where two neighbours flip
 const QS=1-STEP;
 function chainT(live){
+  if(HO){                                   // CP run: the stacks of a group may be equal; a group stays strictly below the smallest total of the group before; no strength rule
+    let limH=Infinity,cur=null,gMin=Infinity;
+    live.forEach(s=>{
+      const g=s.grp||s.r;
+      if(g!==cur){if(isFinite(gMin))limH=gMin*QS;cur=g;gMin=Infinity}
+      if(s.n*s.hp>limH)s.n=Math.floor(limH/s.hp);
+      if(s.n>0)gMin=Math.min(gMin,s.n*s.hp);
+    });
+    return;
+  }
   let limH=Infinity,limT=Infinity;
   live.forEach(s=>{
     const eng=s.cat=='Engineer';
@@ -785,7 +801,7 @@ function allocTight(P,live){
   for(let pass=0;pass<4;pass++){
     cur.forEach(s=>{s.n=0});
     const A=cur.filter(s=>s.p=='A'),Mo=cur.filter(s=>s.p=='M');
-    weights(cur,false,d);markEx(P,cur);profile(cur,d);
+    weights(cur,HO,d);markEx(P,cur);if(!HO)profile(cur,d);      // CP run (HO): every group is equal inside, a small step down only between groups
     fill(A,P.capA,Infinity,Infinity,meas);
     const inv=A.reduce((q,x)=>q+x.w*x.cost/meas(x),0),X=inv&&P.capA>0?P.capA/inv:Infinity;
     if(free===null){const invM=Mo.reduce((q,x)=>q+x.w*x.cost/meas(x),0);free=P.capM>0&&invM>0&&(!isFinite(X)||P.capM/invM>X*1.001)}      // decided once, on the whole list: every monster tier on the army's level still cannot spend the Dominance
@@ -804,8 +820,8 @@ function allocTight(P,live){
     }
     cur.forEach(s=>{s.tgt=(s.p=='A'?X:s.pt?(+s.r.slice(1)==tp?XP:0):XF)*s.w});
     for(let g=0;g<30;g++){const before=cur.map(x=>x.n).join();chainT(cur);if(cur.map(x=>x.n).join()==before)break}
-    TOPTOL=1.005;topUp(cur,A,P.capA,true,meas);topUp(cur,Mo,P.capM,true,meas);
-    if(P.capM-usedOf(Mo)>0.003*P.capM){TOPTOL=1.03;topUp(cur,Mo,P.capM,true,meas);TOPTOL=1.005}      // Dominance left over: the monsters may go up to 3 % above the level (the first monster stands far below the army anyway)
+    TOPTOL=1.005;topUp(cur,A,P.capA,true,meas,HO);topUp(cur,Mo,P.capM,true,meas,HO);
+    if(P.capM-usedOf(Mo)>0.003*P.capM){TOPTOL=1.03;topUp(cur,Mo,P.capM,true,meas,HO);TOPTOL=1.005}      // Dominance left over: the monsters may go up to 3 % above the level (the first monster stands far below the army anyway)
     if(!cur.some(s=>!(s.n>0)))break;
     cur=cur.filter(s=>s.n>0);                      // a stack that got no troop leaves the order: the places Kn+1 move up
   }
@@ -875,6 +891,11 @@ function score(P,list,order){
   const st=p=>Math.ceil(p/K);                                  // strikes of the stack in place p (1-based)
   const dm=L.map(s=>s.n*dpu(s)),hit=L.map((_,i)=>st(i+1)),hp=L.map(s=>s.n*s.hp);
   let hits=hit.reduce((q,x)=>q+x,0);
+  if(P.cp){                                                      // CP run: the game picks the order inside a group of equals, so each of its stacks strikes the average of the group's places
+    for(let a=0;a<L.length;){let b=a+1;while(L[a].grp&&b<L.length&&L[b].grp===L[a].grp)b++;
+      if(b-a>1){const avg=hit.slice(a,b).reduce((q,x)=>q+x,0)/(b-a);for(let k=a;k<b;k++)hit[k]=avg}
+      a=b}
+  }
   if(P.ren){
     const idx=L.map((s,i)=>s.grp=='REST'?i:-1).filter(i=>i>=0);
     if(idx.length>1){
@@ -1019,6 +1040,7 @@ function allocMerc(P,ld,so,X){
   const L=ld.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);
   let H=Infinity,T=Infinity;
   L.forEach(s=>{H=s.n*s.hp;if(s.cat!='Engineer'&&!s.bst&&!s.rs)T=s.n*s.str});   // the last Leadership / Dominance stack: the chain goes on from its health and total strength
+  if(P.cp&&L.length){const lg=L[L.length-1].grp;if(lg)H=Math.min(...L.filter(s=>s.grp===lg).map(s=>s.n*s.hp))}      // CP run: the mercenaries stay below the SMALLEST stack of the last group
   const by={};all.forEach(s=>by[s.name]=s);
   const used=(seq,ns)=>ns.reduce((q,n,i)=>q+n*seq[i].cost,0);
   // EVERY mercenary stack that is on gets units. Without a limit each stack steps down from the one before it (the first from the last Leadership / Dominance stack), as far as the Authority reaches;
