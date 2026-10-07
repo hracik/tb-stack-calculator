@@ -857,6 +857,11 @@ function flatOrder(st){
 function mobList(items){
   return'<div class="vwl">'+items.map(s=>`<div class="vwr${s.off?' off':''}" data-troop="${esc(s.name)}" title="${s.off?'Click to turn this troop on':'Click to turn this troop off'}">${IC[s.name]?`<img class="ic" src="${IC[s.name]}" alt="">`:'<div class="ic ph"></div>'}<div class="vwt"><div class="vwn">${esc(s.name)}</div><div class="vwc">${s.off?'off':(s.n||0).toLocaleString()}</div></div></div>`).join('')+'</div>';
 }
+// MOBILE order, inside every section: the single unit's own (original) health, the biggest first. The same health: the order of this list (mercenaries), then the higher tier,
+// Guardsmen before Specialists, then the order of the cards in the Grouped view.
+const MOBM=['Wyvern','Warden','Eternal Cannoneer','Demonic Salamander','Warregal','Jago','Ariel','Superior Epic Monster Hunter','Quicksand','Galloper','Highlander','Slavic Warrior','Pounder','Scarface','Grace'];
+const mobOrder=list=>{const cr={G:0,S:1,E:2,M:3},mi=n=>{const i=MOBM.indexOf(n);return i<0?999:i};
+  return list.map((s,i)=>[s,i]).sort(([a,i],[b,j])=>TRN[b.name].hp-TRN[a.name].hp||mi(a.name)-mi(b.name)||+b.r.slice(1)-+a.r.slice(1)||cr[a.r[0]]-cr[b.r[0]]||i-j).map(x=>x[0])};
 // MERCENARIES: hired troops, they use Authority only (not Leadership / Dominance) and every one of them lasts 7 days. [class, tier, name, category, health, strength, Authority per unit, vs melee/ranged/mounted/flying, jungle guardian 1/0] - straight from the troop JSON; the swarm bonus of a jungle guardian sits in the same vs column as a regular bonus.
 // All of them are listed; the result shows only the ones we have a picture for.
 const MERC=[["E",9,"Ariel","Engineer",330000,55000,10,[0,0,0,0],0,""],
@@ -996,9 +1001,9 @@ function calc(){
   const gk=r=>r[0]=='E'?-100+ +r.slice(1):-(+r.slice(1))*2+(r[0]=='S'?1:0);
   const Aall=st.filter(s=>s.p=='A').sort((a,b)=>gk(a.r)-gk(b.r)),Mall=st.filter(s=>s.p=='M').sort((a,b)=>(+b.r.slice(1))-(+a.r.slice(1)));
   const mItems=['E','G','S','M'].flatMap(c=>mercSorted(c).map(m=>U.all.find(s=>s.name==m[2]))).filter(mercVis);
-  const secs=[...(P.capU>0?[[`Mercenaries — Authority ${U.used.toLocaleString()} / ${P.capU.toLocaleString()}`,!mItems.length?'<p class="mu">No mercenary gets a unit with this Authority.</p>':mob?mobList(mItems):mercTable(U.all)]]:[]),   // no Authority: no Mercenaries section
-    [`Monsters — Dominance ${usedOf(Mo).toLocaleString()} / ${P.capM.toLocaleString()}`,Mall.length?(mob?mobList(flatOrder(Mall)):table(Mall)):'<p class="mu">No monster tiers selected.</p>'],
-    [`Army — Leadership ${usedOf(A).toLocaleString()} / ${P.capA.toLocaleString()}`,Aall.length?(mob?mobList(flatOrder(Aall)):table(Aall)):'<p class="mu">No army tiers selected.</p>']].map(([t,b],k)=>`<h2${k?' style="margin-top:26px"':''}>${t}</h2>${b}`).join('');
+  const secs=[...(P.capU>0?[[`Mercenaries — Authority ${U.used.toLocaleString()} / ${P.capU.toLocaleString()}`,!mItems.length?'<p class="mu">No mercenary gets a unit with this Authority.</p>':mob?mobList(mobOrder(mItems)):mercTable(U.all)]]:[]),   // no Authority: no Mercenaries section
+    [`Monsters — Dominance ${usedOf(Mo).toLocaleString()} / ${P.capM.toLocaleString()}`,Mall.length?(mob?mobList(mobOrder(flatOrder(Mall))):table(Mall)):'<p class="mu">No monster tiers selected.</p>'],
+    [`Army — Leadership ${usedOf(A).toLocaleString()} / ${P.capA.toLocaleString()}`,Aall.length?(mob?mobList(mobOrder(flatOrder(Aall))):table(Aall)):'<p class="mu">No army tiers selected.</p>']].map(([t,b],k)=>`<h2${k?' style="margin-top:26px"':''}>${t}</h2>${b}`).join('');
   $('res').innerHTML=`<p class="mu" style="margin:0 0 8px">${sc.stacks} stacks · ${EBINFO} · ${sc.hits} strikes against ${P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks'} · <b>estimated damage ${fmt(sc.dmg)}</b></p>
   ${secs}`;
   save();
