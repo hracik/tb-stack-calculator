@@ -8,7 +8,7 @@ Open `index.html` in a browser or use the GitHub Pages site of this repository. 
 
 The modes are in three rows, each with its own icon: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stack, Killshot v. 3) and **PvP** (two emoji shooting each other): **CP kill**, **CP death**, Max damage and Renegades. In the PvP row **CP kill** and **CP death** work (see CP kill and CP death below), **Max damage** is still only a placeholder (its rules are not defined yet, the button is greyed out) and Renegades is switched off (see Renegades below).
 
-Below the mode buttons there is a **bubble with a short explanation of the mode that is on** (full width; it changes when another mode is chosen): the enemy (number of stacks, mounted or not, epic or flying), how the order is made and what is special about the mode. The texts are in the constant `MODEINFO` in the page. The modes against an epic monster (3-, 4-, 6-, 8-stack and Killshot) also carry a tip: for the best result choose the top two tiers of the troops you have (for example G8 + G9, S8 + S9, E8 + E9) and 3 monster tiers (for example M7 + M8 + M9).
+Below the mode buttons there is a **bubble with a short explanation of the mode that is on** (full width; it changes when another mode is chosen): the enemy (number of stacks, mounted or not, epic or flying), how the order is made and what is special about the mode. The texts are in the constant `MODEINFO` in the page. The **Tiers to use** card has a bubble of the same design with a tip: for the best result against an epic monster choose the top two tiers of the troops you have available (for example G8 + G9, S8 + S9, E8 + E9) and 3 monster tiers (for example M7 + M8 + M9). It is hidden in CP kill and CP death (one flying enemy, no epic monster).
 
 ## Troop data
 

@@ -83,7 +83,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <details class="card"><summary><h2>Special bonuses (%)</h2><button type="button" class="ib" data-tip="tipS" aria-expanded="false" aria-controls="tipS" title="About special bonuses">i</button></summary><p class="tip" id="tipS" role="tooltip" hidden>Per-category extras, added on top of the class bonus.</p><div class="bg" id="sb"></div></details>
 
 <div class="card"><h2>Tiers to use</h2><div class="sc"><table class="tt" id="tiers"></table></div>
-<p class="mu" style="margin:8px 0 0">For the best result choose the <b>top two tiers of the troops you have available</b> (for example G8 + G9, S8 + S9, E8 + E9) and <b>3 monster tiers</b> (for example M7 + M8 + M9).</p></div>
+<div class="mdi" id="mdt" role="note"><b>Tip</b> - For the best result against an epic monster the app recommends to choose the <b>top two tiers of the troops you have available</b> (for example G8 + G9, S8 + S9, E8 + E9) and <b>3 monster tiers</b> (for example M7 + M8 + M9).</div></div>
 
 <div class="card"><h2>Attack mode · Dying order - troop by troop</h2>
 <input type="hidden" id="enemy" value="4">
@@ -1141,13 +1141,12 @@ function mercTable(all){
   return o+'</table></div>';
 }
 // The bubble under the attack mode buttons: a short explanation of the mode that is on.
-const REC='<br><b>Tip</b> - For the best result against an epic monster the app recommends to choose the top two tiers of the troops you have available (for example G8 + G9, S8 + S9, E8 + E9) and 3 monster tiers (for example M7 + M8 + M9).';      // the epic monster modes only
 const MODEINFO={
-  '4':['Regular · 4-stack','You hit an epic monster with 4 stacks, one of them mounted. Epic strength and the bonus against epic enemies are counted. All your Leadership is spent and the Dominance goes to the strongest monster tiers. The order is searched for the most damage: the troops are grouped by strength per health (SH), the smaller squad bonus dies first, so the strongest bonuses stand last and strike the most.'+REC],
-  '8':['Regular · 8-stack','The same as the 4-stack, but the epic monster has 8 stacks (one of them mounted): the places 1-8 strike once, 9-16 twice, and so on. The order is searched again for 8 stacks, for the most damage.'+REC],
-  '3':['Sniper · 3-stack','The epic monster has 3 stacks and none of them is mounted, so a bonus against mounted is not counted. The places 1-3 strike once, 4-6 twice, and so on. The order is searched for the most damage, like in the 4-stack mode.'+REC],
-  '6':['Sniper · 6-stack','The epic monster has 6 stacks and none of them is mounted, so a bonus against mounted is not counted. The places 1-6 strike once, 7-12 twice, and so on. The order is searched for the most damage, like in the 4-stack mode.'+REC],
-  'kill':['Sniper · Killshot v. 3','A special version of the 3-stack mode: the same enemy and the same damage counting, but a little damage (under 1 % with the default inputs) is traded for a much cheaper training and reviving. The order is simple, it is not searched: the engineers first, then the army tier by tier from the top (the weaker troops of a tier first), the monsters after the army. Royal Lion and Battle Griffin stand on the places 4, 7, 10 ...'+REC],
+  '4':['Regular · 4-stack','You hit an epic monster with 4 stacks, one of them mounted. Epic strength and the bonus against epic enemies are counted. All your Leadership is spent and the Dominance goes to the strongest monster tiers. The order is searched for the most damage: the troops are grouped by strength per health (SH), the smaller squad bonus dies first, so the strongest bonuses stand last and strike the most.'],
+  '8':['Regular · 8-stack','The same as the 4-stack, but the epic monster has 8 stacks (one of them mounted): the places 1-8 strike once, 9-16 twice, and so on. The order is searched again for 8 stacks, for the most damage.'],
+  '3':['Sniper · 3-stack','The epic monster has 3 stacks and none of them is mounted, so a bonus against mounted is not counted. The places 1-3 strike once, 4-6 twice, and so on. The order is searched for the most damage, like in the 4-stack mode.'],
+  '6':['Sniper · 6-stack','The epic monster has 6 stacks and none of them is mounted, so a bonus against mounted is not counted. The places 1-6 strike once, 7-12 twice, and so on. The order is searched for the most damage, like in the 4-stack mode.'],
+  'kill':['Sniper · Killshot v. 3','A special version of the 3-stack mode: the same enemy and the same damage counting, but a little damage (under 1 % with the default inputs) is traded for a much cheaper training and reviving. The order is simple, it is not searched: the engineers first, then the army tier by tier from the top (the weaker troops of a tier first), the monsters after the army. Royal Lion and Battle Griffin stand on the places 4, 7, 10 ...'],
   'cp':['PvP · CP kill','One flying enemy stack. No epic bonuses, the Specialists deal double damage, only the bonus against flying counts and the Double hit is not used. A fixed order: the engineers first, then the army tier by tier (G9, S9, G8, S8 ...), the monsters last. Troops with the same class, tier, bonus and SH ratio are a group of equals: about the same health and shared places.'],
   'cpd':['PvP · CP death','The same enemy and rules as CP kill, but the order is built for the most damage: the engineers, then the Guardsmen and monsters without a bonus (the smaller SH ratio first), then those with a bonus (the lowest bonus first), then the Specialists the same way, and the partial monster tier last. Troops with the same SH ratio and bonus are a group of equals.']
 };
@@ -1162,7 +1161,7 @@ function calc(){
   document.querySelectorAll('.pb').forEach(b=>b.classList.toggle('on',TY.every(t=>v('bh_'+t)==+b.dataset.p&&v('bs_'+t)==+b.dataset.p)));
   document.querySelectorAll('.eb').forEach(b=>b.classList.toggle('on',!P.kill&&!P.ren&&!P.cp&&+b.dataset.e==P.enemy));
   document.querySelectorAll('.cm').forEach(b=>b.classList.toggle('on',(P.kill&&b.dataset.m=='kill')||(P.ren&&b.dataset.m=='ren')||(P.cp&&!P.cpd&&b.dataset.m=='cp')||(P.cpd&&b.dataset.m=='cpd')));
-  {const m=MODEINFO[P.kill?'kill':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)],el=$('mdi');if(el){el.hidden=!m;if(m)el.innerHTML='<b>'+m[0]+'</b> - '+m[1]}}      // the explanation under the mode buttons
+  {const m=MODEINFO[P.kill?'kill':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)],el=$('mdi');if(el){el.hidden=!m;if(m)el.innerHTML='<b>'+m[0]+'</b> - '+m[1]}const tp=$('mdt');if(tp)tp.hidden=!!P.cp}      // the explanation under the mode buttons; the tier tip under Tiers to use is about the epic monster, so it is hidden in the PvP modes
   const sc=score(P,[...A,...Mo,...U.list],[...(st.so||[]),...U.ord]);
   const food=[...A,...Mo,...U.list].reduce((q,s)=>q+(s.n||0)*foodOf(s.name),0);      // total food consumption of all the units, 25 % less than the plain values (mercenaries use none)
   const noFood=!(v('foodP')>0);      // no Food production: there are no hits to train for, so the Preparing button is off (the choice itself stays saved and comes back when the production is filled in)
