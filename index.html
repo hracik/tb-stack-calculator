@@ -845,7 +845,9 @@ function allocTight(P,live){
     weights(cur,HO,d);markEx(P,cur);if(!HO)profile(cur,d);      // CP kill (HO): every group is equal inside, a small step down only between groups
     fill(A,P.capA,Infinity,Infinity,meas);
     const inv=A.reduce((q,x)=>q+x.w*x.cost/meas(x),0),X=inv&&P.capA>0?P.capA/inv:Infinity;
-    if(free===null){const invM=Mo.reduce((q,x)=>q+x.w*x.cost/meas(x),0);free=P.capM>0&&invM>0&&(!isFinite(X)||P.capM/invM>X*1.001)}      // decided once, on the whole list: every monster tier on the army's level still cannot spend the Dominance
+    if(free===null){      // decided once: the monsters of EVERY tier (also the ones not ticked) on the army's level still cannot spend the Dominance. So leaving a tier out (M7, say) never lifts the ceiling and never changes the tiers above it
+      const invM=Mo.reduce((q,x)=>q+x.w*x.cost/meas(x),0),invAll=TR.reduce((q,t)=>t.pool=='M'?q+t.cost/(t.hp*mults(t,P)[0]):q,0);
+      free=P.capM>0&&invM>0&&(!isFinite(X)||P.capM/Math.max(invM,invAll)>X*1.001)}
     const XM=free?Infinity:X;                         // the monsters' ceiling: the army's level, unless the Dominance is the bigger pool and needs more room (the only ceiling is then the Dominance itself)
     const Fm=Mo.filter(s=>!s.pt),Pm=Mo.filter(s=>s.pt);
     fill(Fm,P.capM,XM,Infinity,meas);                 // the full monster tiers (the strongest first) on one level, not above the army's level (unless free)
