@@ -6,7 +6,7 @@ Open `index.html` in a browser or use the GitHub Pages site of this repository. 
 
 ## Attack modes
 
-The modes are in three rows, each with its own icon: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stack, Killshot v. 3) and **PvP** (two emoji shooting each other): CP run, Max damage and Renegades. In the PvP row **CP run** works (see CP run below), **Max damage** is still only a placeholder (its rules are not defined yet, the button is greyed out) and Renegades is switched off (see Renegades below).
+The modes are in three rows, each with its own icon: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stack, Killshot v. 3) and **PvP** (two emoji shooting each other): **CP kill**, **CP death**, Max damage and Renegades. In the PvP row **CP kill** and **CP death** work (see CP kill and CP death below), **Max damage** is still only a placeholder (its rules are not defined yet, the button is greyed out) and Renegades is switched off (see Renegades below).
 
 ## Troop data
 
@@ -80,9 +80,9 @@ The Leadership / Dominance / Authority used, the number of stacks and strikes an
 The page starts with four tabs: `1 cap`, `3 cap`, `Hero` and `Hero+3 cap`. They are ordinary tabs: rename (double-click), duplicate or delete them, or add your own with `+`. Each tab keeps its own settings, saved in your browser only. A **new tab** (the four start tabs and every `+`) starts blank: Leadership, Dominance, all the basic bonuses, all the monster bonuses (health, strength and Double hit) and the Food production are 0 (the constant `BLANK` in the page); the special bonuses, Authority, the tiers and the Revive choice start as before. Tabs you already have keep their numbers.
 
 
-## CP run (PvP)
+## CP kill and CP death (PvP)
 
-The button is in the PvP row. The enemy is **one flying stack**, and the PvP rules differ from the Regular and Sniper modes (which fight an epic monster):
+The two buttons are in the PvP row (CP kill was called CP run before). In both modes the enemy is **one flying stack**, and the PvP rules differ from the Regular and Sniper modes (which fight an epic monster):
 
 - **No epic bonuses.** The Epic strength box is not used, and the bonus against epic enemies (for example the Superior Epic Monster Hunter) is not counted. Every other bonus you entered is applied as usual.
 - **Specialists deal double damage.** The unit strength is the base strength with all your strength bonuses (no epic strength); it is what the SH ratio (strength per health) is built from. A Specialist hits with two single strengths, and the squad bonus is added to **one** of them (the single strength), it is never doubled: `damage of a unit = (strength + squad bonus) + strength = 2 x strength + squad bonus`, in numbers `base x (2 x your strength multiplier + squad bonus)`. For everybody else it is `base x (multiplier + squad bonus)`. For example a Specialist with a strength multiplier of 64 and +859 % against flying deals `base x (2 x 64 + 8.59) = base x 136.59` (not `base x 145.18`, which would double the bonus too). A monster's Double hit still multiplies its damage.
@@ -91,6 +91,15 @@ The button is in the PvP row. The enemy is **one flying stack**, and the PvP rul
 - **Groups of equals.** Troops with the same class, tier and squad bonus (for example every G9 without a squad bonus against flying) are **one group**: the game picks their order at random, so their stacks get **the same total health** (as equal as whole units allow) and the group shares its places in the order. In the dying-order list and on the cards such a group carries one range of places (`3–5`), and for the estimated damage every stack of the group strikes the average of those places.
 - **Tight by health only.** Between the groups there is the same small step down along the order as in the other modes; the total strength is **not** kept falling along the order, because the strength order does not matter here. As everywhere, the monsters stay below the army's health level, so a Dominance that is far bigger than that level allows partly stays unused. The mercenaries start below the smallest stack of the last group.
 - The number of full monster tiers is chosen by the damage, like in Killshot. The estimated damage counts one enemy stack: the stack in place p of the order strikes p times (one strike for the first, two for the second ...).
+
+**CP kill** is the order described above (E, G9, S9, G8, S8 ..., the monsters last). **CP death** is the same enemy and the same rules (no epic bonuses, Specialists double damage, only the bonus against flying, groups of equals, stacks tight by health), but the order is the one that gives the most damage - the Specialists deal double damage, so they stand last and strike the most. A troop "has a bonus" when it has a squad bonus against flying. The order is:
+
+1. all the **Engineers** (higher tier first)
+2. the **Guardsmen without a bonus**, tier 9 first (G9, G8 ...), then the **Guardsmen with a bonus** (G9, G8 ...)
+3. the **monsters without a bonus**, tier 9 first, then the **monsters with a bonus**
+4. the **Specialists without a bonus** (S9, S8 ...), and at last the **Specialists with a bonus** (S9, S8 ...)
+
+Inside a class and tier the troop with the smaller squad bonus comes first, and troops with the same class, tier and bonus are one group of equals. The total health still never rises along the order, and the Specialists come after the monsters, so a monster tier that gets only a little of the Dominance (a low health level) would pull every stack behind it down. The calculator solves the number of full monster tiers by the damage, so such a tier is left out, and part of the Dominance can stay unused (with the default numbers the third monster tier gets nothing).
 
 ## How the order is chosen
 
