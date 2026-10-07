@@ -18,7 +18,7 @@ Every troop also stores its **revival cost in gold** (the attack figure of the t
 
 ## Capacity & settings
 
-Leadership, Dominance, Authority, **Food production** (default 0) and the **Revive 90 %** select (none / top line / monsters only / monsters and top line / all, default top line), all saved per tab like the other boxes. Food production and Revive only decide how many hits (and how many units to train) are shown (see Result views - Hits the food production pays for); they change no troop number.
+Leadership, Dominance, Authority, **Food production** (default 0) and the **Revive** select (90 % of a revived stack comes back; none / top line / monsters only / monsters and top line / all, default top line), all saved per tab like the other boxes. Food production and Revive only decide how many hits (and how many units to train) are shown (see Result views - Hits the food production pays for); they change no troop number.
 
 ## Mercenaries
 
@@ -66,7 +66,7 @@ The **Food production** box (Capacity & settings, saved per tab, default 0) sets
 
 A row under the summary line gives the hits for all five: `Hits per revive mode: 10.66 none · 14.25 top line · 16.38 monsters · 22.98 monsters + top line · 97.26 all` (the chosen one in bold). It is shown only when at least one of them pays for more than 1 hit (1.01 or more). The estimated damage in the summary line is always the damage of one hit.
 
-**Hitting / Training** (Result, under View, saved per tab, default **Hitting**) choose which number the cards and lines show:
+**Action: Hitting / Training** (Result, under View, saved per tab, default **Hitting**) choose which number the cards and lines show:
 
 - **Hitting**: the units of one hit - the number to hit with (the 1x number, as always).
 - **Training**: only the units to **train** for the hits the chosen Revive pays for, as a range, `380 – 400`: **from** the units for the whole hits the Food production pays for **to** the units for all the hits. With 2.09 hits that is the units for 2.00 hits (for example 360 + 1 x lost units = 380) up to the units for 2.09 hits (360 + 1.09 x lost units = 400), so the lower number is what you need for at least 2 hits. Every number is **rounded up to a whole piece**: the whole stack for the first hit plus the lost units for every next hit, `units + (hits - 1) x lost units`. Without revival the lost units are the whole stack, so it is `units x hits`. A single number is shown when the two ends are the same (a whole number of hits, such as 8.00), when there is less than 2 hits (the range would start at the stack itself, `418` with 1.25 hits), and when the food pays for 1 hit or less (then it is the stack itself). On a narrow card the range breaks into two lines in front of the dash. Mercenaries too; a troop that is turned off shows `off`.
