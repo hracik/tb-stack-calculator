@@ -384,7 +384,7 @@ function fourSearch(P,live,mkOut){
   const mons=rest.filter(t=>t.pool=='M'),mt=monTiers(mons),nT=mt.length;
   const slots=[];for(let p=1;p<=rest.length;p++)if((p-1)%P.enemy==0)slots.push(p-1);   // the places Kn+1 (K = the number of enemy stacks)
   const ev=(units,cc)=>{const names=units.map(t=>t.name),o=mkOut(names,cc),r=allocate(P,o);
-    return{d:score(P,[...r.A,...r.Mo],names).dmg,names,cc,dom:r.dom!==false,full:!(P.capA>0)?2:(ua=>ua>=0.999?2:ua>=0.97?1:0)(usedOf(r.A)/P.capA)}};     // full: 2 = all the Leadership is spent (99.9 %), 1 = nearly (97 %) - an order that leaves more of it unused only wins when no other one spends it
+    return{d:score(P,[...r.A,...r.Mo],names).dmg,names,cc,dom:r.dom!==false,free:!!r.free,full:!(P.capA>0)?2:(ua=>ua>=0.999?2:ua>=0.97?1:0)(usedOf(r.A)/P.capA)}};     // full: 2 = all the Leadership is spent (99.9 %), 1 = nearly (97 %) - an order that leaves more of it unused only wins when no other one spends it
   const better=(a,b)=>!b||(a.full!==b.full?a.full>b.full:(a.k==null?a.d:a.k)>(b.k==null?b.d:b.k)*(1+5e-4));
   // DOMINANCE, tier by tier from the top: the strongest monster tiers are used FULLY (on the army's health level) as long as the Dominance reaches for it, the next tier is the PARTIAL one
   // (it takes what is left, at the end of the order), the tiers below it get nothing. So a tier never depends on the tiers below it: leaving the lowest tier out does not change the others.
@@ -393,11 +393,14 @@ function fourSearch(P,live,mkOut){
   if(nT>1){
     CC=1;
     const armyU=flat(ratioGroups(P,rest.filter(t=>t.pool!='M'),true));
+    let bestFree=null;
     for(let k=nT;k>=1;k--){                                                          // the most full tiers the Dominance can fill at the army's level
       const fm=mons.filter(t=>top(k).has(t.tier));
       const e=ev([...armyU,...flat(ratioGroups(P,fm,true)),...(k<nT?[...flat(ratioGroups(P,pm(k),true)),...flat(ratioGroups(P,low(k),true))]:[])],k);
-      if(e.dom){CC=k;break}
+      if(e.dom&&!e.free){CC=k;break}
+      if(e.dom&&(!bestFree||e.d>bestFree.d*(1+5e-4)))bestFree=e;                    // no army level to fill to (small or no army): the damage decides how many tiers are full (more tiers on a tie)
     }
+    if(bestFree)CC=bestFree.cc;
   }
   const restF=front(CC),F=restF.length;
   let tail=[];
@@ -744,17 +747,19 @@ function lpAlloc(P,live){
 // the monsters get ONE common level, the army's level at most - lower when the Dominance is the smaller pool, so there is a single step between the army and the monsters. Rounding is repaired and the leftover is spent troop by troop.
 function allocTight(P,live){
   const d=P.d,meas=x=>x.hp;
-  let cur=live.slice(),dom=true;
+  let cur=live.slice(),dom=true,free=null;      // free: the army's level is too low for the monsters to spend the Dominance (or there is no army) - then the whole Dominance goes to the monsters, above the army's level
   for(let pass=0;pass<4;pass++){
     cur.forEach(s=>{s.n=0});
     const A=cur.filter(s=>s.p=='A'),Mo=cur.filter(s=>s.p=='M');
     weights(cur,false,d);markEx(P,cur);profile(cur,d);
     fill(A,P.capA,Infinity,Infinity,meas);
     const inv=A.reduce((q,x)=>q+x.w*x.cost/meas(x),0),X=inv&&P.capA>0?P.capA/inv:Infinity;
+    if(free===null){const invM=Mo.reduce((q,x)=>q+x.w*x.cost/meas(x),0);free=P.capM>0&&invM>0&&(!isFinite(X)||P.capM/invM>X*1.001)}      // decided once, on the whole list: every monster tier on the army's level still cannot spend the Dominance
+    const XM=free?Infinity:X;                         // the monsters' ceiling: the army's level, unless the Dominance is the bigger pool and needs more room (the only ceiling is then the Dominance itself)
     const Fm=Mo.filter(s=>!s.pt),Pm=Mo.filter(s=>s.pt);
-    fill(Fm,P.capM,X,Infinity,meas);                  // the full monster tiers (the strongest first) on one level, not above the army's level
-    const invF=Fm.reduce((q,x)=>q+x.w*x.cost/meas(x),0),XF=invF?Math.min(P.capM/invF,X):0;
-    dom=!(P.capM>0)||!invF||P.capM/invF>=X*0.998;       // the Dominance reaches for the full tiers at the army's level (otherwise they stand lower and no tier below them gets anything)
+    fill(Fm,P.capM,XM,Infinity,meas);                 // the full monster tiers (the strongest first) on one level, not above the army's level (unless free)
+    const invF=Fm.reduce((q,x)=>q+x.w*x.cost/meas(x),0),XF=invF?Math.min(P.capM/invF,XM):0;
+    dom=!(P.capM>0)||!invF||free||P.capM/invF>=X*0.998;       // the Dominance reaches for the full tiers at the army's level (otherwise they stand lower and no tier below them gets anything)
     let XP=0,tp=0;
     if(Pm.length){                                    // the partial tier: whatever is left of the Dominance, on one level not above the full tiers. Only ONE tier is partial (the highest of them) - the tiers below stay empty
       tp=Math.max(...Pm.map(s=>+s.r.slice(1)));
@@ -771,7 +776,7 @@ function allocTight(P,live){
     cur=cur.filter(s=>s.n>0);                      // a stack that got no troop leaves the order: the places Kn+1 move up
   }
   live.forEach(s=>{delete s.tgt;if(!(s.n>0)){s.n=0;s.rs=false}});
-  return{A:live.filter(s=>s.p=='A'),Mo:live.filter(s=>s.p=='M'),dom};
+  return{A:live.filter(s=>s.p=='A'),Mo:live.filter(s=>s.p=='M'),dom,free:!!free};
 }
 function allocWhole(P,live){                         // Killshot: the exact solution (health AND total strength step down along the order)
   const d=P.d,A=live.filter(s=>s.p=='A'),Mo=live.filter(s=>s.p=='M'),T=true;
