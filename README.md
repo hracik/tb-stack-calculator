@@ -8,6 +8,10 @@ Open `index.html` in a browser or use the GitHub Pages site of this repository. 
 
 The modes are in three rows: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stack) and Special (Killshot v. 3, Renegades).
 
+## Mercenaries
+
+Mercenaries are hired troops. They use Authority only (not Leadership or Dominance), and all of them last 7 days. The Authority box is next to Leadership and Dominance. The result has a Mercenaries section with the mercenaries we have a picture for; their numbers are still 0 and are not part of the calculation yet.
+
 ## Tabs
 
 The page starts with four tabs: `1 cap`, `3 cap`, `Hero` and `Hero+3 cap`. They are ordinary tabs: rename (double-click), duplicate or delete them, or add your own with `+`. Each tab keeps its own settings, saved in your browser only.
