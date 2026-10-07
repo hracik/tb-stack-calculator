@@ -8,6 +8,8 @@ Open `index.html` in a browser or use the GitHub Pages site of this repository. 
 
 The modes are in three rows, each with its own icon: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stack, Killshot v. 3) and **PvP** (two emoji shooting each other): **CP kill**, **CP death**, Max damage and Renegades. In the PvP row **CP kill** and **CP death** work (see CP kill and CP death below), **Max damage** is still only a placeholder (its rules are not defined yet, the button is greyed out) and Renegades is switched off (see Renegades below).
 
+Below the mode buttons there is a **bubble with a short explanation of the mode that is on** (full width; it changes when another mode is chosen): the enemy (number of stacks, mounted or not, epic or flying), how the order is made and what is special about the mode. The texts are in the constant `MODEINFO` in the page.
+
 ## Troop data
 
 The troop lists are written inside the page. For every troop (army, monsters, engineers, mercenaries) they store the health, the strength, the food consumption (all mercenaries use no food - the JSON lists a food value for most of them, but it is wrong, so it is not stored), the Leadership / Dominance / Authority cost and the vs melee / ranged / mounted / flying bonuses exactly as in the troop JSON. The strength is stored, not calculated from the health. The summary line above the result shows the **food consumption** of all the units together (number of units x food per unit), before the estimated damage.
