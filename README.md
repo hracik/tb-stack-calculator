@@ -36,6 +36,8 @@ Mercenaries are hired troops. They use Authority only (not Leadership or Dominan
 
 ## Result views
 
+The Result section only shows what there is a capacity for: with **Leadership, Dominance and Authority all 0** the whole Result section is hidden (a new tab starts that way); the **Army** section is not shown while Leadership is 0, the **Monsters** section while Dominance is 0 and the **Mercenaries** section while Authority is 0.
+
 Above the result there is a View switch: **Grouped**, **Mobile** and **Computer**.
 
 - **Grouped** (the default) is the cards in groups, 5 per row, with the label of a group (for example Guardsmen 9) in one row above its cards, one block for the Mercenaries, one for the Monsters and one for the Army (in this order, in every view).
