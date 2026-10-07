@@ -750,7 +750,7 @@ function allocTight(P,live){
     const A=cur.filter(s=>s.p=='A'),Mo=cur.filter(s=>s.p=='M');
     weights(cur,false,d);markEx(P,cur);profile(cur,d);
     fill(A,P.capA,Infinity,Infinity,meas);
-    const inv=A.reduce((q,x)=>q+x.w*x.cost/meas(x),0),X=inv?P.capA/inv:Infinity;
+    const inv=A.reduce((q,x)=>q+x.w*x.cost/meas(x),0),X=inv&&P.capA>0?P.capA/inv:Infinity;
     const Fm=Mo.filter(s=>!s.pt),Pm=Mo.filter(s=>s.pt);
     fill(Fm,P.capM,X,Infinity,meas);                  // the full monster tiers (the strongest first) on one level, not above the army's level
     const invF=Fm.reduce((q,x)=>q+x.w*x.cost/meas(x),0),XF=invF?Math.min(P.capM/invF,X):0;
@@ -789,7 +789,7 @@ function allocWhole(P,live){                         // Killshot: the exact solu
   }
   if(!ok){
     fill(A,P.capA,Infinity,Infinity,meas);
-    const inv=A.reduce((q,x)=>q+x.w*x.cost/meas(x),0),X=inv?P.capA/inv:Infinity;
+    const inv=A.reduce((q,x)=>q+x.w*x.cost/meas(x),0),X=inv&&P.capA>0?P.capA/inv:Infinity;
     Mo.forEach(s=>s.n=0);
     let left=P.capM;
     [...new Set(Mo.map(s=>+s.r.slice(1)))].sort((a,b)=>b-a).forEach(t=>{

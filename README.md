@@ -105,7 +105,7 @@ In the 3- and 6-stack modes the squad bonus is counted against melee, ranged and
 ### Leadership and Dominance
 
 - **Leadership** (army): all of it is spent. An order that leaves more than 0.1 % unused only wins when no other order spends it.
-- **Dominance** (monsters) is used tier by tier from the top. The strongest monster tiers are used fully, on the army's health level, for as long as the Dominance reaches. The next tier is the partial one: it takes what is left and stands at the end of the order. Tiers below it get nothing.
+- **Dominance** (monsters) is used tier by tier from the top. The strongest monster tiers are used fully, on the army's health level, for as long as the Dominance reaches. The next tier is the partial one: it takes what is left and stands at the end of the order. Tiers below it get nothing. With **Leadership 0** there is no army level to measure against, so the monsters are sized alone (as when no army tier is selected) and still get their stacks.
 - So a tier never depends on the tiers below it: leaving the lowest tier out does not change the others. When there is enough Dominance for every selected tier, they are all full and ordered together by squad bonus.
 
 ### Stack sizes
