@@ -61,8 +61,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <label>Leadership<br><input id="capA" type="text" inputmode="decimal" value="1875508"></label>
 <label>Dominance<br><input id="capM" type="text" inputmode="decimal" value="330943"></label>
 <label>Authority<br><input id="capU" type="text" inputmode="decimal" value="0"></label>
-<label>Food production<br><input id="foodP" type="text" inputmode="decimal" value="0"></label>
-<label title="After a hit 90 % of a revived stack (rounded down per stack) comes back, so only the rest has to be trained again. The summary line gives the hits for all three cases; this choice decides the second number on the units.">Revive 90 %<br><select id="rev"><option value="none">nothing</option><option value="top">tier 9 only</option><option value="all">all stacks</option></select></label></div></div>
+<label>Food production<br><input id="foodP" type="text" inputmode="decimal" value="0"></label></div></div>
 
 <div class="card"><h2>Basic bonuses (%)<button type="button" class="ib" data-tip="tipB" aria-expanded="false" aria-controls="tipB" title="What do H and S mean?">i</button></h2><p class="tip" id="tipB" role="tooltip" hidden>H = health, S = strength. Epic strength applies vs. Epic Monsters.</p><div class="bg" id="bon"></div></div>
 
@@ -86,7 +85,8 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <details id="osd" style="margin-top:12px"><summary>Show the dying order, troop by troop</summary><div class="ol" id="os" style="max-width:560px;margin-top:8px"></div></details>
 </div>
 
-<div class="card"><h2><span id="rtitle">Result</span><button type="button" class="ib" data-tip="rtip" aria-expanded="false" aria-controls="rtip" title="How to read the result">i</button></h2><p class="tip" id="rtip" role="tooltip" hidden>Click a troop card to turn it off or on. <b>#</b> = position in the kill order (#1 dies first). The Mercenaries (hired with Authority) are added behind the last Leadership / Dominance stack; Authority is only a cap, what is left over stays unused.</p><div style="margin:0 0 12px"><span class="mu" style="margin-right:8px">View:</span><button type="button" class="vb" data-v="grouped" title="The cards in groups, 5 per row">Grouped</button><button type="button" class="vb" data-v="mobile" title="One unit per line: picture, name, number of units">Mobile</button><button type="button" class="vb" data-v="computer" title="Two units per line, the same order as Mobile">Computer</button></div><div id="res"></div></div>
+<div class="card"><h2><span id="rtitle">Result</span><button type="button" class="ib" data-tip="rtip" aria-expanded="false" aria-controls="rtip" title="How to read the result">i</button></h2><p class="tip" id="rtip" role="tooltip" hidden>Click a troop card to turn it off or on. <b>#</b> = position in the kill order (#1 dies first). The Mercenaries (hired with Authority) are added behind the last Leadership / Dominance stack; Authority is only a cap, what is left over stays unused.</p><div style="margin:0 0 12px"><span class="mu" style="margin-right:8px;display:inline-block;min-width:60px">View:</span><button type="button" class="vb" data-v="grouped" title="The cards in groups, 5 per row">Grouped</button><button type="button" class="vb" data-v="mobile" title="One unit per line: picture, name, number of units">Mobile</button><button type="button" class="vb" data-v="computer" title="Two units per line, the same order as Mobile">Computer</button></div>
+<div style="margin:0 0 12px"><span class="mu" style="margin-right:8px;display:inline-block;min-width:60px">Training:</span><input type="hidden" id="trn" value="one"><button type="button" class="vb tb" data-tr="one" title="The units of one hit (no second numbers)">1 hit</button><button type="button" class="vb tb" data-tr="all" title="Revive 90 % of every stack after a hit: the units to train for the hits the Food production pays for">Revive all</button><button type="button" class="vb tb" data-tr="top" title="Revive 90 % of the top line only (the highest tier in use)">Revive top line</button><button type="button" class="vb tb" data-tr="none" title="Nothing is revived: the units x the hits the Food production pays for">Revive none</button></div><div id="res"></div></div>
 
 <script>
 const $=id=>document.getElementById(id),v=id=>parseFloat(String($(id).value).replace(/,/g,''))||0;
@@ -137,6 +137,7 @@ function sync(){
 }
 document.addEventListener('click',e=>{
   if(tabClick(e))return;
+  const tb=e.target.closest('.tb');if(tb){$('trn').value=tb.dataset.tr;calc();return}
   const vb=e.target.closest('.vb');if(vb){if(!vb.disabled&&vb.dataset.v!=VIEW){VIEW=vb.dataset.v;try{localStorage.setItem('sc_view',VIEW)}catch(x){}calc()}return}
   const cm=e.target.closest('.cm');if(cm){if(!cm.disabled){if(cm.dataset.m=='kill')runKill();else if(cm.dataset.m=='ren')runRen()}return}
   const eb=e.target.closest('.eb');if(eb){runBest(+eb.dataset.e);return}
@@ -146,11 +147,11 @@ document.addEventListener('click',e=>{
 });
 
 let VIEW='grouped';try{const sv=localStorage.getItem('sc_view');if(sv=='mobile'||sv=='computer')VIEW=sv}catch(e){}      // result view: Grouped (cards in groups), Mobile (one unit per line) or Computer (two units per line, same order as Mobile). One setting for all tabs.
-let MUL=1,REVM='none';      // MUL = the hits the Food production pays for in the chosen revival case (rounded DOWN to 2 decimals); above 1 the numbers are shown again as a second number (units rounded UP to a whole piece). REVM = which stacks are revived: none / top (tier 9) / all
+let MUL=1,REVM='one',TOPT={A:0,M:0,U:0};      // MUL = the hits the Food production pays for in the chosen Training case (rounded DOWN to 2 decimals); above 1 the numbers are shown again as a second number (units rounded UP to a whole piece). REVM = the Training button: one (1 hit) / all (revive all) / top (revive the top line) / none (revive none). TOPT = the top line: the highest tier in use in the Army (with the engineers), in the Monsters and in the Mercenaries
 const REV=90;      // % of a revived stack that comes back after a hit (rounded down per stack)
 const FOODCUT=25;  // % less food consumption for every unit (the food values stored with the troops are the plain JSON values)
 const foodOf=n=>(TRN[n].food||0)*(100-FOODCUT)/100;      // food consumption of one unit of the troop n, after the cut
-const lossOf=(s,mode)=>{const n=s.n||0,t=TRN[s.name];return mode=='all'||(mode=='top'&&t&&t.tier==9)?n-Math.floor(n*REV/100):n};      // units of the stack that have to be trained again for the next hit
+const lossOf=(s,mode)=>{const n=s.n||0,t=TRN[s.name];return mode=='all'||(mode=='top'&&t&&t.tier==TOPT[t.pool])?n-Math.floor(n*REV/100):n};      // units of the stack that have to be trained again for the next hit
 const hitsFor=(F,fp,list,mode)=>{      // hits the food production fp pays for: the first hit trains the whole army (food F), every next hit only the units that are not revived (food R); rounded DOWN to 2 decimals
   if(!(fp>0&&F>0))return 0;
   if(fp<F)return Math.floor(fp/F*100+1e-9)/100;
@@ -1017,9 +1018,13 @@ function calc(){
   document.querySelectorAll('.cm').forEach(b=>b.classList.toggle('on',(P.kill&&b.dataset.m=='kill')||(P.ren&&b.dataset.m=='ren')));
   const sc=score(P,[...A,...Mo,...U.list],[...(st.so||[]),...U.ord]);
   const food=[...A,...Mo,...U.list].reduce((q,s)=>q+(s.n||0)*foodOf(s.name),0);      // total food consumption of all the units, 25 % less than the plain values (mercenaries use none)
-  REVM=['top','all'].includes($('rev').value)?$('rev').value:'none';
-  const hl=[...A,...Mo,...U.list],HIT={none:hitsFor(food,v('foodP'),hl,'none'),top:hitsFor(food,v('foodP'),hl,'top'),all:hitsFor(food,v('foodP'),hl,'all')};      // hits the Food production pays for in the three revival cases
-  MUL=HIT[REVM]>1?HIT[REVM]:1;      // the chosen case drives the second numbers (1 = nothing extra to show)
+  REVM=['all','top','none'].includes($('trn').value)?$('trn').value:'one';
+  const hl=[...A,...Mo,...U.list];
+  TOPT={A:0,M:0,U:0};hl.forEach(s=>{if((s.n||0)>0){const t=TRN[s.name];if(t.tier>TOPT[t.pool])TOPT[t.pool]=t.tier}});      // the top line = the highest tier in use, for the Army, the Monsters and the Mercenaries
+  const HIT={none:hitsFor(food,v('foodP'),hl,'none'),top:hitsFor(food,v('foodP'),hl,'top'),all:hitsFor(food,v('foodP'),hl,'all')};      // hits the Food production pays for in the three revival cases
+  MUL=REVM!='one'&&HIT[REVM]>1?HIT[REVM]:1;      // the chosen Training button drives the second numbers (1 hit / a case that pays for 1 hit or less = nothing extra to show)
+  document.querySelectorAll('.tb').forEach(b=>b.classList.toggle('on',b.dataset.tr==REVM));
+  {const tt=document.querySelector('.tb[data-tr="top"]');if(tt)tt.title='Revive 90 % of the top line only, the highest tier in use ('+['A:Army','M:Monsters','U:Mercenaries'].filter(x=>TOPT[x[0]]).map(x=>x.slice(2)+' '+TOPT[x[0]]).join(', ')+'); the rest is lost every hit'}
   {const live=[...A,...Mo].filter(x=>x.n>0),eng=live.filter(x=>x.cat=='Engineer').length,mon=live.filter(x=>x.p=='M'),army=live.filter(x=>x.p=='A'&&x.cat!='Engineer').length;
    const full=mon.filter(x=>!x.pt).length;    // full = the monster tiers that are used completely; partial = the tier where the Dominance runs out and whatever is left below it
    EBINFO=rgm(P)?(mon.length-full?`${army} army + ${full} full monster + ${mon.length-full} partial monster + ${eng} engineer`:`${army} army + ${mon.length} monster + ${eng} engineer`):`${army} army + ${full} full monster + ${mon.length-full} partial monster + ${eng} engineer`;if(U.list.length)EBINFO+=` + ${U.list.length} mercenary`}
@@ -1029,14 +1034,14 @@ function calc(){
   if(tabs){const t=$('rtitle');if(t)t.textContent='Result — '+tabs[active].name}
   if(!['grouped','mobile','computer'].includes(VIEW))VIEW='grouped';
   const mob=VIEW!='grouped',ord=(l,pri)=>VIEW=='computer'?compOrder(mobOrder(l),pri):mobOrder(l);                      // Mobile and Computer: one list per section, one unit per card-line; Computer in two columns
-  document.querySelectorAll('.vb').forEach(b=>b.classList.toggle('on',b.dataset.v==VIEW));
+  document.querySelectorAll('.vb:not(.tb)').forEach(b=>b.classList.toggle('on',b.dataset.v==VIEW));
   const gk=r=>r[0]=='E'?-100+ +r.slice(1):-(+r.slice(1))*2+(r[0]=='S'?1:0);
   const Aall=st.filter(s=>s.p=='A').sort((a,b)=>gk(a.r)-gk(b.r)),Mall=st.filter(s=>s.p=='M').sort((a,b)=>(+b.r.slice(1))-(+a.r.slice(1)));
   const mItems=['E','G','S','M'].flatMap(c=>mercSorted(c).map(m=>U.all.find(s=>s.name==m[2]))).filter(mercVis);
   const secs=[...(P.capU>0?[[`Mercenaries — Authority ${U.used.toLocaleString()} / ${P.capU.toLocaleString()}`,!mItems.length?'<p class="mu">No mercenary gets a unit with this Authority.</p>':mob?mobList(ord(mItems,COMPM)):mercTable(U.all)]]:[]),   // no Authority: no Mercenaries section
     [`Monsters — Dominance ${usedOf(Mo).toLocaleString()} / ${P.capM.toLocaleString()}`,Mall.length?(mob?mobList(mobOrder(flatOrder(Mall))):table(Mall)):'<p class="mu">No monster tiers selected.</p>'],
     [`Army — Leadership ${usedOf(A).toLocaleString()} / ${P.capA.toLocaleString()}`,Aall.length?(mob?mobList(ord(flatOrder(Aall),COMPA)):table(Aall)):'<p class="mu">No army tiers selected.</p>']].map(([t,b],k)=>`<h2${k?' style="margin-top:26px"':''}>${t}</h2>${b}`).join('');
-  $('res').innerHTML=`<p class="mu" style="margin:0 0 8px">${sc.stacks} stacks · ${EBINFO} · ${sc.hits} strikes against ${P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks'} · food consumption ${num(food)}${Math.max(HIT.none,HIT.top,HIT.all)>1?` · the food production pays for ${[['none','without revival'],['top','reviving tier 9'],['all','reviving all stacks']].map(([k,l])=>k==REVM?`<b>${HIT[k].toFixed(2)} hits ${l}</b>`:`${HIT[k].toFixed(2)} hits ${l}`).join(' · ')}`:''} · <b>estimated damage ${fmt(sc.dmg)}</b>${MUL>1?` (${mulTxt(sc.dmg,fmt)})`:''}</p>
+  $('res').innerHTML=`<p class="mu" style="margin:0 0 8px">${sc.stacks} stacks · ${EBINFO} · ${sc.hits} strikes against ${P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks'} · food consumption ${num(food)}${Math.max(HIT.none,HIT.top,HIT.all)>1?` · the food production pays for ${[['all','reviving all stacks'],['top','reviving the top line'],['none','without revival']].map(([k,l])=>k==REVM?`<b>${HIT[k].toFixed(2)} hits ${l}</b>`:`${HIT[k].toFixed(2)} hits ${l}`).join(' · ')}`:''} · <b>estimated damage ${fmt(sc.dmg)}</b>${MUL>1?` (${mulTxt(sc.dmg,fmt)})`:''}</p>
   ${secs}`;
   save();
 }
