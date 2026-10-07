@@ -16,7 +16,7 @@ Every troop also stores its **revival cost in gold** (the attack figure of the t
 
 ## Capacity & settings
 
-Four boxes: Leadership, Dominance, Authority and **Food production** (default 0, saved per tab like the other boxes). Food production only decides how many hits are shown (see Result views - Hits the food production pays for); it changes no troop number.
+Leadership, Dominance, Authority, **Food production** (default 0, saved per tab like the others) and the **Revive 90 %** choice (nothing / tier 9 only / all stacks). Food production and the revival only decide how many hits are shown (see Result views - Hits the food production pays for); they change no troop number.
 
 ## Mercenaries
 
@@ -44,12 +44,22 @@ The chosen view is one setting for the whole page (saved in the browser, not per
 
 ### Hits the food production pays for
 
-The **Food production** box (Capacity & settings, saved per tab, default 0) sets how much food you have. The food consumption of the calculated army (all the units of one hit, the number shown in the summary line) is divided into it: `hits = food production / food consumption`, **rounded down to 2 decimals** (20,000,000 / 15,990,240 = 1.2507... shows as 1.25). Only when the production is above 0 and the hits are more than 1 (1.01 or more) the result shows it:
+The **Food production** box (Capacity & settings, saved per tab, default 0) sets how much food you have. The food consumption of the calculated army (all the units of one hit, the number shown in the summary line) is the food one hit costs when every unit has to be trained. The hits are rounded **down to 2 decimals** and shown with 2 decimals.
 
-- the summary line says `the food production pays for 1.25 hits` and gives the estimated damage a second time, multiplied by the hits: `estimated damage 5.36 T (×1.25: 6.70 T)`;
-- every troop card (Grouped) and every line (Mobile, Computer), mercenaries too, shows the number of units multiplied by the hits as a second, smaller number, **rounded up to a whole piece**: `334` with `×1.25: 418` under it (334 x 1.25 = 417.5).
+**Without revival** (all the units are gone after the hit): `hits = food production / food consumption` (20,000,000 / 15,990,240 = 1.2507... shows as 1.25).
 
-The 1x numbers always stay the main ones. With the production at 0, or when it pays for one hit or less, nothing extra is shown. The Leadership / Dominance / Authority used, the number of stacks and strikes and the `#` kill order are not multiplied; a troop that is turned off shows no second number.
+**With revival.** After a hit 90 % of a revived stack comes back, **rounded down per stack** (a stack of 334 units: 300 come back, 34 are lost; a stack of 5: 4 come back). Revival costs gold, not food (the gold cost per unit is stored, see Troop data), so only the lost units have to be trained again. The first hit needs the whole army, every next hit only the lost units:
+
+`hits = 1 + (food production - food of the whole army) / (food of the units that are not revived)`
+
+(when the production is smaller than one army, it is `production / food of the army` as above). The summary line gives the hits for the three cases: **without revival**, **reviving tier 9** (only the tier 9 stacks - Guardsmen, Specialists, Monsters, Engineers and Mercenaries of tier 9 - come back, all the 8s, 7s ... are lost every hit) and **reviving all stacks**. The **Revive 90 %** box in Capacity & settings (nothing / tier 9 only / all stacks, saved per tab, default nothing) chooses the case that drives the rest; its hits are in bold.
+
+Only when at least one of the three cases pays for more than 1 hit (1.01 or more) the result shows them:
+
+- the summary line: `the food production pays for 8.00 hits without revival · 10.60 hits reviving tier 9 · 70.71 hits reviving all stacks · estimated damage 5.73 T (×10.60: 60.70 T)` - the second damage number is the damage of the chosen case's hits;
+- every troop card (Grouped) and every line (Mobile, Computer), mercenaries too, shows the units **to train** for the chosen case's hits as a second, smaller number, **rounded up to a whole piece**: the whole stack for the first hit plus the lost units for every next hit, `units + (hits - 1) x lost units`. Without revival that is simply `units x hits` (`334` with `×1.25: 418` under it); when the stack is revived, much less (a tier 9 stack of 334 units with 10.60 hits and the tier 9 case: 334 + 9.6 x 34 = 660.4, shown as `×10.60: 661`, the 8s still `units x hits`).
+
+The 1x numbers always stay the main ones. With the production at 0 nothing extra is shown, and a case that pays for 1 hit or less shows no second numbers. The Leadership / Dominance / Authority used, the number of stacks and strikes and the `#` kill order are not multiplied; a troop that is turned off shows no second number. The 90 % is the constant `REV` in the page.
 
 ## Tabs
 
