@@ -12,11 +12,11 @@ The modes are in three rows: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stac
 
 The troop lists are written inside the page. For every troop (army, monsters, engineers, mercenaries) they store the health, the strength, the food consumption (all mercenaries use no food), the Leadership / Dominance / Authority cost and the vs melee / ranged / mounted / flying bonuses exactly as in the troop JSON. The strength is stored, not calculated from the health. The summary line above the result shows the **food consumption** of all the units together (number of units x food per unit), before the estimated damage.
 
-Every troop also stores its **revival cost in gold** (the attack figure of the troop JSON; the silver cost of defending is always 10 times it and is not stored). It is only stored for now - nothing shows or uses it yet.
+Every troop also stores its **revival cost in gold** (the attack figure of the troop JSON; the silver cost of defending is always 10 times it and is not stored). It is only stored - nothing shows or uses it yet.
 
 ## Capacity & settings
 
-Four boxes: Leadership, Dominance, Authority and **Food production**. Food production is only an input for now (default 0, saved per tab like the other boxes); the calculation does not use it yet.
+Four boxes: Leadership, Dominance, Authority and **Food production** (default 0, saved per tab like the other boxes). Food production only decides how many hits are shown (see Result views - Hits the food production pays for); it changes no troop number.
 
 ## Mercenaries
 
@@ -42,9 +42,14 @@ Above the result there is a View switch: **Grouped**, **Mobile** and **Computer*
 
 The chosen view is one setting for the whole page (saved in the browser, not per tab).
 
-### Multiplier
+### Hits the food production pays for
 
-Under the View switch there is a **Multiplier** box with `−` and `+` (default 1, the minimum is 1; you can also type a number). With 2, 3, 4 ... every unit number, the food consumption and the estimated damage are multiplied by it, to see what several hits (or several armies) bring. The 1x number always stays the main one; when the multiplier is more than 1 the multiplied number is shown as a second, smaller number (`×3: 6,192` under a card or after the number on a Mobile / Computer line, and a second row under the summary line: `3 hits · food consumption 47,970,720 · estimated damage 17.18 T`). Not multiplied: the Leadership / Dominance / Authority used, the number of stacks and strikes, the `#` kill order. The multiplier is saved per tab, like the other settings; a troop that is turned off shows no second number.
+The **Food production** box (Capacity & settings, saved per tab, default 0) sets how much food you have. The food consumption of the calculated army (all the units of one hit, the number shown in the summary line) is divided into it: `hits = food production / food consumption`, rounded down. Only when the production is above 0 and the hits are more than 1 the result shows it:
+
+- the summary line says `the food production pays for 8 hits` and gives the estimated damage a second time, multiplied by the hits: `estimated damage 5.36 T (×8: 42.90 T)`;
+- every troop card (Grouped) and every line (Mobile, Computer), mercenaries too, shows the number of units multiplied by the hits as a second, smaller number: `334` with `×8: 2,672` under it.
+
+The 1x numbers always stay the main ones. With the production at 0, or when it pays for one hit or less, nothing extra is shown. The Leadership / Dominance / Authority used, the number of stacks and strikes and the `#` kill order are not multiplied; a troop that is turned off shows no second number.
 
 ## Tabs
 
