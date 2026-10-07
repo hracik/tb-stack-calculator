@@ -922,7 +922,7 @@ const MERC=[["E",9,"Ariel","Engineer",330000,55000,10,[0,0,0,0],0,"",0],
 // last of them in the dying order, so they strike and die after all of them. Authority is only a CAP: the stacks step down in health (and in total strength) exactly like the other
 // stacks - the first one from the last Leadership / Dominance stack - until the Authority is used up; whatever is left stays unused. Every mercenary with a picture takes part
 // unless its card is clicked off. Bonuses: its class (Guardsmen / Specialists / Engineers / Monsters) with its category, a monster also its type; the order of the mercenary
-// stacks follows the same rule as the rest (same strength / health ratio = one group, the smaller squad bonus first), the group order with the most damage wins.
+// stacks is simply by the squad bonus: the smaller one dies first.
 const MT=MERC.filter(m=>IC[m[2]]).map(m=>({cls:m[0],tier:m[1],name:m[2],cat:m[3],hp:m[4],str:m[5],cost:m[6],vs:m[7],ve:m[10]||0,jungle:!!m[8],type:m[9]||'',beast:m[0]!='M'&&m[9]=='Beast',pool:'U'}));
 MT.forEach(t=>TRN[t.name]=t);
 const mkM=(t,P,X)=>{const[mh,ms]=mults(t,P);return{r:t.cls+t.tier,p:'U',c:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i:0,dh:dhf(t,P),bst:!!t.beast,n:0}};
@@ -964,10 +964,10 @@ function allocMerc(P,ld,so,X){
     seq.forEach((s,i)=>{if(ns[i]>0){lst.push({...s,n:ns[i]});names.push(s.name)}});
     return{d:score(P,[...ld,...lst],[...so,...names]).dmg,seq,ns};
   };
-  const gs=ratioGroups(P,act,false),orders=[gs,gs.slice().reverse()];
-  if(gs.length<=6)permsOf(gs).forEach(p=>orders.push(p));
-  const cands=[];let best=null;
-  orders.forEach(o=>{const e=evalSeq(o.flatMap(g=>g.u.map(t=>by[t.name])));cands.push(e);if(!best||e.d>best.d*(1+5e-4))best=e});
+  // ORDER: simply by the squad bonus, the smaller one dies first (the strongest bonuses die last and strike the most). The same bonus: nominal bonus, category, higher tier first.
+  const q6=x=>Math.round(x*1e6),ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(...t.vs);
+  const seq=act.slice().sort((a,b)=>q6(sqb(a,P).tot)-q6(sqb(b,P).tot)||nom(a)-nom(b)||ci(a)-ci(b)||b.tier-a.tier).map(t=>by[t.name]);
+  const best=evalSeq(seq);
   best.seq.forEach((s,i)=>{if(best.ns[i]>0){s.n=best.ns[i];res.list.push(s);res.ord.push(s.name);res.used+=s.n*s.cost}});
   return res;
 }
