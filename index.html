@@ -1053,7 +1053,7 @@ function calc(){
     [`Monsters — Dominance ${usedOf(Mo).toLocaleString()} / ${P.capM.toLocaleString()}`,Mall.length?(mob?mobList(mobOrder(flatOrder(Mall))):table(Mall)):'<p class="mu">No monster tiers selected.</p>'],
     [`Army — Leadership ${usedOf(A).toLocaleString()} / ${P.capA.toLocaleString()}`,Aall.length?(mob?mobList(ord(flatOrder(Aall),COMPA)):table(Aall)):'<p class="mu">No army tiers selected.</p>']].map(([t,b],k)=>`<h2${k?' style="margin-top:26px"':''}>${t}</h2>${b}`).join('');
   const hitsRow=Math.max(...REVCASES.map(c=>HIT[c[0]]))>1;      // the hits of every revive mode, after the food consumption in the second row (only when one of them pays for more than 1 hit)
-  $('res').innerHTML=`<p class="mu" style="margin:0 0 3px">${sc.stacks} stacks · ${EBINFO} · ${sc.hits} strikes against ${P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks'} · <b>estimated damage ${fmt(sc.dmg)}</b></p><p class="mu" style="margin:0 0 8px">food consumption ${num(food)}${hitsRow?`&nbsp;- hits per revive mode&nbsp;- ${REVCASES.map(([k,l])=>`<span class="nb">${k==REVM?`<b>${HIT[k].toFixed(2)} ${l}</b>`:`${HIT[k].toFixed(2)} ${l}`}</span>`).join('&nbsp;- ')}`:''}</p>
+  $('res').innerHTML=`<p class="mu" style="margin:0 0 3px">${sc.stacks} stacks · ${EBINFO} · ${sc.hits} strikes against ${P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks'} · <b>estimated damage ${fmt(sc.dmg)}</b></p><p class="mu" style="margin:0 0 8px">food consumption ${num(food)}${hitsRow?` · hits per revive mode&nbsp;- ${REVCASES.map(([k,l])=>`<span class="nb">${k==REVM?`<b>${HIT[k].toFixed(2)} ${l}</b>`:`${HIT[k].toFixed(2)} ${l}`}</span>`).join('&nbsp;- ')}`:''}</p>
   ${secs}`;
   save();
 }
