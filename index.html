@@ -96,6 +96,11 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 
 <script>
 const $=id=>document.getElementById(id),v=id=>parseFloat(String($(id).value).replace(/,/g,''))||0;
+// The number boxes (Leadership, Dominance, Authority, Food prod., the bonuses) show thousands separators: 1875508 -> 1,875,508. Only digits and one decimal point are kept; v() reads the box without the commas.
+const NUMBOX='input[inputmode=decimal]';
+function fmtInt(s){s=String(s).replace(/[^\d.]/g,'');const i=s.indexOf('.');let a=i<0?s:s.slice(0,i);const b=i<0?'':'.'+s.slice(i+1).replace(/\./g,'');a=a.replace(/^0+(?=\d)/,'');return a.replace(/\B(?=(\d{3})+(?!\d))/g,',')+b}
+function fmtBox(el){const old=el.value,pos=el.selectionStart==null?old.length:el.selectionStart,sig=old.slice(0,pos).replace(/[^\d.]/g,'').length,nv=fmtInt(old);if(nv===old)return;el.value=nv;let n=0,i=0;for(;i<nv.length&&n<sig;i++)if(nv[i]!==',')n++;try{el.setSelectionRange(i,i)}catch(x){}}      // formats while typing and keeps the cursor next to the same digit
+const fmtAll=()=>document.querySelectorAll(NUMBOX).forEach(el=>{el.value=fmtInt(el.value)});
 const CO=['Melee','Mounted','Ranged','Flying'],TY=['Giant','Elemental','Dragon','Beast'];
 const NM={G:'Guardsmen',S:'Specialists',E:'Engineer Corps',M:'Monsters'};
 // ---------- troop catalog (straight from the troop JSON): army [class, tier, name, category, health, strength, cost, vs melee/ranged/mounted/flying, beast, food consumption, revival cost in gold (attack)]; monsters [tier, name, type, category, health, strength, cost, vs melee/ranged/mounted/flying, food, gold]; engineers ENGN/ENGH/ENGS/ENGF/ENGG = name/health/strength/food/gold ----------
@@ -229,6 +234,7 @@ function load(d){
   const vals={...DEF.vals,...(d.vals||{})},chk={...DEF.chk,...(d.chk||{})};
   Object.entries(vals).forEach(([id,val])=>{const el=$(id);if(el&&!MODE_IDS.includes(id))el.value=id.startsWith('dh_')?snapDH(val):val});
   Object.entries(chk).forEach(([id,c])=>{const el=$(id);if(el)el.checked=c});
+  fmtAll();
   O=(d.O||[]).slice();XS=new Set(d.X||[]);SO=(d.S||[]).slice();
 }
 function save(){
@@ -1093,7 +1099,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('keydown',e=>{if(e.key=='Escape')closeTips()});
 let TW=innerWidth;addEventListener('resize',()=>{if(innerWidth!=TW){TW=innerWidth;closeTips()}});
-document.addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('tabin'))return;calc()});
+document.addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('tabin'))return;if(e.target.matches&&e.target.matches(NUMBOX))fmtBox(e.target);calc()});
 document.addEventListener('change',e=>{if(e.target.classList&&e.target.classList.contains('tabin'))return;if(e.target.type=='checkbox')refresh();else calc()});
 document.addEventListener('dblclick',e=>{const t=e.target.closest&&e.target.closest('.tab[data-t]');if(t)rename(+t.dataset.t)});
 // start: dying order for a full enemy stack, with the default tiers
