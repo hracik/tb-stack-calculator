@@ -875,16 +875,26 @@ const COMPA=['Royal Lion II','Corax II','Corax I','Royal Lion I','Josephine II',
 const compOrder=(list,pri)=>{const o=list.slice(),sl=[];o.forEach((s,i)=>{if(pri.includes(s.name))sl.push(i)});const it=sl.map(i=>o[i]).sort((a,b)=>pri.indexOf(a.name)-pri.indexOf(b.name));sl.forEach((i,k)=>{o[i]=it[k]});return o};
 // MERCENARIES: hired troops, they use Authority only (not Leadership / Dominance) and every one of them lasts 7 days. [class, tier, name, category, health, strength, Authority per unit, vs melee/ranged/mounted/flying, jungle guardian 1/0] - straight from the troop JSON; the swarm bonus of a jungle guardian sits in the same vs column as a regular bonus.
 // The last two columns: the type (Beast / Giant / Demon ...) and the bonus against epic enemies (a ratio: 10.0 = +1000 %).
-// All of them are listed; the result shows only the ones we have a picture for.
+// MERC = the mercenaries in the page (all have a picture). MERC_LATER = the others, kept below and not used by anything.
 const MERC=[["E",9,"Ariel","Engineer",330000,55000,10,[0,0,0,0],0,"",0],
-  ["G",9,"Chitinous Defender Leader","Melee",33600,11200,1,[40.0,0,0,0],1,"",0],
-  ["G",9,"Combat Anteater Leader","Mounted",34200,11400,1,[0,0,40.0,0],1,"",0],
-  ["G",9,"Grim Stalker Leader","Ranged",31800,10600,1,[0,40.0,0,0],1,"",0],
   ["G",9,"Highlander","Ranged",33000,11000,1,[13.33,0,0,17.17],0,"",0],
   ["G",9,"Quicksand","Mounted",66000,22000,2,[0,16.67,0,0],0,"",0],
   ["G",9,"Slavic Warrior","Melee",33000,11000,1,[0,0,10.0,0],0,"",0],
   ["G",9,"Superior Epic Monster Hunter","Epic Monster Hunter",75000,25000,1,[0,0,0,0],0,"",10.0],
   ["G",9,"Warregal","Flying",660000,220000,20,[0,0,19.99,0],0,"Beast",0],
+  ["S",9,"Galloper","Mounted",66000,22000,2,[0,8.33,0,0],0,"",0],
+  ["S",9,"Grace","Scout",16530,5510,5,[0,0,0,0],0,"",0],
+  ["S",9,"Jago","Flying",660000,220000,20,[0,0,10.0,0],0,"Beast",0],
+  ["S",9,"Pounder","Ranged",33000,11000,1,[6.67,0,0,8.59],0,"",0],
+  ["S",9,"Scarface","Melee",33000,11000,1,[0,0,5.0,0],0,"",0],
+  ["M",9,"Demonic Salamander","Melee",1230000,410000,38,[0,0,0.65,0],0,"Demon",0],
+  ["M",9,"Eternal Cannoneer","Ranged",1320000,440000,40,[0,0,0,0.65],0,"Undead",0],
+  ["M",9,"Warden","Mounted",1410000,470000,43,[0,0.7,0,0],0,"Elves",0],
+  ["M",9,"Wyvern","Flying",2070000,690000,63,[0.75,0,0,0],0,"Cursed",0]];
+// NOT USED YET - the mercenaries we have no picture for. Nothing in the page reads this list (so it changes no number and shows nothing). When a picture is added, move the row up into MERC (the same columns).
+const MERC_LATER=[["G",9,"Chitinous Defender Leader","Melee",33600,11200,1,[40.0,0,0,0],1,"",0],
+  ["G",9,"Combat Anteater Leader","Mounted",34200,11400,1,[0,0,40.0,0],1,"",0],
+  ["G",9,"Grim Stalker Leader","Ranged",31800,10600,1,[0,40.0,0,0],1,"",0],
   ["G",9,"Wasp-Man Leader","Flying",32400,10800,1,[0,0,0,40.0],1,"",0],
   ["G",7,"Arbalester VII","Ranged",10200,3400,1,[5.7,0,0,7.29],0,"",0],
   ["G",7,"Chariot VII","Mounted",20400,6800,2,[0,7.52,0,0],0,"",0],
@@ -900,19 +910,10 @@ const MERC=[["E",9,"Ariel","Engineer",330000,55000,10,[0,0,0,0],0,"",0],
   ["G",6,"Epic Monster Hunter VI","Epic Monster Hunter",6090,2030,1,[0,0,0,0],0,"",7.09],
   ["G",6,"Legionary VI","Melee",5700,1900,1,[0,0,3.95,0],0,"",0],
   ["G",6,"Sphynx VI","Flying",56700,18900,10,[0,0,6.92,0],0,"Beast",0],
-  ["S",9,"Galloper","Mounted",66000,22000,2,[0,8.33,0,0],0,"",0],
-  ["S",9,"Grace","Scout",16530,5510,5,[0,0,0,0],0,"",0],
-  ["S",9,"Jago","Flying",660000,220000,20,[0,0,10.0,0],0,"Beast",0],
-  ["S",9,"Pounder","Ranged",33000,11000,1,[6.67,0,0,8.59],0,"",0],
-  ["S",9,"Scarface","Melee",33000,11000,1,[0,0,5.0,0],0,"",0],
   ["S",7,"Knight","Melee",10200,3400,1,[0,0,1.94,0],0,"",0],
   ["S",7,"Rhino Rider","Mounted",20400,6800,2,[0,3.77,0,0],0,"",0],
   ["S",7,"Shedu","Flying",408000,136000,40,[0,0,4.67,0],0,"Beast",0],
   ["S",7,"Trailseeker VII","Ranged",10200,3400,1,[2.86,0,0,3.64],0,"",0],
-  ["M",9,"Demonic Salamander","Melee",1230000,410000,38,[0,0,0.65,0],0,"Demon",0],
-  ["M",9,"Eternal Cannoneer","Ranged",1320000,440000,40,[0,0,0,0.65],0,"Undead",0],
-  ["M",9,"Warden","Mounted",1410000,470000,43,[0,0.7,0,0],0,"Elves",0],
-  ["M",9,"Wyvern","Flying",2070000,690000,63,[0.75,0,0,0],0,"Cursed",0],
   ["M",7,"Cursed Dragon","Flying",960000,320000,93,[0,0,0.5,0],0,"Cursed",0],
   ["M",7,"Fire Lord","Ranged",1680000,560000,164,[0.8,0,0,0],0,"Demon",0],
   ["M",7,"Golden Dragon","Flying",510000,170000,40,[0,0,9.34,0],0,"Dragon",0],
@@ -927,7 +928,7 @@ const MERC=[["E",9,"Ariel","Engineer",330000,55000,10,[0,0,0,0],0,"",0],
 // stacks - the first one from the last Leadership / Dominance stack - until the Authority is used up; whatever is left stays unused. Every mercenary with a picture takes part
 // unless its card is clicked off. Bonuses: its class (Guardsmen / Specialists / Engineers / Monsters) with its category, a monster also its type; the order of the mercenary
 // stacks is simply by the squad bonus: the smaller one dies first.
-const MT=MERC.filter(m=>IC[m[2]]).map(m=>({cls:m[0],tier:m[1],name:m[2],cat:m[3],hp:m[4],str:m[5],cost:m[6],vs:m[7],ve:m[10]||0,jungle:!!m[8],type:m[9]||'',beast:m[0]!='M'&&m[9]=='Beast',food:0,pool:'U'}));      // food: every mercenary uses no food
+const MT=MERC.map(m=>({cls:m[0],tier:m[1],name:m[2],cat:m[3],hp:m[4],str:m[5],cost:m[6],vs:m[7],ve:m[10]||0,jungle:!!m[8],type:m[9]||'',beast:m[0]!='M'&&m[9]=='Beast',food:0,pool:'U'}));      // food: every mercenary uses no food
 MT.forEach(t=>TRN[t.name]=t);
 const mkM=(t,P,X)=>{const[mh,ms]=mults(t,P);return{r:t.cls+t.tier,p:'U',c:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i:0,dh:dhf(t,P),bst:!!t.beast,n:0}};
 // the counts of a row of stacks: H and T = health and total strength of the stack before (Infinity = none), idx = its place, X = the health level no stack goes above
@@ -980,7 +981,7 @@ function allocMerc(P,ld,so,X){
 // the order of the cards in the Mercenaries section (the ones not listed come after them, by name)
 const MORD=['Ariel','Warregal','Quicksand','Highlander','Slavic Warrior','Superior Epic Monster Hunter','Jago','Galloper','Pounder','Scarface','Grace','Wyvern','Warden','Eternal Cannoneer','Demonic Salamander'];
 const mercVis=s=>s.n>0||s.off;      // the Mercenaries section shows only the ones with units (a turned-off one stays, to be turned on again)
-const mercSorted=c=>{const rk=m=>{const i=MORD.indexOf(m[2]);return i<0?999:i};return MERC.filter(m=>m[0]==c&&IC[m[2]]).sort((a,b)=>rk(a)-rk(b)||a[2].localeCompare(b[2]))};
+const mercSorted=c=>{const rk=m=>{const i=MORD.indexOf(m[2]);return i<0?999:i};return MERC.filter(m=>m[0]==c).sort((a,b)=>rk(a)-rk(b)||a[2].localeCompare(b[2]))};
 function mercTable(all){
   const by={};all.forEach(s=>by[s.name]=s);
   const cell=m=>{const s=by[m[2]];return`<td class="${s.off?'off':''}" data-troop="${esc(m[2])}" title="${esc(m[2])} - ${m[0]=='E'?'Engineer':m[0]=='G'?'Guardsman':m[0]=='S'?'Specialist':'Monster'} ${m[1]}${m[0]=='E'?'':', '+m[3]}, Authority ${m[6]} per unit. ${s.off?'Click to turn this mercenary on':'Click to turn this mercenary off'}"><img class="ic" src="${IC[m[2]]}" alt=""><span class="kp">${KP[m[2]]?'#'+KP[m[2]]:''}</span><span class="mu">${esc(m[2])}</span><br><span class="n">${s.off?'off':s.n.toLocaleString()}</span>${!s.off&&MUL>1?`<br><span class="n2">${mulTxt(s.n)}</span>`:''}</td>`};
