@@ -148,11 +148,13 @@ document.addEventListener('click',e=>{
 let VIEW='grouped';try{const sv=localStorage.getItem('sc_view');if(sv=='mobile'||sv=='computer')VIEW=sv}catch(e){}      // result view: Grouped (cards in groups), Mobile (one unit per line) or Computer (two units per line, same order as Mobile). One setting for all tabs.
 let MUL=1,REVM='none';      // MUL = the hits the Food production pays for in the chosen revival case (rounded DOWN to 2 decimals); above 1 the numbers are shown again as a second number (units rounded UP to a whole piece). REVM = which stacks are revived: none / top (tier 9) / all
 const REV=90;      // % of a revived stack that comes back after a hit (rounded down per stack)
+const FOODCUT=25;  // % less food consumption for every unit (the food values stored with the troops are the plain JSON values)
+const foodOf=n=>(TRN[n].food||0)*(100-FOODCUT)/100;      // food consumption of one unit of the troop n, after the cut
 const lossOf=(s,mode)=>{const n=s.n||0,t=TRN[s.name];return mode=='all'||(mode=='top'&&t&&t.tier==9)?n-Math.floor(n*REV/100):n};      // units of the stack that have to be trained again for the next hit
 const hitsFor=(F,fp,list,mode)=>{      // hits the food production fp pays for: the first hit trains the whole army (food F), every next hit only the units that are not revived (food R); rounded DOWN to 2 decimals
   if(!(fp>0&&F>0))return 0;
   if(fp<F)return Math.floor(fp/F*100+1e-9)/100;
-  const R=list.reduce((q,s)=>q+lossOf(s,mode)*(TRN[s.name].food||0),0);
+  const R=list.reduce((q,s)=>q+lossOf(s,mode)*foodOf(s.name),0);
   return R>0?Math.floor((1+(fp-F)/R)*100+1e-9)/100:0};
 const mulTxt=(x,f)=>MUL>1?`×${MUL.toFixed(2)}: ${f(x*MUL)}`:'';      // damage etc.: simply x MUL
 const unitsTxt=s=>MUL>1?`×${MUL.toFixed(2)}: ${Math.ceil((s.n||0)+(MUL-1)*lossOf(s,REVM)-1e-7).toLocaleString()}`:'';      // units to train for MUL hits: the first hit all of them, every next hit only the ones not revived
@@ -1014,7 +1016,7 @@ function calc(){
   document.querySelectorAll('.eb').forEach(b=>b.classList.toggle('on',!P.kill&&!P.ren&&+b.dataset.e==P.enemy));
   document.querySelectorAll('.cm').forEach(b=>b.classList.toggle('on',(P.kill&&b.dataset.m=='kill')||(P.ren&&b.dataset.m=='ren')));
   const sc=score(P,[...A,...Mo,...U.list],[...(st.so||[]),...U.ord]);
-  const food=[...A,...Mo,...U.list].reduce((q,s)=>q+(s.n||0)*(TRN[s.name].food||0),0);      // total food consumption of all the units (mercenaries use none)
+  const food=[...A,...Mo,...U.list].reduce((q,s)=>q+(s.n||0)*foodOf(s.name),0);      // total food consumption of all the units, 25 % less than the plain values (mercenaries use none)
   REVM=['top','all'].includes($('rev').value)?$('rev').value:'none';
   const hl=[...A,...Mo,...U.list],HIT={none:hitsFor(food,v('foodP'),hl,'none'),top:hitsFor(food,v('foodP'),hl,'top'),all:hitsFor(food,v('foodP'),hl,'all')};      // hits the Food production pays for in the three revival cases
   MUL=HIT[REVM]>1?HIT[REVM]:1;      // the chosen case drives the second numbers (1 = nothing extra to show)

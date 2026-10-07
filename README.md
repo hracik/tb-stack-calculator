@@ -12,6 +12,8 @@ The modes are in three rows: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stac
 
 The troop lists are written inside the page. For every troop (army, monsters, engineers, mercenaries) they store the health, the strength, the food consumption (all mercenaries use no food), the Leadership / Dominance / Authority cost and the vs melee / ranged / mounted / flying bonuses exactly as in the troop JSON. The strength is stored, not calculated from the health. The summary line above the result shows the **food consumption** of all the units together (number of units x food per unit), before the estimated damage.
 
+Every unit eats **25 % less** than the stored food value (the constant `FOODCUT` in the page): the food consumption in the summary line and everything that is counted from it (the hits the Food production pays for) use the reduced value. The stored values stay the plain JSON ones, so the cut can be changed in one place.
+
 Every troop also stores its **revival cost in gold** (the attack figure of the troop JSON; the silver cost of defending is always 10 times it and is not stored). It is only stored - nothing shows or uses it yet.
 
 ## Capacity & settings
@@ -44,7 +46,7 @@ The chosen view is one setting for the whole page (saved in the browser, not per
 
 ### Hits the food production pays for
 
-The **Food production** box (Capacity & settings, saved per tab, default 0) sets how much food you have. The food consumption of the calculated army (all the units of one hit, the number shown in the summary line) is the food one hit costs when every unit has to be trained. The hits are rounded **down to 2 decimals** and shown with 2 decimals.
+The **Food production** box (Capacity & settings, saved per tab, default 0) sets how much food you have. The food consumption of the calculated army (all the units of one hit, after the 25 % cut, the number shown in the summary line) is the food one hit costs when every unit has to be trained. The hits are rounded **down to 2 decimals** and shown with 2 decimals.
 
 **Without revival** (all the units are gone after the hit): `hits = food production / food consumption` (20,000,000 / 15,990,240 = 1.2507... shows as 1.25).
 
