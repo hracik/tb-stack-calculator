@@ -958,13 +958,14 @@ function allocMerc(P,ld,so,X){
 }
 // the order of the cards in the Mercenaries section (the ones not listed come after them, by name)
 const MORD=['Ariel','Warregal','Quicksand','Highlander','Slavic Warrior','Superior Epic Monster Hunter','Jago','Galloper','Pounder','Scarface','Grace','Wyvern','Warden','Eternal Cannoneer','Demonic Salamander'];
+const mercVis=s=>s.n>0||s.off;      // the Mercenaries section shows only the ones with units (a turned-off one stays, to be turned on again)
 const mercSorted=c=>{const rk=m=>{const i=MORD.indexOf(m[2]);return i<0?999:i};return MERC.filter(m=>m[0]==c&&IC[m[2]]).sort((a,b)=>rk(a)-rk(b)||a[2].localeCompare(b[2]))};
 function mercTable(all){
   const by={};all.forEach(s=>by[s.name]=s);
   const cell=m=>{const s=by[m[2]];return`<td class="${s.off?'off':''}" data-troop="${esc(m[2])}" title="${esc(m[2])} - ${m[0]=='E'?'Engineer':m[0]=='G'?'Guardsman':m[0]=='S'?'Specialist':'Monster'} ${m[1]}${m[0]=='E'?'':', '+m[3]}, Authority ${m[6]} per unit. ${s.off?'Click to turn this mercenary on':'Click to turn this mercenary off'}"><img class="ic" src="${IC[m[2]]}" alt=""><span class="kp">${KP[m[2]]?'#'+KP[m[2]]:''}</span><span class="mu">${esc(m[2])}</span><br><span class="n">${s.off?'off':s.n.toLocaleString()}</span></td>`};
   let o='<div class="sc"><table><colgroup><col><col><col><col><col><col></colgroup>';    // 5 cards per row
   [['E','Engineer Corps'],['G','Guardsmen'],['S','Specialists'],['M','Monsters']].forEach(([c,label])=>{
-    const list=mercSorted(c);
+    const list=mercSorted(c).filter(m=>mercVis(by[m[2]]));
     for(let i=0;i<list.length;i+=5){
       const row=list.slice(i,i+5).map(cell);while(row.length<5)row.push('<td></td>');
       o+=`<tr><th>${i?'':label}</th>${row.join('')}</tr>`;
@@ -994,10 +995,12 @@ function calc(){
   document.querySelectorAll('.vb').forEach(b=>b.classList.toggle('on',b.dataset.v==VIEW));
   const gk=r=>r[0]=='E'?-100+ +r.slice(1):-(+r.slice(1))*2+(r[0]=='S'?1:0);
   const Aall=st.filter(s=>s.p=='A').sort((a,b)=>gk(a.r)-gk(b.r)),Mall=st.filter(s=>s.p=='M').sort((a,b)=>(+b.r.slice(1))-(+a.r.slice(1)));
+  const mItems=['E','G','S','M'].flatMap(c=>mercSorted(c).map(m=>U.all.find(s=>s.name==m[2]))).filter(mercVis);
+  const secs=[...(P.capU>0?[[`Mercenaries — Authority ${U.used.toLocaleString()} / ${P.capU.toLocaleString()}`,!mItems.length?'<p class="mu">No mercenary gets a unit with this Authority.</p>':mob?mobList(mItems):mercTable(U.all)]]:[]),   // no Authority: no Mercenaries section
+    [`Monsters — Dominance ${usedOf(Mo).toLocaleString()} / ${P.capM.toLocaleString()}`,Mall.length?(mob?mobList(flatOrder(Mall)):table(Mall)):'<p class="mu">No monster tiers selected.</p>'],
+    [`Army — Leadership ${usedOf(A).toLocaleString()} / ${P.capA.toLocaleString()}`,Aall.length?(mob?mobList(flatOrder(Aall)):table(Aall)):'<p class="mu">No army tiers selected.</p>']].map(([t,b],k)=>`<h2${k?' style="margin-top:26px"':''}>${t}</h2>${b}`).join('');
   $('res').innerHTML=`<p class="mu" style="margin:0 0 8px">${sc.stacks} stacks · ${EBINFO} · ${sc.hits} strikes against ${P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks'} · <b>estimated damage ${fmt(sc.dmg)}</b></p>
-  <h2>Mercenaries — Authority ${U.used.toLocaleString()} / ${P.capU.toLocaleString()}</h2>${mob?mobList(['E','G','S','M'].flatMap(c=>mercSorted(c).map(m=>U.all.find(s=>s.name==m[2])))):mercTable(U.all)}
-  <h2 style="margin-top:26px">Monsters — Dominance ${usedOf(Mo).toLocaleString()} / ${P.capM.toLocaleString()}</h2>${Mall.length?(mob?mobList(flatOrder(Mall)):table(Mall)):'<p class="mu">No monster tiers selected.</p>'}
-  <h2 style="margin-top:26px">Army — Leadership ${usedOf(A).toLocaleString()} / ${P.capA.toLocaleString()}</h2>${Aall.length?(mob?mobList(flatOrder(Aall)):table(Aall)):'<p class="mu">No army tiers selected.</p>'}`;
+  ${secs}`;
   save();
 }
 function refresh(){sync();calc()}
