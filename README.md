@@ -6,11 +6,11 @@ Open `index.html` in a browser or use the GitHub Pages site of this repository. 
 
 ## Attack modes
 
-The modes are in three rows: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stack) and Special (Killshot v. 3, Renegades).
+The modes are in three rows: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stack) and Special (Killshot v. 3, Renegades - **switched off for now**: the button is greyed out, see Renegades below).
 
 ## Troop data
 
-The troop lists are written inside the page. For every troop (army, monsters, engineers, mercenaries) they store the health, the strength, the food consumption (all mercenaries use no food), the Leadership / Dominance / Authority cost and the vs melee / ranged / mounted / flying bonuses exactly as in the troop JSON. The strength is stored, not calculated from the health. The summary line above the result shows the **food consumption** of all the units together (number of units x food per unit), before the estimated damage.
+The troop lists are written inside the page. For every troop (army, monsters, engineers, mercenaries) they store the health, the strength, the food consumption (all mercenaries use no food - the JSON lists a food value for most of them, but it is wrong, so it is not stored), the Leadership / Dominance / Authority cost and the vs melee / ranged / mounted / flying bonuses exactly as in the troop JSON. The strength is stored, not calculated from the health. The summary line above the result shows the **food consumption** of all the units together (number of units x food per unit), before the estimated damage.
 
 Every unit eats **25 % less** than the stored food value (the constant `FOODCUT` in the page): the food consumption in the second summary line and everything that is counted from it (the hits the Food production pays for) use the reduced value. The stored values stay the plain JSON ones, so the cut can be changed in one place.
 
@@ -119,6 +119,8 @@ Each row of "Show the dying order, troop by troop" shows the troop, its squad bo
 The bonus is written as the troop's best bonus against a class of the enemy, for example `+333% vs. mounted`. In the 3- and 6-stack modes there is no mounted enemy, so a bonus against mounted is still shown but it is not counted in Damage.
 
 ### Renegades
+
+**Switched off for now** (the constant `RENEGADES = false` in the page): the button is greyed out and does nothing, and a tab that was saved in Renegades opens in Max damage instead. Nothing else was removed - set the constant to `true` to bring it back.
 
 Highest troop types die first, G before S, up to 16 stacks. Then all the rest of the army is equal and dies at random. These rules maximize the damage and reduce the cost of attacks.
 
