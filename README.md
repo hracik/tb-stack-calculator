@@ -38,7 +38,7 @@ The chosen view is one setting for the whole page (saved in the browser, not per
 
 ### Multiplier
 
-Under the View switch there is a **Multiplier** box with `−` and `+` (default 1, the minimum is 1; you can also type a number). With 2, 3, 4 ... every unit number, the food consumption and the estimated damage are multiplied by it, to see what several hits (or several armies) bring. The 1x number always stays the main one; when the multiplier is more than 1 the multiplied number is shown as a second, smaller number (`×3: 6,192` under a card or after the number on a Mobile / Computer line, `(×3: 17.18 T)` in the summary line, which also says `3 hits`). Not multiplied: the Leadership / Dominance / Authority used, the number of stacks and strikes, the `#` kill order. The multiplier is saved per tab, like the other settings; a troop that is turned off shows no second number.
+Under the View switch there is a **Multiplier** box with `−` and `+` (default 1, the minimum is 1; you can also type a number). With 2, 3, 4 ... every unit number, the food consumption and the estimated damage are multiplied by it, to see what several hits (or several armies) bring. The 1x number always stays the main one; when the multiplier is more than 1 the multiplied number is shown as a second, smaller number (`×3: 6,192` under a card or after the number on a Mobile / Computer line, and a second row under the summary line: `3 hits · food consumption 47,970,720 · estimated damage 17.18 T`). Not multiplied: the Leadership / Dominance / Authority used, the number of stacks and strikes, the `#` kill order. The multiplier is saved per tab, like the other settings; a troop that is turned off shows no second number.
 
 ## Tabs
 

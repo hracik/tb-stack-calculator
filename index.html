@@ -1024,7 +1024,7 @@ function calc(){
   const secs=[...(P.capU>0?[[`Mercenaries — Authority ${U.used.toLocaleString()} / ${P.capU.toLocaleString()}`,!mItems.length?'<p class="mu">No mercenary gets a unit with this Authority.</p>':mob?mobList(ord(mItems,COMPM)):mercTable(U.all)]]:[]),   // no Authority: no Mercenaries section
     [`Monsters — Dominance ${usedOf(Mo).toLocaleString()} / ${P.capM.toLocaleString()}`,Mall.length?(mob?mobList(mobOrder(flatOrder(Mall))):table(Mall)):'<p class="mu">No monster tiers selected.</p>'],
     [`Army — Leadership ${usedOf(A).toLocaleString()} / ${P.capA.toLocaleString()}`,Aall.length?(mob?mobList(ord(flatOrder(Aall),COMPA)):table(Aall)):'<p class="mu">No army tiers selected.</p>']].map(([t,b],k)=>`<h2${k?' style="margin-top:26px"':''}>${t}</h2>${b}`).join('');
-  $('res').innerHTML=`<p class="mu" style="margin:0 0 8px">${sc.stacks} stacks · ${EBINFO} · ${sc.hits} strikes against ${P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks'}${MUL>1?` · ${MUL} hits`:''} · food consumption ${num(food)}${MUL>1?` (${mulTxt(food,num)})`:''} · <b>estimated damage ${fmt(sc.dmg)}</b>${MUL>1?` (${mulTxt(sc.dmg,fmt)})`:''}</p>
+  $('res').innerHTML=`<p class="mu" style="margin:0 0 ${MUL>1?3:8}px">${sc.stacks} stacks · ${EBINFO} · ${sc.hits} strikes against ${P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks'} · food consumption ${num(food)} · <b>estimated damage ${fmt(sc.dmg)}</b></p>${MUL>1?`<p class="mu" style="margin:0 0 8px">${MUL} hits · food consumption ${num(food*MUL)} · <b>estimated damage ${fmt(sc.dmg*MUL)}</b></p>`:''}
   ${secs}`;
   save();
 }
