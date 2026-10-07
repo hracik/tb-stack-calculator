@@ -68,7 +68,7 @@ The **Food production** box (Food capacity & settings, saved per tab, default 0)
 - **monsters and top line**: the monster stacks (all tiers) and the top line of the Army and of the Mercenaries.
 - **all**: every stack comes back (90 %).
 
-The second line under the summary starts with the food consumption of the calculated army and, when at least one revive mode pays for more than 1 hit (1.01 or more), goes on with the hits for all five: `Food consumption 11,990,595 · hits per revive mode: 10.66 none · 14.25 top line · 16.38 monsters · 22.98 monsters + top line · 97.26 all` (the chosen one in bold). Without such hits only the food consumption is shown. The estimated damage in the first line is always the damage of one hit.
+The first line of the Result is the **Summary** (stacks, strikes, estimated damage). The second line shows the hits for all five revive modes, `Hits per revive mode: 10.66 none · 14.25 top line · 16.38 monsters · 22.98 monsters + top line · 97.26 all` (the chosen one in bold), and appears only when at least one revive mode pays for more than 1 hit (1.01 or more). The total food consumption is no longer printed (it is still used for the hits). The estimated damage in the first line is always the damage of one hit.
 
 **Action: Hitting / Preparing** (Result, under View, saved per tab, default **Hitting**) choose which number the cards and lines show. While the **Food production is 0** there is nothing to prepare for: the Preparing button is disabled (greyed out), Hitting is shown, and the line `To see the preparing numbers, fill in the Food production (Food capacity & settings).` appears under the buttons. The Preparing choice itself stays saved and is active again as soon as the production is filled in:
 
