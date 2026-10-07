@@ -54,14 +54,20 @@ The **Food production** box (Capacity & settings, saved per tab, default 0) sets
 
 `hits = 1 + (food production - food of the whole army) / (food of the units that are not revived)`
 
-(when the production is smaller than one army, it is `production / food of the army` as above). The summary line gives the hits for the three cases: **reviving all stacks**, **reviving the top line** and **without revival**. The *top line* is the highest tier in use, taken separately for the Army (with the engineers), the Monsters and the Mercenaries - with the army and monsters on tiers 8 and 9 it is the 9s, with units 7 + 8 only it is the 8s (the tooltip of the button names the tiers); all the lower tiers are lost every hit.
+(when the production is smaller than one army, it is `production / food of the army` as above). The summary line gives the hits for the five Training cases: **reviving all stacks**, **reviving the top line**, **reviving monsters only**, **reviving monsters and the top line** and **without revival**. The *top line* is the highest tier in use, taken separately for the Army (with the engineers), the Monsters and the Mercenaries - with the army and monsters on tiers 8 and 9 it is the 9s, with units 7 + 8 only it is the 8s (the tooltip of the button names the tiers); all the lower tiers are lost every hit.
 
 **Training buttons** (Result, under View, saved per tab) choose what the units show:
 
 - **1 hit** (default): the units of one hit, no second numbers.
-- **Revive all**, **Revive top line**, **Revive none**: the case's hits drive the rest (its hits are in bold in the summary line).
+- **Revive all**: every stack comes back (90 %).
+- **Revive top line**: only the top line stacks (see above).
+- **Revive monsters only**: only the monster stacks - the Monsters and the mercenary monsters (Wyvern, Warden, Eternal Cannoneer, Demonic Salamander) - all their tiers; the Army, the engineers and the other mercenaries are lost every hit.
+- **Revive monsters and top line**: the monster stacks (all tiers) and the top line of the Army and of the Mercenaries.
+- **Revive none**: nothing comes back, `units x hits`.
 
-Only when at least one of the three cases pays for more than 1 hit (1.01 or more) the summary line lists the hits. With a case chosen that pays for more than 1 hit:
+The chosen case's hits drive the second numbers and the multiplied damage (its hits are in bold in the summary line).
+
+Only when at least one of the cases pays for more than 1 hit (1.01 or more) the summary line lists the hits. With a case chosen that pays for more than 1 hit:
 
 - the summary line gives the estimated damage a second time, multiplied by the case's hits: `estimated damage 5.36 T (×14.25: 76.41 T)`;
 - every troop card (Grouped) and every line (Mobile, Computer), mercenaries too, shows the units **to train** for the case's hits after the 1x number, as `179 / 992` (the number of hits is not repeated there, the summary line says it; on a narrow card the second number drops to its own line). It is **rounded up to a whole piece**: the whole stack for the first hit plus the lost units for every next hit, `units + (hits - 1) x lost units`. Without revival that is simply `units x hits` (`334 / 418` with 1.25 hits); when the stack is revived, much less (a revived stack of 334 units with 14.25 hits: 334 + 13.25 x 34 = 784.5, shown as `334 / 785`; the stacks that are not revived still `units x hits`).
