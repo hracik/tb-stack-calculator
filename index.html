@@ -47,7 +47,8 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 .tabin{width:150px;padding:5px 8px;background:#e2cf9e;color:#2a2012;border:1px solid #8a6a2c;border-radius:8px;font:inherit}
 .tabtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 6px;font-size:14px}
 .tl{background:transparent;color:var(--mu);border:1px solid var(--bd);border-radius:6px;padding:3px 10px;margin:0;font:inherit}.tl:hover{color:var(--tx)}
-#res td{min-width:104px}.ic{display:block;width:56px;height:56px;margin:0 auto 4px;border-radius:6px}.ic.ph{background:rgba(42,32,18,.15)}
+#res td{min-width:104px}
+#res table.mt{min-width:790px}.ic{display:block;width:56px;height:56px;margin:0 auto 4px;border-radius:6px}.ic.ph{background:rgba(42,32,18,.15)}
 </style></head><body><main>
 <h1>⚔️ Stack Calculator</h1>
 <p class="mu">Each stack gets about the same total health, stepping down slightly along one kill order (first to die = most health). Army uses Leadership, Monsters use Dominance.</p>
@@ -943,14 +944,17 @@ function allocMerc(P,ld,so,X){
   best.seq.forEach((s,i)=>{if(best.ns[i]>0){s.n=best.ns[i];res.list.push(s);res.ord.push(s.name);res.used+=s.n*s.cost}});
   return res;
 }
+// the order of the cards in the Mercenaries section (the ones not listed come after them, by name)
+const MORD=['Ariel','Warregal','Quicksand','Highlander','Slavic Warrior','Superior Epic Monster Hunter','Jago','Galloper','Pounder','Scarface','Grace','Wyvern','Warden','Eternal Cannoneer','Demonic Salamander'];
 function mercTable(all){
   const by={};all.forEach(s=>by[s.name]=s);
   const cell=m=>{const s=by[m[2]];return`<td class="${s.off?'off':''}" data-troop="${esc(m[2])}" title="${esc(m[2])} - ${m[0]=='E'?'Engineer':m[0]=='G'?'Guardsman':m[0]=='S'?'Specialist':'Monster'} ${m[1]}${m[0]=='E'?'':', '+m[3]}, Authority ${m[6]} per unit. ${s.off?'Click to turn this mercenary on':'Click to turn this mercenary off'}"><img class="ic" src="${IC[m[2]]}" alt=""><span class="kp">${KP[m[2]]?'#'+KP[m[2]]:''}</span><span class="mu">${esc(m[2])}</span><br><span class="n">${s.off?'off':s.n.toLocaleString()}</span></td>`};
-  let o='<div class="sc"><table><colgroup><col><col><col><col><col></colgroup>';
+  let o='<div class="sc"><table class="mt"><colgroup><col><col><col><col><col><col></colgroup>';    // 5 cards per row
   [['E','Engineer Corps'],['G','Guardsmen'],['S','Specialists'],['M','Monsters']].forEach(([c,label])=>{
-    const list=MERC.filter(m=>m[0]==c&&IC[m[2]]).sort((a,b)=>a[2].localeCompare(b[2]));
-    for(let i=0;i<list.length;i+=4){
-      const row=list.slice(i,i+4).map(cell);while(row.length<4)row.push('<td></td>');
+    const rk=m=>{const i=MORD.indexOf(m[2]);return i<0?999:i};
+    const list=MERC.filter(m=>m[0]==c&&IC[m[2]]).sort((a,b)=>rk(a)-rk(b)||a[2].localeCompare(b[2]));
+    for(let i=0;i<list.length;i+=5){
+      const row=list.slice(i,i+5).map(cell);while(row.length<5)row.push('<td></td>');
       o+=`<tr><th>${i?'':label}</th>${row.join('')}</tr>`;
     }
   });
