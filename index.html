@@ -858,10 +858,10 @@ function mobList(items){
   return'<div class="vwl">'+items.map(s=>`<div class="vwr${s.off?' off':''}" data-troop="${esc(s.name)}" title="${s.off?'Click to turn this troop on':'Click to turn this troop off'}">${IC[s.name]?`<img class="ic" src="${IC[s.name]}" alt="">`:'<div class="ic ph"></div>'}<div class="vwt"><div class="vwn">${esc(s.name)}</div><div class="vwc">${s.off?'off':(s.n||0).toLocaleString()}</div></div></div>`).join('')+'</div>';
 }
 // MOBILE order, inside every section: the single unit's own (original) health, the biggest first. The same health: the order of this list (mercenaries), then the higher tier,
-// Guardsmen before Specialists, then the order of the cards in the Grouped view.
+// Guardsmen before Specialists, then Flying, Mounted, Ranged, Melee (so ranged before melee), then the order of the cards in the Grouped view.
 const MOBM=['Wyvern','Warden','Eternal Cannoneer','Demonic Salamander','Warregal','Jago','Ariel','Superior Epic Monster Hunter','Quicksand','Galloper','Highlander','Slavic Warrior','Pounder','Scarface','Grace'];
 const mobOrder=list=>{const cr={G:0,S:1,E:2,M:3},mi=n=>{const i=MOBM.indexOf(n);return i<0?999:i};
-  return list.map((s,i)=>[s,i]).sort(([a,i],[b,j])=>TRN[b.name].hp-TRN[a.name].hp||mi(a.name)-mi(b.name)||+b.r.slice(1)-+a.r.slice(1)||cr[a.r[0]]-cr[b.r[0]]||i-j).map(x=>x[0])};
+  return list.map((s,i)=>[s,i]).sort(([a,i],[b,j])=>TRN[b.name].hp-TRN[a.name].hp||mi(a.name)-mi(b.name)||+b.r.slice(1)-+a.r.slice(1)||cr[a.r[0]]-cr[b.r[0]]||DISP.indexOf(a.cat)-DISP.indexOf(b.cat)||i-j).map(x=>x[0])};
 // MERCENARIES: hired troops, they use Authority only (not Leadership / Dominance) and every one of them lasts 7 days. [class, tier, name, category, health, strength, Authority per unit, vs melee/ranged/mounted/flying, jungle guardian 1/0] - straight from the troop JSON; the swarm bonus of a jungle guardian sits in the same vs column as a regular bonus.
 // All of them are listed; the result shows only the ones we have a picture for.
 const MERC=[["E",9,"Ariel","Engineer",330000,55000,10,[0,0,0,0],0,""],
