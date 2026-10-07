@@ -924,16 +924,16 @@ const MERC=[["E",9,"Ariel","Engineer",330000,55000,10,[0,0,0,0],0,""],
 const MT=MERC.filter(m=>IC[m[2]]).map(m=>({cls:m[0],tier:m[1],name:m[2],cat:m[3],hp:m[4],str:m[5],cost:m[6],vs:m[7],jungle:!!m[8],type:m[9]||'',beast:m[0]!='M'&&m[9]=='Beast',pool:'U'}));
 MT.forEach(t=>TRN[t.name]=t);
 const mkM=(t,P,X)=>{const[mh,ms]=mults(t,P);return{r:t.cls+t.tier,p:'U',c:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i:0,dh:dhf(t,P),bst:!!t.beast,n:0}};
-// the counts of a row of stacks: H and T = health and total strength of the stack before (Infinity = none), idx = its place, cap = the Authority that is left
-function sizeChain(P,seq,H,T,idx,cap){
-  const K=P.enemy,four=rgm(P),ns=[];let rem=cap;
+// the counts of a row of stacks: H and T = health and total strength of the stack before (Infinity = none), idx = its place, X = the health level no stack goes above
+function sizeChain(P,seq,H,T,idx,X){
+  const K=P.enemy,four=rgm(P),ns=[];
   seq.forEach(s=>{
     const eng=s.cat=='Engineer',rs=!!(four&&!eng&&idx%K==0);                 // the places Kn+1 are exempt from the strength rule, as everywhere
-    let n=Math.floor(rem/s.cost+1e-9);
+    let n=Math.floor(X/s.hp+1e-9);
     if(isFinite(H))n=Math.min(n,Math.floor(H*QS/s.hp));
     if(!eng&&!rs&&isFinite(T))n=Math.min(n,Math.floor(T*QS/s.str));
     if(!(n>=1)){ns.push(0);return}                                           // no unit fits: the stack does not exist (the next places move up)
-    ns.push(n);rem-=n*s.cost;H=n*s.hp;if(!eng&&!s.bst&&!rs)T=n*s.str;idx++;
+    ns.push(n);H=n*s.hp;if(!eng&&!s.bst&&!rs)T=n*s.str;idx++;
   });
   return ns;
 }
@@ -947,11 +947,15 @@ function allocMerc(P,ld,so,X){
   L.forEach(s=>{H=s.n*s.hp;if(s.cat!='Engineer'&&!s.bst&&!s.rs)T=s.n*s.str});   // the last Leadership / Dominance stack: the chain goes on from its health and total strength
   const by={};all.forEach(s=>by[s.name]=s);
   const used=(seq,ns)=>ns.reduce((q,n,i)=>q+n*seq[i].cost,0);
+  // EVERY mercenary stack that is on gets units. Without a limit each stack steps down from the one before it (the first from the last Leadership / Dominance stack), as far as the Authority reaches;
+  // when the Authority is short, all the stacks stand about level: the common health level is the highest one the Authority pays for (a tiny step down along the order, rounding apart).
   const sizeOf=seq=>{
-    if(L.length)return sizeChain(P,seq,H,T,L.length,P.capU);
-    let lo=0,hi=1e15;                                                         // no Leadership / Dominance stack at all: no stack before the first one - the chain starts at the highest level the Authority reaches for every stack
-    for(let k=0;k<60;k++){const mid=(lo+hi)/2;if(used(seq,sizeChain(P,seq,mid/QS,Infinity,0,Infinity))<=P.capU)lo=mid;else hi=mid}
-    return sizeChain(P,seq,lo/QS,Infinity,0,P.capU);
+    const hi=L.length?H*QS:1e15,at=X=>sizeChain(P,seq,L.length?H:Infinity,L.length?T:Infinity,L.length,X);
+    let ns=at(hi);
+    if(used(seq,ns)<=P.capU)return ns;                                        // the Authority is enough: the chain is the limit, what is left over stays unused
+    let lo=0,top=hi;
+    for(let k=0;k<60;k++){const mid=(lo+top)/2;if(used(seq,at(mid))<=P.capU)lo=mid;else top=mid}
+    return at(lo);
   };
   const evalSeq=seq=>{
     const ns=sizeOf(seq),lst=[],names=[];
@@ -962,8 +966,6 @@ function allocMerc(P,ld,so,X){
   if(gs.length<=6)permsOf(gs).forEach(p=>orders.push(p));
   const cands=[];let best=null;
   orders.forEach(o=>{const e=evalSeq(o.flatMap(g=>g.u.map(t=>by[t.name])));cands.push(e);if(!best||e.d>best.d*(1+5e-4))best=e});
-  // Authority short: the stacks that die first are the weakest ones - leaving the first few out can give more damage (the Authority then goes to the stronger ones)
-  cands.sort((a,b)=>b.d-a.d).slice(0,3).forEach(c=>{for(let j=1;j<c.seq.length;j++){const e=evalSeq(c.seq.slice(j));if(e.d>best.d*(1+5e-4))best=e}});
   best.seq.forEach((s,i)=>{if(best.ns[i]>0){s.n=best.ns[i];res.list.push(s);res.ord.push(s.name);res.used+=s.n*s.cost}});
   return res;
 }
