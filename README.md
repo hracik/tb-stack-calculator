@@ -64,7 +64,7 @@ The **Food production** box (Capacity & settings, saved per tab, default 0) sets
 - **monsters and top line**: the monster stacks (all tiers) and the top line of the Army and of the Mercenaries.
 - **all**: every stack comes back (90 %).
 
-The second line under the summary starts with the food consumption of the calculated army and, when at least one revive mode pays for more than 1 hit (1.01 or more), goes on with the hits for all five: `food consumption 11,990,595 · Hits per revive mode: 10.66 none · 14.25 top line · 16.38 monsters · 22.98 monsters + top line · 97.26 all` (the chosen one in bold). Without such hits only the food consumption is shown. The estimated damage in the first line is always the damage of one hit.
+The second line under the summary starts with the food consumption of the calculated army and, when at least one revive mode pays for more than 1 hit (1.01 or more), goes on with the hits for all five: `food consumption 11,990,595 - hits per revive mode - 10.66 none - 14.25 top line - 16.38 monsters - 22.98 monsters + top line - 97.26 all` (the chosen one in bold). Without such hits only the food consumption is shown. The estimated damage in the first line is always the damage of one hit.
 
 **Action: Hitting / Training** (Result, under View, saved per tab, default **Hitting**) choose which number the cards and lines show. While the **Food production is 0** there is nothing to train for: the Training button is disabled (greyed out), Hitting is shown, and the line `To see the training numbers, fill in the Food production (Capacity & settings).` appears under the buttons. The Training choice itself stays saved and is active again as soon as the production is filled in:
 
