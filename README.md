@@ -12,6 +12,12 @@ The modes are in three rows: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stac
 
 The troop lists are written inside the page. For every troop (army, monsters, engineers, mercenaries) they store the health, the strength, the food consumption (all mercenaries use no food), the Leadership / Dominance / Authority cost and the vs melee / ranged / mounted / flying bonuses exactly as in the troop JSON. The strength is stored, not calculated from the health. The summary line above the result shows the **food consumption** of all the units together (number of units x food per unit), before the estimated damage.
 
+Every troop also stores its **revival cost in gold** (the attack figure of the troop JSON; the silver cost of defending is always 10 times it and is not stored). It is only stored for now - nothing shows or uses it yet.
+
+## Capacity & settings
+
+Four boxes: Leadership, Dominance, Authority and **Food production**. Food production is only an input for now (default 0, saved per tab like the other boxes); the calculation does not use it yet.
+
 ## Mercenaries
 
 Mercenaries are hired troops. They use Authority only (not Leadership or Dominance), and all of them last 7 days. The Authority box is next to Leadership and Dominance. The 15 mercenaries we have a picture for are in the calculation (list `MERC`, with class, tier, category, type, health, strength, Authority per unit, the vs melee / ranged / mounted / flying bonuses and the bonus against epic enemies). The other 31 mercenaries from the troop JSON are stored apart in the list `MERC_LATER`, with the same columns; nothing reads that list, so they change no number and show nowhere, until a picture is added and the row is moved up into `MERC`. The swarm bonus of a jungle guardian is stored in the same vs column as a regular bonus, and a flag marks the jungle guardians.
