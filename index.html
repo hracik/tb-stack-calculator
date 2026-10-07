@@ -198,7 +198,7 @@ function drawSO(st,P){
   const grp={};st.forEach(x=>grp[x.name]=x.grp);
   const sb={};st.forEach(x=>sb[x.name]=x);
   // squad bonus = the troop's own bonus against this enemy + the Double hit. "No squad bonus" = base strength x your strength multiplier only.
-  const info=n=>{const t=TRN[n],m=vsRatio(t,P),dh=t.cls=='M'?(P['dh'+t.type]||0):t.beast?P.dhBeast:0,cnt=sb[n]?sb[n].n||0:0,hpu=sb[n]?sb[n].hp:t.hp*mults(t,P)[0],
+  const info=n=>{const t=TRN[n],m=vsRatio(t,P),dh=P.cp?0:t.cls=='M'?(P['dh'+t.type]||0):t.beast?P.dhBeast:0,cnt=sb[n]?sb[n].n||0:0,hpu=sb[n]?sb[n].hp:t.hp*mults(t,P)[0],
     one=t.str*mults(t,P)[1],full=one*vsFactor(t,P)*dhf(t,P);
     return`${t.cls}${t.tier} · ${vsText(t,P)}${dh>0?' · Double hit +'+dh+'%':''}<br>${[['SH',(hpu>0?one/hpu:0).toFixed(4)],['Health',num(cnt*hpu)],['Strength',num(cnt*one)],['Damage',num(cnt*full)]].map(([l,x])=>`<span style="white-space:nowrap">${l}: ${x}</span>`).join(' · ')}`};   // SH = strength without squad bonus and Double hit (only your strength multiplier) per health; Damage = strength with the squad bonus and Double hit
   const one=(n,lbl)=>`<div class="oi" data-n="${esc(n)}"><span class="no"${String(lbl).includes('–')?' style="width:auto;padding:0 9px;border-radius:11px"':''}>${lbl}</span>${IC[n]?`<img class="ic2" src="${IC[n]}" alt="">`:''}<span class="nm">${esc(n)} <small class="mu">${info(n)}</small></span></div>`;
@@ -322,7 +322,7 @@ const TRN={};TR.forEach(t=>TRN[t.name]=t);
 // Strength per health is the strength multiplier divided by the health multiplier (Beast army units carry +Beast health, so they hit a little
 // less per health). The modes only differ in the BLOCKS they cut the army into; inside a block the weakest value dies first, strictly.
 // Only troops with exactly the same value are ordered by: smaller unused bonus, then Melee -> Ranged -> Mounted -> Flying, then the lower tier.
-const dhf=(t,P)=>t.cls=='M'?1+(P['dh'+t.type]||0)/100:t.beast?1+P.dhBeast/100:1;     // monsters: their group's Double hit; Beast army units (Royal Lion, Battle Griffin): the Beast group's
+const dhf=(t,P)=>P.cp?1:t.cls=='M'?1+(P['dh'+t.type]||0)/100:t.beast?1+P.dhBeast/100:1;     // monsters: their group's Double hit; Beast army units (Royal Lion, Battle Griffin): the Beast group's. CP kill / CP death: the only enemy is ONE stack, there is no second enemy to hit, so the Double hit is unused (x 1)
 // ONE damage computation for every mode: base strength x (1 + class strength + epic strength + monster strength + troop-type strength (where they
 // apply) + the troop's own bonus against this enemy, all ADDED in one pool), then x (1 + Double hit) for monsters. The modes differ only in the dying-order rule.
 const dmgFactor=(t,P)=>vsFactor(t,P)*dhf(t,P);            // what the troop's own bonus and Double hit add to the same stack without them
@@ -505,9 +505,9 @@ function renOrder(P,names){
 // Guardsmen before Specialists (G9, S9, G8, S8 ...), the monsters last, tier by tier from the top. Inside a class and tier the troops with the SMALLER squad bonus against
 // flying come first. Troops with the same class, tier and squad bonus (for example every G9 without a bonus) are ONE GROUP of equals: the game picks their order at random,
 // so they get the same health and share the places of the group (see cpGroup, allocTight and score).
-// The squad bonus of an ARMY troop is its bonus against flying ONLY - the Double hit of the Beast units (Royal Lion, Battle Griffin) is NOT a bonus, they count as no-bonus units
-// (the Double hit still multiplies their damage). A monster's Double hit stays part of its bonus.
-const cpBonus=(t,P)=>t.pool=='M'?sqb(t,P).tot:vsRatio(t,P);
+// The squad bonus is the bonus against flying ONLY. The Double hit is unused in the CP modes (one enemy stack, no second enemy to hit - see dhf), so the Beast units
+// (Royal Lion, Battle Griffin) and the monsters count as troops without a bonus when they have none against flying.
+const cpBonus=(t,P)=>vsRatio(t,P);
 const cpSH=(t,P)=>Math.round(ratioOf(t,P)*1e9);       // strength per health with your multipliers only (no squad bonus, no Double hit)
 // Group of equals. CP kill: class + tier + bonus. CP death: class + bonus + SH ratio, the TIER does not matter - troops with exactly the same SH ratio and bonus (G9 and G8
 // without a bonus) are interchangeable, so they are one group.
