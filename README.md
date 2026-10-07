@@ -29,8 +29,8 @@ Mercenaries are hired troops. They use Authority only (not Leadership or Dominan
 
 Above the result there is a View switch: **Grouped**, **Mobile** and **Computer**.
 
-- **Grouped** (the default) is the cards in groups, 5 per row, one block for the Army, one for the Monsters and one for the Mercenaries.
-- **Mobile**: one unit per line. The line starts with the picture; to the right of it is the name of the unit and below the name the number of units. The three sections (Army - Leadership, Monsters - Dominance, Mercenaries - Authority) keep their headings. A line can be clicked to turn the troop off or on, like a card. For now the units stand in the same order as the Grouped cards (the order for Mobile is still to be set).
+- **Grouped** (the default) is the cards in groups, 5 per row, one block for the Mercenaries, one for the Monsters and one for the Army (in this order, in every view).
+- **Mobile**: one unit per line. The line starts with the picture; to the right of it is the name of the unit and below the name the number of units. The three sections (Mercenaries - Authority, Monsters - Dominance, Army - Leadership) keep their headings. A line can be clicked to turn the troop off or on, like a card. For now the units stand in the same order as the Grouped cards (the order for Mobile is still to be set).
 - **Computer** is not ready yet (the button is disabled).
 
 The chosen view is one setting for the whole page (saved in the browser, not per tab).
