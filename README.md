@@ -46,7 +46,7 @@ The chosen view is one setting for the whole page (saved in the browser, not per
 
 ### Hits the food production pays for
 
-The **Food production** box (Capacity & settings, saved per tab, default 0) sets how much food you have. The food consumption of the calculated army (all the units of one hit, after the 25 % cut, the number shown in the summary line) is the food one hit costs when every unit has to be trained. The hits are rounded **down to 2 decimals** and shown with 2 decimals.
+The **Food production** box (Capacity & settings, saved per tab, default 0) sets how much food you have. The training calculations use the box **plus 0.9 %** (`production x 1.009`, the constant `FOODADD` in the page); the box itself shows what you typed. The food consumption of the calculated army (all the units of one hit, after the 25 % cut, the number shown in the summary line) is the food one hit costs when every unit has to be trained. The hits are rounded **down to 2 decimals** and shown with 2 decimals.
 
 **Without revival** (all the units are gone after the hit): `hits = food production / food consumption` (20,000,000 / 15,990,240 = 1.2507... shows as 1.25).
 

@@ -149,6 +149,7 @@ document.addEventListener('click',e=>{
 let VIEW='grouped';try{const sv=localStorage.getItem('sc_view');if(sv=='mobile'||sv=='computer')VIEW=sv}catch(e){}      // result view: Grouped (cards in groups), Mobile (one unit per line) or Computer (two units per line, same order as Mobile). One setting for all tabs.
 let MUL=1,REVM='one',TOPT={A:0,M:0,U:0};      // MUL = the hits the Food production pays for in the chosen Training case (rounded DOWN to 2 decimals); above 1 the numbers are shown again as a second number (units rounded UP to a whole piece). REVM = the Training button: one (1 hit) / all (revive all) / top (revive the top line) / none (revive none). TOPT = the top line: the highest tier in use in the Army (with the engineers), in the Monsters and in the Mercenaries
 const REV=90;      // % of a revived stack that comes back after a hit (rounded down per stack)
+const FOODADD=0.9;  // % added to the Food production box before the hits are counted (the training calculations use the box x 1.009)
 const FOODCUT=25;  // % less food consumption for every unit (the food values stored with the troops are the plain JSON values)
 const foodOf=n=>(TRN[n].food||0)*(100-FOODCUT)/100;      // food consumption of one unit of the troop n, after the cut
 const REVCASES=[['none','none'],['top','top line'],['mon','monsters'],['montop','monsters + top line'],['all','all']];      // the Training cases, in the order of the buttons
@@ -1023,7 +1024,7 @@ function calc(){
   REVM=REVCASES.some(c=>c[0]==$('trn').value)?$('trn').value:'one';
   const hl=[...A,...Mo,...U.list];
   TOPT={A:0,M:0,U:0};hl.forEach(s=>{if((s.n||0)>0){const t=TRN[s.name];if(t.tier>TOPT[t.pool])TOPT[t.pool]=t.tier}});      // the top line = the highest tier in use, for the Army, the Monsters and the Mercenaries
-  const HIT={};REVCASES.forEach(([k])=>HIT[k]=hitsFor(food,v('foodP'),hl,k));      // hits the Food production pays for in every Training case
+  const HIT={};REVCASES.forEach(([k])=>HIT[k]=hitsFor(food,v('foodP')*(100+FOODADD)/100,hl,k));      // hits the Food production pays for in every Training case
   MUL=REVM!='one'&&HIT[REVM]>1?HIT[REVM]:1;      // the chosen Training button drives the second numbers (1 hit / a case that pays for 1 hit or less = nothing extra to show)
   document.querySelectorAll('.tb').forEach(b=>b.classList.toggle('on',b.dataset.tr==REVM));
   {const tt=document.querySelector('.tb[data-tr="top"]');if(tt)tt.title='Revive 90 % of the top line only, the highest tier in use ('+['A:Army','M:Monsters','U:Mercenaries'].filter(x=>TOPT[x[0]]).map(x=>x.slice(2)+' '+TOPT[x[0]]).join(', ')+'); the rest is lost every hit'}
