@@ -208,7 +208,13 @@ function drawSO(st,P){
   const flush=()=>{
     if(!block.length)return;
     const first=pos+1,last=pos+block.length;pos=last;
-    if(P.cp){block.forEach(n=>{const lb=block.length>1?first+'–'+last:first;SOPOS[n]=lb;html+=one(n,lb)});block=[];return}      // CP kill: a group of equals - every troop of it carries the same range of places (the game picks the order)
+    if(P.cp){                                                  // CP kill / CP death: a group of equals - the game picks the order inside it, so it is printed with the biggest stack first, every stack with its own place number; a range (3–4) only for stacks with EQUAL health
+      const H=n=>sb[n]?(sb[n].n||0)*sb[n].hp:0,srt=block.map((n,i)=>({n,i,h:H(n)})).sort((a,b)=>b.h-a.h||a.i-b.i);
+      for(let k=0;k<srt.length;){let m=k+1;while(m<srt.length&&Math.abs(srt[m].h-srt[k].h)<=srt[k].h*1e-9)m++;
+        const lb=m-k>1?(first+k)+'–'+(first+m-1):first+k;
+        for(let q=k;q<m;q++){SOPOS[srt[q].n]=lb;html+=one(srt[q].n,lb)}
+        k=m}
+      block=[];return}
     block.forEach(n=>SOPOS[n]=block.length>1?first+'–'+last:first);
     html+=`<div class="oi"><span class="no" style="width:auto;padding:0 9px;border-radius:11px">${block.length>1?first+'–'+last:first}</span><span class="nm">Everything else - one block, random order <small class="mu">${block.length} stacks: ${block.map(esc).join(', ')}</small></span></div>`;
     block=[];
