@@ -10,7 +10,7 @@ The modes are in three rows: Regular (4-stack, 8-stack), Sniper (3-stack, 6-stac
 
 ## Mercenaries
 
-Mercenaries are hired troops. They use Authority only (not Leadership or Dominance), and all of them last 7 days. The Authority box is next to Leadership and Dominance. The result has a Mercenaries section with the mercenaries we have a picture for; their numbers are still 0 and are not part of the calculation yet.
+Mercenaries are hired troops. They use Authority only (not Leadership or Dominance), and all of them last 7 days. The Authority box is next to Leadership and Dominance. All 46 mercenaries from the troop JSON are stored in the page with their stats (class, tier, category, health, Authority per unit, and the vs melee / ranged / mounted / flying bonuses). The result has a Mercenaries section that shows the ones we have a picture for; their numbers are still 0 and are not part of the calculation yet.
 
 ## Tabs
 
