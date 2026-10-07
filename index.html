@@ -502,30 +502,40 @@ function renOrder(P,names){
   return[...head,...seq,...ts.filter(t=>t.pool=='M').sort((a,b)=>b.tier-a.tier||cat(a,b))].map(t=>t.name);
 }
 // CP kill (PvP, one flying enemy): a FIXED order, nothing is ranked by strength. All the engineers first (higher tier first), then the army tier by tier from the top,
-// Guardsmen before Specialists (G9, S9, G8, S8 ...), the monsters last, tier by tier from the top. Inside a class and tier the troops with the SMALLER squad bonus (against
-// flying, Double hit included) come first. Troops with the same class, tier and squad bonus (for example every G9 without a bonus) are ONE GROUP of equals: the game picks their
-// order at random, so they get the same health and share the places of the group (see cpGroup, allocTight and score).
-const cpGroup=(t,P)=>t.cls+t.tier+'|'+Math.round(sqb(t,P).tot*1e6);
+// Guardsmen before Specialists (G9, S9, G8, S8 ...), the monsters last, tier by tier from the top. Inside a class and tier the troops with the SMALLER squad bonus against
+// flying come first. Troops with the same class, tier and squad bonus (for example every G9 without a bonus) are ONE GROUP of equals: the game picks their order at random,
+// so they get the same health and share the places of the group (see cpGroup, allocTight and score).
+// The squad bonus of an ARMY troop is its bonus against flying ONLY - the Double hit of the Beast units (Royal Lion, Battle Griffin) is NOT a bonus, they count as no-bonus units
+// (the Double hit still multiplies their damage). A monster's Double hit stays part of its bonus.
+const cpBonus=(t,P)=>t.pool=='M'?sqb(t,P).tot:vsRatio(t,P);
+const cpSH=(t,P)=>Math.round(ratioOf(t,P)*1e9);       // strength per health with your multipliers only (no squad bonus, no Double hit)
+// Group of equals. CP kill: class + tier + bonus. CP death: class + bonus + SH ratio, the TIER does not matter - troops with exactly the same SH ratio and bonus (G9 and G8
+// without a bonus) are interchangeable, so they are one group.
+const cpGroup=(t,P)=>t.cls+'|'+Math.round(cpBonus(t,P)*1e6)+'|'+(P.cpd?cpSH(t,P):t.tier);
 function cpOrder(P,names){
   const ts=TR.filter(t=>names.has(t.name)),ci=t=>DEFCAT.indexOf(t.cat);
   const eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier),army=ts.filter(t=>t.pool=='A'&&t.cls!='E'),mon=ts.filter(t=>t.pool=='M');
   const tiers=a=>[...new Set(a.map(t=>t.tier))].sort((x,y)=>y-x);
-  const grp=a=>a.slice().sort((x,y)=>sqb(x,P).tot-sqb(y,P).tot||ci(x)-ci(y)||x.name.localeCompare(y.name));      // smaller squad bonus first; equal ones stay together
+  const grp=a=>a.slice().sort((x,y)=>cpBonus(x,P)-cpBonus(y,P)||ci(x)-ci(y)||x.name.localeCompare(y.name));      // smaller squad bonus first; equal ones stay together
   return[...eng,...tiers(army).flatMap(tt=>['G','S'].flatMap(c=>grp(army.filter(t=>t.tier==tt&&t.cls==c)))),...tiers(mon).flatMap(tt=>grp(mon.filter(t=>t.tier==tt)))].map(t=>t.name);
 }
 // CP death (PvP, one flying enemy, the most damage): the troops that strike last strike the most, so the Specialists (double damage) stand near the end. The order:
-// all the engineers (higher tier first), the Guardsmen WITHOUT a squad bonus against flying (the top tier first, down to tier 1), the Guardsmen WITH one, the FULL monster tiers without
+// all the engineers (higher tier first), the Guardsmen WITHOUT a squad bonus against flying (every tier together, see below), the Guardsmen WITH one, the FULL monster tiers without
 // a bonus and with one, the Specialists without a bonus and at last with a bonus - and behind all of them the PARTIAL monster tier (the tier where the Dominance runs out, and the tiers below it):
-// it has the lowest health, so it stands last and cannot pull the Specialists down; it is what spends the Dominance that is left. A troop "has a bonus" when it has a squad bonus against flying.
-// c = the number of full monster tiers (the top c tiers); the damage decides which c is used (see buildStacks). Every tier from 9 down to 1 follows the same rule.
-// Inside a class and tier the smaller squad bonus first; troops with the same class, tier and bonus are one group of equals, as in CP kill.
+// it has the lowest health, so it stands last and cannot pull the Specialists down; it is what spends the Dominance that is left. A troop "has a bonus" when it has a squad bonus against flying
+// (the Double hit of the Beast units is none). c = the number of full monster tiers (the top c tiers); the damage decides which c is used (see buildStacks).
+// The Guardsmen and Specialists WITHOUT a bonus are sorted by their SH ratio (smaller first), then the higher tier first: troops with exactly the same SH ratio (G9 + G8 + ... down to tier 1)
+// stand together and are ONE group of equals with the same health. The troops with a bonus go tier by tier (higher first), the smaller bonus first.
 function cpdOrder(P,names,c){
   const ts=TR.filter(t=>names.has(t.name)),ci=t=>DEFCAT.indexOf(t.cat),bon=t=>vsRatio(t,P)>0,sp=monSplit(ts,c);
   const eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier),army=ts.filter(t=>t.pool=='A'&&t.cls!='E'),mon=ts.filter(t=>t.pool=='M');
   const tiers=a=>[...new Set(a.map(t=>t.tier))].sort((x,y)=>y-x);
-  const grp=a=>a.slice().sort((x,y)=>sqb(x,P).tot-sqb(y,P).tot||ci(x)-ci(y)||x.name.localeCompare(y.name));
-  const blk=a=>[false,true].flatMap(b=>tiers(a).flatMap(tt=>grp(a.filter(t=>t.tier==tt&&bon(t)==b))));      // no bonus (all tiers, the top one first), then with a bonus
-  return[...eng,...blk(army.filter(t=>t.cls=='G')),...blk(mon.filter(t=>sp.full.has(t.tier))),...blk(army.filter(t=>t.cls=='S')),...blk(mon.filter(t=>!sp.full.has(t.tier)))].map(t=>t.name);
+  const grp=a=>a.slice().sort((x,y)=>cpBonus(x,P)-cpBonus(y,P)||cpSH(x,P)-cpSH(y,P)||ci(x)-ci(y)||x.name.localeCompare(y.name));
+  const byTier=(a,b)=>tiers(a).flatMap(tt=>grp(a.filter(t=>t.tier==tt&&bon(t)==b)));
+  const noB=a=>a.filter(t=>!bon(t)).sort((x,y)=>cpSH(x,P)-cpSH(y,P)||y.tier-x.tier||ci(x)-ci(y)||x.name.localeCompare(y.name));
+  const blk=a=>[...byTier(a,false),...byTier(a,true)];                      // monsters: no bonus (the top tier first), then with a bonus
+  const armyBlk=a=>[...noB(a),...byTier(a,true)];                           // army: no bonus (same SH together, all tiers), then with a bonus
+  return[...eng,...armyBlk(army.filter(t=>t.cls=='G')),...blk(mon.filter(t=>sp.full.has(t.tier))),...armyBlk(army.filter(t=>t.cls=='S')),...blk(mon.filter(t=>!sp.full.has(t.tier)))].map(t=>t.name);
 }
 // 4-, 3-, 6- and 8-stack modes and Killshot: Royal Lion and Battle Griffin (the Beast units) carry the Beast health bonus, so they deal less strength per health than the rest of the army.
 // Each one is moved to the nearest place BELOW that is Kn+1 = the FIRST place of a strike group (K = the number of enemy stacks): K = 4: 6 -> 5, 14 -> 13; K = 3: 5 -> 4, 14 -> 13; K = 6 or 8: 6n+1 or 8n+1
@@ -575,7 +585,7 @@ function buildStacks(P,order,X,so){
     if(rgm(P)){                      // 3-, 4-, 6- and 8-stack: troops of the same ratio stay together, the smaller squad bonus first; the group order with the most damage wins
       const fs=fourSearch(P,live,mkOut);so=fs.names;out=mkOut(so,fs.cc);
     }else if(P.cp){                  // CP kill: the order is fixed; the Dominance decides how many monster tiers are full - every choice is solved and the one with the most damage is kept
-      const ordOf=c=>P.cpd?cpdOrder(P,live,c):cpOrder(P,live),mkCP=(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)});return o};let best=null;
+      const ordOf=c=>P.cpd?cpdOrder(P,live,c):cpOrder(P,live),mkCP=(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)+(s.pt?'|p':'')});return o};let best=null;
       for(let c=nT;c>=1;c--){
         const s2=ordOf(c),r=allocate(P,mkCP(s2,c)),dmg=score(P,[...r.A,...r.Mo],s2).dmg;
         if(!best||dmg>best.dmg*(1+1e-9))best={dmg,c};
