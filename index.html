@@ -509,9 +509,9 @@ function renOrder(P,names){
 // (Royal Lion, Battle Griffin) and the monsters count as troops without a bonus when they have none against flying.
 const cpBonus=(t,P)=>vsRatio(t,P);
 const cpSH=(t,P)=>Math.round(ratioOf(t,P)*1e9);       // strength per health with your multipliers only (no squad bonus, no Double hit)
-// Group of equals. CP kill: class + tier + bonus. CP death: class + bonus + SH ratio, the TIER does not matter - troops with exactly the same SH ratio and bonus (G9 and G8
-// without a bonus) are interchangeable, so they are one group.
-const cpGroup=(t,P)=>t.cls+'|'+Math.round(cpBonus(t,P)*1e6)+'|'+(P.cpd?cpSH(t,P):t.tier);
+// Group of equals. CP kill: class + tier + bonus. CP death: no class split between the Guardsmen and the monsters and no tier (G and M count as one kind), the bonus decides:
+// all the G and M without a bonus are ONE group, the S (Specialists) are their own kind, an Engineer is a group of its own (its SH ratio differs per tier).
+const cpGroup=(t,P)=>{const b=Math.round(cpBonus(t,P)*1e6);return P.cpd?(t.cls=='G'||t.cls=='M'?'GM':t.cls)+'|'+b+(t.cls=='E'?'|'+cpSH(t,P):''):t.cls+'|'+b+'|'+t.tier};
 function cpOrder(P,names){
   const ts=TR.filter(t=>names.has(t.name)),ci=t=>DEFCAT.indexOf(t.cat);
   const eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier),army=ts.filter(t=>t.pool=='A'&&t.cls!='E'),mon=ts.filter(t=>t.pool=='M');
@@ -520,22 +520,19 @@ function cpOrder(P,names){
   return[...eng,...tiers(army).flatMap(tt=>['G','S'].flatMap(c=>grp(army.filter(t=>t.tier==tt&&t.cls==c)))),...tiers(mon).flatMap(tt=>grp(mon.filter(t=>t.tier==tt)))].map(t=>t.name);
 }
 // CP death (PvP, one flying enemy, the most damage): the troops that strike last strike the most, so the Specialists (double damage) stand near the end. The order:
-// all the engineers (higher tier first), the Guardsmen WITHOUT a squad bonus against flying (every tier together, see below), the Guardsmen WITH one, the FULL monster tiers without
-// a bonus and with one, the Specialists without a bonus and at last with a bonus - and behind all of them the PARTIAL monster tier (the tier where the Dominance runs out, and the tiers below it):
-// it has the lowest health, so it stands last and cannot pull the Specialists down; it is what spends the Dominance that is left. A troop "has a bonus" when it has a squad bonus against flying
-// (the Double hit of the Beast units is none). c = the number of full monster tiers (the top c tiers); the damage decides which c is used (see buildStacks).
-// The Guardsmen and Specialists WITHOUT a bonus are sorted by their SH ratio (smaller first), then the higher tier first: troops with exactly the same SH ratio (G9 + G8 + ... down to tier 1)
-// stand together and are ONE group of equals with the same health. The troops with a bonus go tier by tier (higher first), the smaller bonus first.
+// all the engineers (higher tier first); the Guardsmen and the FULL monster tiers WITHOUT a squad bonus against flying - ONE group of equals (every tier, G and M together, the same health);
+// the Guardsmen and the full monsters WITH a bonus, mixed, the LOWEST bonus first (it dies first); the Specialists without a bonus (one group) and then with a bonus, the lowest bonus first;
+// and behind all of them the PARTIAL monster tier (the tier where the Dominance runs out, and the tiers below it; without a bonus first, then the lowest bonus first): it has the lowest health,
+// so it stands last and cannot pull the Specialists down; it is what spends the Dominance that is left. A troop "has a bonus" when it has a squad bonus against flying (the Double hit is unused).
+// c = the number of full monster tiers (the top c tiers); the damage decides which c is used (see buildStacks). Every tier from 9 down to 1 follows the same rule.
 function cpdOrder(P,names,c){
   const ts=TR.filter(t=>names.has(t.name)),ci=t=>DEFCAT.indexOf(t.cat),bon=t=>vsRatio(t,P)>0,sp=monSplit(ts,c);
   const eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier),army=ts.filter(t=>t.pool=='A'&&t.cls!='E'),mon=ts.filter(t=>t.pool=='M');
-  const tiers=a=>[...new Set(a.map(t=>t.tier))].sort((x,y)=>y-x);
-  const grp=a=>a.slice().sort((x,y)=>cpBonus(x,P)-cpBonus(y,P)||cpSH(x,P)-cpSH(y,P)||ci(x)-ci(y)||x.name.localeCompare(y.name));
-  const byTier=(a,b)=>tiers(a).flatMap(tt=>grp(a.filter(t=>t.tier==tt&&bon(t)==b)));
-  const noB=a=>a.filter(t=>!bon(t)).sort((x,y)=>cpSH(x,P)-cpSH(y,P)||y.tier-x.tier||ci(x)-ci(y)||x.name.localeCompare(y.name));
-  const blk=a=>[...byTier(a,false),...byTier(a,true)];                      // monsters: no bonus (the top tier first), then with a bonus
-  const armyBlk=a=>[...noB(a),...byTier(a,true)];                           // army: no bonus (same SH together, all tiers), then with a bonus
-  return[...eng,...armyBlk(army.filter(t=>t.cls=='G')),...blk(mon.filter(t=>sp.full.has(t.tier))),...armyBlk(army.filter(t=>t.cls=='S')),...blk(mon.filter(t=>!sp.full.has(t.tier)))].map(t=>t.name);
+  const tie=(x,y)=>y.tier-x.tier||(x.cls=='M')-(y.cls=='M')||ci(x)-ci(y)||x.name.localeCompare(y.name);              // same bonus: the higher tier first, Guardsmen before monsters
+  const noB=a=>a.filter(t=>!bon(t)).sort(tie);                                                                    // no bonus: one group, the higher tier first
+  const withB=a=>a.filter(bon).sort((x,y)=>cpBonus(x,P)-cpBonus(y,P)||tie(x,y));                                  // with a bonus: the lowest bonus first
+  const both=a=>[...noB(a),...withB(a)];
+  return[...eng,...both([...army.filter(t=>t.cls=='G'),...mon.filter(t=>sp.full.has(t.tier))]),...both(army.filter(t=>t.cls=='S')),...both(mon.filter(t=>!sp.full.has(t.tier)))].map(t=>t.name);
 }
 // 4-, 3-, 6- and 8-stack modes and Killshot: Royal Lion and Battle Griffin (the Beast units) carry the Beast health bonus, so they deal less strength per health than the rest of the army.
 // Each one is moved to the nearest place BELOW that is Kn+1 = the FIRST place of a strike group (K = the number of enemy stacks): K = 4: 6 -> 5, 14 -> 13; K = 3: 5 -> 4, 14 -> 13; K = 6 or 8: 6n+1 or 8n+1
@@ -835,21 +832,25 @@ function allocTight(P,live){
     fill(Fm,P.capM,XM,Infinity,meas);                 // the full monster tiers (the strongest first) on one level, not above the army's level (unless free)
     const invF=Fm.reduce((q,x)=>q+x.w*x.cost/meas(x),0),XF=invF?Math.min(P.capM/invF,XM):0;
     dom=!(P.capM>0)||!invF||free||P.capM/invF>=X*0.998;       // the Dominance reaches for the full tiers at the army's level (otherwise they stand lower and no tier below them gets anything)
-    let XP=0,tp=0;
+    let XP=0,tp=0,invP=0;
     if(Pm.length){                                    // the partial tier: whatever is left of the Dominance, on one level not above the full tiers. Only ONE tier is partial (the highest of them) - the tiers below stay empty
       tp=Math.max(...Pm.map(s=>+s.r.slice(1)));
       const P1=Pm.filter(s=>+s.r.slice(1)==tp);
-      const invP=P1.reduce((q,x)=>q+x.w*x.cost/meas(x),0),left=P.capM-XF*invF;
+      invP=P1.reduce((q,x)=>q+x.w*x.cost/meas(x),0);const left=P.capM-XF*invF;
       XP=invP&&left>0?Math.min(left/invP,XF):0;
       Pm.forEach(s=>{s.n=+s.r.slice(1)==tp?Math.floor(XP*s.w/meas(s)):0});
     }
     cur.forEach(s=>{s.tgt=(s.p=='A'?X:s.pt?(+s.r.slice(1)==tp?XP:0):XF)*s.w});
     for(let g=0;g<30;g++){const before=cur.map(x=>x.n).join();chainT(cur);if(cur.map(x=>x.n).join()==before)break}
     if(HO&&isFinite(X)&&A.length){      // CP kill / CP death: the chain cuts down the stacks behind a smaller stack (the monsters before the Specialists) and the Leadership it frees is left over: it raises the level of the whole army instead (the highest level the chain and the budget allow)
-      const mn=Mo.map(s=>s.n),run=x=>{A.forEach(s=>{s.n=Math.floor(x*s.w/meas(s))});Mo.forEach((s,i)=>{s.n=mn[i]});for(let g=0;g<30;g++){const b=cur.map(q=>q.n).join();chainT(cur);if(cur.map(q=>q.n).join()==b)break}return usedOf(A)};
+      // CP death: the full monster tiers stand in the same group as the army (the troops without a bonus), so they follow the army's level (as far as the Dominance reaches) and the partial tier gets what is left
+      const mn=Mo.map(s=>s.n),fol=P.cpd&&!free&&invF>0,lv=xa=>{const f=Math.min(P.capM/invF,xa),left=P.capM-f*invF;return{f,p:invP&&left>0?Math.min(left/invP,f):0}};
+      const setM=xa=>{const l=lv(xa);Fm.forEach(s=>{s.n=Math.floor(l.f*s.w/meas(s))});Pm.forEach(s=>{s.n=+s.r.slice(1)==tp?Math.floor(l.p*s.w/meas(s)):0})};
+      const run=x=>{A.forEach(s=>{s.n=Math.floor(x*s.w/meas(s))});if(fol)setM(x);else Mo.forEach((s,i)=>{s.n=mn[i]});for(let g=0;g<30;g++){const b=cur.map(q=>q.n).join();chainT(cur);if(cur.map(q=>q.n).join()==b)break}return usedOf(A)};
       let lo=X,hi=X*1.1;
       if(run(hi)<=P.capA)lo=hi;else for(let k=0;k<45;k++){const mid=(lo+hi)/2;if(run(mid)<=P.capA)lo=mid;else hi=mid}
       run(lo);A.forEach(s=>{s.tgt=lo*s.w});
+      if(fol){const l=lv(lo);Fm.forEach(s=>{s.tgt=l.f*s.w});Pm.forEach(s=>{s.tgt=(+s.r.slice(1)==tp?l.p:0)*s.w})}
     }
     TOPTOL=1.005;topUp(cur,A,P.capA,true,meas,HO);topUp(cur,Mo,P.capM,true,meas,HO);
     if(P.capM-usedOf(Mo)>0.003*P.capM){TOPTOL=1.03;topUp(cur,Mo,P.capM,true,meas,HO);TOPTOL=1.005}      // Dominance left over: the monsters may go up to 3 % above the level (the first monster stands far below the army anyway)
