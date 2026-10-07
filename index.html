@@ -20,7 +20,7 @@ select{width:auto}.mu{color:var(--mu);font-size:13px}.g{display:flex;gap:14px;fl
 .bc b{display:block;margin-bottom:6px;color:var(--ac);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bi{display:grid;grid-template-columns:20px 1fr;align-items:center;gap:8px;margin:5px 0}
 .bi span{color:var(--mu);text-align:center}.bi input,.bi select{width:100%;box-sizing:border-box}.bc.ep{align-self:start}.bi.dh{grid-template-columns:auto 1fr}.bi.dh span{text-align:left;white-space:nowrap}
-.tt{table-layout:fixed;min-width:620px}.tt th:first-child{width:130px}.tt td,.tt th{text-align:center}.tt td:first-child{text-align:left}
+.tt{table-layout:fixed;min-width:620px}.tt td:first-child{width:130px}.tt td,.tt th{text-align:center}.tt td:first-child{text-align:left}
 .tt label{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
 .ol{max-width:440px}
 .oi{display:flex;align-items:center;gap:10px;background:#dcc791;color:#2a2012;border:1px solid #8a6a2c;border-radius:6px;padding:5px 10px;margin:5px 0;user-select:none}
@@ -119,7 +119,7 @@ $('mb').innerHTML=TY.map(n=>`<div class="bc"><b>${n}</b>${row('H','bh_'+n,100)}$
 $('sb').innerHTML=CO.map(n=>card(n,n)).join('');
 
 // tier checkboxes, aligned in a grid
-let th='<tr><th></th>'+[1,2,3,4,5,6,7,8,9].map(i=>`<th>${i}</th>`).join('')+'</tr>';
+let th='';      // no header row of tier numbers: every box already says its tier (G8, S9, M7)
 [['G',1],['S',1],['E',1],['M',3]].forEach(([c,a])=>{
   th+=`<tr><td>${NM[c]}</td>`;
   for(let i=1;i<=9;i++)th+=i<a?'<td></td>':`<td><label><input type="checkbox" id="s${c}${i}" ${(i>=8&&c!='M')||(c=='M'&&i>=7)?'checked':''}>${c}${i}</label></td>`;
