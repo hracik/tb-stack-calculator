@@ -161,11 +161,11 @@ const hitsFor=(F,fp,list,mode)=>{      // hits the food production fp pays for: 
   if(fp<F)return Math.floor(fp/F*100+1e-9)/100;
   const R=list.reduce((q,s)=>q+lossOf(s,mode)*foodOf(s.name),0);
   return R>0?Math.floor((1+(fp-F)/R)*100+1e-9)/100:0};
-const unitsTxt=s=>{      // units to train: the first hit all of them, every next hit only the ones not revived. A range "for the whole hits - for all the hits": e.g. 2.09 hits -> units for 2 hits - units for 2.09 hits (one number when they are the same, or when it is less than 2 hits; the stack itself when the food pays for less than 1 hit)
+const unitsTxt=s=>{      // units to train: the first hit all of them, every next hit only the ones not revived. A range "for the whole hits - for all the hits": e.g. 2.09 hits -> units for 2 hits - units for 2.09 hits (one number when they are the same; the stack itself when the food pays for 1 hit or less; between 1 and 2 hits the lower number is the stack itself)
   const n=s.n||0,L=lossOf(s,REVM),f=h=>Math.ceil(n+(h-1)*L-1e-7),t=x=>x.toLocaleString();
   if(!(MUL>1))return`<span class="nb">${t(n)}</span>`;
   const hi=f(MUL),lo=f(Math.floor(MUL+1e-9));
-  return lo>n&&lo<hi?`<span class="nb">${t(lo)}</span> <span class="nb">– ${t(hi)}</span>`:`<span class="nb">${t(hi)}</span>`};      // the pieces never break inside; a narrow card breaks only between them
+  return lo<hi?`<span class="nb">${t(lo)}</span> <span class="nb">– ${t(hi)}</span>`:`<span class="nb">${t(hi)}</span>`};      // the pieces never break inside; a narrow card breaks only between them
 const shown=(s,n)=>s.off?'off':SHOWTR?unitsTxt(s):n;      // the number on a card / line: the units to hit with (Hitting) or the units to train (Training)
 const cnt=(s,n)=>SHOWTR&&!s.off?`<span class="n nw">${unitsTxt(s)}</span>`:`<br><span class="n">${shown(s,n)}</span>`;      // on a card the units to train may wrap into two lines (the cell itself does not wrap)
 let EBINFO='';   // the stack split (army / full monster / partial monster / engineer), part of the result summary line
