@@ -1142,8 +1142,8 @@ function mercTable(all){
 }
 // The bubble under the attack mode buttons: a short explanation of the mode that is on.
 const MODEINFO={
-  '4':['Regular · 4-stack','You hit an epic monster with 4 stacks, one of them mounted. Epic strength and the bonus against epic enemies are counted. All your Leadership is spent and the Dominance goes to the strongest monster tiers. The order is searched for the most damage: the troops are grouped by strength per health (SH), the smaller squad bonus dies first, so the strongest bonuses stand last and strike the most.'],
-  '8':['Regular · 8-stack','The same as the 4-stack, but the epic monster has 8 stacks: the places 1-8 strike once, 9-16 twice, and so on. The order is searched again for 8 stacks, for the most damage.'],
+  '4':['Regular · 4-stack','You hit a "full health" epic monster with 4 stacks with the goal to maximize damage by optimizing the number of troops used per stack.'],
+  '8':['Regular · 8-stack','You hit a "full health" epic monster with 8 stacks with the goal to maximize damage by optimizing the number of troops used per stack.'],
   '3':['Sniper · 3-stack','The epic monster has 3 stacks and none of them is mounted, so a bonus against mounted is not counted. The places 1-3 strike once, 4-6 twice, and so on. The order is searched for the most damage, like in the 4-stack mode.'],
   '6':['Sniper · 6-stack','The epic monster has 6 stacks and none of them is mounted, so a bonus against mounted is not counted. The places 1-6 strike once, 7-12 twice, and so on. The order is searched for the most damage, like in the 4-stack mode.'],
   'kill':['Sniper · Killshot v. 3','A special version of the 3-stack mode: the same enemy and the same damage counting, but a little damage (under 1 % with the default inputs) is traded for a much cheaper training and reviving. The order is simple, it is not searched: the engineers first, then the army tier by tier from the top (the weaker troops of a tier first), the monsters after the army. Royal Lion and Battle Griffin stand on the places 4, 7, 10 ...'],
