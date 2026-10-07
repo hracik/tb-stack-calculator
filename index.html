@@ -30,7 +30,8 @@ select{width:auto}.mu{color:var(--mu);font-size:13px}.g{display:flex;gap:14px;fl
 .nm{flex:1}
 button{background:#8a6a2c;color:#fff;border:0;border-radius:5px;padding:1px 6px;cursor:pointer;margin-left:3px;font:inherit}
 #rst{padding:3px 10px;margin:0}
-#res table{border-collapse:separate;border-spacing:8px;table-layout:fixed;min-width:790px}#res td .mu{white-space:normal}#res th{width:150px}
+#res table{border-collapse:separate;border-spacing:8px;table-layout:fixed;min-width:600px}#res td .mu{white-space:normal}#res th{width:150px}
+#res th.gl{width:auto;text-align:left;padding:8px 2px 0}
 #res td{background:#dcc791;color:#2a2012;border:1px solid #8a6a2c;border-radius:6px;text-align:center;padding:8px 10px}
 #res td:empty{background:transparent;border:0}
 #res td .mu{color:#5b4721;font-size:12px}#res td .n{font-size:17px;font-weight:700}
@@ -837,13 +838,13 @@ function table(st){
   const cell=s=>`<td class="${s.off?'off':''}" data-troop="${esc(s.name)}" title="${s.off?'Click to turn this troop on':'Click to turn this troop off'}">${IC[s.name]?`<img class="ic" src="${IC[s.name]}" alt="">`:'<div class="ic ph"></div>'}<span class="kp">${KP[s.name]?'#'+KP[s.name]:''}</span><span class="mu">${s.name}</span><br><span class="n">${s.off?'off':(s.n||0).toLocaleString()}</span></td>`;
   // rows: one per tier; all engineer tiers share one block, 5 per line. Every row has exactly 5 card cells (blank cells are fine) so all tables line up.
   const keys=[];st.forEach(s=>{const k=s.cat=='Engineer'?'E*':s.r;if(!keys.includes(k))keys.push(k)});
-  let o='<div class="sc"><table><colgroup><col><col><col><col><col><col></colgroup>';
+  let o='<div class="sc"><table><colgroup><col><col><col><col><col></colgroup>';
   keys.forEach(k=>{
     const list=k=='E*'?st.filter(s=>s.cat=='Engineer').sort((a,b)=>+b.r.slice(1)-+a.r.slice(1)):st.filter(x=>x.r==k).sort((a,b)=>DISP_KEY(a)-DISP_KEY(b));
+    o+=`<tr><th class="gl" colspan="5">${k=='E*'?'Engineer Corps':`${NM[k[0]]} ${k.slice(1)}`}</th></tr>`;     // the label is one row above its cards
     for(let i=0;i<list.length;i+=5){
-      const label=i?'':(k=='E*'?'Engineer Corps':`${NM[k[0]]} ${k.slice(1)}`);
       const row=list.slice(i,i+5).map(cell);while(row.length<5)row.push('<td></td>');
-      o+=`<tr><th>${label}</th>${row.join('')}</tr>`;
+      o+=`<tr>${row.join('')}</tr>`;
     }
   });
   return o+'</table></div>';
@@ -973,12 +974,13 @@ const mercSorted=c=>{const rk=m=>{const i=MORD.indexOf(m[2]);return i<0?999:i};r
 function mercTable(all){
   const by={};all.forEach(s=>by[s.name]=s);
   const cell=m=>{const s=by[m[2]];return`<td class="${s.off?'off':''}" data-troop="${esc(m[2])}" title="${esc(m[2])} - ${m[0]=='E'?'Engineer':m[0]=='G'?'Guardsman':m[0]=='S'?'Specialist':'Monster'} ${m[1]}${m[0]=='E'?'':', '+m[3]}, Authority ${m[6]} per unit. ${s.off?'Click to turn this mercenary on':'Click to turn this mercenary off'}"><img class="ic" src="${IC[m[2]]}" alt=""><span class="kp">${KP[m[2]]?'#'+KP[m[2]]:''}</span><span class="mu">${esc(m[2])}</span><br><span class="n">${s.off?'off':s.n.toLocaleString()}</span></td>`};
-  let o='<div class="sc"><table><colgroup><col><col><col><col><col><col></colgroup>';    // 5 cards per row
+  let o='<div class="sc"><table><colgroup><col><col><col><col><col></colgroup>';    // 5 cards per row
   [['E','Engineer Corps'],['G','Guardsmen'],['S','Specialists'],['M','Monsters']].forEach(([c,label])=>{
     const list=mercSorted(c).filter(m=>mercVis(by[m[2]]));
+    if(list.length)o+=`<tr><th class="gl" colspan="5">${label}</th></tr>`;     // the label is one row above its cards
     for(let i=0;i<list.length;i+=5){
       const row=list.slice(i,i+5).map(cell);while(row.length<5)row.push('<td></td>');
-      o+=`<tr><th>${i?'':label}</th>${row.join('')}</tr>`;
+      o+=`<tr>${row.join('')}</tr>`;
     }
   });
   return o+'</table></div>';
