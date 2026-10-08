@@ -414,8 +414,11 @@ function fourSearch(P,live,mkOut){
   const flat=g=>g.flatMap(x=>x.u);
   const mons=rest.filter(t=>t.pool=='M'),mt=monTiers(mons),nT=mt.length;
   const slots=[];for(let p=1;p<=rest.length;p++)if((p-1)%P.enemy==0)slots.push(p-1);   // the places Kn+1 (K = the number of enemy stacks)
-  const ev=(units,cc)=>{const names=units.map(t=>t.name),o=mkOut(names,cc),r=allocate(P,o);
-    return{d:score(P,[...r.A,...r.Mo],names).dmg,names,cc,dom:r.dom!==false,free:!!r.free,full:!(P.capA>0)?2:(ua=>ua>=0.999?2:ua>=0.97?1:0)(usedOf(r.A)/P.capA)}};     // full: 2 = all the Leadership is spent (99.9 %), 1 = nearly (97 %) - an order that leaves more of it unused only wins when no other one spends it
+  // The SH ratio decides who may stand in front of whom: a monster never stands in front of a troop whose ratio is clearly (RTOL) lower than its own - the engineers (a very low ratio) always come first.
+  // Monsters whose ratio is lower than some army troops (your bonuses decide) may stand in front of those troops; nothing else forbids a place. Such an order is kept only when no other order exists.
+  const shBad=units=>{let mn=Infinity;for(let i=units.length-1;i>=0;i--){const t=units[i],r=ratioOf(t,P);if(t.pool=='M'){if(mn<r/(1+RTOL))return true}else if(r<mn)mn=r}return false};
+  const ev=(units,cc)=>{const names=units.map(t=>t.name),o=mkOut(names,cc),r=allocate(P,o),bad=shBad(units);
+    return{d:score(P,[...r.A,...r.Mo],names).dmg,names,cc,dom:r.dom!==false,free:!!r.free,full:bad?-1:!(P.capA>0)?2:(ua=>ua>=0.999?2:ua>=0.97?1:0)(usedOf(r.A)/P.capA)}};     // full: 2 = all the Leadership is spent (99.9 %), 1 = nearly (97 %) - an order that leaves more of it unused only wins when no other one spends it
   const better=(a,b)=>!b||(a.full!==b.full?a.full>b.full:(a.k==null?a.d:a.k)>(b.k==null?b.d:b.k)*(1+5e-4));
   // DOMINANCE, tier by tier from the top: the strongest monster tiers are used FULLY (on the army's health level) as long as the Dominance reaches for it, the next tier is the PARTIAL one
   // (it takes what is left, at the end of the order), the tiers below it get nothing. So a tier never depends on the tiers below it: leaving the lowest tier out does not change the others.
@@ -845,9 +848,7 @@ function allocTight(P,live){
     weights(cur,HO,d);markEx(P,cur);if(!HO)profile(cur,d);      // CP kill (HO): every group is equal inside, a small step down only between groups
     fill(A,P.capA,Infinity,Infinity,meas);
     const inv=A.reduce((q,x)=>q+x.w*x.cost/meas(x),0),X=inv&&P.capA>0?P.capA/inv:Infinity;
-    if(free===null){      // decided once: the monsters of EVERY tier (also the ones not ticked) on the army's level still cannot spend the Dominance. So leaving a tier out (M7, say) never lifts the ceiling and never changes the tiers above it
-      const invM=Mo.reduce((q,x)=>q+x.w*x.cost/meas(x),0),invAll=TR.reduce((q,t)=>t.pool=='M'?q+t.cost/(t.hp*mults(t,P)[0]):q,0);
-      free=P.capM>0&&invM>0&&(!isFinite(X)||P.capM/Math.max(invM,invAll)>X*1.001)}
+    if(free===null){const invM=Mo.reduce((q,x)=>q+x.w*x.cost/meas(x),0);free=P.capM>0&&invM>0&&(!isFinite(X)||P.capM/invM>X*1.001)}      // decided once, on the whole list: every monster tier on the army's level still cannot spend the Dominance
     const XM=free?Infinity:X;                         // the monsters' ceiling: the army's level, unless the Dominance is the bigger pool and needs more room (the only ceiling is then the Dominance itself)
     const Fm=Mo.filter(s=>!s.pt),Pm=Mo.filter(s=>s.pt);
     fill(Fm,P.capM,XM,Infinity,meas);                 // the full monster tiers (the strongest first) on one level, not above the army's level (unless free)
