@@ -967,21 +967,22 @@ function runBest(n){                                     // Max vs. 3 stack / fu
   $('mode').value='max';$('enemy').value=n;
   refresh();
 }
+const PVP=false;                                         // all the PvP modes (CP kill, CP death, Max damage) are switched off for now: their buttons are greyed out and a tab that was left in one of them falls back to the 4-stack mode. Set true to switch them on again.
 const RENEGADES=false;                                   // Renegades is switched off for now: its button is greyed out and a tab saved in Renegades opens in Max damage. Set true to switch it on again.
 function runRen(){                                       // Renegades: fixed rule, nothing is refined
   if(!RENEGADES)return;
   $('mode').value='ren';SO=[];
   refresh();
 }
-function runPM(){                                         // PvP Max damage: the CP death rules against a fully equipped enemy (all bonuses count), the rule decides the order, nothing is refined
+function runPM(){ if(!PVP)return;                                        // PvP Max damage: the CP death rules against a fully equipped enemy (all bonuses count), the rule decides the order, nothing is refined
   $('mode').value='pvpmax';SO=[];
   refresh();
 }
-function runCPD(){                                        // CP death (PvP): the rule decides the order, nothing is refined
+function runCPD(){ if(!PVP)return;                          // CP death (PvP): the rule decides the order, nothing is refined
   $('mode').value='cpd';SO=[];
   refresh();
 }
-function runCP(){                                         // CP kill (PvP): the rule decides the order, nothing is refined
+function runCP(){ if(!PVP)return;                           // CP kill (PvP): the rule decides the order, nothing is refined
   $('mode').value='cp';SO=[];
   refresh();
 }
@@ -1162,6 +1163,8 @@ const MODEINFO={
   'cpd':['PvP · CP death','You hit another player who has only one flying troop type in the city, but a very large one, and your army is not strong enough to kill it. Stacks are created with the goal of maximizing damage, using the Specialists\' double damage and the bonuses against flying enemies.']
 };
 function calc(){
+  if(!PVP&&['cp','cpd','pvpmax'].includes($('mode').value)){$('mode').value='max';SO=[]}      // PvP is off: a tab left in a PvP mode falls back to the 4-stack mode
+  document.querySelectorAll('.cm[data-m=cp],.cm[data-m=cpd],.cm[data-m=pvpmax]').forEach(b=>{b.disabled=!PVP;b.title=PVP?'':'Switched off for now'});
   if(!RENEGADES&&$('mode').value=='ren'){$('mode').value='max';SO=[]}      // Renegades is off: a tab saved in it falls back to Max damage
   {const rb=document.querySelector('.cm[data-m=ren]');if(rb){rb.disabled=!RENEGADES;rb.title=RENEGADES?'':'Switched off for now'}}
   const P=getP(),st=buildStacks(P,O,XS,SO);
