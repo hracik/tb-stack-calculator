@@ -72,7 +72,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <label class="bi"><span>Food prod.</span><input id="foodP" type="text" inputmode="decimal" value="0"></label>
 <label class="bi" id="revl" title="After a hit, 90% of a revived stack (rounded down per stack) comes back, so only the rest has to be prepared again."><span>Revive</span><select id="revm"><option value="none">None</option><option value="top" selected>Top line</option><option value="mon">Monsters only</option><option value="montop">Monsters and top line</option><option value="all">All</option></select></label></div></div>
 
-<div class="card"><h2>Basic bonuses (%)<button type="button" class="ib" data-tip="tipB" aria-expanded="false" aria-controls="tipB" title="About Epic strength">i</button></h2><p class="tip" id="tipB" role="tooltip" hidden>Epic strength applies against Epic Monsters.</p><div class="bg" id="bon"></div></div>
+<div class="card"><h2>Basic bonuses (%)<button type="button" class="ib" data-tip="tipB" aria-expanded="false" aria-controls="tipB" title="About the bonuses against epic monsters and players">i</button></h2><p class="tip" id="tipB" role="tooltip" hidden>Against epic monsters: the Strength bonus counts in the modes against Epic Monsters. Against players: the Health and Strength bonuses count in the PvP modes.</p><div class="bg" id="bon"></div></div>
 
 <details class="card" open><summary><h2>Monster bonuses (%)</h2><button type="button" class="ib" data-tip="tipM" aria-expanded="false" aria-controls="tipM" title="About the Beast bonus">i</button></summary><p class="tip" id="tipM" role="tooltip" hidden>Beast army units (Royal Lion, Battle Griffin) get the full Beast bonus.</p>
 <div style="margin:0 0 10px"><div class="mu" style="margin:0 0 6px">Monsters Boost research:</div>
@@ -123,7 +123,8 @@ Object.keys(BYG).forEach(g=>{if(g[0]=='M')BYG[g].sort((a,b)=>CO.indexOf(a.cat)-C
 const row=(l,id,val=0)=>`<div class="bi"><span>${l}</span><input id="${id}" type="text" inputmode="decimal" step="0.5" value="${val}"></div>`;
 const card=(n,k,h=0,sv=h)=>`<div class="bc"><b>${n}</b>${row('Health','bh_'+k,h)}${row('Strength','bs_'+k,sv)}</div>`;
 $('bon').innerHTML=[['Guardsmen','G',3466,6304],['Specialists','S',3466,6304],['Monsters','M',3461,6404],['Siege Engines','E',3466,6304]].map(([n,k,h,sv])=>card(n,k,h,sv)).join('')+
- `<div class="bc ep"><b>Epic strength</b>${row('Strength','bs_Epic',3747)}</div>`;
+ `<div class="bc ep"><b>Against epic monsters</b>${row('Strength','bs_Epic',3747)}</div>`+
+  `<div class="bc ep"><b>Against players</b>${row('Health','bh_Players',0)}${row('Strength','bs_Players',0)}</div>`;
 const STEP=0.001/100;                                     // the step down per rank in the dying order: 0.001 % (practically none, no setting)
 const DHV=Array.from({length:11},(_,i)=>i/2);                // Double hit: 0 - 5 % in steps of 0.5
 const snapDH=x=>{x=parseFloat(String(x).replace(',','.'));if(!isFinite(x))x=0;return Math.min(5,Math.max(0,Math.round(x*2)/2))};
@@ -300,7 +301,7 @@ const fmt=x=>x>=1e12?(x/1e12).toFixed(2)+' T':x>=1e9?(x/1e9).toFixed(2)+' B':x>=
 function getP(){
   if($('mode').value=='maxl')$('mode').value='max';   // the near-maximum modes were removed (old saved tabs)
   const p={d:STEP,mode:'2',kill:$('mode').value=='kill',ren:$('mode').value=='ren',capA:v('capA'),capM:v('capM'),capU:v('capU'),enemy:$('mode').value=='kill'?3:$('mode').value=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4,cat:DEFCAT.slice()};
-  ['G','S','M','E','Epic','Giant','Elemental','Dragon','Beast','Melee','Mounted','Ranged','Flying'].forEach(k=>{p['h'+k]=$('bh_'+k)?v('bh_'+k):0;p['s'+k]=$('bs_'+k)?v('bs_'+k):0});
+  ['G','S','M','E','Epic','Players','Giant','Elemental','Dragon','Beast','Melee','Mounted','Ranged','Flying'].forEach(k=>{p['h'+k]=$('bh_'+k)?v('bh_'+k):0;p['s'+k]=$('bs_'+k)?v('bs_'+k):0});
   ['Giant','Elemental','Dragon','Beast'].forEach(k=>{p['dh'+k]=$('dh_'+k)?snapDH($('dh_'+k).value):0});
   p.pm=$('mode').value=='pvpmax';                // PvP Max damage: a fully equipped enemy (4 stacks, every kind of troop), all bonuses and the Double hit count, no Epic strength
   p.cpd=$('mode').value=='cpd'||p.pm;            // CP death: the order that gives the most damage (PvP Max damage uses the same rules)
@@ -309,6 +310,7 @@ function getP(){
   p.pvp=p.cp;                                    // PvP rules (CP kill, CP death and Max damage): no Epic strength, no bonus against epic enemies, Specialists deal double damage before the squad bonus
   if(p.one)p.enemy=1;
   if(p.pvp)p.sEpic=0;
+  if(!p.pvp){p.hPlayers=0;p.sPlayers=0}              // the Against players bonuses count only in the PvP modes (like the Against epic monsters Strength counts only against epic monsters)
   p.epic=!p.ren&&!p.pvp;                         // the enemy stacks are epic in every mode except Renegades and PvP: the bonus against epic enemies counts
   p.max4=$('mode').value=='max';                 // Max vs. 3 stack and Max vs. full stack: whole army ranking
   p.minH=Math.min(p.hGiant,p.hElemental,p.hDragon,p.hBeast);p.minS=Math.min(p.sGiant,p.sElemental,p.sDragon,p.sBeast);
@@ -316,10 +318,10 @@ function getP(){
 }
 // health and strength multipliers of one troop
 function mults(t,P){                                    // [health multiplier, strength multiplier, strength multiplier without the Renegades x2]
-  if(t.cls=='E'){const ms=1+(P.sE+P.sEpic)/100;return[1+P.hE/100,ms,ms]}
-  if(t.cls=='M'){const ms=1+(P.sM+P.sEpic+(P['s'+t.cat]||0)+Math.max(0,(P['s'+t.type]||0)-P.minS))/100;return[1+(P.hM+(P['h'+t.cat]||0)+Math.max(0,(P['h'+t.type]||0)-P.minH))/100,ms,ms]}
-  const b=t.beast,ms=1+(P['s'+t.cls]+P.sEpic+(P['s'+t.cat]||0)+(b?P.sBeast:0))/100;
-  return[1+(P['h'+t.cls]+(P['h'+t.cat]||0)+(b?P.hBeast:0))/100,P.ren&&t.cls=='S'?ms*2:ms,ms];   // Renegades: Specialists deal double damage
+  if(t.cls=='E'){const ms=1+(P.sE+P.sEpic+P.sPlayers)/100;return[1+(P.hE+P.hPlayers)/100,ms,ms]}
+  if(t.cls=='M'){const ms=1+(P.sM+P.sEpic+P.sPlayers+(P['s'+t.cat]||0)+Math.max(0,(P['s'+t.type]||0)-P.minS))/100;return[1+(P.hM+P.hPlayers+(P['h'+t.cat]||0)+Math.max(0,(P['h'+t.type]||0)-P.minH))/100,ms,ms]}
+  const b=t.beast,ms=1+(P['s'+t.cls]+P.sEpic+P.sPlayers+(P['s'+t.cat]||0)+(b?P.sBeast:0))/100;
+  return[1+(P['h'+t.cls]+P.hPlayers+(P['h'+t.cat]||0)+(b?P.hBeast:0))/100,P.ren&&t.cls=='S'?ms*2:ms,ms];   // Renegades: Specialists deal double damage
 }
 // 3-stack and 6-stack (= two 3-stacks): the enemy has no mounted stack. Killshot is a 3-stack too.
 const NOMT=P=>P.enemy==3||P.enemy==6;
@@ -1239,7 +1241,7 @@ runBest(4);
 DEF=snap();
 // A NEW tab (the start tabs and the + button) starts blank: Leadership, Dominance, the basic bonuses, the monster bonuses (with the Double hit) and the Food production are all 0. DEF (the values above) stays the fallback for a saved tab that lacks a box, so tabs saved earlier keep every number.
 const BLANK=clone(DEF);
-['capA','capM','foodP','bh_G','bs_G','bh_S','bs_S','bh_M','bs_M','bh_E','bs_E','bs_Epic',...['Giant','Elemental','Dragon','Beast'].flatMap(k=>['bh_'+k,'bs_'+k,'dh_'+k])].forEach(id=>{if(id in BLANK.vals)BLANK.vals[id]='0'});
+['capA','capM','foodP','bh_G','bs_G','bh_S','bs_S','bh_M','bs_M','bh_E','bs_E','bs_Epic','bh_Players','bs_Players',...['Giant','Elemental','Dragon','Beast'].flatMap(k=>['bh_'+k,'bs_'+k,'dh_'+k])].forEach(id=>{if(id in BLANK.vals)BLANK.vals[id]='0'});
 const START_TABS=['1 cap','3 cap','Hero','Hero+3 cap'];    // the tabs a new page starts with; they are ordinary tabs (rename, duplicate, delete)
 try{
   const r=JSON.parse(localStorage.getItem(KEY)||'null');
