@@ -144,6 +144,8 @@ There is **one engine** for every attack mode (3-, 4-, 6-, 8-stack, Killshot, CP
 
 The **rules** are written once, in four small functions (`kn1Place`, `kn1Stack`, `strRuled`, `strRef`, just above `markEx`). The target profile, the rounding trim (`chainT`), the top-up of the leftover, the exact solver (`lpSolve`) and the mercenary chain all ask these, so a change of the rule reaches every mode and every step at once. `K` (the number of enemy stacks) is the only thing that tells the 3-, 4-, 6- and 8-stack modes apart.
 
+**Speed.** The order search remembers every order it has solved (the same order comes up again and again, about two thirds of the tries are repeats). The top-up of the leftover (`topUp`) adds one unit at a time on the stack furthest below its target, as the rule says, but after a unit only the stack that got it and the stacks that look at it are checked again (`topUpGroups` does the same for the CP and Renegades groups). While you type in a number box the calculation waits until the keys have stopped for 0.12 s (the number itself is formatted at once); buttons and ticks calculate immediately.
+
 ## How the order is chosen
 
 These notes used to be shown inside the page, under "Show the dying order, troop by troop" (the list is as wide as the page).

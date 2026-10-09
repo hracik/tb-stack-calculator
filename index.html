@@ -243,7 +243,7 @@ function drawSO(st,P){
 // ---- tabs: each tab stores every input, the tier checkboxes and the kill order ----
 const KEY='sc_tabs_v6';
 const DEFCAT=['Melee','Ranged','Mounted','Flying'];
-let tabs=null,active=0,ready=false,delPending=false,DEF=null,XS=new Set(),SO=[];
+let tabs=null,active=0,ready=false,delPending=false,DEF=null,XS=new Set(),SO=[],CALCT=0;      // CALCT = the timer of the calculation that waits for the typing to stop
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const clone=o=>JSON.parse(JSON.stringify(o));
 const MODE_IDS=['mode','enemy'];                       // the two hidden mode boxes are kept out of the input lists: the mode is stored in the tab as mode / enemy (see snap and load)
@@ -429,8 +429,11 @@ function fourSearch(P,live,mkOut,CC){      // CC = the number of full monster ti
   // The SH ratio decides who may stand in front of whom: a monster never stands in front of a troop whose ratio is clearly (RTOL) lower than its own - the engineers (a very low ratio) always come first.
   // Monsters whose ratio is lower than some army troops (your bonuses decide) may stand in front of those troops; nothing else forbids a place. Such an order is kept only when no other order exists.
   const shBad=units=>{let mn=Infinity;for(let i=units.length-1;i>=0;i--){const t=units[i],r=ratioOf(t,P);if(t.pool=='M'){if(mn<r/(1+RTOL))return true}else if(r<mn)mn=r}return false};
-  const ev=(units,cc)=>{const names=units.map(t=>t.name),o=mkOut(names,cc),r=allocate(P,o),bad=shBad(units);
-    return{d:score(P,[...r.A,...r.Mo],names).dmg,names,cc,full:bad?-1:!(P.capA>0)?2:(ua=>ua>=0.999?2:ua>=0.97?1:0)(usedOf(r.A)/P.capA)}};     // full: 2 = all the Leadership is spent (99.9 %), 1 = nearly (97 %) - an order that leaves more of it unused only wins when no other one spends it
+  const seen=new Map();      // the search meets the same order again again: it is solved once (a copy is returned: the caller adds its own bias k)
+  const ev=(units,cc)=>{const names=units.map(t=>t.name),key=cc+'|'+names.join('|');
+    if(!seen.has(key)){const r=allocate(P,mkOut(names,cc)),bad=shBad(units);
+      seen.set(key,{d:score(P,[...r.A,...r.Mo],names).dmg,names,cc,full:bad?-1:!(P.capA>0)?2:(ua=>ua>=0.999?2:ua>=0.97?1:0)(usedOf(r.A)/P.capA)})}
+    return{...seen.get(key)}};     // full: 2 = all the Leadership is spent (99.9 %), 1 = nearly (97 %) - an order that leaves more of it unused only wins when no other one spends it
   const better=(a,b)=>!b||(a.full!==b.full?a.full>b.full:(a.k==null?a.d:a.k)>(b.k==null?b.d:b.k)*(1+5e-4));
   // DOMINANCE, tier by tier from the top: the c strongest monster tiers (c is given by byTiers, the one with the most damage) are used FULLY (on the army's health level, as far as the Dominance reaches), the next tier is the PARTIAL one
   // (it takes what is left, at the end of the order), the tiers below it get nothing. So a tier never depends on the tiers below it: leaving the lowest tier out does not change the others.
@@ -695,31 +698,57 @@ const usedOf=a=>a.reduce((q,x)=>q+x.n*x.cost,0);
 // that is furthest below its target health (health / w), as long as that stack stays at or below the stack before it in the dying order.
 let TOPTOL=1.005;
 let HO=false;      // health only (CP kill and CP death): the stacks are placed tight by health alone - the total strength is not kept falling along the order
-function topUp(seq,A,cap,tmode,grp){
+function topUp(seq,A,cap){
+  // Spends what the rounding left over, one unit at a time, on the stack furthest below its target (the lowest n*hp/w). A stack may take a unit only while
+  //  - it stays within 0.5 % (TOPTOL) of its target level (not the partial tier: its level IS what is left of the Dominance, so the leftover belongs to it),
+  //  - its total health stays below the stack before it by the step, and its total strength below the strength reference before it (the rules above).
+  // Only the stack that gets a unit changes, so only it and the stacks that look at it (the next stack, the ones whose reference it is) have to be checked again.
   let left=cap-usedOf(A);
   if(!(left>0))return;
-  const qs=tmode?QS:1,ix=new Map(seq.map((s,i)=>[s,i]));
+  const S=A.filter(s=>s.n>0&&s.hp>0),m=S.length;      // a stack without units never gets any: the list and the stacks each one looks at cannot change in here
+  if(!m)return;
+  const ix=new Map(seq.map((s,i)=>[s,i])),at=new Map(S.map((s,c)=>[s,c])),PV=[],RF=[],deps=S.map(()=>[]);
+  S.forEach((s,c)=>{
+    let i=ix.get(s)-1;while(i>=0&&!(seq[i].n>0))i--;           // the stack before it that is really in the army
+    let j=i;while(strRuled(s)&&j>=0&&(!strRef(seq[j])||!(seq[j].n>0)))j--;      // ... and the strength reference before it
+    PV[c]=i>=0?seq[i]:null;RF[c]=strRuled(s)&&j>=0?seq[j]:null;
+    [PV[c],RF[c]].forEach(q=>{const d=q?at.get(q):undefined;if(d!==undefined&&!deps[d].includes(c))deps[d].push(c)});
+  });
+  const may=c=>{const s=S[c],p=PV[c],f=RF[c];      // may stack c take one more unit (the cost apart)
+    if(s.tgt!==undefined&&!s.pt&&s.n*s.hp>s.tgt*TOPTOL)return false;
+    if(p&&(s.n+1)*s.hp>p.n*p.hp*QS)return false;
+    if(f&&(s.n+1)*s.str>f.n*f.str*QS)return false;
+    return true};
+  const ok=[],R=[];
+  for(let c=0;c<m;c++){ok[c]=may(c);R[c]=S[c].n*S[c].hp/S[c].w}
   for(let g=0;g<500000;g++){
-    let best=null,br=Infinity,br2=Infinity,bnd=null;
-    if(grp){                                                     // groups (Renegades): every stack of a group must stay strictly below the smallest total of the group before
-      bnd=new Map();let cur=null,curMin=Infinity,prev=Infinity;
-      for(const q of seq){const gq=q.grp||q.r;if(gq!==cur){if(isFinite(curMin))prev=curMin*QS;cur=gq;curMin=Infinity}bnd.set(q,prev);if(q.n>0)curMin=Math.min(curMin,q.n*q.hp)}
-    }
+    let b=-1,br=Infinity;
+    for(let c=0;c<m;c++)if(ok[c]&&!(S[c].cost>left)&&R[c]<br){br=R[c];b=c}
+    if(b<0)break;
+    const s=S[b];s.n++;left-=s.cost;
+    R[b]=s.n*s.hp/s.w;ok[b]=may(b);
+    for(const d of deps[b])ok[d]=may(d);
+  }
+}
+function topUpGroups(seq,A,cap){      // Renegades, CP kill, CP death: a group of equals - every stack of a group must stay strictly below the smallest total of the group before (no strength rule)
+  let left=cap-usedOf(A);
+  if(!(left>0))return;
+  for(let g=0;g<500000;g++){
+    let best=null,br=Infinity,br2=Infinity;
+    const bnd=new Map();let cur=null,curMin=Infinity,prev=Infinity;
+    for(const q of seq){const gq=q.grp||q.r;if(gq!==cur){if(isFinite(curMin))prev=curMin*QS;cur=gq;curMin=Infinity}bnd.set(q,prev);if(q.n>0)curMin=Math.min(curMin,q.n*q.hp)}
     for(const s of A){
       if(!(s.n>0)||!(s.hp>0)||s.cost>left)continue;
-      let i=ix.get(s)-1;while(i>=0&&!(seq[i].n>0))i--;           // the stack before it that is really in the army
-      if(s.tgt!==undefined&&!s.pt&&s.n*s.hp>s.tgt*TOPTOL)continue;         // 4-stack: no stack goes more than 0.5 % above its target level: the leftover must not make a tall stack at the head of the order. Not the partial tier: its level IS what is left of the Dominance, so the leftover belongs to it (only the order and the strength rule limit it)
-      if(grp){if((s.n+1)*s.hp>bnd.get(s))continue}                // inside a group nobody has to stay below another stack (the order there is equal / random)
-      else if(i>=0&&(s.n+1)*s.hp>seq[i].n*seq[i].hp*qs)continue                      // the total health must not rise along the order (Max damage family: it must fall by the step)
-      if(tmode&&!HO&&strRuled(s)){let j=i;while(j>=0&&(!strRef(seq[j])||!(seq[j].n>0)))j--;if(j>=0&&(s.n+1)*s.str>seq[j].n*seq[j].str*qs)continue}   // Max damage: nor the total strength
+      if(s.tgt!==undefined&&!s.pt&&s.n*s.hp>s.tgt*TOPTOL)continue;
+      if((s.n+1)*s.hp>bnd.get(s))continue;                       // inside a group nobody has to stay below another stack (the order there is equal / random)
       const r=s.n*s.hp/s.w;
       if(r<br){br2=br;br=r;best=s}else if(r<br2)br2=r;
     }
     if(!best)break;
     let k=1;
-    if(HO&&grp){          // CP kill / CP death: the same units one by one would go to this stack until it is no longer the lowest, so they are added at once (the order of the units is the same, only faster)
+    if(HO){          // CP kill / CP death: the same units one by one would go to this stack until it is no longer the lowest, so they are added at once (the order of the units is the same, only faster)
       k=Math.floor(left/best.cost);
-      if(bnd)k=Math.min(k,Math.floor(bnd.get(best)/best.hp+1e-9)-best.n);
+      k=Math.min(k,Math.floor(bnd.get(best)/best.hp+1e-9)-best.n);
       if(best.tgt!==undefined&&!best.pt)k=Math.min(k,Math.floor(best.tgt*TOPTOL/best.hp)-best.n+1);
       if(isFinite(br2))k=Math.min(k,Math.ceil(br2*best.w/best.hp)-best.n);
       k=Math.max(1,k);
@@ -863,8 +892,9 @@ function allocTight(P,live){
       run(lo);A.forEach(s=>{s.tgt=lo*s.w});
       if(fol){const l=lv(lo);Fm.forEach(s=>{s.tgt=l.f*s.w});Pm.forEach(s=>{s.tgt=(+s.r.slice(1)==tp?l.p:0)*s.w})}
     }
-    TOPTOL=1.005;topUp(cur,A,P.capA,true,HO);topUp(cur,Mo,P.capM,true,HO);
-    if(P.capM-usedOf(Mo)>0.003*P.capM){TOPTOL=1.03;topUp(cur,Mo,P.capM,true,HO);TOPTOL=1.005}      // Dominance left over: the monsters may go up to 3 % above the level (the first monster stands far below the army anyway)
+    const up=HO?topUpGroups:topUp;
+    TOPTOL=1.005;up(cur,A,P.capA);up(cur,Mo,P.capM);
+    if(P.capM-usedOf(Mo)>0.003*P.capM){TOPTOL=1.03;up(cur,Mo,P.capM);TOPTOL=1.005}      // Dominance left over: the monsters may go up to 3 % above the level (the first monster stands far below the army anyway)
     if(!cur.some(s=>!(s.n>0)))break;
     cur=cur.filter(s=>s.n>0);                      // a stack that got no troop leaves the order: the places Kn+1 move up
   }
@@ -897,13 +927,13 @@ function allocWhole(P,live){                         // Killshot: the exact solu
     chainT(live);
     if(live.map(x=>x.n).join()==before)break;
   }
-  topUp(live,A,P.capA,true);               // spend the Leadership the rounding left over
-  if(ok)topUp(live,Mo,P.capM,true);        // ... and the Dominance
+  topUp(live,A,P.capA);               // spend the Leadership the rounding left over
+  if(ok)topUp(live,Mo,P.capM);        // ... and the Dominance
   return{A,Mo};
 }
 function allocRen(P,live){                 // Renegades: every group is equal inside, a step only between groups
   const Mo=live.filter(s=>s.p=='M'),A=live.filter(s=>s.p=='A'),d=P.d;
-  weights(A,true,d);fill(A,P.capA,Infinity);chain(A,true,Infinity);topUp(A,A,P.capA,false,true);
+  weights(A,true,d);fill(A,P.capA,Infinity);chain(A,true,Infinity);topUpGroups(A,A,P.capA);
   // the monsters only have to stay below the first 16 stacks. They get the same health as the rest of the block
   // (no step, no extra gap); when dominance runs out the lowest monster tier is smaller and so dies last.
   const head=A.filter(s=>s.grp!='REST'&&s.n>0),restA=A.filter(s=>s.grp=='REST'&&s.n>0);
@@ -1144,6 +1174,7 @@ const MODEINFO={
 const PVMODES=['cp','cpd','pvpmax','ren'];      // the modes of the Attack players view; every other mode belongs to Attack epics
 let ATK='epics',LASTE={mode:'max',enemy:'4'},LASTP='cp';      // ATK = the view (stored in the tab, like the inputs; a new tab starts in Attack epics). LASTE / LASTP = the last mode of each view, so switching back returns to it.
 function calc(){
+  clearTimeout(CALCT);
   const pvOK=m=>m=='cp'||m=='cpd'?PV1:m=='pvpmax'?PVM:m=='ren'?RENEGADES:false,okP=PVMODES.filter(pvOK);      // okP = the PvP modes that are switched on
   if(PVMODES.includes($('mode').value)&&!pvOK($('mode').value)){$('mode').value='max';SO=[]}      // a mode that is off: a tab left in it falls back to the 4-stack mode
   document.querySelectorAll('.cm[data-m=cp],.cm[data-m=cpd]').forEach(b=>{b.disabled=!PV1;b.title=PV1?'':'Switched off for now'});
@@ -1266,7 +1297,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('keydown',e=>{if(e.key=='Escape')closeTips()});
 let TW=innerWidth;addEventListener('resize',()=>{if(innerWidth!=TW){TW=innerWidth;closeTips()}});
-document.addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('tabin'))return;if(e.target.matches&&e.target.matches(NUMBOX))fmtBox(e.target);calc()});
+document.addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('tabin'))return;if(e.target.matches&&e.target.matches(NUMBOX))fmtBox(e.target);clearTimeout(CALCT);CALCT=setTimeout(calc,120)});      // typing: the number is formatted at once, the calculation waits until the keys have stopped for a moment (every key would run the whole engine)
 document.addEventListener('change',e=>{if(e.target.classList&&e.target.classList.contains('tabin'))return;if(e.target.type=='checkbox')refresh();else calc()});
 document.addEventListener('dblclick',e=>{const t=e.target.closest&&e.target.closest('.tab[data-t]');if(t)rename(+t.dataset.t)});
 // start: dying order for a full enemy stack, with the default tiers
