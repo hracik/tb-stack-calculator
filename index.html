@@ -654,8 +654,8 @@ function weights(arr,eq,d,c0){
 // and the total strength without squad bonus (who strikes first). Engineers are the exception for the strength - only their health counts.
 // profile(): the health target of every stack (a share of the common level X). Every stack takes a small step down from the one before it, and where the
 // next troop has more strength per health, its health goes down a little further so that its total strength cannot rise either.
-// 3-, 4-, 6- and 8-stack: the stacks on the places Kn+1 (5, 9, 13 ... counted from the first place of the whole order, after the engineers) are EXEMPT from the strength rule: their total strength may be
-// anything and the next stack does not look at it. They only follow the health of the stack before them (as closely as the units allow). s.rs marks them.
+// 3-, 4-, 6- and 8-stack: the stacks on the places Kn+1 (5, 9, 13 ... counted from the first place of the whole order, including the engineers) are only HALF exempt from the strength rule: their total strength may be
+// far LOWER than the stack before it, but never higher, and the next stack does not look at it (it follows the strength of the last stack before the place Kn+1). They follow the health of the stack before them. s.rs marks them.
 function markEx(P,arr){
   const four=rgm(P),K=P.enemy;                                                                              // places Kn+1, K = the number of enemy stacks (3, 4, 6, 8), counted from the first place of the whole order
   arr.forEach((s,i)=>{s.rs=!!(four&&s.cat!='Engineer'&&i%K==0)});
@@ -665,8 +665,8 @@ function profile(live,d){
   live.forEach(s=>{
     const rho=s.str/s.hp,eng=s.cat=='Engineer';
     let p=pH===null?1:pH*(1-d);
-    if(!HO&&!eng&&!s.rs&&qT!==null)p=Math.min(p,qT*(1-d)/rho);
-    s.w=p;pH=p;if(!eng&&!s.bst&&!s.rs)qT=rho*p;
+    if(!HO&&!eng&&qT!==null)p=Math.min(p,qT*(1-d)/rho);      // the total strength never rises: a place Kn+1 (s.rs) is no exception to that (it may be far lower)
+    s.w=p;pH=p;if(!eng&&!s.bst&&!s.rs)qT=rho*p;      // ... but it is no reference for the next stack: that one follows the strength of the last stack before the place Kn+1
   });
 }
 // rounding fix for the same rule: a unit is trimmed only where two neighbours flip
@@ -686,7 +686,7 @@ function chainT(live){
   live.forEach(s=>{
     const eng=s.cat=='Engineer';
     if(s.n*s.hp>limH*QS)s.n=Math.floor(limH*QS/s.hp);                 // every stack stays below the one before it by at least the step (no equal totals = no tie in the order)
-    if(!HO&&!eng&&!s.rs&&s.n*s.str>limT*QS)s.n=Math.floor(limT*QS/s.str);
+    if(!HO&&!eng&&s.n*s.str>limT*QS)s.n=Math.floor(limT*QS/s.str);
     if(s.n>0){limH=s.n*s.hp;if(!eng&&!s.bst&&!s.rs)limT=s.n*s.str}
   });
 }
@@ -735,7 +735,7 @@ function topUp(seq,A,cap,tmode,meas=x=>x.hp,grp){
       if(s.tgt!==undefined&&s.n*s.hp>s.tgt*TOPTOL)continue;         // 4-stack: no stack goes more than 0.5 % above its target level: the leftover must not make a tall stack at the head of the order
       if(grp){if((s.n+1)*s.hp>bnd.get(s))continue}                // inside a group nobody has to stay below another stack (the order there is equal / random)
       else if(i>=0&&(s.n+1)*s.hp>seq[i].n*seq[i].hp*qs)continue                      // the total health must not rise along the order (Max damage family: it must fall by the step)
-      if(tmode&&!HO&&s.cat!='Engineer'&&!s.rs){let j=i;while(j>=0&&(seq[j].cat=='Engineer'||seq[j].bst||seq[j].rs||!(seq[j].n>0)))j--;if(j>=0&&(s.n+1)*s.str>seq[j].n*seq[j].str*qs)continue}   // Max damage: nor the total strength
+      if(tmode&&!HO&&s.cat!='Engineer'){let j=i;while(j>=0&&(seq[j].cat=='Engineer'||seq[j].bst||seq[j].rs||!(seq[j].n>0)))j--;if(j>=0&&(s.n+1)*s.str>seq[j].n*seq[j].str*qs)continue}   // Max damage: nor the total strength
       const r=s.n*meas(s)/s.w;
       if(r<br){br2=br;br=r;best=s}else if(r<br2)br2=r;
     }
@@ -815,7 +815,7 @@ function lpSolve(P,seq){
   for(let i=0;i+1<N;i++)row(i+1,g[i+1],i,g[i]);                                   // total health: never rises
   let pi=-1;
   markEx(P,seq);
-  for(let j=0;j<N;j++){if(seq[j].cat=='Engineer')continue;if(seq[j].rs)continue;if(pi>=0)row(j,rho[j]*g[j],pi,rho[pi]*g[pi]);if(!seq[j].bst)pi=j}   // places Kn+1: no strength row, and they are no reference for the next stack   // total strength without bonus: never rises (engineers excepted)
+  for(let j=0;j<N;j++){if(seq[j].cat=='Engineer')continue;if(pi>=0)row(j,rho[j]*g[j],pi,rho[pi]*g[pi]);if(!seq[j].bst&&!seq[j].rs)pi=j}   // places Kn+1: the strength row is there (never higher), but they are no reference for the next stack   // total strength without bonus: never rises (engineers excepted)
   {const fm=[];seq.forEach((s,i)=>{if(s.p=='M'&&!s.pt)fm.push(i)});               // a monster tier is used FULLY before a lower one is touched: the full tiers stay on one health level
    if(fm.length>1&&fm[fm.length-1]-fm[0]==fm.length-1){const a=fm[0],z=fm[fm.length-1];row(a,0.9*Math.pow(q,z-a)*g[a],z,g[z]/q)}}   // (max. 10 % spread besides the steps); only the partial tier and the ones below it may be smaller
   const x=simplex(w.map(v=>v/wm),A,b);
@@ -1101,10 +1101,10 @@ const mkM=(t,P,X)=>{const[mh,ms]=mults(t,P);return{r:t.cls+t.tier,p:'U',c:t.cat,
 function sizeChain(P,seq,H,T,idx,X){
   const K=P.enemy,four=rgm(P),ns=[];
   seq.forEach(s=>{
-    const eng=s.cat=='Engineer',rs=!!(four&&!eng&&idx%K==0);                 // the places Kn+1 are exempt from the strength rule, as everywhere
+    const eng=s.cat=='Engineer',rs=!!(four&&!eng&&idx%K==0);                 // the places Kn+1: the strength may be far lower, never higher; the next stack follows the strength before it, as everywhere
     let n=Math.floor(X/s.hp+1e-9);
     if(isFinite(H))n=Math.min(n,Math.floor(H*QS/s.hp));
-    if(!HO&&!eng&&!rs&&isFinite(T))n=Math.min(n,Math.floor(T*QS/s.str));
+    if(!HO&&!eng&&isFinite(T))n=Math.min(n,Math.floor(T*QS/s.str));
     if(!(n>=1)){ns.push(0);return}                                           // no unit fits: the stack does not exist (the next places move up)
     ns.push(n);H=n*s.hp;if(!eng&&!s.bst&&!rs)T=n*s.str;idx++;
   });
