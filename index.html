@@ -247,9 +247,9 @@ const DEFCAT=['Melee','Ranged','Mounted','Flying'];
 let tabs=null,active=0,ready=false,delPending=false,DEF=null,XS=new Set(),SO=[];
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const clone=o=>JSON.parse(JSON.stringify(o));
-const MODE_IDS=['mode','enemy'];                       // the mode is not stored in a tab: the page always opens in 4-stack
+const MODE_IDS=['mode','enemy'];                       // the two hidden mode boxes are kept out of the input lists: the mode is stored in the tab as mode / enemy (see snap and load)
 function snap(){
-  const d={vals:{},chk:{},O:O.slice(),X:[...XS],S:SO.slice(),atk:ATK};      // atk: the Attack epics / Attack players switch belongs to the tab
+  const d={vals:{},chk:{},O:O.slice(),X:[...XS],S:SO.slice(),atk:ATK,mode:$('mode').value,enemy:$('enemy').value,le:{...LASTE},lp:LASTP};      // the Attack epics / Attack players switch, the attack mode (4-stack, CP kill ...) and the last mode of each view belong to the tab
   document.querySelectorAll('input[id],select[id]').forEach(el=>{if(MODE_IDS.includes(el.id))return;if(el.type=='checkbox')d.chk[el.id]=el.checked;else d.vals[el.id]=el.value});
   return d;
 }
@@ -259,7 +259,8 @@ function load(d){
   Object.entries(chk).forEach(([id,c])=>{const el=$(id);if(el)el.checked=c});
   fmtAll();
   O=(d.O||[]).slice();XS=new Set(d.X||[]);SO=(d.S||[]).slice();
-  ATK=d.atk=='players'?'players':'epics';      // tabs saved before this existed open in Attack epics
+  ATK=d.atk=='players'?'players':'epics';      // tabs saved before this existed open in Attack epics, in the 4-stack mode
+  $('mode').value=d.mode||'max';$('enemy').value=d.enemy||'4';LASTE=d.le?{...d.le}:{mode:'max',enemy:'4'};LASTP=d.lp||'cp';
 }
 function save(){
   if(!ready)return;
@@ -274,7 +275,7 @@ function drawTabs(){
 }
 function newName(){let n=tabs.length+1;while(tabs.some(t=>t.name==='Tab '+n))n++;return 'Tab '+n}
 function switchTab(i){if(i==active)return;save();active=i;delPending=false;load(tabs[i].data);drawTabs();refresh()}
-function addTab(){save();tabs.push({name:newName(),data:clone(BLANK)});active=tabs.length-1;delPending=false;load(tabs[active].data);$('mode').value='max';$('enemy').value=4;drawTabs();refresh();rename(active)}
+function addTab(){save();tabs.push({name:newName(),data:clone(BLANK)});active=tabs.length-1;delPending=false;load(tabs[active].data);drawTabs();refresh();rename(active)}
 function dupTab(){save();const src=tabs[active];tabs.splice(active+1,0,{name:src.name+' copy',data:clone(src.data)});active++;delPending=false;drawTabs();refresh()}
 function delTab(){tabs.splice(active,1);active=Math.min(active,tabs.length-1);delPending=false;load(tabs[active].data);drawTabs();refresh()}
 function rename(i){
