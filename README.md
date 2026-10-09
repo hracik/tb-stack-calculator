@@ -81,6 +81,19 @@ The first line of the Result is the **Summary** (stacks, strikes, estimated dama
 
 The Leadership / Dominance / Authority used, the number of stacks and strikes and the `#` kill order are not affected. The 90 % is the constant `REV` in the page.
 
+## Tier suggestion
+
+Under the Summary line of the Result there is a line that says whether **one more or one less tier would give more damage**. It appears about a second after you stop changing the inputs (a new check starts and the old line disappears whenever an input, a tier, a mode or a turned-off troop changes). The check runs in the background, one calculation per timer tick, so the page stays usable; it is the same calculation as the result itself (same engine, same mercenaries), once for every tier choice it tries, and it works in every mode.
+
+Rules, per troop type (Guardsmen, Specialists, Engineers, Monsters; a type is skipped when its capacity - Leadership or Dominance - is 0):
+
+- **Only tiers below the highest ticked tier are tried.** The top tiers are the best ones: if you ticked up to tier 8, tier 9 is never suggested.
+- **Adding:** from the tier just below the top, going down one tier at a time. A tier is taken only if it gives more than 0.1 % more damage. As soon as a tier below the lowest ticked one gives no gain, the tiers under it are not tried - they can only be worse.
+- **Removing:** from the lowest ticked tier upwards (never the top one), while each removal gives more damage.
+- The types are repeated (at most 3 rounds) while something changes, so the final suggestion is a set of changes: "**Suggestion:** tick E8, S8 and untick G7 for about +X % more estimated damage." When nothing helps it says "Tiers checked: no other choice of tiers gives more damage."
+
+Only the estimated damage is compared - food, revive and training cost are not part of it, so a tier it suggests to leave out can still be the cheaper choice and the other way round. Typical check: 8 to 20 calculations, 1 to 3 seconds on a computer. The code is the function `tierHint` (the threshold is `HGAIN`).
+
 ## Tabs
 
 The page starts with four tabs: `1 cap`, `3 cap`, `Hero` and `Hero+3 cap`. They are ordinary tabs: rename (double-click), duplicate or delete them, or add your own with `+`. Each tab keeps its own settings, saved in your browser only. A **new tab** (the four start tabs and every `+`) starts blank: Leadership, Dominance, all the basic bonuses, all the monster bonuses (health, strength and Double hit) and the Food production are 0 (the constant `BLANK` in the page); the special bonuses, Authority, the tiers and the Revive choice start as before. Tabs you already have keep their numbers.

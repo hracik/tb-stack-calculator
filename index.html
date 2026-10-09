@@ -1228,11 +1228,55 @@ function calc(){
     ...(P.capA>0?[[`Soldiers — Leadership ${usedOf(A).toLocaleString()} / ${P.capA.toLocaleString()}`,Aall.length?(mob?mobList(ord(flatOrder(Aall),COMPA)):table(Aall)):'<p class="mu">No army tiers selected.</p>']]:[])].map(([t,b],k)=>`<h2${k?' style="margin-top:26px"':''}>${t}</h2>${b}`).join('');
   const hitsRow=Math.max(...REVCASES.map(c=>HIT[c[0]]))>1;      // the hits of every revive mode, after the food consumption in the second row (only when one of them pays for more than 1 hit)
   {const rc=$('rtitle').closest('.card');if(rc)rc.style.display=!pvOff&&(P.capA>0||P.capM>0||P.capU>0)?'':'none'}      // Leadership, Dominance and Authority all 0: nothing to show, the whole Result section is hidden
-  $('res').innerHTML=`<p class="mu" style="margin:0 0 ${hitsRow?3:8}px">Summary: ${sc.stacks} stacks · ${EBINFO} · ${sc.hits} strikes against ${P.one?'one flying enemy stack':P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks'} · <b>estimated damage ${fmt(sc.dmg)}</b></p>${hitsRow?`<p class="mu" style="margin:0 0 8px">Hits per revive mode:&nbsp;${REVCASES.map(([k,l])=>`<span class="nb">${k==REVM?`<b>${HIT[k].toFixed(2)} ${l}</b>`:`${HIT[k].toFixed(2)} ${l}`}</span>`).join(' · ')}</p>`:''}
+  const hsig=hintSig(),hNew=hsig!==HINTKEY;if(hNew){HINTKEY=hsig;HINT='';HINTGEN++}      // new inputs: the old suggestion is dropped and a new check starts
+  $('res').innerHTML=`<p class="mu" style="margin:0 0 ${hitsRow?3:8}px">Summary: ${sc.stacks} stacks · ${EBINFO} · ${sc.hits} strikes against ${P.one?'one flying enemy stack':P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks'} · <b>estimated damage ${fmt(sc.dmg)}</b></p>${hitsRow?`<p class="mu" style="margin:0 0 8px">Hits per revive mode:&nbsp;${REVCASES.map(([k,l])=>`<span class="nb">${k==REVM?`<b>${HIT[k].toFixed(2)} ${l}</b>`:`${HIT[k].toFixed(2)} ${l}`}</span>`).join(' · ')}</p>`:''}<p class="mu" id="hint" style="margin:0 0 8px"${HINT?'':' hidden'}>${HINT}</p>
   ${secs}`;
+  if(hNew){clearTimeout(HINTTIMER);if(!pvOff&&(P.capA>0||P.capM>0)){const g=HINTGEN;HINTTIMER=setTimeout(()=>tierHint(g),700)}}
   save();
 }
 function refresh(){sync();calc()}
+// ---- the tier suggestion: would one more or one less tier give more damage? ----
+// The same calculation is run again with one tier added or removed, per troop type, in the background (after the inputs have settled). Only tiers BELOW the highest ticked tier are tried (the top tiers are the best ones, a higher tier is never suggested), going down one tier at a time: as soon as a lower tier gives no gain, the tiers below it are not tried. Tiers are also removed from the lowest ticked one upwards, while that gives more damage.
+let HINT='',HINTKEY='',HINTGEN=0,HINTTIMER=0;
+const HGAIN=0.001;      // a change is suggested only when it gives more than 0.1 % more damage
+const hintSig=()=>JSON.stringify([...document.querySelectorAll('input[id],select[id]')].filter(e=>e.id!='shw'&&e.id!='revm').map(e=>e.type=='checkbox'?e.checked:e.value))+[...XS].join();      // everything that changes the damage: a change of it starts a new check
+function evalSel(sel){      // the estimated damage of the tier selection sel: the same steps as calc, without drawing
+  const P=getP(),st=buildStacks(P,[...sel].sort((a,b)=>key(a)-key(b)),XS,[]);
+  const{A,Mo}=allocate(P,st.filter(s=>!s.off)),U=allocMerc(P,[...A,...Mo],st.so||[],XS);
+  return score(P,[...A,...Mo,...U.list],[...(st.so||[]),...U.ord]).dmg;
+}
+async function tierHint(gen){
+  const P=getP(),sel0=[];
+  ['E','S','G','M'].forEach(c=>{for(let i=1;i<=9;i++){const el=$('s'+c+i);if(el&&el.checked)sel0.push(c+i)}});
+  const types=[['G','capA'],['S','capA'],['E','capA'],['M','capM']].filter(([c,k])=>P[k]>0&&sel0.some(x=>x[0]==c));
+  if(!types.length)return;
+  const run=async s=>{await new Promise(r=>setTimeout(r,0));return gen===HINTGEN?evalSel(s):null};      // one step per timer tick: the page stays usable; a newer check cancels this one
+  let cur=sel0.slice();const base=await run(cur);if(base==null)return;let best=base;
+  for(let pass=0;pass<3;pass++){
+    let changed=false;
+    for(const[c]of types){
+      const tiers=()=>cur.filter(x=>x[0]==c).map(x=>+x.slice(1)).sort((a,b)=>a-b);
+      let T=tiers();const top=T[T.length-1],lo=c=='M'?3:1;
+      for(let t=top-1;t>=lo;t--){      // add: from the tier just below the top, going down
+        if(T.includes(t))continue;
+        const cand=[...cur,c+t],d=await run(cand);if(d==null)return;
+        if(d>best*(1+HGAIN)){cur=cand;best=d;changed=true;T=tiers()}
+        else if(t<T[0])break;      // below the lowest ticked tier and no gain: the tiers below it can only be worse
+      }
+      T=tiers();
+      for(let i=0;i<T.length-1;i++){      // remove: the lowest ticked tier first, never the top one
+        const cand=cur.filter(x=>x!=c+T[i]),d=await run(cand);if(d==null)return;
+        if(d>best*(1+HGAIN)){cur=cand;best=d}else break;
+        changed=true;
+      }
+    }
+    if(!changed)break;
+  }
+  if(gen!==HINTGEN)return;
+  const add=cur.filter(x=>!sel0.includes(x)),rem=sel0.filter(x=>!cur.includes(x)),ls=a=>a.sort((x,y)=>key(x)-key(y)).join(', ');
+  HINT=add.length||rem.length?`<b>Suggestion:</b> ${[add.length?'tick '+ls(add):'',rem.length?'untick '+ls(rem):''].filter(Boolean).join(' and ')} for about +${((best/base-1)*100).toFixed(1)} % more estimated damage.`:'Tiers checked: no other choice of tiers gives more damage.';
+  const el=$('hint');if(el){el.innerHTML=HINT;el.hidden=!HINT}
+}
 // info icons: the note opens as a small popover under the icon; click the icon again, click elsewhere or press Esc to close it
 const TIPS=['tipS','rtip'];
 function closeTips(){TIPS.forEach(id=>{$(id).hidden=true});document.querySelectorAll('.ib').forEach(b=>b.setAttribute('aria-expanded','false'))}
