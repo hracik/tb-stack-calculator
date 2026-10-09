@@ -131,6 +131,19 @@ The button is in the PvMany row. The enemy is a **fully equipped player**: all f
 
 The order and everything else is the **CP death** machinery: the Engineers first, then the Guardsmen and the full monster tiers (the troops without a bonus by the rising SH ratio, then the ones with a bonus, the lowest first), then the Specialists the same way (they strike twice as hard, so they stay alive as long as possible), and at the very end the partial monster tier. Groups of equals, stacks tight by health only, the number of full monster tiers chosen by the damage and the Mercenaries behind the last group work as in CP death. The text of the bubble is in `MODEINFO` (key `pm`); the flags in `getP` are `p.pm` (Max damage), `p.cpd` (the CP death order, also true for Max damage), `p.one` (CP kill / CP death: one flying enemy, only the bonus against flying, no Double hit) and `p.cp` (the PvP engine for all three).
 
+## The engine in the code
+
+There is **one engine** for every attack mode (3-, 4-, 6-, 8-stack, Killshot, CP kill, CP death, Max damage, Renegades). `solve(P, order)` runs it: `buildStacks` (the dying order) -> `allocate` (the units of every stack) -> `allocMerc` (the mercenaries, last), and `score` counts the damage. A mode is never tested by name inside the shared code. The table **`MD`** is the only place that lists how the modes differ:
+
+| entry | meaning |
+|---|---|
+| `order` | who stands where (`fourSearch` for the 3-, 4-, 6-, 8-stack modes, `byTiers` with a fixed order for Killshot and the CP modes, `renOrder` for Renegades) |
+| `size` | how many units every stack gets (`allocTight`, `allocWhole` = the exact Killshot solution, `allocRen`) |
+| `kn1` | the places `Kn+1` are half exempt from the strength rule |
+| `ho` | health only (CP kill, CP death, Max damage): no strength rule, a group of equals shares its places |
+
+The **rules** are written once, in four small functions (`kn1Place`, `kn1Stack`, `strRuled`, `strRef`, just above `markEx`). The target profile, the rounding trim (`chainT`), the top-up of the leftover, the exact solver (`lpSolve`) and the mercenary chain all ask these, so a change of the rule reaches every mode and every step at once. `K` (the number of enemy stacks) is the only thing that tells the 3-, 4-, 6- and 8-stack modes apart.
+
 ## How the order is chosen
 
 These notes used to be shown inside the page, under "Show the dying order, troop by troop" (the list is as wide as the page).

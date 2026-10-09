@@ -192,7 +192,6 @@ const unitsTxt=s=>{      // units to train: the first hit all of them, every nex
 const shown=(s,n)=>s.off?'off':SHOWTR?unitsTxt(s):n;      // the number on a card / line: the units to hit with (Hitting) or the units to train (Training)
 const cnt=(s,n)=>SHOWTR&&!s.off?`<span class="n nw">${unitsTxt(s)}</span>`:`<br><span class="n">${shown(s,n)}</span>`;      // on a card the units to train may wrap into two lines (the cell itself does not wrap)
 let EBINFO='';   // the stack split (army / full monster / partial monster / engineer), part of the result summary line
-const MODE_NAME=e=>e+'-stack';   // e = enemy stacks (3, 4, 6 or 8)
 const pct=m=>Math.round(m*100).toLocaleString('en-US')+'%';   // bonus ratio -> percent text (6.67 -> 667%)
 const num=x=>Math.round(x).toLocaleString('en-US');                // whole number with thousands separators
 let SOPOS={};
@@ -309,7 +308,7 @@ const fmt=x=>x>=1e12?(x/1e12).toFixed(2)+' T':x>=1e9?(x/1e9).toFixed(2)+' B':x>=
 // ---- settings, read once per calculation ----
 function getP(){
   if($('mode').value=='maxl')$('mode').value='max';   // the near-maximum modes were removed (old saved tabs)
-  const p={d:STEP,mode:'2',kill:$('mode').value=='kill',ren:$('mode').value=='ren',capA:v('capA'),capM:v('capM'),capU:v('capU'),enemy:$('mode').value=='kill'?3:$('mode').value=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4,cat:DEFCAT.slice()};
+  const p={d:STEP,kill:$('mode').value=='kill',ren:$('mode').value=='ren',capA:v('capA'),capM:v('capM'),capU:v('capU'),enemy:$('mode').value=='kill'?3:$('mode').value=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4,cat:DEFCAT.slice()};
   ['G','S','M','E','Epic','Players','Giant','Elemental','Dragon','Beast','Melee','Mounted','Ranged','Flying'].forEach(k=>{p['h'+k]=$('bh_'+k)?v('bh_'+k):0;p['s'+k]=$('bs_'+k)?v('bs_'+k):0});
   ['Giant','Elemental','Dragon','Beast'].forEach(k=>{p['dh'+k]=$('dh_'+k)?snapDH($('dh_'+k).value):0});
   p.pm=$('mode').value=='pvpmax';                // PvP Max damage: a fully equipped enemy (4 stacks, every kind of troop), all bonuses and the Double hit count, no Epic strength
@@ -360,10 +359,9 @@ const rgm=P=>P.max4;    // 3-, 4-, 6- and 8-stack: ONE engine (ratio groups, dam
 // (multiplier + own bonus) x Double hit, is a "squad double hit bonus" in the same % as the own bonus. Own bonus + squad double hit bonus are counted together.
 // All other modes keep the damage per health.
 const sqb=(t,P)=>{const vs=vsRatio(t,P),dd=(mults(t,P)[2]+vs)*(dhf(t,P)-1);return{vs,dd,tot:vs+dd}};
-const rIdx=dIdx;
 function ranker(P){
   const ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(...t.vs),r9=x=>Math.round(x*1e9),kc={};
-  const key=t=>kc[t.name]??(kc[t.name]=rIdx(t,P));
+  const key=t=>kc[t.name]??(kc[t.name]=dIdx(t,P));
   const tie=(a,b)=>nom(a)-nom(b)||ci(a)-ci(b)||a.tier-b.tier;
   const rank=arr=>arr.slice().sort((a,b)=>r9(key(a))-r9(key(b))||tie(a,b));    // weakest first; equal values (to 9 decimals) follow the tie rule
   return{key,rank};
@@ -427,7 +425,7 @@ function fourSearch(P,live,mkOut){
   const rest=ts;                                                                     // the engineers are ordinary troops: they stand first only because their strength / health is (almost) always the lowest
   const flat=g=>g.flatMap(x=>x.u);
   const mons=rest.filter(t=>t.pool=='M'),mt=monTiers(mons),nT=mt.length;
-  const slots=[];for(let p=1;p<=rest.length;p++)if((p-1)%P.enemy==0)slots.push(p-1);   // the places Kn+1 (K = the number of enemy stacks)
+  const slots=[];for(let i=0;i<rest.length;i++)if(kn1Place(P,i))slots.push(i);   // the places Kn+1 (K = the number of enemy stacks)
   // The SH ratio decides who may stand in front of whom: a monster never stands in front of a troop whose ratio is clearly (RTOL) lower than its own - the engineers (a very low ratio) always come first.
   // Monsters whose ratio is lower than some army troops (your bonuses decide) may stand in front of those troops; nothing else forbids a place. Such an order is kept only when no other order exists.
   const shBad=units=>{let mn=Infinity;for(let i=units.length-1;i>=0;i--){const t=units[i],r=ratioOf(t,P);if(t.pool=='M'){if(mn<r/(1+RTOL))return true}else if(r<mn)mn=r}return false};
@@ -587,58 +585,45 @@ function placeBeasts(names,K){
   tg.sort((a,b)=>a[2]-b[2]).forEach(([n,p,t])=>{out.splice(t-1,0,n)});
   return out;
 }
-function autoOrder(P,names,c){return P.kill?placeBeasts(killOrder(P,names,c),P.enemy):renOrder(P,names)}      // Killshot and Renegades (the 3-, 4-, 6- and 8-stack modes use fourSearch)
-// Cost of a solved order = the health gaps (the biggest drop from one stack to the next plus the sum of all drops > 0.1%) + 5 x the share of the Leadership left unspent
-// + 0.3 x the share of the Dominance left unspent. The smaller the better.
-function gapCost(P,r,so){
-  const ix={};so.forEach((n,i)=>ix[n]=i);
-  const all=[...r.A,...r.Mo].filter(x=>x.n>0).sort((x,y)=>ix[x.name]-ix[y.name]);
-  let pH=null,worst=0,sum=0;
-  all.forEach(x=>{const H=x.n*x.hp;if(pH!==null){const g=1-H/pH;if(g>worst)worst=g;if(g>1e-3)sum+=g}pH=H});
-  const uA=P.capA>0&&r.A.length?Math.max(0,P.capA-usedOf(r.A))/P.capA:0,uM=P.capM>0&&r.Mo.length?Math.max(0,P.capM-usedOf(r.Mo))/P.capM:0;
-  return worst+sum+5*uA+0.3*uM;       // unspent Leadership counts heavily (it has to be used up), unspent Dominance a little (the monsters may not stand above the army)
+// ---- THE MODES: ONE engine runs all of them. This table is the only place that says how they differ; everything else (the rules above, the sizing helpers, the score) is shared.
+//   kn1    the places Kn+1 are half exempt from the strength rule (3-, 4-, 6- and 8-stack)
+//   ho     health only: the total strength does not have to fall along the order, a group of equals shares the places (CP kill, CP death, Max damage)
+//   order  who stands where: gives {so: the dying order, out: its stacks}
+//   size   how many units every stack gets
+function byTiers(P,nT,orderOf,mk){      // the Dominance decides how many monster tiers are full: every choice is solved and the one with the most damage is kept
+  let best=null;
+  for(let c=nT;c>=1;c--){
+    const s2=orderOf(c),r=allocate(P,mk(s2,c)),dmg=score(P,[...r.A,...r.Mo],s2).dmg;
+    if(!best||dmg>best.dmg*(1+1e-9))best={dmg,c};
+  }
+  const c=best?best.c:nT,so=orderOf(c);
+  return{so,out:mk(so,c)};
 }
-function buildStacks(P,order,X,so){
-  const mk=(t,i)=>{const[mh,ms]=mults(t,P);
-    return{r:t.cls+t.tier,p:t.pool,c:t.pool=='M'?t.type:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i,dh:dhf(t,P),bst:!!t.beast}};
-  if(P.mode=='2'){                                   // one total order, troop by troop
-    const ts=[];order.forEach(g=>(BYG[g]||[]).forEach(t=>ts.push(t)));
-    const live=new Set(ts.filter(t=>!X.has(t.name)).map(t=>t.name));
-    const mkOut=(so,c)=>{const o=so.map(n=>mk(TRN[n],0)),mt=monTiers(so.map(n=>TRN[n]));o.forEach(s=>{if(s.p=='M')s.pt=mt.indexOf(+s.r.slice(1))>=c});return o};   // pt: the stack belongs to the partial tier or below
-    const mt=monTiers([...live].map(n=>TRN[n])),nT=mt.length;
-    let out;
-    if(rgm(P)){                      // 3-, 4-, 6- and 8-stack: troops of the same ratio stay together, the smaller squad bonus first; the group order with the most damage wins
-      const fs=fourSearch(P,live,mkOut);so=fs.names;out=mkOut(so,fs.cc);
-    }else if(P.cp){                  // CP kill: the order is fixed; the Dominance decides how many monster tiers are full - every choice is solved and the one with the most damage is kept
-      const ordOf=c=>P.cpd?cpdOrder(P,live,c):cpOrder(P,live),mkCP=(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)+(s.pt?'|p':'')});return o};let best=null;
-      for(let c=nT;c>=1;c--){
-        const s2=ordOf(c),r=allocate(P,mkCP(s2,c)),dmg=score(P,[...r.A,...r.Mo],s2).dmg;
-        if(!best||dmg>best.dmg*(1+1e-9))best={dmg,c};
-      }
-      const cB=best?best.c:nT;so=ordOf(cB);out=mkCP(so,cB);
-    }else if(P.kill){                // Killshot: the Dominance decides how many monster tiers are full - every choice is solved and the one with the most damage is kept
-      let best=null;
-      for(let c=nT;c>=1;c--){
-        const s2=autoOrder(P,live,c),o2=mkOut(s2,c),r=allocate(P,o2);
-        const dmg=score(P,[...r.A,...r.Mo],s2).dmg;
-        if(!best||dmg>best.dmg*(1+1e-9))best={dmg,c};
-      }
-      so=autoOrder(P,live,best?best.c:nT);out=mkOut(so,best?best.c:nT);
-    }else{so=autoOrder(P,live);out=mkOut(so,nT>=3?nT-1:nT)}      // Renegades: the lowest tier is the partial one when 3 or more tiers are chosen
-    if(P.ren){
+const MD={
+  epic:{kn1:true,ho:false,size:allocTight,      // 3-, 4-, 6- and 8-stack: troops of the same ratio stay together, the smaller squad bonus first; the group order with the most damage wins
+    order:(P,{live,mkOut})=>{const f=fourSearch(P,live,mkOut);return{so:f.names,out:mkOut(f.names,f.cc)}}},
+  kill:{kn1:false,ho:false,size:allocWhole,     // Killshot: the order is fixed, the beasts stand on the places Kn+1
+    order:(P,{live,mkOut,nT})=>byTiers(P,nT,c=>placeBeasts(killOrder(P,live,c),P.enemy),mkOut)},
+  cp:{kn1:false,ho:true,size:allocTight,        // CP kill / CP death / Max damage: the order is fixed, the troops of the same class and bonus are one group of equals
+    order:(P,{live,mkOut,nT})=>byTiers(P,nT,c=>P.cpd?cpdOrder(P,live,c):cpOrder(P,live),(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)+(s.pt?'|p':'')});return o})},
+  ren:{kn1:false,ho:false,size:allocRen,        // Renegades: fixed rule, nothing is refined; the lowest tier is the partial one when 3 or more tiers are chosen
+    order:(P,{live,mkOut,nT})=>{
+      const so=renOrder(P,live),out=mkOut(so,nT>=3?nT-1:nT);
       const top=[...new Set(out.filter(s=>s.p=='A'&&s.cat!='Engineer').map(s=>+s.r.slice(1)))].sort((a,b)=>b-a).slice(0,2);
       out.forEach(s=>{s.grp=(s.p=='M'||s.cat=='Engineer'||!top.includes(+s.r.slice(1)))?'REST':s.r});   // rest of the army, engineers and monsters: one block
-    }
-    ts.filter(t=>X.has(t.name)).forEach(t=>out.push(mk(t,0)));
-    out.so=so.slice();return out;
-  }
-  const out=[];
-  order.forEach(g=>{
-    const l=(BYG[g]||[]).map((t,i)=>mk(t,i));
-    if(P.mode=='0')l.sort((a,b)=>P.cat.indexOf(a.cat)-P.cat.indexOf(b.cat)||a.i-b.i);   // first in the list dies first
-    out.push(...l);
-  });
-  return out;
+      return{so,out};}}
+};
+const modeOf=P=>rgm(P)?MD.epic:P.cp?MD.cp:P.kill?MD.kill:MD.ren;
+function buildStacks(P,order,X){
+  const mk=(t,i)=>{const[mh,ms]=mults(t,P);
+    return{r:t.cls+t.tier,p:t.pool,c:t.pool=='M'?t.type:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i,dh:dhf(t,P),bst:!!t.beast}};
+  const ts=[];order.forEach(g=>(BYG[g]||[]).forEach(t=>ts.push(t)));      // one total order, troop by troop
+  const live=new Set(ts.filter(t=>!X.has(t.name)).map(t=>t.name));
+  const mkOut=(so,c)=>{const o=so.map(n=>mk(TRN[n],0)),mt=monTiers(so.map(n=>TRN[n]));o.forEach(s=>{if(s.p=='M')s.pt=mt.indexOf(+s.r.slice(1))>=c});return o};   // pt: the stack belongs to the partial tier or below
+  const nT=monTiers([...live].map(n=>TRN[n])).length;
+  const{so,out}=modeOf(P).order(P,{live,mkOut,nT});
+  ts.filter(t=>X.has(t.name)).forEach(t=>out.push(mk(t,0)));
+  out.so=so.slice();return out;
 }
 // Health target factor w of every stack: a small step down along the dying order (this reproduces your reference numbers)
 function weights(arr,eq,d,c0){
@@ -650,23 +635,27 @@ function weights(arr,eq,d,c0){
   });
   return c;
 }
+// ---- THE RULES, defined once: every function that applies them asks these four ----
+// K = the number of enemy stacks (P.enemy). Along the dying order the total health never rises (a step down) and, for every troop but the engineers, the total strength never rises either.
+// The strength rule has a reference: the last stack before it that is not an engineer, not a beast and not a place Kn+1 (see markEx).
+const kn1Place=(P,i)=>i%P.enemy==0;                                          // the 0-based place i of the whole order (engineers counted) is a place Kn+1
+const kn1Stack=(P,i,s)=>modeOf(P).kn1&&s.cat!='Engineer'&&kn1Place(P,i);     // ... and an engineer never stands on one; the modes without the rule have no such place
+const strRuled=s=>s.cat!='Engineer';                                         // the strength rule applies to this stack (the engineers are held by their health only)
+const strRef=(s,rs=s.rs)=>s.cat!='Engineer'&&!s.bst&&!rs;                    // the next stack follows this stack's strength (a beast and a place Kn+1 are no reference)
 // Max damage: the stack that strikes first dies first. Along the dying order BOTH totals go down, never up: the total health (who dies first)
 // and the total strength without squad bonus (who strikes first). Engineers are the exception for the strength - only their health counts.
 // profile(): the health target of every stack (a share of the common level X). Every stack takes a small step down from the one before it, and where the
 // next troop has more strength per health, its health goes down a little further so that its total strength cannot rise either.
 // 3-, 4-, 6- and 8-stack: the stacks on the places Kn+1 (5, 9, 13 ... counted from the first place of the whole order, including the engineers) are only HALF exempt from the strength rule: their total strength may be
 // far LOWER than the stack before it, but never higher, and the next stack does not look at it (it follows the strength of the last stack before the place Kn+1). They follow the health of the stack before them. s.rs marks them.
-function markEx(P,arr){
-  const four=rgm(P),K=P.enemy;                                                                              // places Kn+1, K = the number of enemy stacks (3, 4, 6, 8), counted from the first place of the whole order
-  arr.forEach((s,i)=>{s.rs=!!(four&&s.cat!='Engineer'&&i%K==0)});
-}
+function markEx(P,arr){arr.forEach((s,i)=>{s.rs=kn1Stack(P,i,s)})}      // places Kn+1, counted from the first place of the whole order
 function profile(live,d){
   let pH=null,qT=null;
   live.forEach(s=>{
-    const rho=s.str/s.hp,eng=s.cat=='Engineer';
+    const rho=s.str/s.hp;
     let p=pH===null?1:pH*(1-d);
-    if(!HO&&!eng&&qT!==null)p=Math.min(p,qT*(1-d)/rho);      // the total strength never rises: a place Kn+1 (s.rs) is no exception to that (it may be far lower)
-    s.w=p;pH=p;if(!eng&&!s.bst&&!s.rs)qT=rho*p;      // ... but it is no reference for the next stack: that one follows the strength of the last stack before the place Kn+1
+    if(strRuled(s)&&qT!==null)p=Math.min(p,qT*(1-d)/rho);      // the total strength never rises: a place Kn+1 (s.rs) is no exception to that (it may be far lower)
+    s.w=p;pH=p;if(strRef(s))qT=rho*p;      // ... but it is no reference for the next stack: that one follows the strength of the last stack before the place Kn+1
   });
 }
 // rounding fix for the same rule: a unit is trimmed only where two neighbours flip
@@ -684,20 +673,19 @@ function chainT(live){
   }
   let limH=Infinity,limT=Infinity;
   live.forEach(s=>{
-    const eng=s.cat=='Engineer';
     if(s.n*s.hp>limH*QS)s.n=Math.floor(limH*QS/s.hp);                 // every stack stays below the one before it by at least the step (no equal totals = no tie in the order)
-    if(!HO&&!eng&&s.n*s.str>limT*QS)s.n=Math.floor(limT*QS/s.str);
-    if(s.n>0){limH=s.n*s.hp;if(!eng&&!s.bst&&!s.rs)limT=s.n*s.str}
+    if(strRuled(s)&&s.n*s.str>limT*QS)s.n=Math.floor(limT*QS/s.str);
+    if(s.n>0){limH=s.n*s.hp;if(strRef(s))limT=s.n*s.str}
   });
 }
 // balanced counts: every stack aims for X*w health, X limited by the budget, by a health cap and by a strength cap
-function fill(arr,budget,cap,capSP=Infinity,meas=x=>x.hp){
-  const inv=arr.reduce((q,x)=>q+x.w*x.cost/meas(x),0);
+function fill(arr,budget,cap,capSP=Infinity){
+  const inv=arr.reduce((q,x)=>q+x.w*x.cost/x.hp,0);
   if(!inv||budget<=0){arr.forEach(s=>s.n=0);return false}
   let lim=cap;
   if(isFinite(capSP)){const m=Math.max(...arr.map(s=>s.w*s.rho));if(m>0)lim=Math.min(lim,capSP/m)}
   const X=Math.min(budget/inv,lim);
-  arr.forEach(s=>s.n=Math.floor(X*s.w/meas(s)));
+  arr.forEach(s=>s.n=Math.floor(X*s.w/s.hp));
   return budget/inv>=lim;
 }
 // health never rises along the order (fixes rounding drift); for monsters strength must also stay below the army's
@@ -719,7 +707,7 @@ const usedOf=a=>a.reduce((q,x)=>q+x.n*x.cost,0);
 // that is furthest below its target health (health / w), as long as that stack stays at or below the stack before it in the dying order.
 let TOPTOL=1.005;
 let HO=false;      // health only (CP kill and CP death): the stacks are placed tight by health alone - the total strength is not kept falling along the order
-function topUp(seq,A,cap,tmode,meas=x=>x.hp,grp){
+function topUp(seq,A,cap,tmode,grp){
   let left=cap-usedOf(A);
   if(!(left>0))return;
   const qs=tmode?QS:1,ix=new Map(seq.map((s,i)=>[s,i]));
@@ -735,8 +723,8 @@ function topUp(seq,A,cap,tmode,meas=x=>x.hp,grp){
       if(s.tgt!==undefined&&!s.pt&&s.n*s.hp>s.tgt*TOPTOL)continue;         // 4-stack: no stack goes more than 0.5 % above its target level: the leftover must not make a tall stack at the head of the order. Not the partial tier: its level IS what is left of the Dominance, so the leftover belongs to it (only the order and the strength rule limit it)
       if(grp){if((s.n+1)*s.hp>bnd.get(s))continue}                // inside a group nobody has to stay below another stack (the order there is equal / random)
       else if(i>=0&&(s.n+1)*s.hp>seq[i].n*seq[i].hp*qs)continue                      // the total health must not rise along the order (Max damage family: it must fall by the step)
-      if(tmode&&!HO&&s.cat!='Engineer'){let j=i;while(j>=0&&(seq[j].cat=='Engineer'||seq[j].bst||seq[j].rs||!(seq[j].n>0)))j--;if(j>=0&&(s.n+1)*s.str>seq[j].n*seq[j].str*qs)continue}   // Max damage: nor the total strength
-      const r=s.n*meas(s)/s.w;
+      if(tmode&&!HO&&strRuled(s)){let j=i;while(j>=0&&(!strRef(seq[j])||!(seq[j].n>0)))j--;if(j>=0&&(s.n+1)*s.str>seq[j].n*seq[j].str*qs)continue}   // Max damage: nor the total strength
+      const r=s.n*s.hp/s.w;
       if(r<br){br2=br;br=r;best=s}else if(r<br2)br2=r;
     }
     if(!best)break;
@@ -745,7 +733,7 @@ function topUp(seq,A,cap,tmode,meas=x=>x.hp,grp){
       k=Math.floor(left/best.cost);
       if(bnd)k=Math.min(k,Math.floor(bnd.get(best)/best.hp+1e-9)-best.n);
       if(best.tgt!==undefined&&!best.pt)k=Math.min(k,Math.floor(best.tgt*TOPTOL/best.hp)-best.n+1);
-      if(isFinite(br2))k=Math.min(k,Math.ceil(br2*best.w/meas(best))-best.n);
+      if(isFinite(br2))k=Math.min(k,Math.ceil(br2*best.w/best.hp)-best.n);
       k=Math.max(1,k);
     }
     best.n+=k;left-=k*best.cost;
@@ -815,7 +803,7 @@ function lpSolve(P,seq){
   for(let i=0;i+1<N;i++)row(i+1,g[i+1],i,g[i]);                                   // total health: never rises
   let pi=-1;
   markEx(P,seq);
-  for(let j=0;j<N;j++){if(seq[j].cat=='Engineer')continue;if(pi>=0)row(j,rho[j]*g[j],pi,rho[pi]*g[pi]);if(!seq[j].bst&&!seq[j].rs)pi=j}   // places Kn+1: the strength row is there (never higher), but they are no reference for the next stack   // total strength without bonus: never rises (engineers excepted)
+  for(let j=0;j<N;j++){if(!strRuled(seq[j]))continue;if(pi>=0)row(j,rho[j]*g[j],pi,rho[pi]*g[pi]);if(strRef(seq[j]))pi=j}   // places Kn+1: the strength row is there (never higher), but they are no reference for the next stack   // total strength without bonus: never rises (engineers excepted)
   {const fm=[];seq.forEach((s,i)=>{if(s.p=='M'&&!s.pt)fm.push(i)});               // a monster tier is used FULLY before a lower one is touched: the full tiers stay on one health level
    if(fm.length>1&&fm[fm.length-1]-fm[0]==fm.length-1){const a=fm[0],z=fm[fm.length-1];row(a,0.9*Math.pow(q,z-a)*g[a],z,g[z]/q)}}   // (max. 10 % spread besides the steps); only the partial tier and the ones below it may be smaller
   const x=simplex(w.map(v=>v/wm),A,b);
@@ -854,42 +842,42 @@ function lpAlloc(P,live){
 // total strength would otherwise rise - the places Kn+1 are exempt and just follow the health before them). The level is as high as the Leadership allows (all of it is spent);
 // the monsters get ONE common level, the army's level at most - lower when the Dominance is the smaller pool, so there is a single step between the army and the monsters. Rounding is repaired and the leftover is spent troop by troop.
 function allocTight(P,live){
-  const d=P.d,meas=x=>x.hp;
+  const d=P.d;
   let cur=live.slice(),dom=true,free=null;      // free: the army's level is too low for the monsters to spend the Dominance (or there is no army) - then the whole Dominance goes to the monsters, above the army's level
   for(let pass=0;pass<4;pass++){
     cur.forEach(s=>{s.n=0});
     const A=cur.filter(s=>s.p=='A'),Mo=cur.filter(s=>s.p=='M');
     weights(cur,HO,d);markEx(P,cur);if(!HO)profile(cur,d);      // CP kill (HO): every group is equal inside, a small step down only between groups
-    fill(A,P.capA,Infinity,Infinity,meas);
-    const inv=A.reduce((q,x)=>q+x.w*x.cost/meas(x),0),X=inv&&P.capA>0?P.capA/inv:Infinity;
-    if(free===null){const invM=Mo.reduce((q,x)=>q+x.w*x.cost/meas(x),0);free=P.capM>0&&invM>0&&(!isFinite(X)||P.capM/invM>X*1.001)}      // decided once, on the whole list: every monster tier on the army's level still cannot spend the Dominance
+    fill(A,P.capA,Infinity,Infinity);
+    const inv=A.reduce((q,x)=>q+x.w*x.cost/x.hp,0),X=inv&&P.capA>0?P.capA/inv:Infinity;
+    if(free===null){const invM=Mo.reduce((q,x)=>q+x.w*x.cost/x.hp,0);free=P.capM>0&&invM>0&&(!isFinite(X)||P.capM/invM>X*1.001)}      // decided once, on the whole list: every monster tier on the army's level still cannot spend the Dominance
     const XM=free?Infinity:X;                         // the monsters' ceiling: the army's level, unless the Dominance is the bigger pool and needs more room (the only ceiling is then the Dominance itself)
     const Fm=Mo.filter(s=>!s.pt),Pm=Mo.filter(s=>s.pt);
-    fill(Fm,P.capM,XM,Infinity,meas);                 // the full monster tiers (the strongest first) on one level, not above the army's level (unless free)
-    const invF=Fm.reduce((q,x)=>q+x.w*x.cost/meas(x),0),XF=invF?Math.min(P.capM/invF,XM):0;
+    fill(Fm,P.capM,XM,Infinity);                 // the full monster tiers (the strongest first) on one level, not above the army's level (unless free)
+    const invF=Fm.reduce((q,x)=>q+x.w*x.cost/x.hp,0),XF=invF?Math.min(P.capM/invF,XM):0;
     dom=!(P.capM>0)||!invF||free||P.capM/invF>=X*0.998;       // the Dominance reaches for the full tiers at the army's level (otherwise they stand lower and no tier below them gets anything)
     let XP=0,tp=0,invP=0;
     if(Pm.length){                                    // the partial tier: whatever is left of the Dominance, on one level not above the full tiers. Only ONE tier is partial (the highest of them) - the tiers below stay empty
       tp=Math.max(...Pm.map(s=>+s.r.slice(1)));
       const P1=Pm.filter(s=>+s.r.slice(1)==tp);
-      invP=P1.reduce((q,x)=>q+x.w*x.cost/meas(x),0);const left=P.capM-XF*invF;
+      invP=P1.reduce((q,x)=>q+x.w*x.cost/x.hp,0);const left=P.capM-XF*invF;
       XP=invP&&left>0?Math.min(left/invP,XF):0;
-      Pm.forEach(s=>{s.n=+s.r.slice(1)==tp?Math.floor(XP*s.w/meas(s)):0});
+      Pm.forEach(s=>{s.n=+s.r.slice(1)==tp?Math.floor(XP*s.w/s.hp):0});
     }
     cur.forEach(s=>{s.tgt=(s.p=='A'?X:s.pt?(+s.r.slice(1)==tp?XP:0):XF)*s.w});
     for(let g=0;g<30;g++){const before=cur.map(x=>x.n).join();chainT(cur);if(cur.map(x=>x.n).join()==before)break}
     if(HO&&isFinite(X)&&A.length){      // CP kill / CP death: the chain cuts down the stacks behind a smaller stack (the monsters before the Specialists) and the Leadership it frees is left over: it raises the level of the whole army instead (the highest level the chain and the budget allow)
       // CP death: the full monster tiers stand in the same group as the army (the troops without a bonus), so they follow the army's level (as far as the Dominance reaches) and the partial tier gets what is left
       const mn=Mo.map(s=>s.n),fol=P.cpd&&!free&&invF>0,lv=xa=>{const f=Math.min(P.capM/invF,xa),left=P.capM-f*invF;return{f,p:invP&&left>0?Math.min(left/invP,f):0}};
-      const setM=xa=>{const l=lv(xa);Fm.forEach(s=>{s.n=Math.floor(l.f*s.w/meas(s))});Pm.forEach(s=>{s.n=+s.r.slice(1)==tp?Math.floor(l.p*s.w/meas(s)):0})};
-      const run=x=>{A.forEach(s=>{s.n=Math.floor(x*s.w/meas(s))});if(fol)setM(x);else Mo.forEach((s,i)=>{s.n=mn[i]});for(let g=0;g<30;g++){const b=cur.map(q=>q.n).join();chainT(cur);if(cur.map(q=>q.n).join()==b)break}return usedOf(A)};
+      const setM=xa=>{const l=lv(xa);Fm.forEach(s=>{s.n=Math.floor(l.f*s.w/s.hp)});Pm.forEach(s=>{s.n=+s.r.slice(1)==tp?Math.floor(l.p*s.w/s.hp):0})};
+      const run=x=>{A.forEach(s=>{s.n=Math.floor(x*s.w/s.hp)});if(fol)setM(x);else Mo.forEach((s,i)=>{s.n=mn[i]});for(let g=0;g<30;g++){const b=cur.map(q=>q.n).join();chainT(cur);if(cur.map(q=>q.n).join()==b)break}return usedOf(A)};
       let lo=X,hi=X*1.1;
       if(run(hi)<=P.capA)lo=hi;else for(let k=0;k<45;k++){const mid=(lo+hi)/2;if(run(mid)<=P.capA)lo=mid;else hi=mid}
       run(lo);A.forEach(s=>{s.tgt=lo*s.w});
       if(fol){const l=lv(lo);Fm.forEach(s=>{s.tgt=l.f*s.w});Pm.forEach(s=>{s.tgt=(+s.r.slice(1)==tp?l.p:0)*s.w})}
     }
-    TOPTOL=1.005;topUp(cur,A,P.capA,true,meas,HO);topUp(cur,Mo,P.capM,true,meas,HO);
-    if(P.capM-usedOf(Mo)>0.003*P.capM){TOPTOL=1.03;topUp(cur,Mo,P.capM,true,meas,HO);TOPTOL=1.005}      // Dominance left over: the monsters may go up to 3 % above the level (the first monster stands far below the army anyway)
+    TOPTOL=1.005;topUp(cur,A,P.capA,true,HO);topUp(cur,Mo,P.capM,true,HO);
+    if(P.capM-usedOf(Mo)>0.003*P.capM){TOPTOL=1.03;topUp(cur,Mo,P.capM,true,HO);TOPTOL=1.005}      // Dominance left over: the monsters may go up to 3 % above the level (the first monster stands far below the army anyway)
     if(!cur.some(s=>!(s.n>0)))break;
     cur=cur.filter(s=>s.n>0);                      // a stack that got no troop leaves the order: the places Kn+1 move up
   }
@@ -897,57 +885,49 @@ function allocTight(P,live){
   return{A:live.filter(s=>s.p=='A'),Mo:live.filter(s=>s.p=='M'),dom,free:!!free};
 }
 function allocWhole(P,live){                         // Killshot: the exact solution (health AND total strength step down along the order)
-  const d=P.d,A=live.filter(s=>s.p=='A'),Mo=live.filter(s=>s.p=='M'),T=true;
+  const d=P.d,A=live.filter(s=>s.p=='A'),Mo=live.filter(s=>s.p=='M');
   weights(live,false,d);
   markEx(P,live);
-  const meas=x=>x.hp;                                // every stack aims for a share of the common health level
-  let ok=false;
-  if(T){                                             // Max damage: exact solution (health AND total strength both step down along the order)
-    let sol=null;try{sol=lpAlloc(P,live)}catch(e){sol=null}
-    if(sol){
-      live.forEach(s=>{const v=sol.get(s);s.n=v?Math.floor(v+1e-7):0;s.w=Math.max(1,(v||0)*s.hp)});
-      markEx(P,live.filter(s=>s.n>0));live.filter(s=>!(s.n>0)).forEach(s=>s.rs=false);   // the places Kn+1 of the stacks that really exist
-      ok=true;
-    }else profile(live,d);                           // fallback: the step profile
-  }
+  let ok=false,sol=null;
+  try{sol=lpAlloc(P,live)}catch(e){sol=null}
+  if(sol){
+    live.forEach(s=>{const v=sol.get(s);s.n=v?Math.floor(v+1e-7):0;s.w=Math.max(1,(v||0)*s.hp)});
+    markEx(P,live.filter(s=>s.n>0));live.filter(s=>!(s.n>0)).forEach(s=>s.rs=false);   // the places Kn+1 of the stacks that really exist
+    ok=true;
+  }else profile(live,d);                             // fallback: the step profile
   if(!ok){
-    fill(A,P.capA,Infinity,Infinity,meas);
-    const inv=A.reduce((q,x)=>q+x.w*x.cost/meas(x),0),X=inv&&P.capA>0?P.capA/inv:Infinity;
+    fill(A,P.capA,Infinity,Infinity);
+    const inv=A.reduce((q,x)=>q+x.w*x.cost/x.hp,0),X=inv&&P.capA>0?P.capA/inv:Infinity;
     Mo.forEach(s=>s.n=0);
     let left=P.capM;
     [...new Set(Mo.map(s=>+s.r.slice(1)))].sort((a,b)=>b-a).forEach(t=>{
       const arr=Mo.filter(s=>+s.r.slice(1)==t);
-      fill(arr,left,X,Infinity,meas);left-=usedOf(arr);
+      fill(arr,left,X,Infinity);left-=usedOf(arr);
     });
   }
-  for(let g=0;g<30;g++){                   // rounding fix: a unit is trimmed only where two neighbours flip. Health never rises along the dying order; Max damage: the total strength never rises
+  for(let g=0;g<30;g++){                   // rounding fix: a unit is trimmed only where two neighbours flip. Health never rises along the dying order, nor the total strength
     const before=live.map(x=>x.n).join();
-    if(T)chainT(live);else chain(live,false,Infinity);
+    chainT(live);
     if(live.map(x=>x.n).join()==before)break;
   }
-  topUp(live,A,P.capA,T,meas);             // spend the Leadership the rounding left over
-  if(ok)topUp(live,Mo,P.capM,T,meas);      // ... and the Dominance
+  topUp(live,A,P.capA,true);               // spend the Leadership the rounding left over
+  if(ok)topUp(live,Mo,P.capM,true);        // ... and the Dominance
   return{A,Mo};
 }
-function allocate(P,live){
-  HO=!!P.cp;
-  if(rgm(P)||P.cp)return allocTight(P,live);      // 3-, 4-, 6- and 8-stack: tight stacks; CP kill and CP death: the same tight stacks, by health only (HO)
-  if(P.kill)return allocWhole(P,live);                // Killshot: one chain, health and strength both step down
-  const Mo=live.filter(s=>s.p=='M');
-  const eq=P.mode=='1'||P.ren,d=P.d;                        // Renegades: every group is equal inside, a step only between groups
-  const A=live.filter(s=>s.p=='A');
-  // army: equal health, small step down along the dying order
-  weights(A,eq,d);fill(A,P.capA,Infinity);chain(A,eq,Infinity);topUp(A,A,P.capA,false,undefined,eq);
-  if(P.ren){
-    // Renegades: the monsters only have to stay below the first 16 stacks. They get the same health as the rest of the block
-    // (no step, no extra gap); when dominance runs out the lowest monster tier is smaller and so dies last.
-    const head=A.filter(s=>s.grp!='REST'&&s.n>0),restA=A.filter(s=>s.grp=='REST'&&s.n>0);
-    const headMin=Math.min(...head.map(s=>s.n*s.hp));
-    const level=restA.length?Math.min(...restA.map(s=>s.n*s.hp)):(isFinite(headMin)?headMin*(1-P.d):Infinity);
-    allocMonsters(P,Mo,[],true,{d:0,capHP:level,capSP:Infinity});
-  }else allocMonsters(P,Mo,A.filter(s=>s.n>0&&s.cat!='Engineer'),eq);
+function allocRen(P,live){                 // Renegades: every group is equal inside, a step only between groups
+  const Mo=live.filter(s=>s.p=='M'),A=live.filter(s=>s.p=='A'),d=P.d;
+  weights(A,true,d);fill(A,P.capA,Infinity);chain(A,true,Infinity);topUp(A,A,P.capA,false,true);
+  // the monsters only have to stay below the first 16 stacks. They get the same health as the rest of the block
+  // (no step, no extra gap); when dominance runs out the lowest monster tier is smaller and so dies last.
+  const head=A.filter(s=>s.grp!='REST'&&s.n>0),restA=A.filter(s=>s.grp=='REST'&&s.n>0);
+  const headMin=Math.min(...head.map(s=>s.n*s.hp));
+  const level=restA.length?Math.min(...restA.map(s=>s.n*s.hp)):(isFinite(headMin)?headMin*(1-P.d):Infinity);
+  allocMonsters(P,Mo,[],true,{d:0,capHP:level,capSP:Infinity});
   return{A,Mo};
 }
+function allocate(P,live){const md=modeOf(P);HO=md.ho;return md.size(P,live)}      // the sizing of the mode (HO: health only, read by the shared helpers)
+// the whole calculation of the engine: the order, the Leadership / Dominance stacks, then the mercenaries (they come last: the numbers before are final)
+function solve(P,order){const st=buildStacks(P,order,XS),{A,Mo}=allocate(P,st.filter(s=>!s.off)),U=allocMerc(P,[...A,...Mo],st.so,XS);return{st,A,Mo,U}}
 // ---- total damage from the dying order alone (the same calculation in every mode) ----
 // The enemy has K stacks; each of its K hits kills one of my stacks, the first one in the dying order, and every stack strikes once before it
 // dies (and once more in every following round while it is alive). So the stack in place p of the dying order strikes ceil(p/K) times:
@@ -1099,14 +1079,14 @@ MT.forEach(t=>TRN[t.name]=t);
 const mkM=(t,P,X)=>{const[mh,ms]=mults(t,P);return{r:t.cls+t.tier,p:'U',c:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i:0,dh:dhf(t,P),bst:!!t.beast,n:0}};
 // the counts of a row of stacks: H and T = health and total strength of the stack before (Infinity = none), idx = its place, X = the health level no stack goes above
 function sizeChain(P,seq,H,T,idx,X){
-  const K=P.enemy,four=rgm(P),ns=[];
+  const ns=[];
   seq.forEach(s=>{
-    const eng=s.cat=='Engineer',rs=!!(four&&!eng&&idx%K==0);                 // the places Kn+1: the strength may be far lower, never higher; the next stack follows the strength before it, as everywhere
+    const rs=kn1Stack(P,idx,s);                                              // the places Kn+1: the strength may be far lower, never higher; the next stack follows the strength before it, as everywhere
     let n=Math.floor(X/s.hp+1e-9);
     if(isFinite(H))n=Math.min(n,Math.floor(H*QS/s.hp));
-    if(!HO&&!eng&&isFinite(T))n=Math.min(n,Math.floor(T*QS/s.str));
+    if(!HO&&strRuled(s)&&isFinite(T))n=Math.min(n,Math.floor(T*QS/s.str));
     if(!(n>=1)){ns.push(0);return}                                           // no unit fits: the stack does not exist (the next places move up)
-    ns.push(n);H=n*s.hp;if(!eng&&!s.bst&&!rs)T=n*s.str;idx++;
+    ns.push(n);H=n*s.hp;if(strRef(s,rs))T=n*s.str;idx++;
   });
   return ns;
 }
@@ -1117,7 +1097,7 @@ function allocMerc(P,ld,so,X){
   const ix={};so.forEach((n,i)=>ix[n]=i);
   const L=ld.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);
   let H=Infinity,T=Infinity;
-  L.forEach(s=>{H=s.n*s.hp;if(s.cat!='Engineer'&&!s.bst&&!s.rs)T=s.n*s.str});   // the last Leadership / Dominance stack: the chain goes on from its health and total strength
+  L.forEach(s=>{H=s.n*s.hp;if(strRef(s))T=s.n*s.str});   // the last Leadership / Dominance stack: the chain goes on from its health and total strength
   if(P.cp&&L.length){const lg=L[L.length-1].grp;if(lg)H=Math.min(...L.filter(s=>s.grp===lg).map(s=>s.n*s.hp))}      // CP kill: the mercenaries stay below the SMALLEST stack of the last group
   const by={};all.forEach(s=>by[s.name]=s);
   const used=(seq,ns)=>ns.reduce((q,n,i)=>q+n*seq[i].cost,0);
@@ -1193,16 +1173,14 @@ function calc(){
   [['bcEpic',['bs_Epic'],ep],['bcPlayers',['bh_Players','bs_Players'],!ep]].forEach(([c,ids,on])=>{const el=$(c);if(el)el.hidden=!on;ids.forEach(i=>{const x=$(i);if(x)x.disabled=!on})});      // the Against box that does not count in the chosen view is hidden and its inputs are disabled
   if(!RENEGADES&&$('mode').value=='ren'){$('mode').value='max';SO=[]}      // Renegades is off: a tab saved in it falls back to Max damage
   {const rb=document.querySelector('.cm[data-m=ren]');if(rb){rb.disabled=!RENEGADES;rb.title=RENEGADES?'':'Switched off for now'}}
-  const P=getP(),st=buildStacks(P,O,XS,SO);
-  if(P.mode=='2')SO=st.so;
-  const{A,Mo}=allocate(P,st.filter(s=>!s.off));
-  const U=allocMerc(P,[...A,...Mo],st.so||[],XS);          // the mercenaries come last: the Leadership / Dominance numbers above are already final
-  if(P.mode=='2'){const sx=[...st,...U.all];sx.so=[...st.so,...U.ord];drawSO(sx,P)}                  // after the allocation: the list shows the unit counts
+  const P=getP(),{st,A,Mo,U}=solve(P,O);
+  SO=st.so;
+  {const sx=[...st,...U.all];sx.so=[...st.so,...U.ord];drawSO(sx,P)}                  // after the allocation: the list shows the unit counts
   document.querySelectorAll('.pb').forEach(b=>b.classList.toggle('on',TY.every(t=>v('bh_'+t)==+b.dataset.p&&v('bs_'+t)==+b.dataset.p)));
   document.querySelectorAll('.eb').forEach(b=>b.classList.toggle('on',!P.kill&&!P.ren&&!P.cp&&+b.dataset.e==P.enemy));
   document.querySelectorAll('.cm').forEach(b=>b.classList.toggle('on',(P.kill&&b.dataset.m=='kill')||(P.ren&&b.dataset.m=='ren')||(P.one&&!P.cpd&&b.dataset.m=='cp')||(P.one&&P.cpd&&b.dataset.m=='cpd')||(P.pm&&b.dataset.m=='pvpmax')));
   {const m=MODEINFO[P.kill?'kill':P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)],el=$('mdi');if(el){el.hidden=!m&&!pvOff;if(pvOff)el.innerHTML='<b>Attack players</b> - The PvP modes are switched off for now.';else if(m)el.innerHTML='<b>'+m[0]+'</b> - '+m[1]}}      // the explanation under the mode buttons (the tier tips under Tiers to use are fixed text, both are always shown)
-  const sc=score(P,[...A,...Mo,...U.list],[...(st.so||[]),...U.ord]);
+  const sc=score(P,[...A,...Mo,...U.list],[...st.so,...U.ord]);
   const food=[...A,...Mo,...U.list].reduce((q,s)=>q+(s.n||0)*foodOf(s.name),0);      // total food consumption of all the units, 25 % less than the plain values (mercenaries use none)
   const noFood=!(v('foodP')>0);      // no Food production: there are no hits to train for, so the Preparing button is off (the choice itself stays saved and comes back when the production is filled in)
   REVM=REVCASES.some(c=>c[0]==$('revm').value)?$('revm').value:'top';SHOWTR=$('shw').value=='train'&&!noFood;
@@ -1218,8 +1196,7 @@ function calc(){
    const pl=(n,w,m)=>n+' '+(n==1?w:m||w+'s');      // 1 monster, 2 monsters
    EBINFO=rgm(P)?(mon.length-full?`${army} army + ${pl(full,'full monster')} + ${pl(mon.length-full,'partial monster')} + ${pl(eng,'engineer')}`:`${army} army + ${pl(mon.length,'monster')} + ${pl(eng,'engineer')}`):`${army} army + ${pl(full,'full monster')} + ${pl(mon.length-full,'partial monster')} + ${pl(eng,'engineer')}`;if(U.list.length)EBINFO+=` + ${pl(U.list.length,'mercenary','mercenaries')}`}
   KP={};
-  if(P.mode=='2')[...A,...Mo,...U.list].filter(x=>x.n>0).forEach(x=>{if(SOPOS[x.name]!=null)KP[x.name]=SOPOS[x.name]});   // the same numbers as the dying-order list
-  else [...A,...Mo].filter(x=>x.n>0).sort((a,b)=>b.n*b.hp-a.n*a.hp).forEach((x,i)=>KP[x.name]=i+1);
+  [...A,...Mo,...U.list].filter(x=>x.n>0).forEach(x=>{if(SOPOS[x.name]!=null)KP[x.name]=SOPOS[x.name]});   // the same numbers as the dying-order list
   if(tabs){const t=$('rtitle');if(t)t.textContent='Result — '+tabs[active].name}
   if(!['grouped','mobile','computer'].includes(VIEW))VIEW='grouped';
   const mob=VIEW!='grouped',ord=(l,pri)=>VIEW=='computer'?compOrder(mobOrder(l),pri):mobOrder(l);                      // Mobile and Computer: one list per section, one unit per card-line; Computer in two columns
@@ -1243,9 +1220,8 @@ function refresh(){sync();calc()}
 let HINTGEN=0;      // a newer check (or closing the window) cancels the one that is running
 const HGAIN=0.001;      // a change is suggested only when it gives more than 0.1 % more damage
 function evalSel(sel){      // the estimated damage of the tier selection sel: the same steps as calc, without drawing
-  const P=getP(),st=buildStacks(P,[...sel].sort((a,b)=>key(a)-key(b)),XS,[]);
-  const{A,Mo}=allocate(P,st.filter(s=>!s.off)),U=allocMerc(P,[...A,...Mo],st.so||[],XS);
-  return score(P,[...A,...Mo,...U.list],[...(st.so||[]),...U.ord]).dmg;
+  const P=getP(),{st,A,Mo,U}=solve(P,[...sel].sort((a,b)=>key(a)-key(b)));
+  return score(P,[...A,...Mo,...U.list],[...st.so,...U.ord]).dmg;
 }
 async function tierHint(gen){
   const body=$('tcb'),note='<p class="mu">Only the estimated damage is compared, not the food or revive cost.</p>';
