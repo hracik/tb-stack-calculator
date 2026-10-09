@@ -84,7 +84,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <details class="card"><summary><h2>Special bonuses (%)</h2><button type="button" class="ib" data-tip="tipS" aria-expanded="false" aria-controls="tipS" title="About special bonuses">i</button></summary><p class="tip" id="tipS" role="tooltip" hidden>Extra bonuses per category, added on top of the class bonus.</p><div class="bg" id="sb"></div></details>
 
 <div class="card"><h2>Tiers to use</h2><div class="sc"><table class="tt" id="tiers"></table></div>
-<div class="mdi" id="mdt" role="note"><div id="mdte"><b>Tip against epics</b> - For the maximum damage per hit, the app recommends choosing the top 2 tiers of each troop type you have available (for example G8 + G9, S8 + S9, E8 + E9) and the top 3 Monster tiers (for example M7 + M8 + M9). Leaving out the 2nd tier of Engineers may be more cost-effective, with similar damage per hit.</div><div id="mdtp" hidden><b>Tip against players</b> - For maximum damage, the app recommends the top 2 tiers of Guardsmen and Engineers, the top 3 tiers of Specialists and the top 4 tiers of Monsters. Leaving out the lowest tiers of Monsters and Specialists, and the 2nd tier of Engineers, may be more cost-effective.</div></div></div>
+</div>
 
 <div class="atk" id="atk"><button type="button" class="ab" data-a="epics" title="Hit epic monsters">Attack epics</button><button type="button" class="ab" data-a="players" title="Hit other players">Attack players</button></div>
 <div class="card"><h2>Attack mode · Dying order, troop by troop</h2>
@@ -1184,8 +1184,7 @@ function calc(){
   if(PVMODES.includes($('mode').value))LASTP=$('mode').value;else LASTE={mode:$('mode').value,enemy:$('enemy').value};
   const ep=ATK=='epics',pvOff=!ep&&!okP.length;      // pvOff: the Attack players view while no PvP mode is switched on (nothing to calculate)
   document.querySelectorAll('.ab').forEach(b=>b.classList.toggle('on',b.dataset.a==ATK));{const t=$('atk');if(t)t.dataset.v=ATK}
-  [['mrE1',ep],['mrE2',ep],['mrP1',!ep],['mrPM',!ep],['bcEpic',ep],['bcPlayers',!ep],['mdte',ep],['mdtp',!ep&&okP.length>0]].forEach(([id,on])=>{const el=$(id);if(el)el.hidden=!on});      // the settings and the tips of the chosen view
-  {const t=$('mdt');if(t)t.hidden=!(ep||okP.length>0)}
+  [['mrE1',ep],['mrE2',ep],['mrP1',!ep],['mrPM',!ep],['bcEpic',ep],['bcPlayers',!ep]].forEach(([id,on])=>{const el=$(id);if(el)el.hidden=!on});      // the settings of the chosen view
   {const o=$('osd');if(o)o.style.display=pvOff?'none':''}
   if(!RENEGADES&&$('mode').value=='ren'){$('mode').value='max';SO=[]}      // Renegades is off: a tab saved in it falls back to Max damage
   {const rb=document.querySelector('.cm[data-m=ren]');if(rb){rb.disabled=!RENEGADES;rb.title=RENEGADES?'':'Switched off for now'}}
