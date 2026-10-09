@@ -367,7 +367,7 @@ function ranker(P){
   return{key,rank};
 }
 // The monster tiers are used from the top: the first c tiers are FULL (they stand together in the order, ranked as one group), the next tier is the PARTIAL one (it takes what the Dominance still allows)
-// and any lower tier comes after it (it gets whatever is left, if anything). Which c is best depends on the Dominance, so it is tried (see buildStacks): c = number of full tiers.
+// and any lower tier comes after it (it gets whatever is left, if anything). Which c is best depends on the Dominance and the bonuses, so every c is tried (see byTiers) and the one with the most damage is kept: c = number of full tiers.
 const monTiers=ts=>[...new Set(ts.filter(t=>t.pool=='M').map(t=>t.tier))].sort((a,b)=>b-a);
 function monSplit(ts,c){const mt=monTiers(ts),n=c==null?mt.length:Math.min(c,mt.length);return{full:new Set(mt.slice(0,n)),rest:mt.slice(n)}}
 // 3-, 4-, 6- and 8-stack: the stacks have to be as close in health as possible. Health AND total strength (without squad bonus) both go DOWN along the dying order, so the order
@@ -420,7 +420,7 @@ function ratioGroups(P,arr,split){                                              
   return gs;
 }
 const permsOf=a=>a.length<2?[a]:a.flatMap((x,i)=>permsOf([...a.slice(0,i),...a.slice(i+1)]).map(p=>[x,...p]));
-function fourSearch(P,live,mkOut){
+function fourSearch(P,live,mkOut,CC){      // CC = the number of full monster tiers (byTiers tries them all)
   const ts=TR.filter(t=>live.has(t.name));
   const rest=ts;                                                                     // the engineers are ordinary troops: they stand first only because their strength / health is (almost) always the lowest
   const flat=g=>g.flatMap(x=>x.u);
@@ -430,24 +430,11 @@ function fourSearch(P,live,mkOut){
   // Monsters whose ratio is lower than some army troops (your bonuses decide) may stand in front of those troops; nothing else forbids a place. Such an order is kept only when no other order exists.
   const shBad=units=>{let mn=Infinity;for(let i=units.length-1;i>=0;i--){const t=units[i],r=ratioOf(t,P);if(t.pool=='M'){if(mn<r/(1+RTOL))return true}else if(r<mn)mn=r}return false};
   const ev=(units,cc)=>{const names=units.map(t=>t.name),o=mkOut(names,cc),r=allocate(P,o),bad=shBad(units);
-    return{d:score(P,[...r.A,...r.Mo],names).dmg,names,cc,dom:r.dom!==false,free:!!r.free,full:bad?-1:!(P.capA>0)?2:(ua=>ua>=0.999?2:ua>=0.97?1:0)(usedOf(r.A)/P.capA)}};     // full: 2 = all the Leadership is spent (99.9 %), 1 = nearly (97 %) - an order that leaves more of it unused only wins when no other one spends it
+    return{d:score(P,[...r.A,...r.Mo],names).dmg,names,cc,full:bad?-1:!(P.capA>0)?2:(ua=>ua>=0.999?2:ua>=0.97?1:0)(usedOf(r.A)/P.capA)}};     // full: 2 = all the Leadership is spent (99.9 %), 1 = nearly (97 %) - an order that leaves more of it unused only wins when no other one spends it
   const better=(a,b)=>!b||(a.full!==b.full?a.full>b.full:(a.k==null?a.d:a.k)>(b.k==null?b.d:b.k)*(1+5e-4));
-  // DOMINANCE, tier by tier from the top: the strongest monster tiers are used FULLY (on the army's health level) as long as the Dominance reaches for it, the next tier is the PARTIAL one
+  // DOMINANCE, tier by tier from the top: the c strongest monster tiers (c is given by byTiers, the one with the most damage) are used FULLY (on the army's health level, as far as the Dominance reaches), the next tier is the PARTIAL one
   // (it takes what is left, at the end of the order), the tiers below it get nothing. So a tier never depends on the tiers below it: leaving the lowest tier out does not change the others.
   const top=k=>new Set(mt.slice(0,k)),front=k=>rest.filter(t=>t.pool!='M'||top(k).has(t.tier)),pm=k=>mons.filter(t=>t.tier==mt[k]),low=k=>mons.filter(t=>t.tier<mt[k]);
-  let CC=nT;
-  if(nT>1){
-    CC=1;
-    const armyU=flat(ratioGroups(P,rest.filter(t=>t.pool!='M'),true));
-    let bestFree=null;
-    for(let k=nT;k>=1;k--){                                                          // the most full tiers the Dominance can fill at the army's level
-      const fm=mons.filter(t=>top(k).has(t.tier));
-      const e=ev([...armyU,...flat(ratioGroups(P,fm,true)),...(k<nT?[...flat(ratioGroups(P,pm(k),true)),...flat(ratioGroups(P,low(k),true))]:[])],k);
-      if(e.dom&&!e.free){CC=k;break}
-      if(e.dom&&(!bestFree||e.d>bestFree.d*(1+5e-4)))bestFree=e;                    // no army level to fill to (small or no army): the damage decides how many tiers are full (more tiers on a tie)
-    }
-    if(bestFree)CC=bestFree.cc;
-  }
   const restF=front(CC),F=restF.length;
   let tail=[];
   if(CC<nT){                                                                         // the partial tier (the monsters of the same ratio by squad bonus; a type with a very different ratio on a place Kn+1 inside it) and behind it the tiers that get nothing
@@ -590,22 +577,23 @@ function placeBeasts(names,K){
 //   ho     health only: the total strength does not have to fall along the order, a group of equals shares the places (CP kill, CP death, Max damage)
 //   order  who stands where: gives {so: the dying order, out: its stacks}
 //   size   how many units every stack gets
-function byTiers(P,nT,orderOf,mk){      // the Dominance decides how many monster tiers are full: every choice is solved and the one with the most damage is kept
+function byTiers(nT,tryTier,mk){      // the number of full monster tiers: every choice is solved and the one with the most damage is kept (a tie: more full tiers; an order that leaves Leadership unspent only wins when no other does)
   let best=null;
   for(let c=nT;c>=1;c--){
-    const s2=orderOf(c),r=allocate(P,mk(s2,c)),dmg=score(P,[...r.A,...r.Mo],s2).dmg;
-    if(!best||dmg>best.dmg*(1+1e-9))best={dmg,c};
+    const r=tryTier(c);r.c=c;
+    if(!best||(r.full!==best.full?r.full>best.full:r.dmg>best.dmg*(1+1e-9)))best=r;
   }
-  const c=best?best.c:nT,so=orderOf(c);
-  return{so,out:mk(so,c)};
+  if(!best){best=tryTier(nT);best.c=nT}
+  return{so:best.so,out:mk(best.so,best.c)};
 }
+const tierTry=(P,so,mk,c)=>{const r=allocate(P,mk(so,c));return{so,dmg:score(P,[...r.A,...r.Mo],so).dmg,full:0}};      // a fixed order: solve it, count the damage
 const MD={
   epic:{kn1:true,ho:false,size:allocTight,      // 3-, 4-, 6- and 8-stack: troops of the same ratio stay together, the smaller squad bonus first; the group order with the most damage wins
-    order:(P,{live,mkOut})=>{const f=fourSearch(P,live,mkOut);return{so:f.names,out:mkOut(f.names,f.cc)}}},
+    order:(P,{live,mkOut,nT})=>byTiers(nT,c=>{const f=fourSearch(P,live,mkOut,c);return{so:f.names,dmg:f.d,full:f.full}},mkOut)},
   kill:{kn1:false,ho:false,size:allocWhole,     // Killshot: the order is fixed, the beasts stand on the places Kn+1
-    order:(P,{live,mkOut,nT})=>byTiers(P,nT,c=>placeBeasts(killOrder(P,live,c),P.enemy),mkOut)},
+    order:(P,{live,mkOut,nT})=>byTiers(nT,c=>tierTry(P,placeBeasts(killOrder(P,live,c),P.enemy),mkOut,c),mkOut)},
   cp:{kn1:false,ho:true,size:allocTight,        // CP kill / CP death / Max damage: the order is fixed, the troops of the same class and bonus are one group of equals
-    order:(P,{live,mkOut,nT})=>byTiers(P,nT,c=>P.cpd?cpdOrder(P,live,c):cpOrder(P,live),(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)+(s.pt?'|p':'')});return o})},
+    order:(P,{live,mkOut,nT})=>{const mkCP=(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)+(s.pt?'|p':'')});return o};return byTiers(nT,c=>tierTry(P,P.cpd?cpdOrder(P,live,c):cpOrder(P,live),mkCP,c),mkCP)}},
   ren:{kn1:false,ho:false,size:allocRen,        // Renegades: fixed rule, nothing is refined; the lowest tier is the partial one when 3 or more tiers are chosen
     order:(P,{live,mkOut,nT})=>{
       const so=renOrder(P,live),out=mkOut(so,nT>=3?nT-1:nT);
@@ -843,7 +831,7 @@ function lpAlloc(P,live){
 // the monsters get ONE common level, the army's level at most - lower when the Dominance is the smaller pool, so there is a single step between the army and the monsters. Rounding is repaired and the leftover is spent troop by troop.
 function allocTight(P,live){
   const d=P.d;
-  let cur=live.slice(),dom=true,free=null;      // free: the army's level is too low for the monsters to spend the Dominance (or there is no army) - then the whole Dominance goes to the monsters, above the army's level
+  let cur=live.slice(),free=null;      // free: the army's level is too low for the monsters to spend the Dominance (or there is no army) - then the whole Dominance goes to the monsters, above the army's level
   for(let pass=0;pass<4;pass++){
     cur.forEach(s=>{s.n=0});
     const A=cur.filter(s=>s.p=='A'),Mo=cur.filter(s=>s.p=='M');
@@ -855,7 +843,6 @@ function allocTight(P,live){
     const Fm=Mo.filter(s=>!s.pt),Pm=Mo.filter(s=>s.pt);
     fill(Fm,P.capM,XM,Infinity);                 // the full monster tiers (the strongest first) on one level, not above the army's level (unless free)
     const invF=Fm.reduce((q,x)=>q+x.w*x.cost/x.hp,0),XF=invF?Math.min(P.capM/invF,XM):0;
-    dom=!(P.capM>0)||!invF||free||P.capM/invF>=X*0.998;       // the Dominance reaches for the full tiers at the army's level (otherwise they stand lower and no tier below them gets anything)
     let XP=0,tp=0,invP=0;
     if(Pm.length){                                    // the partial tier: whatever is left of the Dominance, on one level not above the full tiers. Only ONE tier is partial (the highest of them) - the tiers below stay empty
       tp=Math.max(...Pm.map(s=>+s.r.slice(1)));
@@ -882,7 +869,7 @@ function allocTight(P,live){
     cur=cur.filter(s=>s.n>0);                      // a stack that got no troop leaves the order: the places Kn+1 move up
   }
   live.forEach(s=>{delete s.tgt;if(!(s.n>0)){s.n=0;s.rs=false}});
-  return{A:live.filter(s=>s.p=='A'),Mo:live.filter(s=>s.p=='M'),dom,free:!!free};
+  return{A:live.filter(s=>s.p=='A'),Mo:live.filter(s=>s.p=='M')};
 }
 function allocWhole(P,live){                         // Killshot: the exact solution (health AND total strength step down along the order)
   const d=P.d,A=live.filter(s=>s.p=='A'),Mo=live.filter(s=>s.p=='M');
