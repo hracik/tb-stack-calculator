@@ -732,7 +732,7 @@ function topUp(seq,A,cap,tmode,meas=x=>x.hp,grp){
     for(const s of A){
       if(!(s.n>0)||!(s.hp>0)||s.cost>left)continue;
       let i=ix.get(s)-1;while(i>=0&&!(seq[i].n>0))i--;           // the stack before it that is really in the army
-      if(s.tgt!==undefined&&s.n*s.hp>s.tgt*TOPTOL)continue;         // 4-stack: no stack goes more than 0.5 % above its target level: the leftover must not make a tall stack at the head of the order
+      if(s.tgt!==undefined&&!s.pt&&s.n*s.hp>s.tgt*TOPTOL)continue;         // 4-stack: no stack goes more than 0.5 % above its target level: the leftover must not make a tall stack at the head of the order. Not the partial tier: its level IS what is left of the Dominance, so the leftover belongs to it (only the order and the strength rule limit it)
       if(grp){if((s.n+1)*s.hp>bnd.get(s))continue}                // inside a group nobody has to stay below another stack (the order there is equal / random)
       else if(i>=0&&(s.n+1)*s.hp>seq[i].n*seq[i].hp*qs)continue                      // the total health must not rise along the order (Max damage family: it must fall by the step)
       if(tmode&&!HO&&s.cat!='Engineer'){let j=i;while(j>=0&&(seq[j].cat=='Engineer'||seq[j].bst||seq[j].rs||!(seq[j].n>0)))j--;if(j>=0&&(s.n+1)*s.str>seq[j].n*seq[j].str*qs)continue}   // Max damage: nor the total strength
@@ -744,7 +744,7 @@ function topUp(seq,A,cap,tmode,meas=x=>x.hp,grp){
     if(HO&&grp){          // CP kill / CP death: the same units one by one would go to this stack until it is no longer the lowest, so they are added at once (the order of the units is the same, only faster)
       k=Math.floor(left/best.cost);
       if(bnd)k=Math.min(k,Math.floor(bnd.get(best)/best.hp+1e-9)-best.n);
-      if(best.tgt!==undefined)k=Math.min(k,Math.floor(best.tgt*TOPTOL/best.hp)-best.n+1);
+      if(best.tgt!==undefined&&!best.pt)k=Math.min(k,Math.floor(best.tgt*TOPTOL/best.hp)-best.n+1);
       if(isFinite(br2))k=Math.min(k,Math.ceil(br2*best.w/meas(best))-best.n);
       k=Math.max(1,k);
     }
