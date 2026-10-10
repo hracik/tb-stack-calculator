@@ -238,6 +238,7 @@ function drawSO(st,P){
     block=[];
   };
   st.so.forEach(n=>{
+    if(!(sb[n]&&sb[n].n>0))return;                                // a troop with 0 units is not in the list (and takes no place number)
     if(P.ren&&grp[n]=='REST'){block.push(n);return}
     if(P.cp&&grp[n]){if(block.length&&blockG!==grp[n])flush();blockG=grp[n];block.push(n);return}
     flush();pos++;SOPOS[n]=pos;html+=one(n,pos);
