@@ -468,7 +468,7 @@ function fourSearch(P,live,mkOut,CC,quick){      // CC = the number of full mons
     weak.forEach((t,i)=>{out[sl[i]]=t});let k=0;for(let i=0;i<out.length;i++)if(!out[i])out[i]=body[k++];
     return out;
   };
-  if(quick){const g0=ratioGroups(P,restF,true),f0=ev([...flat(g0),...tail],CC),wo=weakOrder(g0);if(!wo)return f0;const w0=ev([...wo,...tail],CC);return better(w0,f0)?w0:f0}      // the quick order: the plain ascending one or the weak-on-Kn+1 one, whichever has more damage
+  if(quick){const g0=ratioGroups(P,restF,true),wo=weakOrder(g0);if(wo&&WEAKFORCE)return ev([...wo,...tail],CC);const f0=ev([...flat(g0),...tail],CC);if(!wo)return f0;const w0=ev([...wo,...tail],CC);return better(w0,f0)?w0:f0}      // the quick order ranks the tier counts, so it is the same kind of order the whole search will use: the weak-on-Kn+1 one (WEAKFORCE), otherwise the better of it and the plain ascending one
   // THE PRINCIPLES (nothing else decides the order): (1) the WEAKEST die first - the groups stand in the order of the rising SH ratio, the engineers (the lowest ratio) in front,
   // inside a group the lowest squad bonus first; (2) the places Kn+1 are the only exception: a small group with a LOWER ratio than the group around it may stand on them (no step in health);
   // (3) the gaps in health between the groups are limited by (2): which small groups go on the places Kn+1, and in which group, is what the damage decides.
