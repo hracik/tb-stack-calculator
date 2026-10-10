@@ -463,6 +463,7 @@ function fourSearch(P,live,mkOut,CC,quick){      // CC = the number of full mons
   let best=null;
   const tryU=(units,bias)=>{const e=ev([...units,...tail],CC);e.k=e.d*(1+(bias||0));if(better(e,best))best=e;return e};
   const embed=(pi,sm,h)=>{                                                           // the small group sm stands on the places Kn+1 inside the group h, where its squad bonus suits
+    if(!(sm.lo<h.lo))return;                                                         // an outlier has a LOWER ratio than the group it stands in (a troop with a higher ratio never stands inside a group of a lower ratio: the engineers, with the lowest ratio, are never pushed back by it)
     const order=pi.filter(g=>g!==sm);let start=0;for(const g of order){if(g===h)break;start+=g.u.length}
     const hs=slots.filter(x=>x>=start&&x<start+h.u.length+sm.u.length).map(x=>x-start);
     if(hs.length<sm.u.length)return;                                                 // an outlier group stands ONLY on the places Kn+1: all of it has to fit there
