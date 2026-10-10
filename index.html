@@ -130,7 +130,7 @@ const card=(n,k,h=0,sv=h)=>`<div class="bc"><b>${n}</b>${row('Health','bh_'+k,h)
 $('bon').innerHTML=[['Guardsmen','G',3466,6304],['Specialists','S',3466,6304],['Monsters','M',3461,6404],['Siege Engines','E',3466,6304]].map(([n,k,h,sv])=>card(n,k,h,sv)).join('');
 $('bonx').innerHTML=`<div class="bc ep" id="bcEpic"><b>Against epic monsters</b>${row('Strength','bs_Epic',3747)}</div>`+
   `<div class="bc ep" id="bcPlayers"><b>Against players</b>${row('Health','bh_Players',0)}${row('Strength','bs_Players',0)}</div>`;      // the Against boxes are in the Bonuses against enemies card; the Attack epics / Attack players switch (just above that card) hides and disables the one that does not count
-const STEP=0.001/100;                                     // the step down per rank in the dying order: 0.001 % (practically none, no setting)
+const STEP=0.000001/100;                                  // the step down per rank in the dying order: 0.000001 % (practically none, no setting)
 const DHV=Array.from({length:11},(_,i)=>i/2);                // Double hit: 0 - 5 % in steps of 0.5
 const snapDH=x=>{x=parseFloat(String(x).replace(',','.'));if(!isFinite(x))x=0;return Math.min(5,Math.max(0,Math.round(x*2)/2))};
 $('mb').innerHTML=TY.map(n=>`<div class="bc"><b>${n}</b>${row('Health','bh_'+n,100)}${row('Strength','bs_'+n,100)}<div class="bi"><span>Double hit</span><select id="dh_${n}">${DHV.map(x=>`<option value="${x}"${x==5?' selected':''}>${x}%</option>`).join('')}</select></div></div>`).join('');
