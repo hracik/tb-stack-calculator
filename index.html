@@ -550,31 +550,6 @@ function cpdOrder(P,names,c){
   const both=a=>[...noB(a),...withB(a)];
   return[...eng,...both([...army.filter(t=>t.cls=='G'),...mon.filter(t=>sp.full.has(t.tier))]),...both(army.filter(t=>t.cls=='S')),...both(mon.filter(t=>!sp.full.has(t.tier)))].map(t=>t.name);
 }
-// 4-, 3-, 6- and 8-stack modes and Killshot: Royal Lion and Battle Griffin (the Beast units) carry the Beast health bonus, so they deal less strength per health than the rest of the army.
-// Each one is moved to the nearest place BELOW that is Kn+1 = the FIRST place of a strike group (K = the number of enemy stacks): K = 4: 6 -> 5, 14 -> 13; K = 3: 5 -> 4, 14 -> 13; K = 6 or 8: 6n+1 or 8n+1
-// (a place that already is Kn+1 stays). When two of them are in the same group, the first goes down to the Kn+1 below and the second up to the next Kn+1 above (K = 4: 14 and 15 -> 13 and 17).
-// A beast never goes in front of the engineers. If the Kn+1 place above the army does not exist (second beast of a group), the first one steps one group down and the second takes the group's first place; if that is impossible too, the beast stays where it was.
-function placeBeasts(names,K){
-  const isB=n=>!!TRN[n].beast,bs=[];
-  names.forEach((n,i)=>{if(isB(n))bs.push([n,i+1])});
-  if(!bs.length)return names;
-  const rest=names.filter(n=>!isB(n)),tg=[],used=new Set();
-  const lastA=names.reduce((m,n,i)=>TRN[n].pool=='M'?m:i+1,0),nE=names.filter(n=>TRN[n].cat=='Engineer').length;
-  bs.forEach(([n,p],k)=>{
-    const g=Math.floor((p-1)/K);                     // strike group of the place: Kg+1 ... Kg+K
-    let t=k>0&&Math.floor((bs[k-1][1]-1)/K)==g?K*(g+1)+1:K*g+1;
-    while(t<=nE||used.has(t))t+=K;                   // not in front of the engineers, and not on a place that is already taken
-    if(t>lastA&&k>0&&tg[k-1][2]==K*g+1){             // the Kn+1 place above the army does not exist: the earlier beast of the group steps one group down, this one takes the group's first place
-      const q=tg[k-1][2]-K;
-      if(q>nE&&!used.has(q)){used.delete(tg[k-1][2]);used.add(q);tg[k-1][2]=q;t=K*g+1;used.delete(t)}
-    }
-    if(t>lastA)t=p;                                  // still no Kn+1 place: the beast stays where it was
-    used.add(t);tg.push([n,p,t]);
-  });
-  const out=rest.slice();
-  tg.sort((a,b)=>a[2]-b[2]).forEach(([n,p,t])=>{out.splice(t-1,0,n)});
-  return out;
-}
 // ---- THE MODES: ONE engine runs all of them. This table is the only place that says how they differ; everything else (the rules above, the sizing helpers, the score) is shared.
 //   kn1    the places Kn+1 are half exempt from the strength rule (3-, 4-, 6- and 8-stack)
 //   ho     health only: the total strength does not have to fall along the order, a group of equals shares the places (CP kill, CP death, Max damage)
@@ -593,8 +568,8 @@ const tierTry=(P,so,mk,c)=>{const r=allocate(P,mk(so,c));return{so,dmg:score(P,[
 const MD={
   epic:{kn1:true,ho:false,size:allocTight,      // 3-, 4-, 6- and 8-stack: troops of the same ratio stay together, the smaller squad bonus first; the group order with the most damage wins
     order:(P,{live,mkOut,nT})=>byTiers(nT,c=>{const f=fourSearch(P,live,mkOut,c);return{so:f.names,dmg:f.d,full:f.full}},mkOut)},
-  kill:{kn1:false,ho:false,size:allocWhole,     // Killshot: the order is fixed, the beasts stand on the places Kn+1
-    order:(P,{live,mkOut,nT})=>byTiers(nT,c=>tierTry(P,placeBeasts(killOrder(P,live,c),P.enemy),mkOut,c),mkOut)},
+  kill:{kn1:false,ho:false,size:allocWhole,     // Killshot: the order is fixed, a strict chain (no places Kn+1)
+    order:(P,{live,mkOut,nT})=>byTiers(nT,c=>tierTry(P,killOrder(P,live,c),mkOut,c),mkOut)},
   cp:{kn1:false,ho:true,size:allocTight,        // CP kill / CP death / Max damage: the order is fixed, the troops of the same class and bonus are one group of equals
     order:(P,{live,mkOut,nT})=>{const mkCP=(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)+(s.pt?'|p':'')});return o};return byTiers(nT,c=>tierTry(P,P.cpd?cpdOrder(P,live,c):cpOrder(P,live),mkCP,c),mkCP)}},
   ren:{kn1:false,ho:false,size:allocRen,        // Renegades: fixed rule, nothing is refined; the lowest tier is the partial one when 3 or more tiers are chosen
@@ -607,7 +582,7 @@ const MD={
 const modeOf=P=>rgm(P)?MD.epic:P.cp?MD.cp:P.kill?MD.kill:MD.ren;
 function buildStacks(P,order,X){
   const mk=(t,i)=>{const[mh,ms]=mults(t,P);
-    return{r:t.cls+t.tier,p:t.pool,c:t.pool=='M'?t.type:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i,dh:dhf(t,P),bst:!!t.beast}};
+    return{r:t.cls+t.tier,p:t.pool,c:t.pool=='M'?t.type:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i,dh:dhf(t,P)}};
   const ts=[];order.forEach(g=>(BYG[g]||[]).forEach(t=>ts.push(t)));      // one total order, troop by troop
   const live=new Set(ts.filter(t=>!X.has(t.name)).map(t=>t.name));
   const mkOut=(so,c)=>{const o=so.map(n=>mk(TRN[n],0)),mt=monTiers(so.map(n=>TRN[n]));o.forEach(s=>{if(s.p=='M')s.pt=mt.indexOf(+s.r.slice(1))>=c});return o};   // pt: the stack belongs to the partial tier or below
@@ -628,11 +603,11 @@ function weights(arr,eq,d,c0){
 }
 // ---- THE RULES, defined once: every function that applies them asks these four ----
 // K = the number of enemy stacks (P.enemy). Along the dying order the total health never rises (a step down) and, for every troop but the engineers, the total strength never rises either.
-// The strength rule has a reference: the last stack before it that is not an engineer, not a beast and not a place Kn+1 (see markEx).
+// The strength rule has a reference: the last stack before it that is not an engineer and not on a place Kn+1 (see markEx). The kind of troop never matters.
 const kn1Place=(P,i)=>i%P.enemy==0;                                          // the 0-based place i of the whole order (engineers counted) is a place Kn+1
 const kn1Stack=(P,i,s)=>modeOf(P).kn1&&s.cat!='Engineer'&&kn1Place(P,i);     // ... and an engineer never stands on one; the modes without the rule have no such place
 const strRuled=s=>s.cat!='Engineer';                                         // the strength rule applies to this stack (the engineers are held by their health only)
-const strRef=(s,rs=s.rs)=>s.cat!='Engineer'&&!s.bst&&!rs;                    // the next stack follows this stack's strength (a beast and a place Kn+1 are no reference)
+const strRef=(s,rs=s.rs)=>s.cat!='Engineer'&&!rs;                            // the next stack follows this stack's strength (a place Kn+1 is no reference; no kind of troop is special)
 // Max damage: the stack that strikes first dies first. Along the dying order BOTH totals go down, never up: the total health (who dies first)
 // and the total strength without squad bonus (who strikes first). Engineers are the exception for the strength - only their health counts.
 // profile(): the health target of every stack (a share of the common level X). Every stack takes a small step down from the one before it, and where the
@@ -1093,7 +1068,7 @@ const MERC_LATER=[["G",9,"Chitinous Defender Leader","Melee",33600,11200,1,[40.0
 // stacks is simply by the squad bonus: the smaller one dies first.
 const MT=MERC.map(m=>({cls:m[0],tier:m[1],name:m[2],cat:m[3],hp:m[4],str:m[5],cost:m[6],vs:m[7],ve:m[10]||0,jungle:!!m[8],type:m[9]||'',beast:m[0]!='M'&&m[9]=='Beast',food:0,gold:m[11],pool:'U'}));      // food: every mercenary uses no food (the troop JSON lists a food value for most of them, but it is wrong - they consume none, so it is NOT stored)
 MT.forEach(t=>TRN[t.name]=t);
-const mkM=(t,P,X)=>{const[mh,ms]=mults(t,P);return{r:t.cls+t.tier,p:'U',c:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i:0,dh:dhf(t,P),bst:!!t.beast,n:0}};
+const mkM=(t,P,X)=>{const[mh,ms]=mults(t,P);return{r:t.cls+t.tier,p:'U',c:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i:0,dh:dhf(t,P),n:0}};
 // the counts of a row of stacks: H and T = health and total strength of the stack before (Infinity = none), idx = its place, X = the health level no stack goes above
 function sizeChain(P,seq,H,T,idx,X){
   const ns=[];
