@@ -243,7 +243,7 @@ function drawSO(st,P){
 // ---- tabs: each tab stores every input, the tier checkboxes and the kill order ----
 const KEY='sc_tabs_v6';
 const DEFCAT=['Melee','Ranged','Mounted','Flying'];
-let tabs=null,active=0,ready=false,delPending=false,DEF=null,XS=new Set(),SO=[],CALCT=0;      // CALCT = the timer of the calculation that waits for the typing to stop
+let tabs=null,active=0,ready=false,delPending=false,DEF=null,XS=new Set(),SO=[],CALCT=0,CALCMS=0;      // CALCT = the timer of the calculation that waits for the typing to stop, CALCMS = how long the last calculation took
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const clone=o=>JSON.parse(JSON.stringify(o));
 const MODE_IDS=['mode','enemy'];                       // the two hidden mode boxes are kept out of the input lists: the mode is stored in the tab as mode / enemy (see snap and load)
@@ -1173,7 +1173,8 @@ const MODEINFO={
 };
 const PVMODES=['cp','cpd','pvpmax','ren'];      // the modes of the Attack players view; every other mode belongs to Attack epics
 let ATK='epics',LASTE={mode:'max',enemy:'4'},LASTP='cp';      // ATK = the view (stored in the tab, like the inputs; a new tab starts in Attack epics). LASTE / LASTP = the last mode of each view, so switching back returns to it.
-function calc(){
+function calc(){const t0=performance.now();try{calcRun()}finally{CALCMS=performance.now()-t0}}
+function calcRun(){
   clearTimeout(CALCT);
   const pvOK=m=>m=='cp'||m=='cpd'?PV1:m=='pvpmax'?PVM:m=='ren'?RENEGADES:false,okP=PVMODES.filter(pvOK);      // okP = the PvP modes that are switched on
   if(PVMODES.includes($('mode').value)&&!pvOK($('mode').value)){$('mode').value='max';SO=[]}      // a mode that is off: a tab left in it falls back to the 4-stack mode
@@ -1297,7 +1298,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('keydown',e=>{if(e.key=='Escape')closeTips()});
 let TW=innerWidth;addEventListener('resize',()=>{if(innerWidth!=TW){TW=innerWidth;closeTips()}});
-document.addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('tabin'))return;if(e.target.matches&&e.target.matches(NUMBOX))fmtBox(e.target);clearTimeout(CALCT);CALCT=setTimeout(calc,120)});      // typing: the number is formatted at once, the calculation waits until the keys have stopped for a moment (every key would run the whole engine)
+document.addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('tabin'))return;if(e.target.matches&&e.target.matches(NUMBOX))fmtBox(e.target);clearTimeout(CALCT);CALCT=setTimeout(calc,Math.min(900,Math.max(250,2.5*CALCMS)))});      // typing: the number is formatted at once, the calculation waits until the keys have stopped - at least 0.25 s, and 2.5x as long as the last calculation took, so a slow device never calculates between two digits
 document.addEventListener('change',e=>{if(e.target.classList&&e.target.classList.contains('tabin'))return;if(e.target.type=='checkbox')refresh();else calc()});
 document.addEventListener('dblclick',e=>{const t=e.target.closest&&e.target.closest('.tab[data-t]');if(t)rename(+t.dataset.t)});
 // start: dying order for a full enemy stack, with the default tiers
