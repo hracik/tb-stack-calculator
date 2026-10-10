@@ -427,7 +427,7 @@ function ratioGroups(P,arr,split){                                              
   return gs;
 }
 const permsOf=a=>a.length<2?[a]:a.flatMap((x,i)=>permsOf([...a.slice(0,i),...a.slice(i+1)]).map(p=>[x,...p]));
-function fourSearch(P,live,mkOut,CC){      // CC = the number of full monster tiers (byTiers tries them all)
+function fourSearch(P,live,mkOut,CC,quick){      // CC = the number of full monster tiers (byTiers ranks them); quick: only ONE order is solved (the lowest ratio first, the plain partial tier behind it) - it ranks the tier counts
   const ts=TR.filter(t=>live.has(t.name));
   const rest=ts;                                                                     // the engineers are ordinary troops: they stand first only because their strength / health is (almost) always the lowest
   const flat=g=>g.flatMap(x=>x.u);
@@ -449,6 +449,8 @@ function fourSearch(P,live,mkOut,CC){      // CC = the number of full monster ti
   let tail=[];
   if(CC<nT){                                                                         // the partial tier (the monsters of the same ratio by squad bonus; a type with a very different ratio on a place Kn+1 inside it) and behind it the tiers that get nothing
     const gt=ratioGroups(P,pm(CC),true),lowU=flat(ratioGroups(P,low(CC),true)),cands=[{t:flat(gt),b:0}];
+    if(quick)tail=[...cands[0].t,...lowU];
+    else{
     if(gt.length>1){
       cands.push({t:flat(gt.slice().reverse()),b:0});
       gt.forEach(sm=>gt.forEach(h=>{
@@ -461,7 +463,9 @@ function fourSearch(P,live,mkOut,CC){      // CC = the number of full monster ti
     }
     const ref=flat(ratioGroups(P,restF,true));let tb=null;
     cands.forEach(cd=>{const e=ev([...ref,...cd.t,...lowU],CC);e.k=e.d*(1+cd.b);if(better(e,tb)){tb=e;tail=[...cd.t,...lowU]}});
+    }
   }
+  if(quick)return ev([...flat(ratioGroups(P,restF,true)),...tail],CC);
   let best=null;
   const tryU=(units,bias)=>{const e=ev([...units,...tail],CC);e.k=e.d*(1+(bias||0));if(better(e,best))best=e;return e};
   const embed=(pi,sm,h)=>{                                                           // the small group sm stands on the places Kn+1 inside the group h, where its squad bonus suits
@@ -578,11 +582,18 @@ function cpdOrder(P,names,c){
 //   ho     health only: the total strength does not have to fall along the order, a group of equals shares the places (CP kill, CP death, Max damage)
 //   order  who stands where: gives {so: the dying order, out: its stacks}
 //   size   how many units every stack gets
-function byTiers(nT,tryTier,mk){      // the number of full monster tiers: every choice is solved and the one with the most damage is kept (a tie: more full tiers; an order that leaves Leadership unspent only wins when no other does)
+function byTiers(nT,tryTier,mk,quickTier){      // the number of full monster tiers: the one with the most damage is kept (a tie: more full tiers; an order that leaves Leadership unspent only wins when no other does)
+  const win=(r,b)=>!b||(r.full!==b.full?r.full>b.full:r.dmg>b.dmg*(1+1e-9));
+  let cs=[];for(let c=nT;c>=1;c--)cs.push(c);
+  if(quickTier&&nT>1){                                   // ONE quick order per tier count ranks them; only the best one gets the whole search (the others are ignored, even when close behind).
+    const q=cs.map(c=>({c,r:quickTier(c)}));               // A tier count whose quick order is not allowed (full < 0) cannot be ranked by it, so it still gets the whole search.
+    let top=null;q.forEach(x=>{if(x.r.full>=0&&win(x.r,top&&top.r))top=x});
+    cs=q.filter(x=>x===top||x.r.full<0).map(x=>x.c);
+  }
   let best=null;
-  for(let c=nT;c>=1;c--){
+  for(const c of cs){
     const r=tryTier(c);r.c=c;
-    if(!best||(r.full!==best.full?r.full>best.full:r.dmg>best.dmg*(1+1e-9)))best=r;
+    if(win(r,best))best=r;
   }
   if(!best){best=tryTier(nT);best.c=nT}
   return{so:best.so,out:mk(best.so,best.c)};
@@ -590,7 +601,7 @@ function byTiers(nT,tryTier,mk){      // the number of full monster tiers: every
 const tierTry=(P,so,mk,c)=>{const r=allocate(P,mk(so,c));return{so,dmg:score(P,[...r.A,...r.Mo],so).dmg,full:0}};      // a fixed order: solve it, count the damage
 const MD={
   epic:{kn1:true,ho:false,size:allocTight,      // 3-, 4-, 6- and 8-stack: troops of the same ratio stay together, the smaller squad bonus first; the group order with the most damage wins
-    order:(P,{live,mkOut,nT})=>byTiers(nT,c=>{const f=fourSearch(P,live,mkOut,c);return{so:f.names,dmg:f.d,full:f.full}},mkOut)},
+    order:(P,{live,mkOut,nT})=>byTiers(nT,c=>{const f=fourSearch(P,live,mkOut,c);return{so:f.names,dmg:f.d,full:f.full}},mkOut,c=>{const f=fourSearch(P,live,mkOut,c,true);return{so:f.names,dmg:f.d,full:f.full}})},
   kill:{kn1:true,ho:false,size:allocWhole,      // Killshot: the order is fixed (tier by tier); it is a 3-stack mode, so it has the places Kn+1 (4, 7, 10 ...) and the SH-ratio outliers of every tier stand on them (killOutliers)
     order:(P,{live,mkOut,nT})=>byTiers(nT,c=>tierTry(P,killOrder(P,live,c),mkOut,c),mkOut)},
   cp:{kn1:false,ho:true,size:allocTight,        // CP kill / CP death / Max damage: the order is fixed, the troops of the same class and bonus are one group of equals
