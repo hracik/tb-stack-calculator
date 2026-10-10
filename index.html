@@ -411,7 +411,7 @@ function placeOutliers(P,rsv,rest,slots){
 // (exempt from the strength rule) at the place that suits its squad bonus, is the one that gives the most damage.
 // An order only wins over an earlier one when it is clearly better (0.05 %).
 const RTOL=0.015;      // 'nearly the same ratio': within 1.5 %
-let WEAKFORCE=false;    // true: the weak-on-Kn+1 order is the ONLY candidate (no damage comparison with the others)
+let WEAKFORCE=true;     // true: the weak-on-Kn+1 order is the ONLY candidate where it exists (no damage comparison with the others); false: the damage decides between it and the others
 let WEAKSLOTS=true;     // the weakest groups (lowest ratio first) stand on the places Kn+1, one troop per place; the rest of the army follows on the other places
 function ratioGroups(P,arr,split){                                                    // split: army and monsters never share a group
   const q6=x=>Math.round(x*1e6),ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(...t.vs);
