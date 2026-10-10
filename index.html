@@ -972,15 +972,29 @@ function allocate(P,live){const md=modeOf(P);HO=md.ho;return md.size(P,live)}   
 // the whole calculation of the engine: the order, the Leadership / Dominance stacks, then the mercenaries (they come last: the numbers before are final)
 function solve(P,order){const st=buildStacks(P,order,XS),{A,Mo}=allocate(P,st.filter(s=>!s.off)),U=allocMerc(P,[...A,...Mo],st.so,XS);return{st,A,Mo,U}}
 // ---- total damage from the dying order alone (the same calculation in every mode) ----
-// The enemy has K stacks; each of its K hits kills one of my stacks, the first one in the dying order, and every stack strikes once before it
-// dies (and once more in every following round while it is alive). So the stack in place p of the dying order strikes ceil(p/K) times:
-// places 1..K once, K+1..2K twice, ... Total strikes depend only on the number of stacks and K; the damage is sum(strikes x damage per strike).
+// The enemy has K stacks. In a round my stacks strike one after another, the strongest total strength (n x str x Double hit, no squad bonus) first;
+// after each of my strikes (K per round) the enemy kills ONE of my stacks - always the first one still alive in the dying order. A stack that is
+// killed before its turn never strikes in that round (an early, weak stack - Engineers - can die without ever hitting). The rounds repeat while
+// anybody is alive. SEQ=false switches back to the old simple count: the stack in place p of the dying order strikes ceil(p/K) times.
+// The damage is sum(strikes x damage per strike).
 // Renegades: the block after the first 16 has a random order - every stack in it gets the average strikes of the block's places.
+let SEQ=true;
+function strikes(L,K){                                         // strikes of every stack; L is in the dying order
+  const N=L.length;
+  if(!SEQ)return L.map((_,i)=>Math.ceil((i+1)/K));
+  const T=L.map(s=>s.n*s.str*(s.dh||1)),by=L.map((_,i)=>i).sort((a,b)=>T[b]-T[a]||a-b),cnt=new Array(N).fill(0);
+  K=Math.max(1,K|0);let head=0;                                // head = the first stack still alive in the dying order
+  while(head<N){
+    let h=0;
+    for(const i of by){if(i<head)continue;cnt[i]++;if(h<K){head++;h++}}
+    while(h<K&&head<N){head++;h++}                             // fewer strikers than enemy hits: the rest of the hits still kill
+  }
+  return cnt;
+}
 function score(P,list,order){
   const K=P.enemy,ix={};order.forEach((n,i)=>ix[n]=i);
   const L=list.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);
-  const st=p=>Math.ceil(p/K);                                  // strikes of the stack in place p (1-based)
-  const dm=L.map(s=>s.n*dpu(s)),hit=L.map((_,i)=>st(i+1)),hp=L.map(s=>s.n*s.hp);
+  const dm=L.map(s=>s.n*dpu(s)),hit=strikes(L,K),hp=L.map(s=>s.n*s.hp);
   let hits=hit.reduce((q,x)=>q+x,0);
   if(P.cp){                                                      // CP kill: the game picks the order inside a group of equals, so each of its stacks strikes the average of the group's places
     for(let a=0;a<L.length;){let b=a+1;while(L[a].grp&&b<L.length&&L[b].grp===L[a].grp)b++;
