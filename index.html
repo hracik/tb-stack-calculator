@@ -460,17 +460,21 @@ function fourSearch(P,live,mkOut,CC,quick){      // CC = the number of full mons
     }
   }
   if(quick)return ev([...flat(ratioGroups(P,restF,true)),...tail],CC);
-  let best=null;
-  const tryU=(units,bias)=>{const e=ev([...units,...tail],CC);e.k=e.d*(1+(bias||0));if(better(e,best))best=e;return e};
+  let best=null,pre=[],E=0;      // pre: the engineers, when they are the group with the lowest ratio - they then always stand first (E of them), the search only orders what comes behind them
+  const isEng=t=>t.cat=='Engineer';
+  const tryU=(units,bias)=>{const e=ev([...pre,...units,...tail],CC);e.k=e.d*(1+(bias||0));if(better(e,best))best=e;return e};
   const embed=(pi,sm,h)=>{                                                           // the small group sm stands on the places Kn+1 inside the group h, where its squad bonus suits
     if(!(sm.lo<h.lo))return;                                                         // an outlier has a LOWER ratio than the group it stands in (a troop with a higher ratio never stands inside a group of a lower ratio: the engineers, with the lowest ratio, are never pushed back by it)
     const order=pi.filter(g=>g!==sm);let start=0;for(const g of order){if(g===h)break;start+=g.u.length}
-    const hs=slots.filter(x=>x>=start&&x<start+h.u.length+sm.u.length).map(x=>x-start);
+    const hs=slots.filter(x=>x>=E+start&&x<E+start+h.u.length+sm.u.length).map(x=>x-E-start);      // the places Kn+1 of the whole order (the engineers in front counted)
     if(hs.length<sm.u.length)return;                                                 // an outlier group stands ONLY on the places Kn+1: all of it has to fit there
     tryU(flat(order.map(g=>g===h?{u:placeOutliers(P,sm.u,h.u,hs)}:g)),0.01);         // outliers on the places Kn+1 win unless the plain order is clearly (1 %) better
   };
   const embedAll=pi=>pi.filter(g=>g.u.length<=slots.length).forEach(sm=>pi.filter(h=>h!==sm).forEach(h=>embed(pi,sm,h)));
-  const search=gs=>{
+  const search=gs0=>{
+    const lk=gs0[0]&&gs0[0].u.length&&gs0[0].u.every(isEng)?gs0[0]:null;      // the group with the lowest ratio is made of engineers: they are the biggest outliers of all, so they stand first, whatever else is tried
+    pre=lk?lk.u:[];E=pre.length;const gs=lk?gs0.slice(1):gs0;
+    if(!gs.length){tryU([]);return}
     const asc=gs,desc=gs.slice().reverse();
     if(gs.length<=4){                                                                // up to 4 groups: every order
       const key=p=>p.map(g=>gs.indexOf(g)).join(),k1=key(asc),k2=key(desc);
