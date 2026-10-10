@@ -139,7 +139,7 @@ There is **one engine** for every attack mode (3-, 4-, 6-, 8-stack, Killshot, CP
 |---|---|
 | `order` | who stands where: for a given number of full monster tiers, `fourSearch` (3-, 4-, 6-, 8-stack: searches the best order), a fixed order (Killshot, CP modes) or `renOrder` (Renegades, a fixed number of tiers); `byTiers` is the one loop that tries every number of full tiers and keeps the most damage |
 | `size` | how many units every stack gets (`allocTight`, `allocWhole` = the exact Killshot solution, `allocRen`) |
-| `kn1` | the places `Kn+1` are half exempt from the strength rule (3-, 4-, 6- and 8-stack; Killshot has none) |
+| `kn1` | the places `Kn+1` are half exempt from the strength rule (3-, 4-, 6- and 8-stack and Killshot) |
 | `ho` | health only (CP kill, CP death, Max damage): no strength rule, a group of equals shares its places |
 
 The **rules** never look at the kind of troop (a Beast unit is a stack like any other; only the place `Kn+1` exempts a stack from being the strength reference). They are written once, in four small functions (`kn1Place`, `kn1Stack`, `strRuled`, `strRef`, just above `markEx`). The target profile, the rounding trim (`chainT`), the top-up of the leftover, the exact solver (`lpSolve`) and the mercenary chain all ask these, so a change of the rule reaches every mode and every step at once. `K` (the number of enemy stacks) is the only thing that tells the 3-, 4-, 6- and 8-stack modes apart.
@@ -197,4 +197,4 @@ Highest troop types die first, G before S, up to 16 stacks. Then all the rest of
 
 Killshot is a special type of the 3-stack mode. The enemy is the same (3 stacks, no mounted one) and the damage is counted the same way, but a little of the total damage is sacrificed for a drastically reduced cost of training and reviving. With the default inputs it deals under 1 % less than the 3-stack mode.
 
-To get that, the order does not come from the damage search. All the engineers stand first (higher tier first), then the army tier by tier from the top, so the top level units die first. Inside a tier the weaker troops die first. The monsters stand after the army, the fully used tiers first. Killshot has no places `Kn+1`: every stack follows the strength of the stack before it, and no troop is moved because of its kind (Royal Lion and Battle Griffin stand where the ranking puts them).
+To get that, the order does not come from the damage search. All the engineers stand first (higher tier first), then the army tier by tier from the top, so the top level units die first. Inside a tier the weaker troops die first. The monsters stand after the army, the fully used tiers first. Killshot is a 3-stack mode, so it has the same places `Kn+1` (4, 7, 10 ...) as the 3-stack mode: a stack that stands there is half exempt from the strength rule (see Stack sizes). The order is fixed, so no troop is moved to such a place because of its kind (Royal Lion and Battle Griffin stand where the ranking puts them).

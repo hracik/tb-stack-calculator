@@ -551,7 +551,7 @@ function cpdOrder(P,names,c){
   return[...eng,...both([...army.filter(t=>t.cls=='G'),...mon.filter(t=>sp.full.has(t.tier))]),...both(army.filter(t=>t.cls=='S')),...both(mon.filter(t=>!sp.full.has(t.tier)))].map(t=>t.name);
 }
 // ---- THE MODES: ONE engine runs all of them. This table is the only place that says how they differ; everything else (the rules above, the sizing helpers, the score) is shared.
-//   kn1    the places Kn+1 are half exempt from the strength rule (3-, 4-, 6- and 8-stack)
+//   kn1    the places Kn+1 are half exempt from the strength rule (3-, 4-, 6- and 8-stack and Killshot)
 //   ho     health only: the total strength does not have to fall along the order, a group of equals shares the places (CP kill, CP death, Max damage)
 //   order  who stands where: gives {so: the dying order, out: its stacks}
 //   size   how many units every stack gets
@@ -568,7 +568,7 @@ const tierTry=(P,so,mk,c)=>{const r=allocate(P,mk(so,c));return{so,dmg:score(P,[
 const MD={
   epic:{kn1:true,ho:false,size:allocTight,      // 3-, 4-, 6- and 8-stack: troops of the same ratio stay together, the smaller squad bonus first; the group order with the most damage wins
     order:(P,{live,mkOut,nT})=>byTiers(nT,c=>{const f=fourSearch(P,live,mkOut,c);return{so:f.names,dmg:f.d,full:f.full}},mkOut)},
-  kill:{kn1:false,ho:false,size:allocWhole,     // Killshot: the order is fixed, a strict chain (no places Kn+1)
+  kill:{kn1:true,ho:false,size:allocWhole,      // Killshot: the order is fixed; it is a 3-stack mode, so it has the places Kn+1 (4, 7, 10 ...) like the 3-stack mode
     order:(P,{live,mkOut,nT})=>byTiers(nT,c=>tierTry(P,killOrder(P,live,c),mkOut,c),mkOut)},
   cp:{kn1:false,ho:true,size:allocTight,        // CP kill / CP death / Max damage: the order is fixed, the troops of the same class and bonus are one group of equals
     order:(P,{live,mkOut,nT})=>{const mkCP=(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)+(s.pt?'|p':'')});return o};return byTiers(nT,c=>tierTry(P,P.cpd?cpdOrder(P,live,c):cpOrder(P,live),mkCP,c),mkCP)}},
