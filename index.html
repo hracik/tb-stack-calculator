@@ -972,10 +972,11 @@ function allocate(P,live){const md=modeOf(P);HO=md.ho;return md.size(P,live)}   
 // the whole calculation of the engine: the order, the Leadership / Dominance stacks, then the mercenaries (they come last: the numbers before are final)
 function solve(P,order){const st=buildStacks(P,order,XS),{A,Mo}=allocate(P,st.filter(s=>!s.off)),U=allocMerc(P,[...A,...Mo],st.so,XS);return{st,A,Mo,U}}
 // ---- total damage from the dying order alone (the same calculation in every mode) ----
-// The enemy has K stacks. In a round my stacks strike one after another, the strongest total strength (n x str x Double hit, no squad bonus) first;
-// after each of my strikes (K per round) the enemy kills ONE of my stacks - always the first one still alive in the dying order. A stack that is
-// killed before its turn never strikes in that round (an early, weak stack - Engineers - can die without ever hitting). The rounds repeat while
-// anybody is alive. SEQ=false switches back to the old simple count: the stack in place p of the dying order strikes ceil(p/K) times.
+// The enemy has K stacks, so every round has K trades: my strongest living stack (total strength n x str x Double hit, no squad bonus) strikes and the
+// enemy hits - it kills ONE of my stacks, always the first one still alive in the dying order. Round 1 starts with my strike (strike, kill, strike, kill ...);
+// every later round starts with the enemy (kill, strike, kill, strike ...), so the stack killed there does not strike in that round. After the K trades the
+// other living stacks strike. A stack killed before its turn never strikes (an early, weak stack - Engineers - can die without ever hitting).
+// The rounds repeat while anybody is alive. SEQ=false switches back to the old simple count: the stack in place p of the dying order strikes ceil(p/K) times.
 // The damage is sum(strikes x damage per strike).
 // Renegades: the block after the first 16 has a random order - every stack in it gets the average strikes of the block's places.
 let SEQ=true;
@@ -984,10 +985,13 @@ function strikes(L,K){                                         // strikes of eve
   if(!SEQ)return L.map((_,i)=>Math.ceil((i+1)/K));
   const T=L.map(s=>s.n*s.str*(s.dh||1)),by=L.map((_,i)=>i).sort((a,b)=>T[b]-T[a]||a-b),cnt=new Array(N).fill(0);
   K=Math.max(1,K|0);let head=0;                                // head = the first stack still alive in the dying order
-  while(head<N){
-    let h=0;
-    for(const i of by){if(i<head)continue;cnt[i]++;if(h<K){head++;h++}}
-    while(h<K&&head<N){head++;h++}                             // fewer strikers than enemy hits: the rest of the hits still kill
+  for(let rd=0;head<N;rd++){
+    let pos=0;const nx=()=>{while(pos<N&&by[pos]<head)pos++;return pos<N?by[pos++]:-1};   // the strongest living stack that has not struck in this round
+    for(let j=0;j<K&&head<N;j++){                              // the K trades of the round
+      if(rd===0){const s=nx();if(s>=0)cnt[s]++;head++}         // round 1: we strike first, then the enemy kills
+      else{head++;const s=nx();if(s>=0)cnt[s]++}              // later rounds: the enemy kills first (the victim does not strike), then we strike
+    }
+    for(let s=nx();s>=0;s=nx())cnt[s]++;                       // the extra living stacks strike after the trades
   }
   return cnt;
 }
