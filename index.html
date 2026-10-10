@@ -496,10 +496,26 @@ function fourSearch(P,live,mkOut,CC){      // CC = the number of full monster ti
 }
 // Killshot: the biggest tier dies first - E9, then the 9s (Specialists and Guardsmen together), then E8 and the 8s ...
 // Monsters stay after the army, highest tier first (M9 before M8); the lowest (partial) monster tier is last. No mounted enemy.
+// Killshot: inside ONE tier the troops whose SH ratio is clearly (RTOL) lower than the ratio of the main group of that tier (the biggest group of nearly equal ratios) are the outliers: they stand on the places Kn+1
+// that lie inside that tier (as many as fit, the weakest first), the other troops keep their ranking. grp = the tier, ranked; start = the number of stacks in front of it (engineers and the tiers before).
+function killOutliers(P,grp,start){
+  if(grp.length<2)return grp;
+  const K=P.enemy,rs=grp.map(t=>ratioOf(t,P)),cl=[];
+  grp.map((_,i)=>i).sort((a,b)=>rs[a]-rs[b]).forEach(i=>{const g=cl[cl.length-1];if(g&&rs[i]<=g.lo*(1+RTOL))g.u.push(i);else cl.push({lo:rs[i],u:[i]})});
+  const main=cl.reduce((m,g)=>g.u.length>m.u.length?g:m,cl[0]);
+  const slots=[];for(let j=0;j<grp.length;j++)if(kn1Place(P,start+j))slots.push(j);      // the place start+j of the whole order (0-based) is a place Kn+1
+  const mv=grp.map((_,i)=>i).filter(i=>rs[i]*(1+RTOL)<main.lo).slice(0,slots.length);
+  if(!mv.length)return grp;
+  const res=new Array(grp.length).fill(null),out=new Set(mv);
+  mv.forEach((i,k)=>{res[slots[k]]=grp[i]});
+  const rest=grp.filter((_,i)=>!out.has(i));let k=0;
+  return res.map(x=>x||rest[k++]);
+}
 function killOrder(P,names,c){
   const ts=TR.filter(t=>names.has(t.name)),{rank}=ranker(P),sp=monSplit(ts,c);
-  const byTier=arr=>[...new Set(arr.map(t=>t.tier))].sort((a,b)=>b-a).flatMap(tt=>[...arr.filter(t=>t.tier==tt&&t.cls=='E'),...rank(arr.filter(t=>t.tier==tt&&t.cls!='E'))]);
   const mon=ts.filter(t=>t.pool=='M'),eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier);   // all the engineers first (higher tier first), then the army tier by tier
+  let n=eng.length;      // the stacks placed so far (the places Kn+1 are counted from the first place of the whole order)
+  const byTier=arr=>[...new Set(arr.map(t=>t.tier))].sort((a,b)=>b-a).flatMap(tt=>{const e=arr.filter(t=>t.tier==tt&&t.cls=='E'),g=killOutliers(P,rank(arr.filter(t=>t.tier==tt&&t.cls!='E')),n+e.length);n+=e.length+g.length;return[...e,...g]});
   return[...eng,...byTier(ts.filter(t=>t.pool=='A'&&t.cls!='E')),...byTier(mon.filter(t=>sp.full.has(t.tier))),...sp.rest.flatMap(tt=>byTier(mon.filter(t=>t.tier==tt)))].map(t=>t.name);
 }
 // Renegades: the first 16 stacks - tier 9 before 8, Guardsmen before Specialists (G9, S9, G8, S8), inside each group the weakest first.
@@ -568,7 +584,7 @@ const tierTry=(P,so,mk,c)=>{const r=allocate(P,mk(so,c));return{so,dmg:score(P,[
 const MD={
   epic:{kn1:true,ho:false,size:allocTight,      // 3-, 4-, 6- and 8-stack: troops of the same ratio stay together, the smaller squad bonus first; the group order with the most damage wins
     order:(P,{live,mkOut,nT})=>byTiers(nT,c=>{const f=fourSearch(P,live,mkOut,c);return{so:f.names,dmg:f.d,full:f.full}},mkOut)},
-  kill:{kn1:true,ho:false,size:allocWhole,      // Killshot: the order is fixed; it is a 3-stack mode, so it has the places Kn+1 (4, 7, 10 ...) like the 3-stack mode
+  kill:{kn1:true,ho:false,size:allocWhole,      // Killshot: the order is fixed (tier by tier); it is a 3-stack mode, so it has the places Kn+1 (4, 7, 10 ...) and the SH-ratio outliers of every tier stand on them (killOutliers)
     order:(P,{live,mkOut,nT})=>byTiers(nT,c=>tierTry(P,killOrder(P,live,c),mkOut,c),mkOut)},
   cp:{kn1:false,ho:true,size:allocTight,        // CP kill / CP death / Max damage: the order is fixed, the troops of the same class and bonus are one group of equals
     order:(P,{live,mkOut,nT})=>{const mkCP=(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)+(s.pt?'|p':'')});return o};return byTiers(nT,c=>tierTry(P,P.cpd?cpdOrder(P,live,c):cpOrder(P,live),mkCP,c),mkCP)}},
