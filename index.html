@@ -405,18 +405,19 @@ function placeOutliers(P,rsv,rest,slots){
 }
 // ---- 3-, 4-, 6- and 8-stack (one engine, K = the number of enemy stacks) ------------------------------------------------------------
 // Goal: the most damage - the strongest squad bonuses die among the LAST places (they strike the most). The strength / health ratio only does this:
-// troops (army AND monsters, no pool has a place of its own) with the same or nearly the same ratio (within RTOL) stay TOGETHER in one group, and inside a group
+// troops (army AND monsters, no pool has a place of its own) with the SAME ratio (GTOL: equal up to rounding noise, no tolerance band) stay TOGETHER in one group, and inside a group
 // the smaller squad bonus dies first. The engineers (higher tier first) stand in front of everything.
 // The ORDER OF THE GROUPS (lowest ratio first is tried first, then highest first, then all the others) and - for a small group - whether it stands on the places Kn+1
 // (exempt from the strength rule) at the place that suits its squad bonus, is the one that gives the most damage.
 // An order only wins over an earlier one when it is clearly better (0.05 %).
-const RTOL=0.015;      // 'nearly the same ratio': within 1.5 %
+const GTOL=1e-9;       // the same ratio = one group: equal up to floating-point noise (v286: there is no 1.5 % band any more - a different ratio is a different place in the order)
+const RTOL=0.015;      // Killshot only (killOutliers): 'clearly lower than the main group of the tier' = more than 1.5 % below
 let WEAKFORCE=true;     // true: the weak-on-Kn+1 order is the ONLY candidate where it exists (no damage comparison with the others); false: the damage decides between it and the others
 let WEAKSLOTS=true;     // the weakest groups (lowest ratio first) stand on the places Kn+1, one troop per place; the rest of the army follows on the other places
 function ratioGroups(P,arr,split){                                                    // split: army and monsters never share a group
   const q6=x=>Math.round(x*1e6),ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(...t.vs);
   const byB=(a,b)=>q6(sqb(a,P).tot)-q6(sqb(b,P).tot)||nom(a)-nom(b)||ci(a)-ci(b)||b.tier-a.tier;           // smaller squad bonus first; the same bonus: the higher tier first
-  const mk1=list=>{const gs=[];list.slice().sort((a,b)=>ratioOf(a,P)-ratioOf(b,P)||byB(a,b)).forEach(t=>{const r=ratioOf(t,P),g=gs[gs.length-1];if(g&&r<=g.lo*(1+RTOL))g.u.push(t);else gs.push({lo:r,u:[t]})});return gs};
+  const mk1=list=>{const gs=[];list.slice().sort((a,b)=>ratioOf(a,P)-ratioOf(b,P)||byB(a,b)).forEach(t=>{const r=ratioOf(t,P),g=gs[gs.length-1];if(g&&r<=g.lo*(1+GTOL))g.u.push(t);else gs.push({lo:r,u:[t]})});return gs};
   const mk=list=>mk1(list).sort((a,b)=>a.lo-b.lo);      // only the SH ratio decides: a troop whose ratio is clearly lower (a Beast unit, for example) is a group of its own, an outlier for the places Kn+1
   const gs=split?[...mk(arr.filter(t=>t.pool!='M')),...mk(arr.filter(t=>t.pool=='M'))].sort((a,b)=>a.lo-b.lo):mk(arr);
   gs.forEach(g=>g.u.sort(byB));
@@ -884,7 +885,7 @@ function allocTight(P,live){
     let XF=0,XP=0,tp=0,invP=0,lvF=0;
     if(Pm.length){tp=Math.max(...Pm.map(s=>+s.r.slice(1)));invP=Pm.filter(s=>+s.r.slice(1)==tp).reduce((q,x)=>q+x.w*x.cost/x.hp,0)}      // the partial tier: only ONE tier is partial (the highest of them) - the tiers below it stay empty
     const settle=()=>{for(let g=0;g<30;g++){const before=cur.map(x=>x.n).join();chainT(cur);if(cur.map(x=>x.n).join()==before)break}};
-    const sizeMon=()=>{      // 3-, 4-, 6-, 8-stack: the monsters have no ceiling. The full tiers (the strongest first) take the Dominance on one level; the order rules (health and strength never rise) cut a stack where it stands behind a smaller stack - a monster behind the army cannot be bigger than the army stack in front of it, a monster in front of it (lower SH) can; the partial tier takes what is left, on a level not above the one the full tiers reached
+    const sizeMon=()=>{      // 3-, 4-, 6-, 8-stack: the monsters are sized from the Dominance like the army from the Leadership, with the same rules (no ceiling of their own): the full tiers on one level, the partial tier takes what is left
       XF=invF?P.capM/invF:0;
       Fm.forEach(s=>{s.n=XF>0?Math.floor(XF*s.w/s.hp):0});Pm.forEach(s=>{s.n=0});settle();
       lvF=Math.max(0,...Fm.filter(s=>s.n>0).map(s=>s.n*s.hp/s.w));      // the level the full tiers really reached
