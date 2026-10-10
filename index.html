@@ -891,6 +891,14 @@ function allocTight(P,live){
     }
     cur.forEach(s=>{s.tgt=(s.p=='A'?X:s.pt?(+s.r.slice(1)==tp?XP:0):XF)*s.w});
     for(let g=0;g<30;g++){const before=cur.map(x=>x.n).join();chainT(cur);if(cur.map(x=>x.n).join()==before)break}
+    if(!HO&&isFinite(X)&&A.length&&P.capA-usedOf(A)>0.002*P.capA){      // 3-, 4-, 6-, 8-stack: the rule check cut stacks and freed Leadership - the common level goes up (the first stack gets bigger and every stack behind it follows) until the budget is used again
+      const lvl=xm=>{const f=invF?Math.min(P.capM/invF,xm):0,left=P.capM-f*invF;return{f,p:Pm.length&&invP&&left>0?Math.min(left/invP,f):0}};      // the monsters follow the army's level (xm), as far as the Dominance reaches
+      const run=x=>{A.forEach(s=>{s.n=Math.floor(x*s.w/s.hp)});const l=lvl(free?Infinity:x);Fm.forEach(s=>{s.n=Math.floor(l.f*s.w/s.hp)});Pm.forEach(s=>{s.n=+s.r.slice(1)==tp?Math.floor(l.p*s.w/s.hp):0});for(let g=0;g<30;g++){const b=cur.map(q=>q.n).join();chainT(cur);if(cur.map(q=>q.n).join()==b)break}return usedOf(A)};
+      let lo=X,hi=X*Math.min(1.5,Math.max(1.0005,P.capA/Math.max(usedOf(A),1))*1.03);
+      if(run(hi)<=P.capA)lo=hi;else for(let k=0;k<18;k++){const mid=(lo+hi)/2;if(run(mid)<=P.capA)lo=mid;else hi=mid}
+      run(lo);const l=lvl(free?Infinity:lo);
+      cur.forEach(s=>{s.tgt=(s.p=='A'?lo:s.pt?(+s.r.slice(1)==tp?l.p:0):l.f)*s.w});
+    }
     if(HO&&isFinite(X)&&A.length){      // CP kill / CP death: the chain cuts down the stacks behind a smaller stack (the monsters before the Specialists) and the Leadership it frees is left over: it raises the level of the whole army instead (the highest level the chain and the budget allow)
       // CP death: the full monster tiers stand in the same group as the army (the troops without a bonus), so they follow the army's level (as far as the Dominance reaches) and the partial tier gets what is left
       const mn=Mo.map(s=>s.n),fol=P.cpd&&!free&&invF>0,lv=xa=>{const f=Math.min(P.capM/invF,xa),left=P.capM-f*invF;return{f,p:invP&&left>0?Math.min(left/invP,f):0}};
