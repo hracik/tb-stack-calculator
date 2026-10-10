@@ -512,8 +512,8 @@ function fourSearch(P,live,mkOut,CC,quick){     // CC = the number of full monst
   if(gM.some(g=>g.u.some(t=>t.pool=='M')&&g.u.some(t=>t.pool!='M')))search(gM);      // army and monsters of the same ratio in one group, by squad bonus (only when such a group exists)
   return best;
 }
-// Killshot (v287): the same rule as the 3-stack mode for the places Kn+1 - the WEAKEST troops (the lowest SH, engineers, Beast units ... one troop per place, the weakest first, weakSplit) stand on them.
-// The other places are filled by blocks, whatever the SH of the groups: the 9s (Specialists, Guardsmen, engineers ... of tier 9), then the 8s, and so on down, then the monsters (the full tiers together).
+// Killshot (v287, monsters tier by tier v288): the same rule as the 3-stack mode for the places Kn+1 - the WEAKEST troops (the lowest SH, engineers, Beast units ... one troop per place, the weakest first, weakSplit) stand on them.
+// The other places are filled by blocks, whatever the SH of the groups: the 9s (Specialists, Guardsmen, engineers ... of tier 9), then the 8s, and so on down, then the monsters, tier by tier from the top (M9 before M8 ...).
 // Inside a block by SH (strength / health, no squad bonus), then by squad bonus (ratioGroups). The partial monster tier is last, then the tiers below it. No mounted enemy. There is no 1.5 % band (RTOL) any more.
 function killOrder(P,names,c){
   const ts=TR.filter(t=>names.has(t.name)),sp=monSplit(ts,c),mons=ts.filter(t=>t.pool=='M');
@@ -521,7 +521,7 @@ function killOrder(P,names,c){
   const front=ts.filter(t=>t.pool!='M'||sp.full.has(t.tier)),F=front.length;
   const ws=weakSplit(P,ratioGroups(P,front,true),F),left=ws?front.filter(t=>!ws.weak.includes(t)):front;
   const tiers=[...new Set(left.filter(t=>t.pool=='A').map(t=>t.tier))].sort((a,b)=>b-a);
-  const body=[...tiers.flatMap(tt=>by(left.filter(t=>t.pool=='A'&&t.tier==tt))),...by(left.filter(t=>t.pool=='M'))],out=new Array(F).fill(null);
+  const body=[...tiers.flatMap(tt=>by(left.filter(t=>t.pool=='A'&&t.tier==tt))),...[...new Set(left.filter(t=>t.pool=='M').map(t=>t.tier))].sort((a,b)=>b-a).flatMap(tt=>by(left.filter(t=>t.pool=='M'&&t.tier==tt)))],out=new Array(F).fill(null);
   if(ws)ws.weak.forEach((t,i)=>{out[ws.sl[i]]=t});
   let k=0;for(let i=0;i<F;i++)if(!out[i])out[i]=body[k++];
   return[...out,...sp.rest.flatMap(tt=>by(mons.filter(t=>t.tier==tt)))].map(t=>t.name);
