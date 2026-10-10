@@ -1289,7 +1289,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('keydown',e=>{if(e.key=='Escape')closeTips()});
 let TW=innerWidth;addEventListener('resize',()=>{if(innerWidth!=TW){TW=innerWidth;closeTips()}});
-document.addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('tabin'))return;if(e.target.matches&&e.target.matches(NUMBOX))fmtBox(e.target);clearTimeout(CALCT);CALCT=setTimeout(calc,Math.min(900,Math.max(250,2.5*CALCMS)))});      // typing: the number is formatted at once, the calculation waits until the keys have stopped - at least 0.25 s, and 2.5x as long as the last calculation took, so a slow device never calculates between two digits
+document.addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('tabin'))return;const num=e.target.matches&&e.target.matches(NUMBOX);if(num)fmtBox(e.target);clearTimeout(CALCT);if(num&&e.target.value.trim()===''){CALCT=0;return}CALCT=setTimeout(calc,Math.min(900,Math.max(250,2.5*CALCMS)))});      // typing: the number is formatted at once, the calculation waits until the keys have stopped - at least 0.25 s, and 2.5x as long as the last calculation took, so a slow device never calculates between two digits; an emptied box (the number is being replaced) calculates nothing until a digit comes or the box is left
 document.addEventListener('change',e=>{if(e.target.classList&&e.target.classList.contains('tabin'))return;if(e.target.type=='checkbox')refresh();else calc()});
 document.addEventListener('dblclick',e=>{const t=e.target.closest&&e.target.closest('.tab[data-t]');if(t)rename(+t.dataset.t)});
 // start: dying order for a full enemy stack, with the default tiers
