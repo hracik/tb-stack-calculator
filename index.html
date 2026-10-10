@@ -409,12 +409,12 @@ function placeOutliers(P,rsv,rest,slots){
 // The ORDER OF THE GROUPS (lowest ratio first is tried first, then highest first, then all the others) and - for a small group - whether it stands on the places Kn+1
 // (exempt from the strength rule) at the place that suits its squad bonus, is the one that gives the most damage with all the Leadership spent.
 // An order only wins over an earlier one when it is clearly better (0.05 %).
-const RTOL=0.025;
+const RTOL=0.015;      // 'nearly the same ratio': within 1.5 %
 function ratioGroups(P,arr,split){                                                    // split: army and monsters never share a group
   const q6=x=>Math.round(x*1e6),ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(...t.vs);
   const byB=(a,b)=>q6(sqb(a,P).tot)-q6(sqb(b,P).tot)||nom(a)-nom(b)||ci(a)-ci(b)||b.tier-a.tier;           // smaller squad bonus first; the same bonus: the higher tier first
   const mk1=list=>{const gs=[];list.slice().sort((a,b)=>ratioOf(a,P)-ratioOf(b,P)||byB(a,b)).forEach(t=>{const r=ratioOf(t,P),g=gs[gs.length-1];if(g&&r<=g.lo*(1+RTOL))g.u.push(t);else gs.push({lo:r,u:[t]})});return gs};
-  const mk=list=>[...mk1(list.filter(t=>!t.beast)),...mk1(list.filter(t=>t.beast))].sort((a,b)=>a.lo-b.lo);   // the Beast units (Royal Lion, Battle Griffin) are always outliers: their own group
+  const mk=list=>mk1(list).sort((a,b)=>a.lo-b.lo);      // only the SH ratio decides: a troop whose ratio is clearly lower (a Beast unit, for example) is a group of its own, an outlier for the places Kn+1
   const gs=split?[...mk(arr.filter(t=>t.pool!='M')),...mk(arr.filter(t=>t.pool=='M'))].sort((a,b)=>a.lo-b.lo):mk(arr);
   gs.forEach(g=>g.u.sort(byB));
   return gs;
