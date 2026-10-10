@@ -586,8 +586,8 @@ function byTiers(nT,tryTier,mk,quickTier){      // the number of full monster ti
   const win=(r,b)=>!b||(r.full!==b.full?r.full>b.full:r.dmg>b.dmg*(1+1e-9));
   let cs=[];for(let c=nT;c>=1;c--)cs.push(c);
   if(quickTier&&nT>1){                                   // ONE quick order per tier count ranks them; only the best one gets the whole search (the others are ignored, even when close behind).
-    const q=cs.map(c=>({c,r:quickTier(c)}));               // A tier count whose quick order is not allowed (full < 0) cannot be ranked by it, so it still gets the whole search.
-    let top=null;q.forEach(x=>{if(x.r.full>=0&&win(x.r,top&&top.r))top=x});
+    const q=cs.map(c=>({c,r:quickTier(c)}));               // the quick orders are ranked by DAMAGE only (a tie: more full tiers). A tier count whose quick order is not allowed (full < 0) cannot be ranked by it, so it still gets the whole search.
+    let top=null;q.forEach(x=>{if(x.r.full>=0&&(!top||x.r.dmg>top.r.dmg*(1+1e-9)))top=x});
     cs=q.filter(x=>x===top||x.r.full<0).map(x=>x.c);
   }
   let best=null;
