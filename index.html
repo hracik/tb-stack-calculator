@@ -5,7 +5,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=EB+Garamond:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0f0e0b;--card:#1b1912;--tx:#e8dcc0;--mu:#a89a78;--ac:#d9a441;--bd:#4a3d22;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 64px)}      /* a box that is scrolled into view while typing is not hidden under the Calculate stacks bar */
 body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 'EB Garamond',Georgia,serif;padding:16px}
 main{max-width:960px;margin:auto}
 h1,h2{font-family:'Cinzel',Georgia,serif;letter-spacing:.06em;text-transform:uppercase}
@@ -59,11 +59,16 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 .tabtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 6px;font-size:14px}
 .tl{background:transparent;color:var(--mu);border:1px solid var(--bd);border-radius:6px;padding:3px 10px;margin:0;font:inherit}.tl:hover{color:var(--tx)}
 #res td{min-width:104px}.ic{display:block;width:56px;height:56px;margin:0 auto 4px;border-radius:6px}.ic.ph{background:rgba(42,32,18,.15)}
+.stalebar{position:sticky;top:8px;z-index:30;display:flex;align-items:center;gap:12px;margin:8px 0;padding:6px 12px;background:#27230f;border:1px solid var(--ac);border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.55)}
+.stalebar[hidden]{display:none}.stalebar span{flex:1 1 auto;color:var(--tx)}
+.stalebar .go{padding:8px 16px;margin:0;font:inherit;font-weight:600;color:#1b1408;background:var(--ac);border:1px solid #8a6a2c;border-radius:8px;cursor:pointer}
+.stalemsg{display:none;margin:8px 0}main.stale .stalemsg{display:block}main.stale #res,main.stale #osd{display:none!important}      /* the numbers changed: the old result is hidden until Calculate stacks is pressed */
 </style></head><body><main>
 <h1>⚔️ Stack Calculator</h1>
 
 <div class="tabs" id="tabs"></div>
 <div class="tabtools" id="tabtools"></div>
+<div class="stalebar" id="stalebar" role="status" hidden><span>Result out of date</span><button type="button" class="go" id="goCalc">Calculate stacks</button></div>
 <div class="card"><h2>Army capacity</h2><div class="fg">
 <label class="bi"><span>Leadership</span><input id="capA" type="text" inputmode="decimal" value="1875508"></label>
 <label class="bi"><span>Dominance</span><input id="capM" type="text" inputmode="decimal" value="330943"></label>
@@ -100,7 +105,8 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 </div>
 
 <div class="card"><h2><span id="rtitle">Result</span><button type="button" class="ib" data-tip="rtip" aria-expanded="false" aria-controls="rtip" title="How to read the result">i</button></h2><p class="tip" id="rtip" role="tooltip" hidden>Click a troop card to turn it on or off. <b>#</b> = position in the dying order (#1 dies first). Mercenaries (hired with Authority) are added after the last Leadership / Dominance stack. Authority is only a cap: whatever is left over stays unused.</p><div style="margin:0 0 12px"><div class="mu" style="margin:0 0 6px">View:</div><div class="pbrow"><button type="button" class="vb" data-v="grouped" title="Cards in groups, 5 per row">Grouped</button><button type="button" class="vb" data-v="mobile" title="One unit per line: picture, name and number of units">Mobile</button><button type="button" class="vb" data-v="computer" title="Two units per line, in the same order as Mobile">Computer</button></div></div>
-<div style="margin:0 0 12px"><div class="mu" style="margin:0 0 6px">Action:</div><input type="hidden" id="shw" value="hit"><div class="pbrow"><button type="button" class="vb sb" data-sh="hit" title="The units for one hit: the numbers to hit with">Hitting</button><button type="button" class="vb sb" data-sh="train" title="The units to prepare for the hits your Food production pays for, with the chosen Revive setting. The range goes from the units needed for the whole hits to the units needed for all the hits, including the partial one.">Preparing</button><button type="button" class="tc" title="Check whether one more or one less tier of each troop type gives more damage">Tier check</button></div><div id="shwmsg" class="mu" style="display:none;margin:6px 0 0">To see the numbers to prepare, enter your Food production in &ldquo;Food capacity &amp; settings&rdquo;.</div></div><div id="res"></div></div>
+<div style="margin:0 0 12px"><div class="mu" style="margin:0 0 6px">Action:</div><input type="hidden" id="shw" value="hit"><div class="pbrow"><button type="button" class="vb sb" data-sh="hit" title="The units for one hit: the numbers to hit with">Hitting</button><button type="button" class="vb sb" data-sh="train" title="The units to prepare for the hits your Food production pays for, with the chosen Revive setting. The range goes from the units needed for the whole hits to the units needed for all the hits, including the partial one.">Preparing</button><button type="button" class="tc" title="Check whether one more or one less tier of each troop type gives more damage">Tier check</button></div><div id="shwmsg" class="mu" style="display:none;margin:6px 0 0">To see the numbers to prepare, enter your Food production in &ldquo;Food capacity &amp; settings&rdquo;.</div></div><p class="mu stalemsg" id="stalemsg">The numbers changed. Press <b>Calculate stacks</b> (or Enter in a number box) to see the new result.</p>
+<div id="res"></div></div>
 
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div style="margin-top:14px;text-align:right"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <script>
@@ -243,7 +249,7 @@ function drawSO(st,P){
 // ---- tabs: each tab stores every input, the tier checkboxes and the kill order ----
 const KEY='sc_tabs_v6';
 const DEFCAT=['Melee','Ranged','Mounted','Flying'];
-let tabs=null,active=0,ready=false,delPending=false,DEF=null,XS=new Set(),SO=[],CALCT=0,CALCMS=0;      // CALCT = the timer of the calculation that waits for the typing to stop, CALCMS = how long the last calculation took
+let tabs=null,active=0,ready=false,delPending=false,DEF=null,XS=new Set(),SO=[],STALE=false,SAVET=0;      // STALE = a number was changed and the result is not calculated yet, SAVET = the timer of the saving, CALCMS = how long the last calculation took
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const clone=o=>JSON.parse(JSON.stringify(o));
 const MODE_IDS=['mode','enemy'];                       // the two hidden mode boxes are kept out of the input lists: the mode is stored in the tab as mode / enemy (see snap and load)
@@ -1164,9 +1170,9 @@ const MODEINFO={
 };
 const PVMODES=['cp','cpd','pvpmax','ren'];      // the modes of the Attack players view; every other mode belongs to Attack epics
 let ATK='epics',LASTE={mode:'max',enemy:'4'},LASTP='cp';      // ATK = the view (stored in the tab, like the inputs; a new tab starts in Attack epics). LASTE / LASTP = the last mode of each view, so switching back returns to it.
-function calc(){const t0=performance.now();try{calcRun()}finally{CALCMS=performance.now()-t0}}
-function calcRun(){
-  clearTimeout(CALCT);
+function setStale(on){if(STALE===on)return;STALE=on;const b=$('stalebar');if(b)b.hidden=!on;const m=document.querySelector('main');if(m)m.classList.toggle('stale',on)}      // on: a number was changed and the result is not calculated yet
+function calc(){
+  setStale(false);
   const pvOK=m=>m=='cp'||m=='cpd'?PV1:m=='pvpmax'?PVM:m=='ren'?RENEGADES:false,okP=PVMODES.filter(pvOK);      // okP = the PvP modes that are switched on
   if(PVMODES.includes($('mode').value)&&!pvOK($('mode').value)){$('mode').value='max';SO=[]}      // a mode that is off: a tab left in it falls back to the 4-stack mode
   document.querySelectorAll('.cm[data-m=cp],.cm[data-m=cpd]').forEach(b=>{b.disabled=!PV1;b.title=PV1?'':'Switched off for now'});
@@ -1289,8 +1295,10 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('keydown',e=>{if(e.key=='Escape')closeTips()});
 let TW=innerWidth;addEventListener('resize',()=>{if(innerWidth!=TW){TW=innerWidth;closeTips()}});
-document.addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('tabin'))return;const num=e.target.matches&&e.target.matches(NUMBOX);if(num)fmtBox(e.target);clearTimeout(CALCT);if(num&&e.target.value.trim()===''){CALCT=0;return}CALCT=setTimeout(calc,Math.min(900,Math.max(250,2.5*CALCMS)))});      // typing: the number is formatted at once, the calculation waits until the keys have stopped - at least 0.25 s, and 2.5x as long as the last calculation took, so a slow device never calculates between two digits; an emptied box (the number is being replaced) calculates nothing until a digit comes or the box is left
-document.addEventListener('change',e=>{if(e.target.classList&&e.target.classList.contains('tabin'))return;if(e.target.type=='checkbox')refresh();else calc()});
+document.addEventListener('input',e=>{const t=e.target;if(t.classList&&t.classList.contains('tabin'))return;if(!(t.matches&&t.matches(NUMBOX)))return;fmtBox(t);setStale(true);clearTimeout(SAVET);SAVET=setTimeout(save,400)});      // ANY change of a number box (typing, Backspace, cut, paste, drop ...): only the formatting, the 'out of date' mark and the saving - nothing is calculated until Calculate stacks (or Enter) is pressed, so nothing can lag while you edit
+document.addEventListener('change',e=>{if(e.target.classList&&e.target.classList.contains('tabin'))return;if(e.target.matches&&e.target.matches(NUMBOX)){setStale(true);return}if(e.target.type=='checkbox')refresh();else calc()});      // a number box only marks the result as out of date; ticks and lists calculate at once
+$('goCalc').addEventListener('click',()=>calc());
+document.addEventListener('keydown',e=>{if(e.key=='Enter'&&e.target.matches&&e.target.matches(NUMBOX)){e.preventDefault();calc()}});      // Enter in a number box = Calculate stacks
 document.addEventListener('dblclick',e=>{const t=e.target.closest&&e.target.closest('.tab[data-t]');if(t)rename(+t.dataset.t)});
 // start: dying order for a full enemy stack, with the default tiers
 runBest(4);
