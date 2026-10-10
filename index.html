@@ -877,28 +877,33 @@ function allocTight(P,live){
     weights(cur,HO,d);markEx(P,cur);if(!HO)profile(cur,d);      // CP kill (HO): every group is equal inside, a small step down only between groups
     fill(A,P.capA,Infinity,Infinity);
     const inv=A.reduce((q,x)=>q+x.w*x.cost/x.hp,0),X=inv&&P.capA>0?P.capA/inv:Infinity;
-    if(free===null){const invM=Mo.reduce((q,x)=>q+x.w*x.cost/x.hp,0);free=P.capM>0&&invM>0&&(!isFinite(X)||P.capM/invM>X*1.001)}      // decided once, on the whole list: every monster tier on the army's level still cannot spend the Dominance
-    const XM=free?Infinity:X;                         // the monsters' ceiling: the army's level, unless the Dominance is the bigger pool and needs more room (the only ceiling is then the Dominance itself)
+    if(HO&&free===null){const invM=Mo.reduce((q,x)=>q+x.w*x.cost/x.hp,0);free=P.capM>0&&invM>0&&(!isFinite(X)||P.capM/invM>X*1.001)}      // decided once, on the whole list: every monster tier on the army's level still cannot spend the Dominance
+    const XM=HO&&!free?X:Infinity;                    // CP kill / CP death only: the monsters' ceiling is the army's level (unless the Dominance is the bigger pool). The 3-, 4-, 6- and 8-stack modes have NO ceiling (v285): the SH order and the rules decide how big a monster stack can be where it stands
     const Fm=Mo.filter(s=>!s.pt),Pm=Mo.filter(s=>s.pt);
-    fill(Fm,P.capM,XM,Infinity);                 // the full monster tiers (the strongest first) on one level, not above the army's level (unless free)
-    const invF=Fm.reduce((q,x)=>q+x.w*x.cost/x.hp,0),XF=invF?Math.min(P.capM/invF,XM):0;
-    let XP=0,tp=0,invP=0;
-    if(Pm.length){                                    // the partial tier: whatever is left of the Dominance, on one level not above the full tiers. Only ONE tier is partial (the highest of them) - the tiers below stay empty
-      tp=Math.max(...Pm.map(s=>+s.r.slice(1)));
-      const P1=Pm.filter(s=>+s.r.slice(1)==tp);
-      invP=P1.reduce((q,x)=>q+x.w*x.cost/x.hp,0);const left=P.capM-XF*invF;
-      XP=invP&&left>0?Math.min(left/invP,XF):0;
-      Pm.forEach(s=>{s.n=+s.r.slice(1)==tp?Math.floor(XP*s.w/s.hp):0});
-    }
-    cur.forEach(s=>{s.tgt=(s.p=='A'?X:s.pt?(+s.r.slice(1)==tp?XP:0):XF)*s.w});
+    const invF=Fm.reduce((q,x)=>q+x.w*x.cost/x.hp,0);
+    let XF=0,XP=0,tp=0,invP=0,lvF=0;
+    if(Pm.length){tp=Math.max(...Pm.map(s=>+s.r.slice(1)));invP=Pm.filter(s=>+s.r.slice(1)==tp).reduce((q,x)=>q+x.w*x.cost/x.hp,0)}      // the partial tier: only ONE tier is partial (the highest of them) - the tiers below it stay empty
+    const settle=()=>{for(let g=0;g<30;g++){const before=cur.map(x=>x.n).join();chainT(cur);if(cur.map(x=>x.n).join()==before)break}};
+    const sizeMon=()=>{      // 3-, 4-, 6-, 8-stack: the monsters have no ceiling. The full tiers (the strongest first) take the Dominance on one level; the order rules (health and strength never rise) cut a stack where it stands behind a smaller stack - a monster behind the army cannot be bigger than the army stack in front of it, a monster in front of it (lower SH) can; the partial tier takes what is left, on a level not above the one the full tiers reached
+      XF=invF?P.capM/invF:0;
+      Fm.forEach(s=>{s.n=XF>0?Math.floor(XF*s.w/s.hp):0});Pm.forEach(s=>{s.n=0});settle();
+      lvF=Math.max(0,...Fm.filter(s=>s.n>0).map(s=>s.n*s.hp/s.w));      // the level the full tiers really reached
+      const left=P.capM-usedOf(Fm);
+      XP=invP&&left>0?Math.min(left/invP,lvF>0?lvF:XF):0;
+      Pm.forEach(s=>{s.n=+s.r.slice(1)==tp?Math.floor(XP*s.w/s.hp):0});settle();
+    };
+    if(HO){      // CP kill / CP death: the old sizing with the army's level as the ceiling
+      fill(Fm,P.capM,XM,Infinity);XF=invF?Math.min(P.capM/invF,XM):0;lvF=XF;
+      if(Pm.length){const left=P.capM-XF*invF;XP=invP&&left>0?Math.min(left/invP,XF):0;Pm.forEach(s=>{s.n=+s.r.slice(1)==tp?Math.floor(XP*s.w/s.hp):0})}
+    }else sizeMon();
+    cur.forEach(s=>{s.tgt=(s.p=='A'?X:s.pt?(+s.r.slice(1)==tp?XP:0):lvF)*s.w});
     for(let g=0;g<30;g++){const before=cur.map(x=>x.n).join();chainT(cur);if(cur.map(x=>x.n).join()==before)break}
     if(!HO&&isFinite(X)&&A.length&&P.capA-usedOf(A)>0.002*P.capA){      // 3-, 4-, 6-, 8-stack: the rule check cut stacks and freed Leadership - the common level goes up (the first stack gets bigger and every stack behind it follows) until the budget is used again
-      const lvl=xm=>{const f=invF?Math.min(P.capM/invF,xm):0,left=P.capM-f*invF;return{f,p:Pm.length&&invP&&left>0?Math.min(left/invP,f):0}};      // the monsters follow the army's level (xm), as far as the Dominance reaches
-      const run=x=>{A.forEach(s=>{s.n=Math.floor(x*s.w/s.hp)});const l=lvl(free?Infinity:x);Fm.forEach(s=>{s.n=Math.floor(l.f*s.w/s.hp)});Pm.forEach(s=>{s.n=+s.r.slice(1)==tp?Math.floor(l.p*s.w/s.hp):0});for(let g=0;g<30;g++){const b=cur.map(q=>q.n).join();chainT(cur);if(cur.map(q=>q.n).join()==b)break}return usedOf(A)};
+      const run=x=>{A.forEach(s=>{s.n=Math.floor(x*s.w/s.hp)});sizeMon();return usedOf(A)};      // the monsters follow the Dominance and the order rules (no ceiling)
       let lo=X,hi=X*Math.min(1.5,Math.max(1.0005,P.capA/Math.max(usedOf(A),1))*1.03);
       if(run(hi)<=P.capA)lo=hi;else for(let k=0;k<18;k++){const mid=(lo+hi)/2;if(run(mid)<=P.capA)lo=mid;else hi=mid}
-      run(lo);const l=lvl(free?Infinity:lo);
-      cur.forEach(s=>{s.tgt=(s.p=='A'?lo:s.pt?(+s.r.slice(1)==tp?l.p:0):l.f)*s.w});
+      run(lo);
+      cur.forEach(s=>{s.tgt=(s.p=='A'?lo:s.pt?(+s.r.slice(1)==tp?XP:0):lvF)*s.w});
     }
     if(HO&&isFinite(X)&&A.length){      // CP kill / CP death: the chain cuts down the stacks behind a smaller stack (the monsters before the Specialists) and the Leadership it frees is left over: it raises the level of the whole army instead (the highest level the chain and the budget allow)
       // CP death: the full monster tiers stand in the same group as the army (the troops without a bonus), so they follow the army's level (as far as the Dominance reaches) and the partial tier gets what is left
