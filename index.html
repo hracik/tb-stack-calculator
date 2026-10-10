@@ -411,6 +411,7 @@ function placeOutliers(P,rsv,rest,slots){
 // (exempt from the strength rule) at the place that suits its squad bonus, is the one that gives the most damage.
 // An order only wins over an earlier one when it is clearly better (0.05 %).
 const RTOL=0.015;      // 'nearly the same ratio': within 1.5 %
+const ENGPEN=0.02;     // an order with a troop of a clearly higher ratio in front of an engineer must give this much more damage (2 %) to win over one with the engineers in front
 function ratioGroups(P,arr,split){                                                    // split: army and monsters never share a group
   const q6=x=>Math.round(x*1e6),ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(...t.vs);
   const byB=(a,b)=>q6(sqb(a,P).tot)-q6(sqb(b,P).tot)||nom(a)-nom(b)||ci(a)-ci(b)||b.tier-a.tier;           // smaller squad bonus first; the same bonus: the higher tier first
@@ -460,27 +461,59 @@ function fourSearch(P,live,mkOut,CC,quick){      // CC = the number of full mons
     }
   }
   if(quick)return ev([...flat(ratioGroups(P,restF,true)),...tail],CC);
-  let best=null,pre=[],E=0;      // pre: the engineers, when they are the group with the lowest ratio - they then always stand first (E of them), the search only orders what comes behind them
-  const isEng=t=>t.cat=='Engineer';
-  const tryU=(units,bias)=>{const e=ev([...pre,...units,...tail],CC);e.k=e.d*(1+(bias||0));if(better(e,best))best=e;return e};
-  const embed=(pi,sm,h)=>{                                                           // the small group sm stands on the places Kn+1 inside the group h, where its squad bonus suits
-    if(!(sm.lo<h.lo))return;                                                         // an outlier has a LOWER ratio than the group it stands in (a troop with a higher ratio never stands inside a group of a lower ratio: the engineers, with the lowest ratio, are never pushed back by it)
-    const order=pi.filter(g=>g!==sm);let start=0;for(const g of order){if(g===h)break;start+=g.u.length}
-    const hs=slots.filter(x=>x>=E+start&&x<E+start+h.u.length+sm.u.length).map(x=>x-E-start);      // the places Kn+1 of the whole order (the engineers in front counted)
-    if(hs.length<sm.u.length)return;                                                 // an outlier group stands ONLY on the places Kn+1: all of it has to fit there
-    tryU(flat(order.map(g=>g===h?{u:placeOutliers(P,sm.u,h.u,hs)}:g)),0.01);         // outliers on the places Kn+1 win unless the plain order is clearly (1 %) better
+  let best=null;
+  // The WEAKEST troops die first (rising SH ratio): the engineers - by far the lowest ratio - stand first by design. An order with a troop of a clearly higher ratio in front of an engineer is only taken when it gives clearly (ENGPEN) more damage.
+  const engRatio=Math.min(...restF.filter(t=>t.cat=='Engineer').map(t=>ratioOf(t,P)));
+  const unnat=units=>{if(!isFinite(engRatio))return false;for(const t of units){if(t.cat=='Engineer')return false;if(ratioOf(t,P)>engRatio*(1+RTOL))return true}return false};
+  const bads=[];      // orders that are not allowed (a monster in front of a clearly lower ratio) are not solved at all - they only matter when no other order exists (see the end)
+  let PRE=[];         // the troops that stand first in the order being searched (the engineers, when they are the group with the lowest ratio)
+  const tryU=(units,bias)=>{
+    const all=[...PRE,...units,...tail];
+    if(shBad(all)){bads.push(all);return{d:0,k:0,names:all.map(t=>t.name),cc:CC,full:-1}}
+    const e=ev(all,CC);e.k=e.d*(1+(bias||0))*(unnat(all)?1-ENGPEN:1);if(better(e,best))best=e;return e};
+  // BLOCKS: a block is a group (the host) with the small groups with a LOWER ratio that stand on its places Kn+1 (the outliers). A lower ratio on a place Kn+1 needs no drop in health; in front of the host it would force the host (and all behind it) down by the ratio step.
+  const layout=blocks=>{
+    const out=[];let start=PRE.length;
+    for(const b of blocks){
+      if(!b.o.length){out.push(...b.h.u);start+=b.h.u.length;continue}
+      const ou=b.o.flatMap(x=>x.u),len=b.h.u.length+ou.length,hs=slots.filter(x=>x>=start&&x<start+len).map(x=>x-start);
+      if(hs.length<ou.length)return null;                                              // the outliers stand ONLY on the places Kn+1 of their block: all of them have to fit there
+      out.push(...placeOutliers(P,ou,b.h.u,hs));start+=len;
+    }
+    return out;
   };
-  const embedAll=pi=>pi.filter(g=>g.u.length<=slots.length).forEach(sm=>pi.filter(h=>h!==sm).forEach(h=>embed(pi,sm,h)));
-  const search=gs0=>{
-    const lk=gs0[0]&&gs0[0].u.length&&gs0[0].u.every(isEng)?gs0[0]:null;      // the group with the lowest ratio is made of engineers: they are the biggest outliers of all, so they stand first, whatever else is tried
-    pre=lk?lk.u:[];E=pre.length;const gs=lk?gs0.slice(1):gs0;
+  const isEng=g=>g.u.every(t=>t.cat=='Engineer');
+  const grow=pi=>{                                                                     // move small groups onto the places Kn+1 of a group with a higher ratio, one by one (up to 3), while the damage grows (outliers win unless the plain order is clearly (1 %) better);
+    let blocks=pi.map(g=>({h:g,o:[]})),cur=tryU(flat(pi));                             // then two neighbouring blocks may swap (the host with its outliers moves as one piece)
+    for(let round=0;round<3;round++){
+      let mv=null,me=null;
+      blocks.forEach(sb=>{
+        if(sb.o.length||isEng(sb.h)||sb.h.u.length>slots.length)return;
+        blocks.forEach(hb=>{
+          if(hb===sb||!(sb.h.lo<hb.h.lo))return;                                       // an outlier has a LOWER ratio than the group it stands in
+          const nb=blocks.filter(b=>b!==sb).map(b=>b===hb?{h:b.h,o:[...b.o,sb.h]}:b),u=layout(nb);
+          if(!u)return;
+          const e=tryU(u,0.01);if(!me||better(e,me)){me=e;mv=nb}
+        });
+      });
+      if(!mv||!better(me,cur))break;
+      cur=me;blocks=mv;
+    }
+  };
+  const searchCore=(gs,exh,full)=>{
     if(!gs.length){tryU([]);return}
     const asc=gs,desc=gs.slice().reverse();
-    if(gs.length<=4){                                                                // up to 4 groups: every order
+    if(gs.length<=exh){                                                                // up to 5 groups : every order, then the best of them (and lowest / highest first) are improved step by step
       const key=p=>p.map(g=>gs.indexOf(g)).join(),k1=key(asc),k2=key(desc);
       const ev2=[asc,desc,...permsOf(gs).filter(p=>key(p)!=k1&&key(p)!=k2)].map(pi=>({pi,e:tryU(flat(pi))}));
-      const topO=ev2.slice().sort((x,y)=>(y.e.full-x.e.full)||(y.e.d-x.e.d)).slice(0,3).map(x=>x.pi);   // the small groups are tried on the places Kn+1 for the 3 best group orders (and lowest / highest first)
-      [asc,desc,...topO].filter((x,i,ar)=>ar.indexOf(x)==i).forEach(pi=>embedAll(pi));
+      const topO=ev2.slice().sort((x,y)=>(y.e.full-x.e.full)||(y.e.k-x.e.k)).slice(0,3).map(x=>x.pi);
+      [asc,desc,...topO].filter((x,i,ar)=>ar.indexOf(x)==i).forEach(grow);
+      if(full)gs.forEach(sm=>{                                                       // ONE small group on the places Kn+1 of a group with a higher ratio, together with every order of the other blocks (the host with its outlier moves as one piece)
+        if(isEng(sm)||sm.u.length>slots.length)return;
+        const hosts=gs.filter(h=>h!==sm&&sm.lo<h.lo);if(!hosts.length)return;
+        const po=permsOf(gs.filter(g=>g!==sm));
+        hosts.forEach(h=>po.forEach(pi=>{const u=layout(pi.map(g=>({h:g,o:g===h?[sm]:[]})));if(u)tryU(u,0.01)}));
+      });
     }else{                                                                           // more groups: start from the army first (lowest / highest ratio first) and the monsters behind it, move single groups while the damage grows
       tryU(flat(asc));tryU(flat(desc));
       const pure=gs.every(g=>g.u.every(t=>t.pool=='M')||g.u.every(t=>t.pool!='M'));
@@ -495,13 +528,20 @@ function fourSearch(P,live,mkOut,CC,quick){      // CC = the number of full mons
           }
           if(!moved)break;
         }
-        embedAll(cur);
+        grow(cur);
       });
     }
+  };
+  // The natural family: the engineers (when they are the group with the lowest ratio) stand first and every order of the groups behind them is tried; the free family: the engineers are one group among the others and may stand anywhere
+  // (the weakest dies first, so an order with a stronger troop in front of an engineer needs ENGPEN more damage to win - see unnat).
+  const search=gs=>{
+    if(gs[0]&&gs[0].u.length&&isEng(gs[0])){PRE=gs[0].u;searchCore(gs.slice(1),5,true);PRE=[]}
+    searchCore(gs,5);
   };
   const gP=ratioGroups(P,restF,true),gM=ratioGroups(P,restF,false);
   search(gP);                                                                        // army groups and monster groups apart
   if(gM.some(g=>g.u.some(t=>t.pool=='M')&&g.u.some(t=>t.pool!='M')))search(gM);      // army and monsters of the same ratio in one group, by squad bonus (only when such a group exists)
+  if(!best)bads.forEach(u=>{const e=ev(u,CC);e.k=e.d;if(better(e,best))best=e});      // no allowed order exists: the best of the others
   return best;
 }
 // Killshot: the biggest tier dies first - E9, then the 9s (Specialists and Guardsmen together), then E8 and the 8s ...
