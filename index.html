@@ -414,7 +414,7 @@ function placeOutliers(P,rsv,rest,slots){
 // troops (army AND monsters, no pool has a place of its own) with the same or nearly the same ratio (within RTOL) stay TOGETHER in one group, and inside a group
 // the smaller squad bonus dies first. The engineers (higher tier first) stand in front of everything.
 // The ORDER OF THE GROUPS (lowest ratio first is tried first, then highest first, then all the others) and - for a small group - whether it stands on the places Kn+1
-// (exempt from the strength rule) at the place that suits its squad bonus, is the one that gives the most damage with all the Leadership spent.
+// (exempt from the strength rule) at the place that suits its squad bonus, is the one that gives the most damage.
 // An order only wins over an earlier one when it is clearly better (0.05 %).
 const RTOL=0.015;      // 'nearly the same ratio': within 1.5 %
 function ratioGroups(P,arr,split){                                                    // split: army and monsters never share a group
@@ -439,8 +439,8 @@ function fourSearch(P,live,mkOut,CC,quick){      // CC = the number of full mons
   const seen=new Map();      // the search meets the same order again again: it is solved once (a copy is returned: the caller adds its own bias k)
   const ev=(units,cc)=>{const names=units.map(t=>t.name),key=cc+'|'+names.join('|');
     if(!seen.has(key)){const r=allocate(P,mkOut(names,cc)),bad=shBad(units);
-      seen.set(key,{d:score(P,[...r.A,...r.Mo],names).dmg,names,cc,full:bad?-1:!(P.capA>0)?2:(ua=>ua>=0.999?2:ua>=0.97?1:0)(usedOf(r.A)/P.capA)})}
-    return{...seen.get(key)}};     // full: 2 = all the Leadership is spent (99.9 %), 1 = nearly (97 %) - an order that leaves more of it unused only wins when no other one spends it
+      seen.set(key,{d:score(P,[...r.A,...r.Mo],names).dmg,names,cc,full:bad?-1:0})}
+    return{...seen.get(key)}};     // full: -1 = an order that is not allowed (a monster in front of a clearly lower ratio) - it only wins when no other order exists; every other order is 0: the damage decides, whatever Leadership the order leaves unspent
   const better=(a,b)=>!b||(a.full!==b.full?a.full>b.full:(a.k==null?a.d:a.k)>(b.k==null?b.d:b.k)*(1+5e-4));
   // DOMINANCE, tier by tier from the top: the c strongest monster tiers (c is given by byTiers, the one with the most damage) are used FULLY (on the army's health level, as far as the Dominance reaches), the next tier is the PARTIAL one
   // (it takes what is left, at the end of the order), the tiers below it get nothing. So a tier never depends on the tiers below it: leaving the lowest tier out does not change the others.
@@ -582,7 +582,7 @@ function cpdOrder(P,names,c){
 //   ho     health only: the total strength does not have to fall along the order, a group of equals shares the places (CP kill, CP death, Max damage)
 //   order  who stands where: gives {so: the dying order, out: its stacks}
 //   size   how many units every stack gets
-function byTiers(nT,tryTier,mk,quickTier){      // the number of full monster tiers: the one with the most damage is kept (a tie: more full tiers; an order that leaves Leadership unspent only wins when no other does)
+function byTiers(nT,tryTier,mk,quickTier){      // the number of full monster tiers: the one with the most damage is kept (a tie: more full tiers; an order that is not allowed only wins when no other exists)
   const win=(r,b)=>!b||(r.full!==b.full?r.full>b.full:r.dmg>b.dmg*(1+1e-9));
   let cs=[];for(let c=nT;c>=1;c--)cs.push(c);
   if(quickTier&&nT>1){                                   // ONE quick order per tier count ranks them; only the best one gets the whole search (the others are ignored, even when close behind).
