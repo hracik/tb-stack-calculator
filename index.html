@@ -56,6 +56,9 @@ button{background:#8a6a2c;color:#fff;border:0;border-radius:5px;padding:1px 6px;
 #rst{padding:3px 10px;margin:0}
 #res table{border-collapse:separate;border-spacing:8px;table-layout:fixed;min-width:600px}#res td .mu{white-space:normal}#res th{width:150px}
 #res th.gl{width:auto;text-align:left;padding:8px 2px 0}
+.glh{padding:8px 2px 0 10px;color:var(--ac);font-weight:600;font-size:14px}.gs{overflow-x:auto;scrollbar-width:thin;scrollbar-color:#8a6a2c transparent}.gs.ov{cursor:grab;user-select:none;-webkit-user-select:none}.gs.ov.dg{cursor:grabbing}.gs img{-webkit-user-drag:none}
+#res table.gt{min-width:0}#res table.gt td{min-width:0}
+@media(max-width:480px){#res table.gt td{padding:16px 3px 8px}#res table.gt .ic{width:48px;height:48px}#res table.gt .kp{top:3px;right:5px;font-size:10px}}      /* on a phone the place number gets a line of its own above the picture */
 #res td{background:#dcc791;color:#2a2012;border:1px solid #8a6a2c;border-radius:6px;text-align:center;padding:8px 10px}
 #res td:empty{background:transparent;border:0}
 #res td .mu{color:#5b4721;font-size:12px}#res td .n{font-size:17px;font-weight:700}
@@ -126,14 +129,14 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <div class="card" data-help="res"><h2><span id="rtitle">Result</span></h2>
 <div id="osd" style="margin:0 0 12px"><div class="mu" style="margin:0 0 6px">Battle in detail:</div><div class="obrow"><button type="button" class="ob" data-o="die" aria-expanded="false" title="Show the dying order, troop by troop">Dying order</button><button type="button" class="ob" data-o="hit" aria-expanded="false" title="Show the hitting order: the order in which the units hit the enemy in round 1">Hitting order</button><button type="button" class="ob" data-o="rep" aria-expanded="false" title="Show the battle report: our hits and the enemy hits, round by round, until no unit is left">Battle report</button></div>
 <div class="ol sbx" id="os" hidden></div><div class="sbx" id="ho" hidden></div><div class="sbx" id="br" hidden></div></div>
-<div style="margin:0 0 12px"><div class="mu" style="margin:0 0 6px">View:</div><div class="pbrow"><button type="button" class="vb" data-v="grouped" title="Cards in groups, 5 per row">Grouped</button><button type="button" class="vb" data-v="mobile" title="One unit per line: picture, name and number of units">Mobile</button><button type="button" class="vb" data-v="computer" title="Two units per line, in the same order as Mobile">Computer</button></div></div>
+<div style="margin:0 0 12px"><div class="mu" style="margin:0 0 6px">View:</div><div class="pbrow"><button type="button" class="vb" data-v="grouped" title="Cards in groups, 4 per line; a group with more cards scrolls sideways">Grouped</button><button type="button" class="vb" data-v="mobile" title="One unit per line: picture, name and number of units">Mobile</button><button type="button" class="vb" data-v="computer" title="Two units per line, in the same order as Mobile">Computer</button></div></div>
 <div style="margin:0 0 12px"><div class="mu" style="margin:0 0 6px">Action:</div><input type="hidden" id="shw" value="hit"><div class="pbrow"><button type="button" class="vb sb" data-sh="hit" title="The units for one hit: the numbers to hit with">Hitting</button><button type="button" class="vb sb" data-sh="train" title="The units to prepare for the hits your Food production pays for, with the chosen Revive setting. The range goes from the units needed for the whole hits to the units needed for all the hits, including the partial one.">Preparing</button><button type="button" class="tc" title="Check whether one more or one less tier of each troop type gives more damage">Tier check</button></div><div id="shwmsg" class="mu" style="display:none;margin:6px 0 0">To see the numbers to prepare, enter your Food production in &ldquo;Food capacity &amp; settings&rdquo;.</div></div>
 <div id="res"></div></div>
 
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div style="margin-top:14px;text-align:right"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <script>
 // Version of this page. APP_VERSION is the build number (counts up with every release, never resets - the update check compares it with version.json); APP_LABEL is the version people see: MAJOR.MINOR. The minor counts the releases since the last push to the live site, a push starts the next major (1.12 -> 2.0). Every release: raise both and write the same two values into version.json.
-const APP_VERSION=310,APP_LABEL='1.19';
+const APP_VERSION=311,APP_LABEL='1.20';
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
   const me='v'+APP_LABEL;
@@ -1152,23 +1155,29 @@ function runKill(){                                      // Killshot: the rule d
   $('mode').value='kill';SO=[];
   refresh();
 }
+// a group with more than 4 cards scrolls sideways: a mouse drag scrolls it (touch and the wheel scroll it natively); a drag is not a click, so it never turns a troop on or off
+(function(){let d=null,moved=false;
+  document.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse'||e.button!==0)return;const g=e.target.closest&&e.target.closest('.gs.ov');if(!g)return;d={g,x:e.clientX,l:g.scrollLeft};moved=false});
+  document.addEventListener('pointermove',e=>{if(!d)return;const dx=e.clientX-d.x;if(!moved&&Math.abs(dx)>5){moved=true;d.g.classList.add('dg')}if(moved)d.g.scrollLeft=d.l-dx});
+  const end=()=>{if(d){d.g.classList.remove('dg');d=null;setTimeout(()=>{moved=false},0)}};
+  document.addEventListener('pointerup',end);document.addEventListener('pointercancel',end);
+  document.addEventListener('click',e=>{if(moved){e.stopPropagation();e.preventDefault();moved=false}},true);
+  document.addEventListener('dragstart',e=>{if(e.target.closest&&e.target.closest('.gs'))e.preventDefault()});
+})();
 let KP={};
 const MON_DISP=['Kraken II','Fire Phoenix II','Devastator II','Trickster II','Kraken I','Fire Phoenix I','Devastator I','Trickster I','Wind Lord','Black Dragon','Destructive Colossus','Ancient Terror'];
 const DISP_KEY=s=>{if(s.c=='Engineer')return -1;const m=MON_DISP.indexOf(s.name);return m>=0?m-100:DISP.indexOf(s.cat||s.c)};
 function table(st){
   const cell=s=>`<td class="${s.off?'off':!(s.n>0)?'zero':''}" data-troop="${esc(s.name)}" title="${s.off?'Click to turn this troop on':'Click to turn this troop off'}">${IC[s.name]?`<img class="ic" src="${IC[s.name]}" alt="">`:'<div class="ic ph"></div>'}<span class="kp">${KP[s.name]?'#'+KP[s.name]:''}</span><span class="mu">${s.name}</span>${cnt(s,(s.n||0).toLocaleString())}</td>`;
-  // rows: one per tier; all engineer tiers share one block, 5 per line. Every row has exactly 5 card cells (blank cells are fine) so all tables line up.
+  // one block per tier (all engineer tiers share one block): the label, then the cards in ONE line, 4 cards wide. A block with more than 4 cards is one line that scrolls sideways (finger, wheel, scrollbar or dragging with the mouse), so it never wraps into a second line. A block with fewer than 4 cards is padded with blank cells, so all blocks line up.
   const keys=[];st.forEach(s=>{const k=s.cat=='Engineer'?'E*':s.r;if(!keys.includes(k))keys.push(k)});
-  let o='<div class="sc"><table><colgroup><col><col><col><col><col></colgroup>';
+  let o='<div class="sc">';
   keys.forEach(k=>{
     const list=k=='E*'?st.filter(s=>s.cat=='Engineer').sort((a,b)=>+b.r.slice(1)-+a.r.slice(1)):st.filter(x=>x.r==k).sort((a,b)=>DISP_KEY(a)-DISP_KEY(b));
-    o+=`<tr><th class="gl" colspan="5">${k=='E*'?'Engineer Corps':`${NM[k[0]]} ${k.slice(1)}`}</th></tr>`;     // the label is one row above its cards
-    for(let i=0;i<list.length;i+=5){
-      const row=list.slice(i,i+5).map(cell);while(row.length<5)row.push('<td></td>');
-      o+=`<tr>${row.join('')}</tr>`;
-    }
+    const n=Math.max(4,list.length),row=list.map(cell);while(row.length<n)row.push('<td></td>');
+    o+=`<div class="glh">${k=='E*'?'Engineer Corps':`${NM[k[0]]} ${k.slice(1)}`}</div><div class="gs${list.length>4?' ov':''}"><table class="gt" style="width:${n*25}%"><colgroup>${'<col>'.repeat(n)}</colgroup><tr>${row.join('')}</tr></table></div>`;
   });
-  return o+'</table></div>';
+  return o+'</div>';
 }
 // the order the cards of table() are shown in, as one list
 function flatOrder(st){
