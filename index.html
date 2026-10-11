@@ -53,7 +53,14 @@ summary{cursor:pointer;list-style:none;margin-bottom:6px}summary::-webkit-detail
 summary::before{content:'▸ ';color:var(--ac)}details[open] summary::before{content:'▾ '}
 summary h2{display:inline;border:0;padding:0;margin:0}
 .pb{padding:6px 4px;margin:0;width:100%;white-space:nowrap}.pb.on{background:var(--ac);color:#000}.pbrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-width:400px}.pbrow .vb{margin:0;min-width:0;width:100%;padding:6px 4px;white-space:nowrap}      /* the research buttons: a row of their own, three equal buttons */
-.ib{display:inline-block;width:18px;height:18px;border-radius:50%;border:1px solid var(--ac);background:transparent;color:var(--ac);font:italic 700 12px/16px Georgia,serif;padding:0;margin:0 0 0 10px;cursor:pointer;text-transform:none;letter-spacing:0;vertical-align:middle;position:relative;top:-2px;text-align:center}.ib:hover,.ib[aria-expanded=true]{background:var(--ac);color:#000}.tip{position:absolute;z-index:50;width:max-content;max-width:min(320px,calc(100vw - 16px));box-sizing:border-box;margin:0;padding:10px 13px;background:#2b2415;color:var(--tx);border:1px solid var(--ac);border-radius:8px;box-shadow:0 8px 22px rgba(0,0,0,.6);font-size:14px;line-height:1.4;font-weight:400;letter-spacing:0;text-transform:none;text-align:left}.tip::before{content:"";position:absolute;top:-6px;left:var(--ax,16px);width:10px;height:10px;background:#2b2415;border-left:1px solid var(--ac);border-top:1px solid var(--ac);transform:rotate(45deg)}.eb{padding:6px 16px;margin:0 8px 8px 0;font:inherit}.eb.on{background:var(--ac);color:#000}
+/* help sections (v292): a Help button in the header of a card shows / hides a panel under it - the same on every card */
+.card>h2{display:flex;align-items:center;gap:10px}.card>summary{display:flex;align-items:center;gap:8px}.card>summary h2{flex:1;min-width:0}
+.hq{flex:none;display:inline-flex;align-items:center;gap:6px;margin:0 0 0 auto;padding:4px 11px 4px 5px;border:1px solid var(--bd);border-radius:999px;background:transparent;color:var(--ac);font:600 11px/1 'Cinzel',Georgia,serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+.hq .hqm{display:inline-block;width:16px;height:16px;border:1px solid var(--ac);border-radius:50%;font:italic 700 11px/14px Georgia,serif;letter-spacing:0;text-transform:none;text-align:center}
+.hq:hover{border-color:var(--ac)}.hq[aria-expanded=true]{background:var(--ac);border-color:var(--ac);color:#000}.hq[aria-expanded=true] .hqm{border-color:#000}
+.hp{margin:0 0 12px;padding:10px 14px;border:1px solid var(--bd);border-left:3px solid var(--ac);border-radius:8px;background:rgba(217,164,65,.07);font-size:15px;line-height:1.5;color:var(--tx)}
+.hp p{margin:0 0 8px}.hp p:last-child{margin-bottom:0}.hp figure{margin:10px 0 0}.hp img{display:block;max-width:100%;height:auto;border:1px solid var(--bd);border-radius:6px}.hp figcaption{margin:5px 0 0;font-size:13px;color:var(--mu)}
+.eb{padding:6px 16px;margin:0 8px 8px 0;font:inherit}.eb.on{background:var(--ac);color:#000}
 #res td[data-troop]{cursor:pointer}.cm{padding:6px 16px;margin:0 8px 8px 0;font:inherit}.cm.on{background:var(--ac);color:#000}.cm:disabled{opacity:.4;cursor:not-allowed}.mrow{display:flex;align-items:center;flex-wrap:wrap}.mrow>.mu{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;width:126px;margin-right:8px;margin-bottom:8px;font-size:13px}.mrow>.mu b{font-weight:600;color:var(--ac);margin:0 0 0 8px;font-size:14px;letter-spacing:.3px}.mi{width:60px;height:auto;display:block;flex:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}.mrow button{width:128px;padding-left:4px;padding-right:4px;text-align:center;white-space:nowrap}@media(max-width:520px){.mrow+.mrow{border-top:1px solid var(--bd);margin-top:6px;padding-top:12px}.mrow>.mu{flex:0 0 100%;width:auto;margin:0 0 4px}.mrow{column-gap:8px}.mrow button{width:calc((100% - 8px)/2);margin-right:0}}      /* two buttons per line, the gap between them from column-gap (a row can hold 3 buttons) */.cm:disabled{opacity:.4;cursor:not-allowed}#osd summary{cursor:pointer;color:var(--ac);padding:4px 0}#os .oi{cursor:default}.lock{opacity:.4;pointer-events:none}.ic2{width:30px;height:30px;border-radius:4px;vertical-align:middle}.oi small{display:block;line-height:1.1}#res td{position:relative}.kp{position:absolute;top:3px;right:7px;font-size:11px;color:#5b4721}#res td.off,#res td.zero{opacity:.35}
 .nb{white-space:nowrap}.nw{display:block;white-space:normal}
 .atk{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;box-sizing:border-box;margin:0 0 12px;padding:3px;border:1px solid var(--ac);border-radius:10px;background:var(--bg)}.atk::before{content:'';position:absolute;top:3px;bottom:3px;left:3px;width:calc(50% - 3px);border-radius:7px;background:var(--ac);transition:transform .2s ease}.atk[data-v=players]::before{transform:translateX(100%)}.ab{position:relative;z-index:1;margin:0;padding:9px 4px;width:100%;white-space:nowrap;font:inherit;font-size:15px;background:transparent;color:var(--ac);border-radius:7px}.ab.on{color:#000;font-weight:600}      /* one toggle: a track with a sliding thumb behind the two labels */.mrow[hidden],.bc[hidden]{display:none}.pbrow .tc{margin:0;min-width:0;width:100%;padding:6px 4px;white-space:nowrap;font:inherit;background:transparent;border:1px solid var(--ac);color:var(--ac)}.pbrow .tc:hover{background:var(--ac);color:#000}.tc:disabled{opacity:.4;cursor:not-allowed}.mod{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.65)}.mod[hidden]{display:none}.mod>div{width:min(440px,100%);max-height:calc(100vh - 32px);overflow:auto;box-sizing:border-box;padding:16px 18px;background:var(--card);border:1px solid var(--ac);border-radius:10px;box-shadow:0 12px 36px rgba(0,0,0,.7)}.mod p{margin:0 0 8px;line-height:1.4}.tcx{padding:6px 18px;margin:0;font:inherit}input:disabled{cursor:not-allowed}      /* the Attack epics / Attack players toggle */
@@ -71,31 +78,31 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 
 <div class="tabs" id="tabs"></div>
 <div class="tabtools" id="tabtools"></div>
-<div class="card"><h2>Army capacity</h2><div class="fg">
+<div class="card" data-help="army"><h2>Army capacity</h2><div class="fg">
 <label class="bi"><span>Leadership</span><input id="capA" type="text" inputmode="decimal" value="1875508"></label>
 <label class="bi"><span>Authority</span><input id="capU" type="text" inputmode="decimal" value="0"></label>
 <label class="bi"><span>Dominance</span><input id="capM" type="text" inputmode="decimal" value="330943"></label>
 </div></div>
-<div class="card"><h2>Food capacity &amp; settings</h2><div class="fg">
+<div class="card" data-help="food"><h2>Food capacity &amp; settings</h2><div class="fg">
 <label class="bi"><span>Food prod.</span><input id="foodP" type="text" inputmode="decimal" value="0"></label>
 <label class="bi" id="revl" title="After a hit, 90% of a revived stack (rounded down per stack) comes back, so only the rest has to be prepared again."><span>Revive</span><select id="revm"><option value="none">None</option><option value="top" selected>Top line</option><option value="mon">Monsters only</option><option value="montop">Monsters and top line</option><option value="all">All</option></select></label></div></div>
 
 <div class="atk" id="atk"><button type="button" class="ab" data-a="epics" title="Hit epic monsters">Attack epics</button><button type="button" class="ab" data-a="players" title="Hit other players">Attack players</button></div>
-<div class="card"><h2>Bonuses against enemies (%)</h2><div class="bg" id="bonx"></div></div>
-<div class="card"><h2>Category bonuses (%)</h2><div class="bg" id="bon"></div></div>
+<div class="card" data-help="bonx"><h2>Bonuses against enemies (%)</h2><div class="bg" id="bonx"></div></div>
+<div class="card" data-help="bon"><h2>Category bonuses (%)</h2><div class="bg" id="bon"></div></div>
 
-<details class="card" open><summary><h2>Monster boost research bonuses (%)</h2></summary>
+<details class="card" open data-help="mb"><summary><h2>Monster boost research bonuses (%)</h2></summary>
 <div style="margin:0 0 10px">
 <div class="pbrow"><button class="pb" data-p="19" data-dh="0">I · 19%</button><button class="pb" data-p="50" data-dh="0">II · 50%</button><button class="pb" data-p="100" data-dh="5">III · 100%</button></div></div>
 <div class="bg" id="mb"></div>
 </details>
 
-<details class="card"><summary><h2>Combat type bonuses (%)</h2><button type="button" class="ib" data-tip="tipS" aria-expanded="false" aria-controls="tipS" title="About combat type bonuses">i</button></summary><p class="tip" id="tipS" role="tooltip" hidden>Extra bonuses per combat type (Melee, Mounted, Ranged, Flying), added on top of the category bonus.</p><div class="bg" id="sb"></div></details>
+<details class="card" data-help="sb"><summary><h2>Combat type bonuses (%)</h2></summary><div class="bg" id="sb"></div></details>
 
-<div class="card"><h2>Tiers to use</h2><div class="sc"><table class="tt" id="tiers"></table></div>
+<div class="card" data-help="tiers"><h2>Tiers to use</h2><div class="sc"><table class="tt" id="tiers"></table></div>
 </div>
 
-<div class="card"><h2>Attack mode · Dying order, troop by troop</h2>
+<div class="card" data-help="mode"><h2>Attack mode · Dying order, troop by troop</h2>
 <input type="hidden" id="enemy" value="4">
 <input type="hidden" id="mode" value="max">
 <div class="mrow" id="mrE1"><span class="mu"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92 56" class="mi" aria-hidden="true" focusable="false"><circle cx="24" cy="26" r="20" fill="#FFCB3D" stroke="#B9831A" stroke-width="2"/><ellipse cx="17" cy="21" rx="2.6" ry="3.4" fill="#3a2a10"/><ellipse cx="31" cy="21" rx="2.6" ry="3.4" fill="#3a2a10"/><circle cx="17.8" cy="19.8" r="0.9" fill="#fff"/><circle cx="31.8" cy="19.8" r="0.9" fill="#fff"/><path d="M15 12.5 h5 M28 12.5 h5" stroke="#3a2a10" stroke-width="2" stroke-linecap="round"/><path d="M16.5 36.5 h15" stroke="#3a2a10" stroke-width="2.6" stroke-linecap="round"/><path d="M30 33 h34 q4 0 4 4 v6 q0 4 -4 4 h-34 q-5 0 -5 -5 v-4 q0 -5 5 -5 z" fill="#ff7a1a" stroke="#a84a05" stroke-width="1.8" stroke-linejoin="round"/><path d="M36 33 v-6 q0 -5 5 -5 h14 q5 0 5 5 v6 z" fill="#46b7ff" stroke="#1673b0" stroke-width="1.8" stroke-linejoin="round"/><path d="M40 27 q1 -3 4 -3" fill="none" stroke="#bfe9ff" stroke-width="2" stroke-linecap="round"/><path d="M42 33 v-5 m6 5 v-5 m6 5 v-5" stroke="#1673b0" stroke-width="0" /><rect x="68" y="35" width="11" height="6.5" rx="2.5" fill="#ffd23a" stroke="#a87a05" stroke-width="1.6"/><rect x="77" y="36.2" width="4" height="4.2" rx="1" fill="#d94a1a"/><path d="M33 48 h12 l-3 8 h-11 z" fill="#ff7a1a" stroke="#a84a05" stroke-width="1.8" stroke-linejoin="round" transform="translate(0,-2)"/><path d="M50 47 q1 5 6 5" fill="none" stroke="#a84a05" stroke-width="2" stroke-linecap="round"/><path d="M52 47 l0.5 3" stroke="#ffd23a" stroke-width="2.4" stroke-linecap="round"/><path d="M84 33 q2 -4 4 0 q1 3 -2 3.2 q-3 -.2 -2 -3.2 z" fill="#46b7ff" stroke="#1673b0" stroke-width="1"/><path d="M85.5 42.5 q1.6 -3.4 3.4 0 q.8 2.6 -1.7 2.8 q-2.5 -.2 -1.7 -2.8 z" fill="#8fd6ff" stroke="#1673b0" stroke-width="1"/><circle cx="90" cy="38.5" r="1.4" fill="#46b7ff"/></svg><b>Regular</b></span><button class="eb" data-e="4">4-stack</button><button class="eb" data-e="8">8-stack</button></div>
@@ -106,13 +113,13 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <details id="osd" style="margin-top:12px"><summary>Show the dying order, troop by troop</summary><div class="ol" id="os" style="margin-top:8px"></div></details>
 </div>
 
-<div class="card"><h2><span id="rtitle">Result</span><button type="button" class="ib" data-tip="rtip" aria-expanded="false" aria-controls="rtip" title="How to read the result">i</button></h2><p class="tip" id="rtip" role="tooltip" hidden>Click a troop card to turn it on or off. <b>#</b> = position in the dying order (#1 dies first). Mercenaries (hired with Authority) are added after the last Leadership / Dominance stack. Authority is only a cap: whatever is left over stays unused.</p><div style="margin:0 0 12px"><div class="mu" style="margin:0 0 6px">View:</div><div class="pbrow"><button type="button" class="vb" data-v="grouped" title="Cards in groups, 5 per row">Grouped</button><button type="button" class="vb" data-v="mobile" title="One unit per line: picture, name and number of units">Mobile</button><button type="button" class="vb" data-v="computer" title="Two units per line, in the same order as Mobile">Computer</button></div></div>
+<div class="card" data-help="res"><h2><span id="rtitle">Result</span></h2><div style="margin:0 0 12px"><div class="mu" style="margin:0 0 6px">View:</div><div class="pbrow"><button type="button" class="vb" data-v="grouped" title="Cards in groups, 5 per row">Grouped</button><button type="button" class="vb" data-v="mobile" title="One unit per line: picture, name and number of units">Mobile</button><button type="button" class="vb" data-v="computer" title="Two units per line, in the same order as Mobile">Computer</button></div></div>
 <div style="margin:0 0 12px"><div class="mu" style="margin:0 0 6px">Action:</div><input type="hidden" id="shw" value="hit"><div class="pbrow"><button type="button" class="vb sb" data-sh="hit" title="The units for one hit: the numbers to hit with">Hitting</button><button type="button" class="vb sb" data-sh="train" title="The units to prepare for the hits your Food production pays for, with the chosen Revive setting. The range goes from the units needed for the whole hits to the units needed for all the hits, including the partial one.">Preparing</button><button type="button" class="tc" title="Check whether one more or one less tier of each troop type gives more damage">Tier check</button></div><div id="shwmsg" class="mu" style="display:none;margin:6px 0 0">To see the numbers to prepare, enter your Food production in &ldquo;Food capacity &amp; settings&rdquo;.</div></div><div id="res"></div></div>
 
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div style="margin-top:14px;text-align:right"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <script>
-// Version of this page (v291). Raise it with every release and write the same number into version.json; the check below compares the two.
-const APP_VERSION=291;
+// Version of this page (v292). Raise it with every release and write the same number into version.json; the check below compares the two.
+const APP_VERSION=292;
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
   const me='v'+APP_VERSION;
@@ -1365,25 +1372,34 @@ function openTierCheck(){HINTGEN++;$('tcm').hidden=false;$('tcb').innerHTML='<p>
 function closeTierCheck(){HINTGEN++;$('tcm').hidden=true}
 $('tcx').addEventListener('click',closeTierCheck);$('tcm').addEventListener('click',e=>{if(e.target===$('tcm'))closeTierCheck()});
 document.addEventListener('keydown',e=>{if(e.key=='Escape'&&!$('tcm').hidden)closeTierCheck()});
-// info icons: the note opens as a small popover under the icon; click the icon again, click elsewhere or press Esc to close it
-const TIPS=['tipS','rtip'];
-function closeTips(){TIPS.forEach(id=>{$(id).hidden=true});document.querySelectorAll('.ib').forEach(b=>b.setAttribute('aria-expanded','false'))}
-function showTip(b){
-  const t=$(b.dataset.tip);if(t.parentNode!==document.body)document.body.appendChild(t);       // out of the card, so nothing clips or shifts it
-  t.hidden=false;t.style.left='0px';t.style.top='0px';
-  const r=b.getBoundingClientRect(),w=t.offsetWidth,vw=document.documentElement.clientWidth;
-  const left=Math.max(8,Math.min(r.left+r.width/2-w/2,vw-w-8));
-  t.style.left=(left+scrollX)+'px';t.style.top=(r.bottom+scrollY+10)+'px';
-  t.style.setProperty('--ax',(r.left+r.width/2-left-5)+'px');                                  // arrow points at the icon
-  b.setAttribute('aria-expanded','true');
-}
-document.addEventListener('click',e=>{
-  const b=e.target.closest('.ib');
-  if(b){e.preventDefault();e.stopPropagation();const was=!$(b.dataset.tip).hidden;closeTips();if(!was)showTip(b);return}
-  if(!e.target.closest('.tip'))closeTips();
-});
-document.addEventListener('keydown',e=>{if(e.key=='Escape')closeTips()});
-let TW=innerWidth;addEventListener('resize',()=>{if(innerWidth!=TW){TW=innerWidth;closeTips()}});
+// ---- Help sections (v292): every card with data-help gets a Help button in its header (hidden panel, same design on every card).
+// The text (HTML allowed, one string per paragraph) and the screenshots live HERE and nowhere else. img: a list of {src, alt, cap}; src is a data: URI (the page is a single file) or a file path.
+const HELP={
+  army:{t:["Don't have mercs? Keep Authority at 0, it has no use for you.","Lack of monster coins, so you want to use smaller monster stacks? Just input less Dominance than you actually have, check the given stacks and adjust if needed."],img:[]},
+  food:{t:["<b>Food prod.</b> is the food you have for the hits. The Preparing view turns it into the number of hits it pays for.","<b>Revive</b> sets which stacks you revive after a hit. 90 % of a revived stack comes back, so only the rest has to be prepared again."],img:[]},
+  bonx:{t:["Your bonuses against the enemy you hit: <b>Strength</b> against epic monsters (used in the epic modes), <b>Health</b> and <b>Strength</b> against other players (used in the player modes)."],img:[]},
+  bon:{t:["The <b>Health</b> and <b>Strength</b> bonus of each troop category: Guardsmen, Specialists, Monsters and Siege Engines."],img:[]},
+  mb:{t:["Research bonuses of the monsters: <b>Health</b>, <b>Strength</b> and <b>Double hit</b> for each monster type.","The buttons <b>I</b>, <b>II</b> and <b>III</b> fill in all the types at once with a research level (19 %, 50 %, and 100 % with Double hit 5 %)."],img:[]},
+  sb:{t:["Extra bonuses per combat type (Melee, Mounted, Ranged, Flying), added on top of the category bonus."],img:[]},
+  tiers:{t:["Tick the tiers of every troop type you want the calculation to use. Tiers you don't have, or don't want to send, stay unticked."],img:[]},
+  mode:{t:["Pick how you hit. The bubble under the buttons explains the mode that is on.","The dying order below lists the stacks in the order they die, troop by troop."],img:[]},
+  res:{t:["Click a troop card to turn it on or off. <b>#</b> = position in the dying order (#1 dies first).","Mercenaries (hired with Authority) are added after the last Leadership / Dominance stack. Authority is only a cap: whatever is left over stays unused."],img:[]}
+};
+(function(){
+  document.querySelectorAll('[data-help]').forEach(card=>{
+    const k=card.dataset.help,h=HELP[k],head=[...card.children].find(x=>x.tagName=='H2'||x.tagName=='SUMMARY');if(!h||!head)return;
+    const id='hp-'+k,b=document.createElement('button');b.type='button';b.className='hq';b.setAttribute('aria-expanded','false');b.setAttribute('aria-controls',id);b.title='Show help';b.innerHTML='<span class="hqm">?</span>Help';head.appendChild(b);
+    const p=document.createElement('div');p.className='hp';p.id=id;p.hidden=true;
+    p.innerHTML=h.t.map(x=>'<p>'+x+'</p>').join('')+(h.img||[]).map(m=>'<figure><img src="'+m.src+'" alt="'+(m.alt||'')+'" loading="lazy">'+(m.cap?'<figcaption>'+m.cap+'</figcaption>':'')+'</figure>').join('');
+    head.after(p);
+  });
+  document.addEventListener('click',e=>{
+    const b=e.target.closest('.hq');if(!b)return;
+    e.preventDefault();                                   // a Help button inside a summary must not open / close the card
+    const p=document.getElementById(b.getAttribute('aria-controls')),open=p.hidden;p.hidden=!open;if(open){const d=b.closest('details');if(d)d.open=true}      // showing the help of a closed (collapsible) card opens the card too
+    b.setAttribute('aria-expanded',String(open));b.title=open?'Hide help':'Show help';
+  });
+})();
 document.addEventListener('input',e=>{const t=e.target;if(t.classList&&t.classList.contains('tabin'))return;if(!(t.matches&&t.matches(NUMBOX)))return;fmtBox(t);clearTimeout(CALCT);clearTimeout(SAVET);if(t.value.trim()===''){CALCT=0;SAVET=setTimeout(save,400);return}CALCT=setTimeout(calc,Math.min(1200,Math.max(500,4*CALCMS)))});      // ANY change of a number box (typing, Backspace, cut, paste, drop ...): the number is formatted at once, the calculation waits until the typing has stopped (0.5 s, longer on a slow device); an emptied box starts nothing (a new number is coming)
 document.addEventListener('change',e=>{if(e.target.classList&&e.target.classList.contains('tabin'))return;if(e.target.type=='checkbox')refresh();else calc()});      // leaving a box (or a tick, a list) calculates at once
 document.addEventListener('keydown',e=>{if(e.key=='Enter'&&e.target.matches&&e.target.matches(NUMBOX)){e.preventDefault();calc()}});      // Enter in a number box = calculate now, without waiting
