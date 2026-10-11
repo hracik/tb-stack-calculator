@@ -45,8 +45,9 @@ select{width:auto}.mu{color:var(--mu);font-size:13px}
 .bic{flex:none;position:relative;display:inline-block;width:30px;height:30px}.bic .ic2{display:block}.be .bic .ic2{opacity:.4;filter:grayscale(.5)}.bic .bx{position:absolute;left:4px;top:4px;width:22px;height:22px;transform:rotate(-5deg);overflow:visible}
 .bm{flex:1 1 0;min-width:0;font-size:14px;line-height:1.3}.bm small{display:block;font-size:11.5px;opacity:.75}
 .bv{flex:none;display:flex;flex-direction:column;align-items:flex-end;white-space:nowrap;font-variant-numeric:tabular-nums}.bv b{font-size:14px}.bv small{opacity:.65;font-size:11.5px}.be .bv b{color:#ff9a84}
+.bb{flex:none;display:flex;flex-direction:column;align-items:flex-end;white-space:nowrap;font-size:13px;opacity:.85;font-variant-numeric:tabular-nums}.bb small{font-size:11.5px;opacity:.75}
 .bf{margin:8px 0 0;font-size:14px}
-@media(max-width:480px){.bl{gap:8px;padding:3px 8px;font-size:13px}.bv b{font-size:13px}}
+@media(max-width:480px){.bl{gap:8px;padding:3px 8px;font-size:13px}.bv b{font-size:13px}.bo{flex-wrap:wrap}.bo .bb{order:5;flex:0 0 100%;flex-direction:row;align-items:baseline;justify-content:flex-start;gap:10px;padding-left:38px;font-size:12px}.bb small{font-size:11.5px}}      /* on a phone the bonus gets a line of its own under the name */
 .oi{display:flex;align-items:center;gap:10px;background:#dcc791;color:#2a2012;border:1px solid #8a6a2c;border-radius:6px;padding:5px 10px;margin:5px 0;user-select:none}
 .oi.dg{opacity:.65;outline:2px solid var(--ac)}
 .hd{cursor:grab;touch-action:none;font-weight:700;padding:2px 6px}.oi.dg .hd{cursor:grabbing}
@@ -136,7 +137,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div style="margin-top:14px;text-align:right"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <script>
 // Version of this page. APP_VERSION is the build number (counts up with every release, never resets - the update check compares it with version.json); APP_LABEL is the version people see: MAJOR.MINOR. The minor counts the releases since the last push to the live site, a push starts the next major (1.12 -> 2.0). Every release: raise both and write the same two values into version.json.
-const APP_VERSION=314,APP_LABEL='2.0';
+const APP_VERSION=315,APP_LABEL='2.1';
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
   const me='v'+APP_LABEL;
@@ -1097,7 +1098,9 @@ function battleHtml(P,list,order,sc){
     const s=L[i],img=IC[s.name]?`<img class="ic2" src="${IC[s.name]}" alt="">`:'<span class="ic2"></span>',nm=`<span class="bm"><b>#${i+1}</b> ${esc(s.name)}<small>${s.n.toLocaleString()} units</small></span>`;
     if(t=='o'){                                              // one strike: the damage of the whole stack WITHOUT the Double hit, and the part of it that comes from the squad bonus (always counted; no mounted enemy in the 3-stack and Killshot modes, see vsRatio)
       const base=(P.pvp&&s.r&&s.r[0]=='S')?2:1,d=s.n*s.str*(s.f||1),bn=Math.max(0,s.n*s.str*((s.f||1)-base));
-      h+=`<div class="bl bo"><span class="bic">${img}</span>${nm}<span class="bv"><b>+${num(d)}</b>${bn>0?`<small title="Only the squad bonus listed on the troop itself (against the enemy), and the damage it adds: units x the troop's own strength x that bonus. Your own bonuses are not part of it.">squad bonus ${TRN[s.name]?Math.round(vsRatio(TRN[s.name],P)*100)+' % \u00b7 ':''}+${num(bn)}</small>`:''}</span></div>`}
+      const t0=TRN[s.name],dh=t0?(P.one?0:t0.cls=='M'?(P['dh'+t0.type]||0):t0.beast?P.dhBeast:0):0,      // the same line of facts as in the dying order list: the tier first (S8, M8 ...) and the Double hit, the bonus against the enemy at the end, before the damage
+        nmh=`<span class="bm"><b>#${i+1}</b> ${esc(s.name)}<small>${s.n.toLocaleString()} units${t0?' \u00b7 '+t0.cls+t0.tier:''}${dh>0?' \u00b7 Double hit +'+dh+'%':''}</small></span>`;
+      h+=`<div class="bl bo"><span class="bic">${img}</span>${nmh}<span class="bb"${bn>0?' title="The bonus listed on the troop itself against the enemy, and the damage it adds: units x the troop\'s own strength x that bonus. Your own bonuses are not part of it."':''}>${t0?vsText(t0,P):''}${bn>0?`<small>+${num(bn)}</small>`:''}</span><span class="bv"><b>+${num(d)}</b></span></div>`}
     else{const d=s.n*s.hp;      // the stack is killed: the damage the enemy had to deal
       h+=`<div class="bl be"><span class="bic">${img}${XS}</span>${nm}<span class="bv"><b>\u2212${num(d)}</b></span></div>`}
   });
