@@ -127,8 +127,8 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div style="margin-top:14px;text-align:right"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <script>
-// Version of this page (v300). Raise it with every release and write the same number into version.json; the check below compares the two.
-const APP_VERSION=300;
+// Version of this page (v301). Raise it with every release and write the same number into version.json; the check below compares the two.
+const APP_VERSION=301;
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
   const me='v'+APP_VERSION;
@@ -1088,7 +1088,7 @@ function battleHtml(P,list,order,sc){
     const s=L[i],img=IC[s.name]?`<img class="ic2" src="${IC[s.name]}" alt="">`:'<span class="ic2"></span>',nm=`<span class="bm"><b>#${i+1}</b> ${esc(s.name)} <small>${s.n.toLocaleString()} units</small></span>`;
     if(t=='o'){                                              // one strike: the damage of the whole stack WITHOUT the Double hit, and the part of it that comes from the squad bonus (always counted; no mounted enemy in the 3-stack and Killshot modes, see vsRatio)
       const base=(P.pvp&&s.r&&s.r[0]=='S')?2:1,d=s.n*s.str*(s.f||1),bn=Math.max(0,s.n*s.str*((s.f||1)-base));given+=d;hits++;
-      h+=`<div class="bl bo"><span class="bic">${img}</span>${nm}<span class="bv"><b>+${num(d)}</b>${bn>0?`<small title="The part of this damage that comes from the squad bonus">squad bonus +${num(bn)} (${(100*bn/d).toFixed(1)} %)</small>`:''}</span></div>`}
+      h+=`<div class="bl bo"><span class="bic">${img}</span>${nm}<span class="bv"><b>+${num(d)}</b>${bn>0?`<small title="Only the squad bonus listed on the troop itself (against the enemy), and the damage it adds: units x the troop's own strength x that bonus. Your own bonuses are not part of it.">squad bonus ${TRN[s.name]?Math.round(vsRatio(TRN[s.name],P)*100)+' % \u00b7 ':''}+${num(bn)}</small>`:''}</span></div>`}
     else{const d=s.n*s.hp;taken+=d;      // the stack is killed: the damage the enemy had to deal
       h+=`<div class="bl be"><span class="bic">${img}${XS}</span>${nm}<span class="bv"><b>\u2212${num(d)}</b></span></div>`}
   });
