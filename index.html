@@ -118,8 +118,8 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div style="margin-top:14px;text-align:right"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <script>
-// Version of this page (v292). Raise it with every release and write the same number into version.json; the check below compares the two.
-const APP_VERSION=292;
+// Version of this page (v293). Raise it with every release and write the same number into version.json; the check below compares the two.
+const APP_VERSION=293;
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
   const me='v'+APP_VERSION;
@@ -1379,7 +1379,7 @@ const HELP={
   food:{t:["<b>Food prod.</b> is the food you have for the hits. The Preparing view turns it into the number of hits it pays for.","<b>Revive</b> sets which stacks you revive after a hit. 90 % of a revived stack comes back, so only the rest has to be prepared again."],img:[]},
   bonx:{t:["Your bonuses against the enemy you hit: <b>Strength</b> against epic monsters (used in the epic modes), <b>Health</b> and <b>Strength</b> against other players (used in the player modes)."],img:[]},
   bon:{t:["The <b>Health</b> and <b>Strength</b> bonus of each troop category: Guardsmen, Specialists, Monsters and Siege Engines."],img:[]},
-  mb:{t:["Research bonuses of the monsters: <b>Health</b>, <b>Strength</b> and <b>Double hit</b> for each monster type.","The buttons <b>I</b>, <b>II</b> and <b>III</b> fill in all the types at once with a research level (19 %, 50 %, and 100 % with Double hit 5 %)."],img:[]},
+  mb:{t:["Monster boost research in the Academy has 3 parts. Click I, II or III based on the latest research part you have already finished.","For a partially finished part, e.g. no research is done for health at part III, still click III and adjust the health manually to 50."],img:[]},
   sb:{t:["Extra bonuses per combat type (Melee, Mounted, Ranged, Flying), added on top of the category bonus."],img:[]},
   tiers:{t:["Tick the tiers of every troop type you want the calculation to use. Tiers you don't have, or don't want to send, stay unticked."],img:[]},
   mode:{t:["Pick how you hit. The bubble under the buttons explains the mode that is on.","The dying order below lists the stacks in the order they die, troop by troop."],img:[]},
