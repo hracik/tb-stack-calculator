@@ -412,6 +412,7 @@ function placeOutliers(P,rsv,rest,slots){
 // An order only wins over an earlier one when it is clearly better (0.05 %).
 const GTOL=1e-9;       // the same ratio = one group: equal up to floating-point noise (v286: there is no 1.5 % band any more - a different ratio is a different place in the order)
 let WEAKFORCE=true;     // true: the weak-on-Kn+1 order is the ONLY candidate where it exists (no damage comparison with the others); false: the damage decides between it and the others
+let MONLAST=true;       // v289: the full monster tiers stand BEHIND the whole army (the army is ordered alone, weakest on the places Kn+1; the monsters follow by SH ratio, then the partial tier). false: army and monsters are one list by SH ratio
 let WEAKSLOTS=true;     // the weakest groups (lowest ratio first) stand on the places Kn+1, one troop per place; the rest of the army follows on the other places
 function ratioGroups(P,arr,split){                                                    // split: army and monsters never share a group
   const q6=x=>Math.round(x*1e6),ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(...t.vs);
@@ -446,7 +447,9 @@ function fourSearch(P,live,mkOut,CC,quick){     // CC = the number of full monst
   // DOMINANCE, tier by tier from the top: the c strongest monster tiers (c is given by byTiers, the one with the most damage) are used FULLY (on the army's health level, as far as the Dominance reaches), the next tier is the PARTIAL one
   // (it takes what is left, at the end of the order), the tiers below it get nothing. So a tier never depends on the tiers below it: leaving the lowest tier out does not change the others.
   const top=k=>new Set(mt.slice(0,k)),front=k=>rest.filter(t=>t.pool!='M'||top(k).has(t.tier)),pm=k=>mons.filter(t=>t.tier==mt[k]),low=k=>mons.filter(t=>t.tier<mt[k]);
-  const restF=front(CC),F=restF.length;
+  const restF=front(CC),Ft=restF.length;                                              // Ft: all the places in front of the partial tier
+  const mid=MONLAST?flat(ratioGroups(P,restF.filter(t=>t.pool=='M'),true)):[];       // MONLAST: the full monster tiers, by SH ratio and squad bonus, behind the army
+  const ordF=MONLAST?restF.filter(t=>t.pool!='M'):restF,F=ordF.length;                // ordF = the troops the search orders (the army alone with MONLAST); F = their places
   let tail=[];
   if(CC<nT){                                                                         // the partial tier (the monsters of the same ratio by squad bonus; a type with a very different ratio on a place Kn+1 inside it) and behind it the tiers that get nothing
     const gt=ratioGroups(P,pm(CC),true),lowU=flat(ratioGroups(P,low(CC),true)),cands=[{t:flat(gt),b:0}];
@@ -456,12 +459,12 @@ function fourSearch(P,live,mkOut,CC,quick){     // CC = the number of full monst
       gt.forEach(sm=>gt.forEach(h=>{
         if(h===sm||!(sm.lo<h.lo))return;                                             // an outlier has a LOWER ratio than the group it stands in
         const ord=gt.filter(g=>g!==sm);let st=0;for(const g of ord){if(g===h)break;st+=g.u.length}
-        const hs=slots.filter(x=>x>=F+st&&x<F+st+h.u.length+sm.u.length).map(x=>x-F-st);
+        const hs=slots.filter(x=>x>=Ft+st&&x<Ft+st+h.u.length+sm.u.length).map(x=>x-Ft-st);
         if(hs.length<sm.u.length)return;                                             // an outlier group stands ONLY on the places Kn+1: all of it has to fit there
         cands.push({t:flat(ord.map(g=>g===h?{u:placeOutliers(P,sm.u,h.u,hs)}:g)),b:0.01});
       }));
     }
-    const ref=flat(ratioGroups(P,restF,true));let tb=null;
+    const ref=[...flat(ratioGroups(P,ordF,true)),...mid];let tb=null;
     cands.forEach(cd=>{const e=ev([...ref,...cd.t,...lowU],CC);e.k=e.d*(1+cd.b);if(better(e,tb)){tb=e;tail=[...cd.t,...lowU]}});
     }
   }
@@ -471,13 +474,13 @@ function fourSearch(P,live,mkOut,CC,quick){     // CC = the number of full monst
     ws.weak.forEach((t,i)=>{out[ws.sl[i]]=t});let k=0;for(let i=0;i<out.length;i++)if(!out[i])out[i]=body[k++];
     return out;
   };
-  if(quick){const g0=ratioGroups(P,restF,true),wo=weakOrder(g0);if(wo&&WEAKFORCE)return ev([...wo,...tail],CC);const f0=ev([...flat(g0),...tail],CC);if(!wo)return f0;const w0=ev([...wo,...tail],CC);return better(w0,f0)?w0:f0}      // the quick order ranks the tier counts, so it is the same kind of order the whole search will use: the weak-on-Kn+1 one (WEAKFORCE), otherwise the better of it and the plain ascending one
+  if(quick){const g0=ratioGroups(P,ordF,true),wo=weakOrder(g0);if(wo&&WEAKFORCE)return ev([...wo,...mid,...tail],CC);const f0=ev([...flat(g0),...mid,...tail],CC);if(!wo)return f0;const w0=ev([...wo,...mid,...tail],CC);return better(w0,f0)?w0:f0}      // the quick order ranks the tier counts, so it is the same kind of order the whole search will use: the weak-on-Kn+1 one (WEAKFORCE), otherwise the better of it and the plain ascending one
   // THE PRINCIPLES (nothing else decides the order): (1) the WEAKEST die first - the groups stand in the order of the rising SH ratio, the engineers (the lowest ratio) in front,
   // inside a group the lowest squad bonus first; (2) the places Kn+1 are the only exception: a small group with a LOWER ratio than the group around it may stand on them (no step in health);
   // (3) the gaps in health between the groups are limited by (2): which small groups go on the places Kn+1, and in which group, is what the damage decides.
   let best=null;
   const tryU=(units,bias)=>{
-    const all=[...units,...tail];
+    const all=[...units,...mid,...tail];
     const e=ev(all,CC);e.k=e.d*(1+(bias||0));if(better(e,best))best=e;return e};
   // BLOCKS: a block is a group (the host) with the small groups with a LOWER ratio that stand on its places Kn+1 (the outliers). A lower ratio on a place Kn+1 needs no step down in health; in front of the host it would force the host (and all behind it) down by the ratio step.
   const layout=blocks=>{
@@ -507,7 +510,7 @@ function fourSearch(P,live,mkOut,CC,quick){     // CC = the number of full monst
     };
     rec(m-1,0);
   };
-  const gP=ratioGroups(P,restF,true),gM=ratioGroups(P,restF,false);
+  const gP=ratioGroups(P,ordF,true),gM=ratioGroups(P,ordF,false);
   search(gP);                                                                        // army groups and monster groups apart
   if(gM.some(g=>g.u.some(t=>t.pool=='M')&&g.u.some(t=>t.pool!='M')))search(gM);      // army and monsters of the same ratio in one group, by squad bonus (only when such a group exists)
   return best;
