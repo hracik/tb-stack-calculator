@@ -129,7 +129,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div style="margin-top:14px;text-align:right"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <script>
 // Version of this page. APP_VERSION is the build number (counts up with every release, never resets - the update check compares it with version.json); APP_LABEL is the version people see: MAJOR.MINOR. The minor counts the releases since the last push to the live site, a push starts the next major (1.12 -> 2.0). Every release: raise both and write the same two values into version.json.
-const APP_VERSION=304,APP_LABEL='1.13';
+const APP_VERSION=305,APP_LABEL='1.14';
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
   const me='v'+APP_LABEL;
@@ -1419,7 +1419,7 @@ const HELP={
   mb:{t:["Monster boost research in the Academy has 3 parts. Click I, II or III based on the latest research part you have already finished. For a partially finished part, e.g. no research is done for health at part III, still click III and adjust the health manually to 50."],img:[]},
   sb:{t:["Use these only if a specific category or type has a bonus on top of the class bonus above \u2014 e.g. unbalanced research, talents, or captain effects. Leave all on 0% if there are no imbalances."],img:[]},
   tiers:{t:["Tick the tiers of every troop type you want the calculation to use. Tiers you don't have, or don't want to send, stay unticked.","Click <b>Tier check</b> in the Result section to see potential suggestions for improvement."],img:[]},
-  mode:{t:["Check the dying order and compare it with your in-game report, there should not be any difference except some rounding errors. If there is significant difference, either in hit/die order or the numbers, your inputs / bonuses are probably not correct, double check or ask for help.","Calculator does not display double damage hits and double hits, so these differences are normal to see, they are random, so can't be shown deterministically."],img:[]},
+  mode:{t:["Check the dying order and compare it with your in-game report, there should not be any difference except some rounding errors. If there is significant difference, either in hit/die order or the numbers, your inputs / bonuses are probably not correct, double check or ask for help.","Calculator does not display double damage hits and double hits, so these differences are normal to see, they are random, so can't be shown deterministically.","The battle report shows only one scenario, the one where you attack first. It is a 50/50 chance who attacks first, but the only change in the other scenario is the swap of lines 1-2 in round 1."],img:[]},
   res:{t:["Click a troop card to turn it on or off. <b>#</b> = position in the dying order (#1 dies first).","Mercenaries (hired with Authority) are added after the last Leadership / Dominance stack. Authority is only a cap: whatever is left over stays unused."],img:[]}
 };
 (function(){
