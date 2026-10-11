@@ -36,6 +36,13 @@ select{width:auto}.mu{color:var(--mu);font-size:13px}
 .tt{table-layout:fixed;min-width:620px}.tt td:first-child{width:130px}.tt td,.tt th{text-align:center}.tt td:first-child{text-align:left}
 .tt label{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
 .ol{max-width:none}
+.br{display:flex;flex-direction:column;gap:3px;max-height:min(65vh,600px);overflow:auto;padding-right:4px}.brh{margin:8px 0 1px;color:var(--ac);font:600 13px/1 'Cinzel',Georgia,serif;letter-spacing:.12em;text-transform:uppercase}.brh:first-child{margin-top:0}
+.bl{display:flex;align-items:center;flex-wrap:wrap;gap:2px 10px;padding:3px 10px;border-radius:6px;font-size:13.5px;line-height:1.3}
+.bo{background:#dcc791;color:#2a2012;border:1px solid #8a6a2c}.be{background:rgba(163,64,44,.2);color:var(--tx);border:1px solid #7a3a2a}
+.bt{flex:none;min-width:72px;font:700 11px/1 'Cinzel',Georgia,serif;letter-spacing:.1em;text-transform:uppercase}.bo .bt{color:#5b4721}.be .bt{color:#e08a72}
+.bm{flex:1 1 150px;min-width:0}.bm small{opacity:.75}.bd{white-space:nowrap;font-weight:700}.bs{white-space:nowrap;opacity:.7;min-width:78px;text-align:right}
+.bf{margin:8px 0 0;font-size:14px}
+@media(max-width:480px){.bl{flex-wrap:nowrap;gap:6px;padding:3px 8px;font-size:13px}.bt{min-width:0;font-size:10px;width:50px}.bm{flex:1 1 0}.bs{min-width:0}}
 .oi{display:flex;align-items:center;gap:10px;background:#dcc791;color:#2a2012;border:1px solid #8a6a2c;border-radius:6px;padding:5px 10px;margin:5px 0;user-select:none}
 .oi.dg{opacity:.65;outline:2px solid var(--ac)}
 .hd{cursor:grab;touch-action:none;font-weight:700;padding:2px 6px}.oi.dg .hd{cursor:grabbing}
@@ -111,6 +118,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <div class="mrow" id="mrPM" hidden><span class="mu"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92 56" class="mi" aria-hidden="true" focusable="false"><g><g transform="rotate(5 15 28)"><circle cx="15" cy="28" r="13" fill="#FFCB3D" stroke="#B9831A" stroke-width="2"/><path d="M5.8 19.6 l7.4 3.2" stroke="#3a2a10" stroke-width="2.1" stroke-linecap="round"/><path d="M17.4 22.9 l7.6 -3.2" stroke="#3a2a10" stroke-width="2.1" stroke-linecap="round"/><circle cx="10.2" cy="26.2" r="3.5" fill="#fff" stroke="#3a2a10" stroke-width="1.2"/><circle cx="11.5" cy="26.6" r="1.5" fill="#222"/><circle cx="20.2" cy="26.2" r="3.5" fill="#fff" stroke="#3a2a10" stroke-width="1.2"/><circle cx="21.5" cy="26.6" r="1.5" fill="#222"/><path d="M8.5 33.6 h13 q-.9 4.4 -6.5 4.4 q-5.6 0 -6.5 -4.4 z" fill="#7a1e1e" stroke="#3a2a10" stroke-width="1.5" stroke-linejoin="round"/><path d="M9.9 34.8 h10.2 q-.6 1.9 -1.6 1.9 h-7 q-1 0 -1.6 -1.9 z" fill="#fff"/></g><path d="M27 37 h6.4 l-1.6 9 h-5.4 z" fill="#3a4047" stroke="#22262b" stroke-width="1.3" stroke-linejoin="round"/><rect x="24" y="29.5" width="18" height="7.5" rx="1.7" fill="#4b525a" stroke="#22262b" stroke-width="1.5"/><rect x="41" y="31.2" width="4.2" height="4" rx=".9" fill="#5d656e" stroke="#22262b" stroke-width="1.1"/><path d="M27 31.4 h11" stroke="#7b848e" stroke-width="1.2" stroke-linecap="round"/></g><g transform="translate(92 0) scale(-1 1)"><g transform="rotate(5 15 28)"><circle cx="15" cy="28" r="13" fill="#FFCB3D" stroke="#B9831A" stroke-width="2"/><path d="M5.8 19.6 l7.4 3.2" stroke="#3a2a10" stroke-width="2.1" stroke-linecap="round"/><path d="M17.4 22.9 l7.6 -3.2" stroke="#3a2a10" stroke-width="2.1" stroke-linecap="round"/><circle cx="10.2" cy="26.2" r="3.5" fill="#fff" stroke="#3a2a10" stroke-width="1.2"/><circle cx="11.5" cy="26.6" r="1.5" fill="#222"/><circle cx="20.2" cy="26.2" r="3.5" fill="#fff" stroke="#3a2a10" stroke-width="1.2"/><circle cx="21.5" cy="26.6" r="1.5" fill="#222"/><path d="M8.5 33.6 h13 q-.9 4.4 -6.5 4.4 q-5.6 0 -6.5 -4.4 z" fill="#7a1e1e" stroke="#3a2a10" stroke-width="1.5" stroke-linejoin="round"/><path d="M9.9 34.8 h10.2 q-.6 1.9 -1.6 1.9 h-7 q-1 0 -1.6 -1.9 z" fill="#fff"/></g><path d="M27 37 h6.4 l-1.6 9 h-5.4 z" fill="#3a4047" stroke="#22262b" stroke-width="1.3" stroke-linejoin="round"/><rect x="24" y="29.5" width="18" height="7.5" rx="1.7" fill="#4b525a" stroke="#22262b" stroke-width="1.5"/><rect x="41" y="31.2" width="4.2" height="4" rx=".9" fill="#5d656e" stroke="#22262b" stroke-width="1.1"/><path d="M27 31.4 h11" stroke="#7b848e" stroke-width="1.2" stroke-linecap="round"/></g><path d="M46 21.5 L46 26 M46 40.5 L46 45 M40.5 23.5 L42.8 27.2 M51.5 23.5 L49.2 27.2 M40.5 43 L42.8 39.3 M51.5 43 L49.2 39.3" stroke="#ff7a1a" stroke-width="1.9" stroke-linecap="round" fill="none"/><circle cx="46" cy="20.3" r="1.4" fill="#ffd23a"/><circle cx="46" cy="46.2" r="1.4" fill="#ffd23a"/><g><path d="M51.8 34.6 L48.8 34.7 L49.0 37.7 L47.0 35.4 L44.8 37.4 L45.4 34.4 L42.5 33.9 L45.1 32.5 L43.7 29.9 L46.4 31.2 L47.6 28.4 L48.3 31.3 L51.2 30.5 L49.4 32.9 Z" fill="#ffe45a" stroke="#ff7a1a" stroke-width="1" stroke-linejoin="round"/></g><g transform="translate(92 0) scale(-1 1)"><path d="M51.8 34.6 L48.8 34.7 L49.0 37.7 L47.0 35.4 L44.8 37.4 L45.4 34.4 L42.5 33.9 L45.1 32.5 L43.7 29.9 L46.4 31.2 L47.6 28.4 L48.3 31.3 L51.2 30.5 L49.4 32.9 Z" fill="#ffe45a" stroke="#ff7a1a" stroke-width="1" stroke-linejoin="round"/></g></svg><b>PvMany</b></span><button class="cm" data-m="ovo">One v. One</button><button class="cm" data-m="pvpmax">Max damage</button><button class="cm" data-m="ren">Renegades</button></div>
 <div class="mdi" id="mdi" role="note" hidden></div>
 <details id="osd" style="margin-top:12px"><summary>Show the dying order, troop by troop</summary><div class="ol" id="os" style="margin-top:8px"></div></details>
+<details id="brd" style="margin-top:8px"><summary>Show battle report</summary><div id="br" style="margin-top:8px"></div></details>
 </div>
 
 <div class="card" data-help="res"><h2><span id="rtitle">Result</span></h2><div style="margin:0 0 12px"><div class="mu" style="margin:0 0 6px">View:</div><div class="pbrow"><button type="button" class="vb" data-v="grouped" title="Cards in groups, 5 per row">Grouped</button><button type="button" class="vb" data-v="mobile" title="One unit per line: picture, name and number of units">Mobile</button><button type="button" class="vb" data-v="computer" title="Two units per line, in the same order as Mobile">Computer</button></div></div>
@@ -118,8 +126,8 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div style="margin-top:14px;text-align:right"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <script>
-// Version of this page (v297). Raise it with every release and write the same number into version.json; the check below compares the two.
-const APP_VERSION=297;
+// Version of this page (v298). Raise it with every release and write the same number into version.json; the check below compares the two.
+const APP_VERSION=298;
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
   const me='v'+APP_VERSION;
@@ -1030,7 +1038,7 @@ function solve(P,order){const st=buildStacks(P,order,XS),{A,Mo}=allocate(P,st.fi
 // The damage is sum(strikes x damage per strike).
 // Renegades: the block after the first 16 has a random order - every stack in it gets the average strikes of the block's places.
 let SEQ=true;
-function strikes(L,K){                                         // strikes of every stack; L is in the dying order
+function strikes(L,K,log){                                     // strikes of every stack; L is in the dying order. log (optional): the events of the battle in their order, [round, 'o' (our hit) | 'e' (the enemy kills the stack), index in L]
   const N=L.length;
   if(!SEQ)return L.map((_,i)=>Math.ceil((i+1)/K));
   const T=L.map(s=>s.n*s.str),by=L.map((_,i)=>i).sort((a,b)=>T[b]-T[a]||a-b),cnt=new Array(N).fill(0);
@@ -1038,10 +1046,10 @@ function strikes(L,K){                                         // strikes of eve
   for(let rd=0;head<N;rd++){
     let pos=0;const nx=()=>{while(pos<N&&by[pos]<head)pos++;return pos<N?by[pos++]:-1};   // the strongest living stack that has not struck in this round
     for(let j=0;j<K&&head<N;j++){                              // the K trades of the round
-      if(rd===0){const s=nx();if(s>=0)cnt[s]++;head++}         // round 1: we strike first, then the enemy kills
-      else{head++;const s=nx();if(s>=0)cnt[s]++}              // later rounds: the enemy kills first (the victim does not strike), then we strike
+      if(rd===0){const s=nx();if(s>=0){cnt[s]++;if(log)log.push([rd,'o',s])}if(log)log.push([rd,'e',head]);head++}         // round 1: we strike first, then the enemy kills
+      else{if(log)log.push([rd,'e',head]);head++;const s=nx();if(s>=0){cnt[s]++;if(log)log.push([rd,'o',s])}}              // later rounds: the enemy kills first (the victim does not strike), then we strike
     }
-    for(let s=nx();s>=0;s=nx())cnt[s]++;                       // the extra living stacks strike after the trades
+    for(let s=nx();s>=0;s=nx()){cnt[s]++;if(log)log.push([rd,'o',s])}                       // the extra living stacks strike after the trades
   }
   return cnt;
 }
@@ -1064,6 +1072,26 @@ function score(P,list,order){
   }
   return{dmg:dm.reduce((q,x,i)=>q+x*hit[i],0),hits,stacks:L.length};
 }
+// ---- Battle report (v298): the same battle as the damage estimate (strikes(): K trades per round), told event by event until no unit is left ----
+let BRD=null;
+function battleHtml(P,list,order,sc){
+  const K=P.enemy,ix={};order.forEach((n,i)=>ix[n]=i);
+  const L=list.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);
+  if(!L.length)return '<p class="mu">No units.</p>';
+  const log=[];strikes(L,K,log);
+  let tot=0,rd=-1,h='<div class="br">',hits=0;
+  log.forEach(([r,t,i])=>{
+    if(r!==rd){rd=r;h+=`<div class="brh">Round ${r+1}</div>`}
+    const s=L[i],nm=`<span class="bm"><b>#${i+1}</b> ${esc(s.name)} <small>${s.n.toLocaleString()} units</small></span>`;
+    if(t=='o'){const d=s.n*dpu(s);tot+=d;hits++;h+=`<div class="bl bo"><span class="bt">Our hit</span>${nm}<span class="bd">+${fmt(d)}</span><span class="bs">${fmt(tot)}</span></div>`}
+    else h+=`<div class="bl be"><span class="bt">Enemy hit</span>${nm}<span class="bd">killed</span><span class="bs"></span></div>`;
+  });
+  h+=`</div><p class="bf">No unit is left after ${rd+1} rounds: ${hits} hits of ours, ${L.length} stacks lost. <b>Total damage ${fmt(tot)}</b>.</p>`;
+  h+=`<p class="mu bf">The enemy has ${K==1?'one stack':K+' stacks'}, so ${K==1?'it kills':'it kills up to '+K} of our stacks per round, always the next one in the dying order. We strike first in round 1; from round 2 the enemy kills first and the stack that was just killed does not strike. Every living stack that has not struck yet strikes before the next round, the strongest first.`;
+  if(P.cp||P.ren)h+=' In this mode the game picks the order inside a group of equals, so the estimate averages the places of such a group; this report shows one possible order, its total can differ a little from the estimate.';
+  return h+'</p>';
+}
+function drawBR(){const d=$('brd');if(d&&d.open&&BRD)$('br').innerHTML=battleHtml(BRD.P,BRD.list,BRD.order,BRD.sc)}
 // ---- the buttons ----
 function runBest(n){                                     // Max vs. 3 stack / full stack (whole-army ranking)
   $('mode').value='max';$('enemy').value=n;
@@ -1293,6 +1321,7 @@ function calcRun(){
   document.querySelectorAll('.cm').forEach(b=>b.classList.toggle('on',(P.kill&&b.dataset.m=='kill')||(P.ren&&b.dataset.m=='ren')||(P.one&&!P.cpd&&b.dataset.m=='cp')||(P.one&&P.cpd&&b.dataset.m=='cpd')||(P.pm&&b.dataset.m=='pvpmax')));
   {const m=MODEINFO[P.kill?'kill':P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)],el=$('mdi');if(el){el.hidden=!m&&!pvOff;if(pvOff)el.innerHTML='<b>Attack players</b> - The PvP modes are switched off for now.';else if(m)el.innerHTML='<b>'+m[0]+'</b> - '+m[1]}}      // the explanation under the mode buttons (the tier tips under Tiers to use are fixed text, both are always shown)
   const sc=score(P,[...A,...Mo,...U.list],[...st.so,...U.ord]);
+  BRD={P,list:[...A,...Mo,...U.list],order:[...st.so,...U.ord],sc};drawBR();      // the battle report (drawn only while it is open)
   const food=[...A,...Mo,...U.list].reduce((q,s)=>q+(s.n||0)*foodOf(s.name),0);      // total food consumption of all the units, 25 % less than the plain values (mercenaries use none)
   const noFood=!(v('foodP')>0);      // no Food production: there are no hits to train for, so the Preparing button is off (the choice itself stays saved and comes back when the production is filled in)
   REVM=REVCASES.some(c=>c[0]==$('revm').value)?$('revm').value:'top';SHOWTR=$('shw').value=='train'&&!noFood;
@@ -1372,6 +1401,7 @@ function openTierCheck(){HINTGEN++;$('tcm').hidden=false;$('tcb').innerHTML='<p>
 function closeTierCheck(){HINTGEN++;$('tcm').hidden=true}
 $('tcx').addEventListener('click',closeTierCheck);$('tcm').addEventListener('click',e=>{if(e.target===$('tcm'))closeTierCheck()});
 document.addEventListener('keydown',e=>{if(e.key=='Escape'&&!$('tcm').hidden)closeTierCheck()});
+$('brd').addEventListener('toggle',drawBR);
 // ---- Help sections (v292): every card with data-help gets a Help button in its header (hidden panel, same design on every card).
 // The text (HTML allowed; t = the list of tips, each one a paragraph of its own that starts with the star marker) and the screenshots live HERE and nowhere else. img: a list of {src, alt, cap}; src is a data: URI (the page is a single file) or a file path.
 const HELP={
@@ -1380,9 +1410,9 @@ const HELP={
   bonx:{t:["Your bonuses against the enemy you hit: <b>Strength</b> against epic monsters (used in the epic modes), <b>Health</b> and <b>Strength</b> against other players (used in the player modes)."],img:[]},
   bon:{t:["The <b>Health</b> and <b>Strength</b> bonus of each troop category: Guardsmen, Specialists, Monsters and Siege Engines."],img:[]},
   mb:{t:["Monster boost research in the Academy has 3 parts. Click I, II or III based on the latest research part you have already finished. For a partially finished part, e.g. no research is done for health at part III, still click III and adjust the health manually to 50."],img:[]},
-  sb:{t:["Extra bonuses per combat type (Melee, Mounted, Ranged, Flying), added on top of the category bonus."],img:[]},
+  sb:{t:["Use these only if a specific category or type has a bonus on top of the class bonus above \u2014 e.g. unbalanced research, talents, or captain effects. Leave all on 0% if there are no imbalances."],img:[]},
   tiers:{t:["Tick the tiers of every troop type you want the calculation to use. Tiers you don't have, or don't want to send, stay unticked.","Click <b>Tier check</b> in the Result section to see potential suggestions for improvement."],img:[]},
-  mode:{t:["Pick how you hit. The bubble under the buttons explains the mode that is on.","The dying order below lists the stacks in the order they die, troop by troop.","Check the dying order and compare it with your in-game report, there should not be any difference. If there is, your inputs / bonuses are probably not correct, double check or ask for help."],img:[]},
+  mode:{t:["Check the dying order and compare it with your in-game report, there should not be any difference. If there is, your inputs / bonuses are probably not correct, double check or ask for help."],img:[]},
   res:{t:["Click a troop card to turn it on or off. <b>#</b> = position in the dying order (#1 dies first).","Mercenaries (hired with Authority) are added after the last Leadership / Dominance stack. Authority is only a cap: whatever is left over stays unused."],img:[]}
 };
 (function(){
