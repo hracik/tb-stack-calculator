@@ -118,8 +118,8 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div style="margin-top:14px;text-align:right"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <script>
-// Version of this page (v296). Raise it with every release and write the same number into version.json; the check below compares the two.
-const APP_VERSION=296;
+// Version of this page (v297). Raise it with every release and write the same number into version.json; the check below compares the two.
+const APP_VERSION=297;
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
   const me='v'+APP_VERSION;
@@ -1336,7 +1336,7 @@ function evalSel(sel){      // the estimated damage of the tier selection sel: t
   return score(P,[...A,...Mo,...U.list],[...st.so,...U.ord]).dmg;
 }
 async function tierHint(gen){
-  const body=$('tcb'),note='<p class="mu">Only the estimated damage is compared, not the food or revive cost.</p>';
+  const body=$('tcb');
   const P=getP(),sel0=[];
   ['E','S','G','M'].forEach(c=>{for(let i=1;i<=9;i++){const el=$('s'+c+i);if(el&&el.checked)sel0.push(c+i)}});
   const types=[['G','capA'],['S','capA'],['E','capA'],['M','capM']].filter(([c,k])=>P[k]>0&&sel0.some(x=>x[0]==c));
@@ -1366,7 +1366,7 @@ async function tierHint(gen){
   }
   if(gen!==HINTGEN)return;
   const add=cur.filter(x=>!sel0.includes(x)),rem=sel0.filter(x=>!cur.includes(x)),ls=a=>a.sort((x,y)=>key(x)-key(y)).join(', ');
-  body.innerHTML=add.length||rem.length?`<p><b>Suggestion:</b> ${[add.length?'tick <b>'+ls(add)+'</b>':'',rem.length?'untick <b>'+ls(rem)+'</b>':''].filter(Boolean).join(' and ')}.</p><p>Estimated damage: ${fmt(base)} &rarr; <b>${fmt(best)}</b> (+${((best/base-1)*100).toFixed(1)} %).</p>${note}`:`<p>No other choice of tiers gives more damage.</p>${note}`;
+  body.innerHTML=add.length||rem.length?`<p><b>Suggestion:</b> ${[add.length?'tick <b>'+ls(add)+'</b>':'',rem.length?'untick <b>'+ls(rem)+'</b>':''].filter(Boolean).join(' and ')}.</p><p>Estimated damage: ${fmt(base)} &rarr; <b>${fmt(best)}</b> (+${((best/base-1)*100).toFixed(1)} %).</p>`:`<p>No other choice of tiers gives more damage.</p>`;
 }
 function openTierCheck(){HINTGEN++;$('tcm').hidden=false;$('tcb').innerHTML='<p>Checking the tiers...</p>';$('tcx').focus();tierHint(HINTGEN)}
 function closeTierCheck(){HINTGEN++;$('tcm').hidden=true}
@@ -1382,7 +1382,7 @@ const HELP={
   mb:{t:["Monster boost research in the Academy has 3 parts. Click I, II or III based on the latest research part you have already finished. For a partially finished part, e.g. no research is done for health at part III, still click III and adjust the health manually to 50."],img:[]},
   sb:{t:["Extra bonuses per combat type (Melee, Mounted, Ranged, Flying), added on top of the category bonus."],img:[]},
   tiers:{t:["Tick the tiers of every troop type you want the calculation to use. Tiers you don't have, or don't want to send, stay unticked.","Click <b>Tier check</b> in the Result section to see potential suggestions for improvement."],img:[]},
-  mode:{t:["Pick how you hit. The bubble under the buttons explains the mode that is on.","The dying order below lists the stacks in the order they die, troop by troop."],img:[]},
+  mode:{t:["Pick how you hit. The bubble under the buttons explains the mode that is on.","The dying order below lists the stacks in the order they die, troop by troop.","Check the dying order and compare it with your in-game report, there should not be any difference. If there is, your inputs / bonuses are probably not correct, double check or ask for help."],img:[]},
   res:{t:["Click a troop card to turn it on or off. <b>#</b> = position in the dying order (#1 dies first).","Mercenaries (hired with Authority) are added after the last Leadership / Dominance stack. Authority is only a cap: whatever is left over stays unused."],img:[]}
 };
 (function(){

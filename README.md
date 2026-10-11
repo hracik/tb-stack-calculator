@@ -100,7 +100,7 @@ Rules, per troop type (Guardsmen, Specialists, Engineers, Monsters; a type is sk
 - **Removing:** from the lowest ticked tier upwards (never the top one), while each removal gives more damage.
 - The types are repeated (at most 3 rounds) while something changes, so the final suggestion is a set of changes.
 
-Only the estimated damage is compared - food, revive and training cost are not part of it, so a tier it suggests to leave out can still be the cheaper choice and the other way round. Typical check: 8 to 20 calculations, 0.3 to 3 seconds on a computer. The code is the function `tierHint` (the threshold is `HGAIN`, the window is `#tcm`).
+Only the estimated damage is compared - food, revive and training cost are not part of it (the window no longer says so since v297). Typical check: 8 to 20 calculations, 0.3 to 3 seconds on a computer. The code is the function `tierHint` (the threshold is `HGAIN`, the window is `#tcm`).
 
 ## Tabs
 
