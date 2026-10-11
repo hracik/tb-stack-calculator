@@ -4,7 +4,7 @@ A single-file calculator for Total Battle. It works out how many troops of each 
 
 Open `index.html` in a browser or use the GitHub Pages site of this repository. Nothing is installed or uploaded; everything is calculated in the page.
 
-**Version (v291).** The page shows its version (`APP_VERSION` in `index.html`) next to the title. The live site also publishes `version.json`; when that names a newer version than the loaded page (an old copy kept by the browser), the page reloads itself - once per live version, so it can never loop - and it checks again when the tab comes back into view (at most every 5 minutes). A page newer than the live site (a test copy) never reloads. **Every release: raise `APP_VERSION` and write the same number into `version.json`.**
+**Version (v291).** The page shows its version (`APP_VERSION` in `index.html`) as a gold pill at the right end of the title row; the diamond in it is green when the page is the live version, blue for a test copy newer than live, pulsing amber while it updates, red when the browser keeps an old copy and grey when the check could not run (hover for details). The live site also publishes `version.json`; when that names a newer version than the loaded page (an old copy kept by the browser), the page reloads itself - once per live version, so it can never loop - and it checks again when the tab comes back into view (at most every 5 minutes). A page newer than the live site (a test copy) never reloads. **Every release: raise `APP_VERSION` and write the same number into `version.json`.**
 
 ## Attack modes
 
