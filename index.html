@@ -37,12 +37,14 @@ select{width:auto}.mu{color:var(--mu);font-size:13px}
 .tt label{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
 .ol{max-width:none}
 .br{display:flex;flex-direction:column;gap:3px;max-height:min(65vh,600px);overflow:auto;padding-right:4px}.brh{margin:8px 0 1px;color:var(--ac);font:600 13px/1 'Cinzel',Georgia,serif;letter-spacing:.12em;text-transform:uppercase}.brh:first-child{margin-top:0}
-.bl{display:flex;align-items:center;flex-wrap:wrap;gap:2px 10px;padding:3px 10px;border-radius:6px;font-size:13.5px;line-height:1.3}
+.bl{display:flex;align-items:center;gap:10px;padding:3px 10px;border-radius:6px;font-size:13.5px;line-height:1.3}
 .bo{background:#dcc791;color:#2a2012;border:1px solid #8a6a2c}.be{background:rgba(163,64,44,.2);color:var(--tx);border:1px solid #7a3a2a}
-.bt{flex:none;min-width:72px;font:700 11px/1 'Cinzel',Georgia,serif;letter-spacing:.1em;text-transform:uppercase}.bo .bt{color:#5b4721}.be .bt{color:#e08a72}
-.bm{flex:1 1 150px;min-width:0}.bm small{opacity:.75}.bd{white-space:nowrap;font-weight:700}.bs{white-space:nowrap;opacity:.7;min-width:78px;text-align:right}
-.bf{margin:8px 0 0;font-size:14px}
-@media(max-width:480px){.bl{flex-wrap:nowrap;gap:6px;padding:3px 8px;font-size:13px}.bt{min-width:0;font-size:10px;width:50px}.bm{flex:1 1 0}.bs{min-width:0}}
+.ba{flex:none;display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#2a2012;border:1px solid #8a6a2c;font-size:14px;line-height:1}
+.bic{flex:none;position:relative;display:inline-block;width:30px;height:30px}.bic .ic2{display:block}.be .bic .ic2{opacity:.4;filter:grayscale(.5)}.bic .bx{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#e53b25;font:900 27px/1 Arial,Helvetica,sans-serif;text-shadow:0 0 2px #000,0 0 5px rgba(0,0,0,.6)}
+.bm{flex:1 1 0;min-width:0}.bm small{opacity:.75}
+.bv{flex:none;display:flex;flex-direction:column;align-items:flex-end;white-space:nowrap;font-variant-numeric:tabular-nums}.bv b{font-size:14px}.bv small{opacity:.65;font-size:11.5px}.be .bv b{color:#ff9a84}
+.bf{margin:8px 0 0;font-size:14px}.bf .bsum{display:inline-block;margin-right:16px;white-space:nowrap}
+@media(max-width:480px){.bl{gap:6px;padding:3px 8px;font-size:13px}.ba{width:22px;height:22px;font-size:12px}.bv b{font-size:13px}}
 .oi{display:flex;align-items:center;gap:10px;background:#dcc791;color:#2a2012;border:1px solid #8a6a2c;border-radius:6px;padding:5px 10px;margin:5px 0;user-select:none}
 .oi.dg{opacity:.65;outline:2px solid var(--ac)}
 .hd{cursor:grab;touch-action:none;font-weight:700;padding:2px 6px}.oi.dg .hd{cursor:grabbing}
@@ -126,8 +128,8 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div style="margin-top:14px;text-align:right"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <script>
-// Version of this page (v298). Raise it with every release and write the same number into version.json; the check below compares the two.
-const APP_VERSION=298;
+// Version of this page (v299). Raise it with every release and write the same number into version.json; the check below compares the two.
+const APP_VERSION=299;
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
   const me='v'+APP_VERSION;
@@ -1079,16 +1081,19 @@ function battleHtml(P,list,order,sc){
   const L=list.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);
   if(!L.length)return '<p class="mu">No units.</p>';
   const log=[];strikes(L,K,log);
-  let tot=0,rd=-1,h='<div class="br">',hits=0;
+  const num=x=>Math.round(x).toLocaleString();
+  let given=0,taken=0,rd=-1,h='<div class="br">',hits=0;
   log.forEach(([r,t,i])=>{
     if(r!==rd){rd=r;h+=`<div class="brh">Round ${r+1}</div>`}
-    const s=L[i],nm=`<span class="bm"><b>#${i+1}</b> ${esc(s.name)} <small>${s.n.toLocaleString()} units</small></span>`;
-    if(t=='o'){const d=s.n*dpu(s);tot+=d;hits++;h+=`<div class="bl bo"><span class="bt">Our hit</span>${nm}<span class="bd">+${fmt(d)}</span><span class="bs">${fmt(tot)}</span></div>`}
-    else h+=`<div class="bl be"><span class="bt">Enemy hit</span>${nm}<span class="bd">killed</span><span class="bs"></span></div>`;
+    const s=L[i],img=IC[s.name]?`<img class="ic2" src="${IC[s.name]}" alt="">`:'<span class="ic2"></span>',nm=`<span class="bm"><b>#${i+1}</b> ${esc(s.name)} <small>${s.n.toLocaleString()} units</small></span>`;
+    if(t=='o'){const d=s.n*s.str*(s.f||1);given+=d;hits++;      // the damage of the strike WITHOUT the Double hit
+      h+=`<div class="bl bo"><span class="ba" title="Our hit">\u2694\uFE0F</span><span class="bic">${img}</span>${nm}<span class="bv"><b>+${num(d)}</b><small>${num(given)}</small></span></div>`}
+    else{const d=s.n*s.hp;taken+=d;      // the stack is killed: the damage the enemy had to deal
+      h+=`<div class="bl be"><span class="ba" title="Enemy hit">\uD83D\uDC80</span><span class="bic">${img}<i class="bx">X</i></span>${nm}<span class="bv"><b>\u2212${num(d)}</b><small>${num(taken)}</small></span></div>`}
   });
-  h+=`</div><p class="bf">No unit is left after ${rd+1} rounds: ${hits} hits of ours, ${L.length} stacks lost. <b>Total damage ${fmt(tot)}</b>.</p>`;
-  h+=`<p class="mu bf">The enemy has ${K==1?'one stack':K+' stacks'}, so ${K==1?'it kills':'it kills up to '+K} of our stacks per round, always the next one in the dying order. We strike first in round 1; from round 2 the enemy kills first and the stack that was just killed does not strike. Every living stack that has not struck yet strikes before the next round, the strongest first.`;
-  if(P.cp||P.ren)h+=' In this mode the game picks the order inside a group of equals, so the estimate averages the places of such a group; this report shows one possible order, its total can differ a little from the estimate.';
+  h+=`</div><p class="bf"><span class="bsum" title="Damage given">\u2694\uFE0F <b>${num(given)}</b></span><span class="bsum" title="Damage incurred">\uD83D\uDC80 <b>${num(taken)}</b></span></p>`;
+  h+=`<p class="mu bf">No unit is left after ${rd+1} rounds: ${hits} hits of ours, ${L.length} stacks lost. The enemy has ${K==1?'one stack':K+' stacks'}, so it kills ${K==1?'':'up to '+K+' of '}our stack${K==1?'':'s'} per round, always the next one in the dying order. We strike first in round 1; from round 2 the enemy kills first and the stack that was just killed does not strike. Every living stack that has not struck yet strikes before the next round, the strongest first.`;
+  if(P.cp||P.ren)h+=' In this mode the game picks the order inside a group of equals, so the estimate averages the places of such a group; this report shows one possible order.';
   return h+'</p>';
 }
 function drawBR(){const d=$('brd');if(d&&d.open&&BRD)$('br').innerHTML=battleHtml(BRD.P,BRD.list,BRD.order,BRD.sc)}
