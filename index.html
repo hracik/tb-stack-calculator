@@ -59,7 +59,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 .hq .hqm{display:inline-block;width:16px;height:16px;border:1px solid var(--ac);border-radius:50%;font:italic 700 11px/14px Georgia,serif;letter-spacing:0;text-transform:none;text-align:center}
 .hq:hover{border-color:var(--ac)}.hq[aria-expanded=true]{background:var(--ac);border-color:var(--ac);color:#000}.hq[aria-expanded=true] .hqm{border-color:#000}
 .hp{margin:0 0 12px;padding:10px 14px;border:1px solid var(--bd);border-left:3px solid var(--ac);border-radius:8px;background:rgba(217,164,65,.07);font-size:15px;line-height:1.5;color:var(--tx)}
-.hp p{margin:0 0 8px}.hp p:last-child{margin-bottom:0}.hp .hm{display:inline-block;width:12px;height:12px;margin:0 7px 0 0;vertical-align:-1px;background:linear-gradient(135deg,#f3cb6e,#b5832a);clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}.hp .ht+.ht{margin-left:.45em}      /* every tip starts with a small gilded four-point star; the tips of a panel run on in one paragraph */.hp figure{margin:10px 0 0}.hp img{display:block;max-width:100%;height:auto;border:1px solid var(--bd);border-radius:6px}.hp figcaption{margin:5px 0 0;font-size:13px;color:var(--mu)}
+.hp p{margin:0 0 8px}.hp p:last-child{margin-bottom:0}.hp .ht{position:relative;padding-left:20px}.hp .hm{position:absolute;left:1px;top:.4em;width:12px;height:12px;background:linear-gradient(135deg,#f3cb6e,#b5832a);clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}      /* every tip is a paragraph of its own and starts with a small gilded four-point star */.hp figure{margin:10px 0 0}.hp img{display:block;max-width:100%;height:auto;border:1px solid var(--bd);border-radius:6px}.hp figcaption{margin:5px 0 0;font-size:13px;color:var(--mu)}
 .eb{padding:6px 16px;margin:0 8px 8px 0;font:inherit}.eb.on{background:var(--ac);color:#000}
 #res td[data-troop]{cursor:pointer}.cm{padding:6px 16px;margin:0 8px 8px 0;font:inherit}.cm.on{background:var(--ac);color:#000}.cm:disabled{opacity:.4;cursor:not-allowed}.mrow{display:flex;align-items:center;flex-wrap:wrap}.mrow>.mu{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;width:126px;margin-right:8px;margin-bottom:8px;font-size:13px}.mrow>.mu b{font-weight:600;color:var(--ac);margin:0 0 0 8px;font-size:14px;letter-spacing:.3px}.mi{width:60px;height:auto;display:block;flex:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}.mrow button{width:128px;padding-left:4px;padding-right:4px;text-align:center;white-space:nowrap}@media(max-width:520px){.mrow+.mrow{border-top:1px solid var(--bd);margin-top:6px;padding-top:12px}.mrow>.mu{flex:0 0 100%;width:auto;margin:0 0 4px}.mrow{column-gap:8px}.mrow button{width:calc((100% - 8px)/2);margin-right:0}}      /* two buttons per line, the gap between them from column-gap (a row can hold 3 buttons) */.cm:disabled{opacity:.4;cursor:not-allowed}#osd summary{cursor:pointer;color:var(--ac);padding:4px 0}#os .oi{cursor:default}.lock{opacity:.4;pointer-events:none}.ic2{width:30px;height:30px;border-radius:4px;vertical-align:middle}.oi small{display:block;line-height:1.1}#res td{position:relative}.kp{position:absolute;top:3px;right:7px;font-size:11px;color:#5b4721}#res td.off,#res td.zero{opacity:.35}
 .nb{white-space:nowrap}.nw{display:block;white-space:normal}
@@ -118,8 +118,8 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div style="margin-top:14px;text-align:right"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <script>
-// Version of this page (v294). Raise it with every release and write the same number into version.json; the check below compares the two.
-const APP_VERSION=294;
+// Version of this page (v295). Raise it with every release and write the same number into version.json; the check below compares the two.
+const APP_VERSION=295;
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
   const me='v'+APP_VERSION;
@@ -1373,7 +1373,7 @@ function closeTierCheck(){HINTGEN++;$('tcm').hidden=true}
 $('tcx').addEventListener('click',closeTierCheck);$('tcm').addEventListener('click',e=>{if(e.target===$('tcm'))closeTierCheck()});
 document.addEventListener('keydown',e=>{if(e.key=='Escape'&&!$('tcm').hidden)closeTierCheck()});
 // ---- Help sections (v292): every card with data-help gets a Help button in its header (hidden panel, same design on every card).
-// The text (HTML allowed; t = the list of tips, each starts with the star marker and all of them run on in one paragraph) and the screenshots live HERE and nowhere else. img: a list of {src, alt, cap}; src is a data: URI (the page is a single file) or a file path.
+// The text (HTML allowed; t = the list of tips, each one a paragraph of its own that starts with the star marker) and the screenshots live HERE and nowhere else. img: a list of {src, alt, cap}; src is a data: URI (the page is a single file) or a file path.
 const HELP={
   army:{t:["Don't have mercs? Keep Authority at 0, it has no use for you.","Lack of monster coins, so you want to use smaller monster stacks? Just input less Dominance than you actually have, check the given stacks and adjust if needed."],img:[]},
   food:{t:["<b>Food prod.</b> is the food you have for the hits. The Preparing view turns it into the number of hits it pays for.","<b>Revive</b> sets which stacks you revive after a hit. 90 % of a revived stack comes back, so only the rest has to be prepared again."],img:[]},
@@ -1390,7 +1390,7 @@ const HELP={
     const k=card.dataset.help,h=HELP[k],head=[...card.children].find(x=>x.tagName=='H2'||x.tagName=='SUMMARY');if(!h||!head)return;
     const id='hp-'+k,b=document.createElement('button');b.type='button';b.className='hq';b.setAttribute('aria-expanded','false');b.setAttribute('aria-controls',id);b.title='Show help';b.innerHTML='<span class="hqm">?</span>Help';head.appendChild(b);
     const p=document.createElement('div');p.className='hp';p.id=id;p.hidden=true;
-    p.innerHTML='<p>'+h.t.map(x=>'<span class="ht"><i class="hm"></i>\u2060'+x+'</span>').join(' ')+'</p>'+(h.img||[]).map(m=>'<figure><img src="'+m.src+'" alt="'+(m.alt||'')+'" loading="lazy">'+(m.cap?'<figcaption>'+m.cap+'</figcaption>':'')+'</figure>').join('');
+    p.innerHTML=h.t.map(x=>'<p class="ht"><i class="hm"></i>'+x+'</p>').join('')+(h.img||[]).map(m=>'<figure><img src="'+m.src+'" alt="'+(m.alt||'')+'" loading="lazy">'+(m.cap?'<figcaption>'+m.cap+'</figcaption>':'')+'</figure>').join('');
     head.after(p);
   });
   document.addEventListener('click',e=>{
