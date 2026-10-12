@@ -139,7 +139,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div style="margin-top:14px;text-align:right"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='8.1';
+const APP_VERSION='8.2';
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
   const me='v'+APP_VERSION;
@@ -573,6 +573,7 @@ let MONLAST=true;       // v289: the full monster tiers stand BEHIND the whole a
 let QNARROW=true;       // v317: the quick order that ranks the numbers of full monster tiers uses the army-block weak order only (as before v317): the wide order is judged in the whole search of the chosen number (in 320 random runs it never lost more than 0.6 %, ranking with it lost up to 1.5 %)
 let WEAKMON=true;       // v317: the places Kn+1 beyond the army block (inside the full monster tiers) are free for the weak troops too: the rule Kn+1 comes BEFORE 'monsters last'
 let WEAKMONO=true;      // v328: the full monster tiers have outliers too: a monster group below the top monster group (a clearly lower SH, e.g. Fire Phoenix) may stand on a place Kn+1 like a weak army group; the damage decides between this order and the ones without it
+let WEAKPERM=true;      // 8.2: the weak groups of the order above (army AND monster outliers) are also tried in every other sequence on the places Kn+1: a weak monster may stand on the FIRST such place, not only behind the weak army troops; the damage decides
 let WEAKSLOTS=true;     // the weakest groups (lowest ratio first) stand on the places Kn+1, one troop per place; the rest of the army follows on the other places
 function ratioGroups(P,arr,split,tol=GTOL){                                           // split: army and monsters never share a group; tol: troops within this relative SH distance of the lowest of the group join it (default: equal SH only)
   const q6=x=>Math.round(x*1e6),ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(...t.vs);
@@ -649,16 +650,18 @@ function fourSearch(P,live,mkOut,CC,quick){     // CC = the number of full monst
   };
   const mg=wm&&WEAKMONO?ratioGroups(P,restF.filter(t=>t.pool=='M'),true):[];      // the groups of the full monster tiers, the lowest ratio first
   const weakOrderM=gs=>{      // v328: outliers = the groups below the TOP group of their block (the army block, the monster block); the lowest ratios of both blocks stand on the places Kn+1 of the whole front, one troop per place, the weakest first, as many groups as fit
-    if(!WEAKSLOTS||mg.length<2)return null;
+    if(!WEAKSLOTS||mg.length<2)return[];
     const sl=[];for(let i=0;i<Ft;i++)if(kn1Place(P,i))sl.push(i);
     const el=[...gs.slice(0,-1).map(g=>({g,a:true})),...mg.slice(0,-1).map(g=>({g,a:false}))].sort((x,y)=>x.g.lo-y.g.lo);
     let w=0,cnt=0;while(w<el.length&&cnt+el[w].g.u.length<=sl.length){cnt+=el[w].g.u.length;w++}
-    const wk=el.slice(0,w);if(!wk.some(x=>!x.a))return null;      // no monster outlier: the same as the wide order
-    const wg=new Set(wk.map(x=>x.g)),seq=[...gs.filter(g=>!wg.has(g)).flatMap(g=>g.u),...mg.filter(g=>!wg.has(g)).flatMap(g=>g.u)],out=new Array(Ft).fill(null);
-    wk.flatMap(x=>x.g.u).forEach((t,i)=>{out[sl[i]]=t});let k=0;for(let i=0;i<Ft;i++)if(!out[i])out[i]=seq[k++];
-    out.full=true;return out;
+    const wk=el.slice(0,w);if(!wk.some(x=>!x.a))return[];      // no monster outlier: the same as the wide order
+    const wg=new Set(wk.map(x=>x.g)),seq=[...gs.filter(g=>!wg.has(g)).flatMap(g=>g.u),...mg.filter(g=>!wg.has(g)).flatMap(g=>g.u)];
+    const place=arr=>{const out=new Array(Ft).fill(null);arr.flatMap(g=>g.u).forEach((t,i)=>{out[sl[i]]=t});let k=0;for(let i=0;i<Ft;i++)if(!out[i])out[i]=seq[k++];out.full=true;return out};
+    const base=wk.map(x=>x.g),res=[place(base)];      // the weakest first (the order of v328), then - WEAKPERM - every other sequence of the weak groups (at most 6 groups)
+    if(WEAKPERM&&base.length>1&&base.length<=6){const perm=(a,pre)=>{if(!a.length){if(pre.some((g,i)=>g!==base[i]))res.push(place(pre));return}a.forEach((g,i)=>perm(a.filter((_,j)=>j!==i),[...pre,g]))};perm(base,[])}
+    return res;
   };
-  const weakCands=gs=>{const m=weakOrderM(gs),w=weakOrder(gs);if(!w&&!m)return{list:[],force:false};const n=wm&&w?weakOrder(gs,false):w;return{list:[m,w,n&&n!==w?n:null].filter(Boolean),force:!!n}};      // the wide order first; the one with the places Kn+1 of the army block only is the second candidate (the damage decides, the wide one is preferred): a weak troop far behind may cost more than it brings, when the monsters in front of it are many. WEAKFORCE only holds where the army-block order exists (as before v317); a wide order alone is one more candidate
+  const weakCands=gs=>{const m=weakOrderM(gs),w=weakOrder(gs);if(!w&&!m.length)return{list:[],force:false};const n=wm&&w?weakOrder(gs,false):w;return{list:[...m,w,n&&n!==w?n:null].filter(Boolean),force:!!n}};      // the wide order first; the one with the places Kn+1 of the army block only is the second candidate (the damage decides, the wide one is preferred): a weak troop far behind may cost more than it brings, when the monsters in front of it are many. WEAKFORCE only holds where the army-block order exists (as before v317); a wide order alone is one more candidate
   const fl=u=>u.full?[...u,...tail]:[...u,...mid,...tail];      // the whole order: the army part (with the monsters inside when .full), the full monster tiers, the partial tier and what is below it
   const groupings=bandGroupings(P,ordF);      // the strict groups first, then the merges of neighbouring SH groups (the damage decides between them)
   if(quick){let bq=null;for(const g0 of groupings){const wc=QNARROW?(n=>({list:n?[n]:[],force:!!n}))(weakOrder(g0,false)):weakCands(g0);let e=null;wc.list.forEach(w=>{const x=ev(fl(w),CC);if(better(x,e))e=x});if(!(e&&WEAKFORCE&&wc.force)){const f0=ev([...flat(g0),...mid,...tail],CC);if(!e||!better(e,f0))e=f0}if(better(e,bq))bq=e}return bq}      // the quick order ranks the tier counts, so it is the same kind of order the whole search will use: the weak-on-Kn+1 one (WEAKFORCE), otherwise the better of it and the plain ascending one
