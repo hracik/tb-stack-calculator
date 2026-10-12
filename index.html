@@ -87,7 +87,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 .tabin{width:150px;padding:5px 8px;background:#e2cf9e;color:#2a2012;border:1px solid #8a6a2c;border-radius:8px;font:inherit}
 .tabtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 6px;font-size:14px}
 .tl{background:transparent;color:var(--mu);border:1px solid var(--bd);border-radius:6px;padding:3px 10px;margin:0;font:inherit}.tl:hover,.tl.on{color:var(--tx)}.tl.on{border-color:var(--ac)}
-#xp{margin:0 0 10px;padding:10px 12px}#xp textarea{display:block;width:100%;box-sizing:border-box;height:150px;min-height:80px;max-height:60vh;resize:vertical;margin:6px 0;padding:6px;background:#e2cf9e;color:#2a2012;border:1px solid #8a6a2c;border-radius:4px;font:12px/1.35 ui-monospace,Consolas,monospace}#xp .tl{font-size:14px}#xp .xr{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#xp{margin:0 0 10px;padding:10px 12px}#xp textarea{display:block;width:100%;box-sizing:border-box;height:120px;min-height:80px;max-height:60vh;resize:vertical;margin:6px 0;padding:6px;background:#e2cf9e;color:#2a2012;border:1px solid #8a6a2c;border-radius:4px;font:12px/1.35 ui-monospace,Consolas,monospace}#xp .tl{font-size:14px}#xp .xr{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 #res td{min-width:104px}.ic{display:block;width:56px;height:56px;margin:0 auto 4px;border-radius:6px}.ic.ph{background:rgba(42,32,18,.15)}
 </style></head><body><main>
 <h1>⚔️ Stack Calculator <span id="appver" class="ver"></span></h1>
@@ -139,7 +139,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div style="margin-top:14px;text-align:right"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <script>
 // Version of this page. APP_VERSION is the build number (counts up with every release, never resets - the update check compares it with version.json); APP_LABEL is the version people see: MAJOR.MINOR. The minor counts the releases since the last push to the live site, a push starts the next major (1.12 -> 2.0). Every release: raise both and write the same two values into version.json.
-const APP_VERSION=324,APP_LABEL='6.0';
+const APP_VERSION=325,APP_LABEL='6.1';
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
   const me='v'+APP_LABEL;
@@ -375,8 +375,8 @@ function tabClick(e){
 const XMODES=['max','ren','pvpmax','cpd','cp','kill'],XENEMY=['3','4','6','8'],XNAME='Stack Calculator inputs';
 let XPM=null,XTAB=null;      // the open panel: 'exp' (export), 'imp' (import) or null; XTAB = the tab an export was made in
 function exportText(){
-  const d=snap(),J=JSON.stringify,rows=o=>Object.entries(o).map(([k,x])=>' '+J(k)+':'+J(x)).join(',\n');      // one input per line; the part before the first { is only a title
-  return XNAME+' - version '+APP_LABEL+'\n{\n"name":'+J(tabs[active].name)+',\n"vals":{\n'+rows(d.vals)+'\n},\n"chk":{\n'+rows(d.chk)+'\n},\n"O":'+J(d.O)+',\n"X":'+J(d.X)+',\n"atk":'+J(d.atk)+',\n"mode":'+J(d.mode)+',\n"enemy":'+J(d.enemy)+',\n"le":'+J(d.le)+',\n"lp":'+J(d.lp)+'\n}\n';
+  const d=snap(),J=JSON.stringify;      // a few long lines (the page wraps them); the part before the first { is only a title
+  return XNAME+' - version '+APP_LABEL+'\n{"name":'+J(tabs[active].name)+',"atk":'+J(d.atk)+',"mode":'+J(d.mode)+',"enemy":'+J(d.enemy)+',"le":'+J(d.le)+',"lp":'+J(d.lp)+',"O":'+J(d.O)+',"X":'+J(d.X)+',\n"vals":'+J(d.vals)+',\n"chk":'+J(d.chk)+'}\n';
 }
 function drawXP(){
   const p=$('xp');p.hidden=!XPM;if(!XPM){p.innerHTML='';return}
