@@ -139,7 +139,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div style="margin-top:14px;text-align:right"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='8.4';
+const APP_VERSION='8.5';
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
   const me='v'+APP_VERSION;
@@ -574,7 +574,8 @@ let QNARROW=true;       // v317: the quick order that ranks the numbers of full 
 let WEAKMON=true;       // v317: the places Kn+1 beyond the army block (inside the full monster tiers) are free for the weak troops too: the rule Kn+1 comes BEFORE 'monsters last'
 let WEAKMONO=true;      // v328: the full monster tiers have outliers too: a monster group below the top monster group (a clearly lower SH, e.g. Fire Phoenix) may stand on a place Kn+1 like a weak army group; the damage decides between this order and the ones without it
 let WEAKPERM=true;      // 8.2: the weak groups of the order above (army AND monster outliers) are also tried in every other sequence on the places Kn+1: a weak monster may stand on the FIRST such place, not only behind the weak army troops; the damage decides
-let WEAKFRONT=true;     // 8.4: the weakest monster groups may also stand in a block at the FRONT (places 1, 2, 3 ...), in every sequence (at most 3 groups of the 4 weakest): the places in front have no troop before them to hold them down, so a weak monster may stand first. The army outliers then take the places Kn+1 behind the block. The damage decides (MONCAP keeps the first stack from growing too big)
+let WEAKFRONT=true;     // 8.5: weak troops (army and monster outliers) may stand as a block on the FIRST places (1, 2, 3 ...), in every sequence, with the other weak groups on the places Kn+1 behind the block: weak troops at the start and on the places Kn+1 can be combined, the damage decides. The places in front have no troop before them to hold them down (MONCAP keeps a monster there from growing too big)
+const FRONTPOOL=5,FRONTLEN=3;      // the block in front is taken from the FRONTPOOL weakest troops, at most FRONTLEN of them
 let MONCAP=true;        // 8.3: no full monster stack is bigger (in health) than the army's level. A monster on the FIRST place has no stack in front of it that could hold it down, so it took the whole level the Dominance allowed (Ari_3: Fire Phoenix I 20 % above the army's level, the next stack far below it); the Dominance the others cannot use stays unspent
 let WEAKSLOTS=true;     // the weakest groups (lowest ratio first) stand on the places Kn+1, one troop per place; the rest of the army follows on the other places
 function ratioGroups(P,arr,split,tol=GTOL){                                           // split: army and monsters never share a group; tol: troops within this relative SH distance of the lowest of the group join it (default: equal SH only)
@@ -663,7 +664,34 @@ function fourSearch(P,live,mkOut,CC,quick){     // CC = the number of full monst
     if(WEAKPERM&&base.length>1&&base.length<=6){const perm=(a,pre)=>{if(!a.length){if(pre.some((g,i)=>g!==base[i]))res.push(place(pre));return}a.forEach((g,i)=>perm(a.filter((_,j)=>j!==i),[...pre,g]))};perm(base,[])}
     return res;
   };
-  const weakFront=gs=>{      // 8.4 (WEAKFRONT): a block of the weakest monster groups on the first places, then the weak groups on the places Kn+1 behind the block, the rest in the order of the rising ratio
+  const weakFront=gs=>{      // 8.5 (WEAKFRONT): weak TROOPS (army and monster outliers) as a block on the FIRST places, the other weak groups on the places Kn+1 behind the block, in any combination; the rest by the rising ratio
+    if(!WEAKFRONT||!WEAKSLOTS)return[];
+    const span=wm?Ft:F,sl=[];for(let i=0;i<span;i++)if(kn1Place(P,i))sl.push(i);
+    const el0=[...gs.slice(0,-1).map(g=>({g,a:true})),...mg.slice(0,-1).map(g=>({g,a:false}))].sort((x,y)=>x.g.lo-y.g.lo);      // the outlier groups, the weakest first
+    if(!el0.length)return[];
+    const pool=el0.flatMap(x=>x.g.u).slice(0,FRONTPOOL),seqs=[];      // the FRONTPOOL weakest troops: the block in front is taken from them (single troops: a group may be split, one troop in front, another on a place Kn+1)
+    const perm=(arr,pre)=>{if(pre.length)seqs.push(pre);if(pre.length>=FRONTLEN)return;arr.forEach((t,i)=>perm(arr.filter((_,j)=>j!==i),[...pre,t]))};perm(pool,[]);
+    const rest=fr=>{const fs=new Set(fr),room=sl.filter(x=>x>=fr.length).length,out=[];let c=0;      // the weak groups that still fit (all of what is left of them) on the places Kn+1 behind the block, the weakest first
+      for(const x of el0){const u=x.g.u.filter(t=>!fs.has(t));if(!u.length)continue;if(c+u.length>room)break;c+=u.length;out.push(u)}return out};
+    const place=(fr,wk)=>{
+      const wu=wk.flat(),sl2=sl.filter(x=>x>=fr.length);if(fr.length>=span||wu.length>sl2.length)return null;
+      const used=new Set([...fr,...wu]),seq=[...gs.flatMap(g=>g.u),...(wm?mg.flatMap(g=>g.u):[])].filter(t=>!used.has(t));
+      const out=new Array(span).fill(null);fr.forEach((t,i)=>{out[i]=t});wu.forEach((t,i)=>{out[sl2[i]]=t});
+      let k=0;for(let i=0;i<span;i++)if(!out[i])out[i]=seq[k++];
+      if(out.some(t=>!t))return null;
+      out.full=wm;return out;
+    };
+    const all=[],top=[];      // stage 1: every block in front (up to FRONTLEN of the FRONTPOOL weakest troops, every sequence); stage 2: the best blocks get every sequence of the weak groups behind them
+    seqs.forEach(fr=>{const wk=rest(fr),o=place(fr,wk);if(o){const x={o,d:ev(fl(o),CC).d,fr,wk};all.push(x);top.push(x)}});
+    top.sort((a,b)=>b.d-a.d);
+    top.slice(0,3).forEach(x=>{
+      if(x.wk.length<2||x.wk.length>4)return;
+      const pr=(a,pre)=>{if(!a.length){if(pre.some((u,i)=>u!==x.wk[i])){const o=place(x.fr,pre);if(o)all.push({o,d:ev(fl(o),CC).d})}return}a.forEach((u,i)=>pr(a.filter((_,j)=>j!==i),[...pre,u]))};pr(x.wk,[]);
+    });
+    all.sort((a,b)=>b.d-a.d);
+    return all.slice(0,3).map(x=>x.o);
+  };
+  const weakFrontG=gs=>{      // 8.4 (WEAKFRONT): a block of the weakest monster GROUPS on the first places (whole groups), then the weak groups on the places Kn+1 behind the block, the rest in the order of the rising ratio
     if(!WEAKFRONT||!WEAKSLOTS||mg.length<2)return[];
     const sl=[];for(let i=0;i<Ft;i++)if(kn1Place(P,i))sl.push(i);
     const mo=mg.slice(0,-1).slice(0,4),seqs=[];
@@ -681,7 +709,7 @@ function fourSearch(P,live,mkOut,CC,quick){     // CC = the number of full monst
     });
     return res;
   };
-  const weakCands=(gs,front)=>{const m=weakOrderM(gs),w=weakOrder(gs),fr=front?weakFront(gs):[];if(!w&&!m.length&&!fr.length)return{list:[],force:false};const n=wm&&w?weakOrder(gs,false):w;return{list:[...m,w,n&&n!==w?n:null,...fr].filter(Boolean),force:!!n}};      // the wide order first; the one with the places Kn+1 of the army block only is the second candidate (the damage decides, the wide one is preferred): a weak troop far behind may cost more than it brings, when the monsters in front of it are many. WEAKFORCE only holds where the army-block order exists (as before v317); a wide order alone is one more candidate
+  const weakCands=(gs,front)=>{const m=weakOrderM(gs),w=weakOrder(gs),fr=front?[...weakFrontG(gs),...weakFront(gs)]:[];if(!w&&!m.length&&!fr.length)return{list:[],force:false};const n=wm&&w?weakOrder(gs,false):w;return{list:[...m,w,n&&n!==w?n:null,...fr].filter(Boolean),force:!!n}};      // the wide order first; the one with the places Kn+1 of the army block only is the second candidate (the damage decides, the wide one is preferred): a weak troop far behind may cost more than it brings, when the monsters in front of it are many. WEAKFORCE only holds where the army-block order exists (as before v317); a wide order alone is one more candidate
   const fl=u=>u.full?[...u,...tail]:[...u,...mid,...tail];      // the whole order: the army part (with the monsters inside when .full), the full monster tiers, the partial tier and what is below it
   const groupings=bandGroupings(P,ordF);      // the strict groups first, then the merges of neighbouring SH groups (the damage decides between them)
   if(quick){let bq=null;for(const g0 of groupings){const wc=QNARROW?(n=>({list:n?[n]:[],force:!!n}))(weakOrder(g0,false)):weakCands(g0);let e=null;wc.list.forEach(w=>{const x=ev(fl(w),CC);if(better(x,e))e=x});if(!(e&&WEAKFORCE&&wc.force)){const f0=ev([...flat(g0),...mid,...tail],CC);if(!e||!better(e,f0))e=f0}if(better(e,bq))bq=e}return bq}      // the quick order ranks the tier counts, so it is the same kind of order the whole search will use: the weak-on-Kn+1 one (WEAKFORCE), otherwise the better of it and the plain ascending one
