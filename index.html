@@ -137,7 +137,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div style="margin-top:14px;text-align:right"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <script>
 // Version of this page. APP_VERSION is the build number (counts up with every release, never resets - the update check compares it with version.json); APP_LABEL is the version people see: MAJOR.MINOR. The minor counts the releases since the last push to the live site, a push starts the next major (1.12 -> 2.0). Every release: raise both and write the same two values into version.json.
-const APP_VERSION=319,APP_LABEL='4.1';
+const APP_VERSION=320,APP_LABEL='4.2';
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
   const me='v'+APP_LABEL;
@@ -573,7 +573,7 @@ function fourSearch(P,live,mkOut,CC,quick){     // CC = the number of full monst
     return out;
   };
   const isEng=g=>g.u.every(t=>t.cat=='Engineer');
-  // gs = the groups, the lowest ratio first. Every way to put small groups (up to 3, never the engineers) on the places Kn+1 of a group with a higher ratio is tried: the groups that stay stand in the order of the rising ratio.
+  // gs = the groups, the lowest ratio first. Every way to put small groups (any number, never the engineers: they are handled by the weak-first order above) on the places Kn+1 of a group with a higher ratio is tried: the groups that stay stand in the order of the rising ratio.
   const search=gs=>{
     const wc=weakCands(gs);if(wc.list.length){wc.list.forEach(w=>tryU(w,0.01));if(WEAKFORCE&&wc.force)return}      // the weak-on-Kn+1 order is one more candidate; the damage decides between it and the others
     const m=gs.length,host=new Array(m).fill(-1);
@@ -584,7 +584,7 @@ function fourSearch(P,live,mkOut,CC,quick){     // CC = the number of full monst
         return;
       }
       rec(i-1,n);                                                                      // the group stands in its own place
-      if(n>=3||isEng(gs[i])||gs[i].u.length>slots.length)return;
+      if(isEng(gs[i])||gs[i].u.length>slots.length)return;
       for(let j=i+1;j<m;j++)if(host[j]<0&&gs[i].lo<gs[j].lo){host[i]=j;rec(i-1,n+1);host[i]=-1}      // an outlier has a LOWER ratio than the group it stands in
     };
     rec(m-1,0);
