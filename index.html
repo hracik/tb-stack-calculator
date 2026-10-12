@@ -139,7 +139,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div style="margin-top:14px;text-align:right"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='8.5';
+const APP_VERSION='8.6';
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
   const me='v'+APP_VERSION;
@@ -375,9 +375,13 @@ function tabClick(e){
 // ---- export / import: every input of the open tab as a short text, and back. An import opens as a NEW tab: nothing that is already saved is overwritten ----
 // The text: a title line, then  key=value  pieces (one space between them). A box that holds the blank value (0) is left out, a number has no thousands commas, a space in a name is _ ; the key is short:
 // L Leadership, U Authority, D Dominance, F Food prod., R Revive, A Action; hG / sG = health / strength bonus of Guardsmen (S, M, E, and Gi El Dr Be Me Mo Ra Fl Ep Pl the same way), dGi = Double hit; T = the ticked tiers (E89S89G89M789 = E8 E9 S8 S9 G8 G9 M7 M8 M9);
-// n = name, x = switched-off troops, at = Attack players, mo / en / le / lp = attack mode. Text of the first version (JSON, "Stack Calculator inputs") is still read.
+// n = name, x = switched-off troops (3 characters each, see xcode), at = Attack players, mo / en / le / lp = attack mode. Text of the first version (JSON, "Stack Calculator inputs") is still read.
 const XMODES=['max','ren','pvpmax','cpd','cp','kill'],XENEMY=['3','4','6','8'],XHEAD='Krappy Calculator',XFIX={capA:'L',capU:'U',capM:'D',foodP:'F',revm:'R',shw:'A'},XSUF={Epic:'Ep',Players:'Pl',Giant:'Gi',Elemental:'El',Dragon:'Dr',Beast:'Be',Melee:'Me',Mounted:'Mo',Ranged:'Ra',Flying:'Fl'};
 const xkey=id=>{const m=/^(bh|bs|dh)_(.+)$/.exec(id);return XFIX[id]||(m?{bh:'h',bs:'s',dh:'d'}[m[1]]+(XSUF[m[2]]||m[2]):id)};      // bh_G -> hG, bs_G -> sG, dh_Giant -> dGi, bs_Epic -> sEp
+const xhash=q=>{let h=2166136261;for(let i=0;i<q.length;i++){h^=q.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return h};
+const xcode=nm=>(xhash(nm)%46656).toString(36).padStart(3,'0');      // a troop (or mercenary) as 3 characters 0-9a-z: from its name, so it does not depend on the order of the tables; no two names of today share a code
+let XMAP=null;
+const xmap=()=>{if(XMAP)return XMAP;const m={};[...TR.map(t=>t.name),...MERC.map(q=>q[2]),...MERC_LATER.map(q=>q[2])].forEach(n=>{const c=xcode(n);if(m[c]&&m[c]!==n)console.warn('troop code clash',c,m[c],n);else m[c]=n});return XMAP=m};
 let XPM=null,XTAB=null;      // the open panel: 'exp' (export), 'imp' (import) or null; XTAB = the tab an export was made in
 function exportText(){
   const d=snap(),t=['n='+tabs[active].name.replace(/ /g,'_')],num=id=>$(id).matches(NUMBOX),val=(id,x)=>num(id)?String(x).replace(/,/g,''):String(x);
@@ -385,7 +389,7 @@ function exportText(){
   let T='';for(const c of 'ESGM'){let q='';for(let i=1;i<=9;i++)if(d.chk['s'+c+i])q+=i;if(q)T+=c+q}
   t.push('T='+T);
   for(const [id,c] of Object.entries(d.chk))if(!/^s[ESGM]\d$/.test(id)&&c!==BLANK.chk[id])t.push(id+'='+(c?1:0));      // any other tick box (none now)
-  if(d.X.length)t.push('x='+d.X.map(q=>q.replace(/ /g,'_')).join(','));
+  if(d.X.length)t.push('x='+d.X.map(xcode).join(''));      // 3 characters per switched-off troop (the first versions wrote the names, they are still read)
   if(d.atk=='players')t.push('at=p');
   if(d.mode!='max')t.push('mo='+d.mode);
   if(d.enemy!='4')t.push('en='+d.enemy);
@@ -412,7 +416,7 @@ function parseKrappy(txt){      // the short text -> the same object the first (
     const i=tk.indexOf('=');if(i<1)continue;const k=tk.slice(0,i),w=tk.slice(i+1);let ok=true;
     if(k=='n')r.name=w.replace(/_/g,' ');
     else if(k=='T'){const on=new Set();for(const g of w.matchAll(/([ESGM])(\d+)/g))for(const c of g[2])on.add('s'+g[1]+c);Object.keys(BLANK.chk).forEach(id=>{if(/^s[ESGM]\d$/.test(id))r.chk[id]=on.has(id)})}
-    else if(k=='x')r.X=w.split(',').filter(Boolean).map(q=>q.replace(/_/g,' '));
+    else if(k=='x')r.X=/^[0-9a-z]+$/.test(w)?(w.match(/.{3}/g)||[]).map(c=>xmap()[c]).filter(Boolean):w.split(',').filter(Boolean).map(q=>q.replace(/_/g,' '));      // codes (lower case and digits only) or, as before, names
     else if(k=='at')r.atk=w=='p'?'players':'epics';
     else if(k=='mo')r.mode=w;
     else if(k=='en')r.enemy=w;
@@ -574,7 +578,7 @@ let QNARROW=true;       // v317: the quick order that ranks the numbers of full 
 let WEAKMON=true;       // v317: the places Kn+1 beyond the army block (inside the full monster tiers) are free for the weak troops too: the rule Kn+1 comes BEFORE 'monsters last'
 let WEAKMONO=true;      // v328: the full monster tiers have outliers too: a monster group below the top monster group (a clearly lower SH, e.g. Fire Phoenix) may stand on a place Kn+1 like a weak army group; the damage decides between this order and the ones without it
 let WEAKPERM=true;      // 8.2: the weak groups of the order above (army AND monster outliers) are also tried in every other sequence on the places Kn+1: a weak monster may stand on the FIRST such place, not only behind the weak army troops; the damage decides
-let WEAKFRONT=true;     // 8.5: weak troops (army and monster outliers) may stand as a block on the FIRST places (1, 2, 3 ...), in every sequence, with the other weak groups on the places Kn+1 behind the block: weak troops at the start and on the places Kn+1 can be combined, the damage decides. The places in front have no troop before them to hold them down (MONCAP keeps a monster there from growing too big)
+let WEAKFRONT=false;     // 8.6: OFF. Weak troops (army and monsters) as a block on the FIRST places with the other weak groups on the places Kn+1 behind it (8.4 whole monster groups, 8.5 single troops) gave a little more damage (Ari_3 +1.8 %) but made the calculation 3-10 times slower (Ari_3 30 ms against 3 ms). The code stays as an idea and a benchmark: set it to true to see how much damage the order search leaves, when a new idea is tested
 const FRONTPOOL=5,FRONTLEN=3;      // the block in front is taken from the FRONTPOOL weakest troops, at most FRONTLEN of them
 let MONCAP=true;        // 8.3: no full monster stack is bigger (in health) than the army's level. A monster on the FIRST place has no stack in front of it that could hold it down, so it took the whole level the Dominance allowed (Ari_3: Fire Phoenix I 20 % above the army's level, the next stack far below it); the Dominance the others cannot use stays unspent
 let WEAKSLOTS=true;     // the weakest groups (lowest ratio first) stand on the places Kn+1, one troop per place; the rest of the army follows on the other places
