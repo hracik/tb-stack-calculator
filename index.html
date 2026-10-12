@@ -138,28 +138,29 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div style="margin-top:14px;text-align:right"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <script>
-// Version of this page. APP_VERSION is the build number (counts up with every release, never resets - the update check compares it with version.json); APP_LABEL is the version people see: MAJOR.MINOR. The minor counts the releases since the last push to the live site, a push starts the next major (1.12 -> 2.0). Every release: raise both and write the same two values into version.json.
-const APP_VERSION=329,APP_LABEL='8.0';
+// Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
+const APP_VERSION='8.1';
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
-  const me='v'+APP_LABEL;
-  setBadge(me,'Version '+APP_LABEL,'unk');
+  const me='v'+APP_VERSION;
+  setBadge(me,'Version '+APP_VERSION,'unk');
   // Stale-page check: the live site publishes version.json. If it names a NEWER version than this page, the page is reloaded - once per live version, so a browser that keeps serving the old copy cannot loop. A page that is newer than the live site (a test copy) never reloads.
-  if(!/^https?:$/.test(location.protocol)){setBadge(me,'Version '+APP_LABEL+' - a local copy, the update check runs on the website','unk');return}
+  if(!/^https?:$/.test(location.protocol)){setBadge(me,'Version '+APP_VERSION+' - a local copy, the update check runs on the website','unk');return}
   const LIVE='https://hracik.github.io/tb-stack-calculator/';
   const base=/\.github\.io$/.test(location.hostname)?location.origin+location.pathname.replace(/[^\/]*$/,''):LIVE;
   const tried=()=>{let t=null;try{t=sessionStorage.getItem('sc_reload')}catch(e){}return t||(/^sc_reload=/.test(window.name)?window.name.slice(10):null)};
   const mark=n=>{try{sessionStorage.setItem('sc_reload',n)}catch(e){}window.name='sc_reload='+n};
+  const vnum=x=>{const m=/^(\d+)\.(\d+)$/.exec(String(x));return m?+m[1]*100000+ +m[2]:0};      // 8.1 -> 800001: the major counts first, then the minor
   let last=0;
   const check=()=>{
     const now=Date.now();if(now-last<300000)return;last=now;
     fetch(base+'version.json?_='+now,{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{
-      const live=j&&+j.version,ll=String((j&&j.label)||live);
-      if(!live){setBadge(me,'Version '+APP_LABEL+' - the update check could not reach the website','unk');return}
-      if(live<APP_VERSION){setBadge(me,'Version '+APP_LABEL+' - a test copy, newer than the live version '+ll,'ahead');return}
-      if(live==APP_VERSION){setBadge(me,'Version '+APP_LABEL+' - up to date','ok');return}
-      if(String(tried())===String(live)){setBadge(me+' \u00b7 live v'+ll,'Version '+ll+' is live, but the browser still serves version '+APP_LABEL+'. Reload with Ctrl+F5.','old');return}
-      mark(live);setBadge(me+' \u00b7 updating','Version '+ll+' is live - reloading','upd');
+      const ll=String((j&&(j.label||j.version))||''),live=vnum(ll);      // an old version.json also has a label (MAJOR.MINOR): it is read too
+      if(!live){setBadge(me,'Version '+APP_VERSION+' - the update check could not reach the website','unk');return}
+      if(live<vnum(APP_VERSION)){setBadge(me,'Version '+APP_VERSION+' - a test copy, newer than the live version '+ll,'ahead');return}
+      if(live==vnum(APP_VERSION)){setBadge(me,'Version '+APP_VERSION+' - up to date','ok');return}
+      if(String(tried())===ll){setBadge(me+' \u00b7 live v'+ll,'Version '+ll+' is live, but the browser still serves version '+APP_VERSION+'. Reload with Ctrl+F5.','old');return}
+      mark(ll);setBadge(me+' \u00b7 updating','Version '+ll+' is live - reloading','upd');
       try{if(typeof save=='function')save()}catch(e){}      // the numbers typed so far are stored first, the reload then brings them back
       fetch(location.href.split('#')[0],{cache:'reload'}).catch(()=>{}).then(()=>location.reload());
     }).catch(()=>{});
@@ -390,7 +391,7 @@ function exportText(){
   if(d.enemy!='4')t.push('en='+d.enemy);
   if(d.le.mode!='max'||d.le.enemy!='4')t.push('le='+d.le.mode+':'+d.le.enemy);
   if(d.lp!='cp')t.push('lp='+d.lp);
-  return XHEAD+' v'+APP_LABEL.split('.')[0]+'\n'+t.join(' ')+'\n';
+  return XHEAD+' v'+APP_VERSION.split('.')[0]+'\n'+t.join(' ')+'\n';
 }
 function drawXP(){
   const p=$('xp');p.hidden=!XPM;if(!XPM){p.innerHTML='';return}
