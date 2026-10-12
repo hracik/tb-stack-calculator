@@ -137,7 +137,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div style="margin-top:14px;text-align:right"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <script>
 // Version of this page. APP_VERSION is the build number (counts up with every release, never resets - the update check compares it with version.json); APP_LABEL is the version people see: MAJOR.MINOR. The minor counts the releases since the last push to the live site, a push starts the next major (1.12 -> 2.0). Every release: raise both and write the same two values into version.json.
-const APP_VERSION=318,APP_LABEL='4.0';
+const APP_VERSION=319,APP_LABEL='4.1';
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
   const me='v'+APP_LABEL;
@@ -1455,7 +1455,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
 // The text (HTML allowed; t = the list of tips, each one a paragraph of its own that starts with the star marker) and the screenshots live HERE and nowhere else. img: a list of {src, alt, cap}; src is a data: URI (the page is a single file) or a file path.
 const HELP={
   army:{t:["Don't have mercenaries at all? Keep Authority at 0, it has no use for you. Have a little bit of mercenaries? Just input less Authority than you actually have, check the given stacks and adjust if needed.","Lack of monster coins, so you want to use smaller monster stacks? Just input less Dominance than you actually have, check the given stacks and adjust if needed."],img:[]},
-  food:{t:["<b>Food prod.</b> is the total food production you can use to train army. It has no effect on the stacks, but it enables the Preparing action, which shows how many units you can train per stack at once to achieve the maximum hit per training.","The <b>Revive</b> selection is used together with Food prod. to calculate the number of units you can train per stack.","The app assumes you have the 25 % food cost reduction bonus active."],img:[]},
+  food:{t:["<b>Food prod.</b> is the total food production you can use to train army. It has no effect on the stacks, but it enables the Preparing action, which shows how many units you can train per stack at once to achieve the maximum hit per training.","The <b>Revive</b> selection is used together with Food prod. to calculate the number of units you can train per stack.","The app assumes you have the 25 % food consumption reduction bonus active."],img:[]},
   bonx:{t:["Your bonuses against the enemy you hit: <b>Strength</b> against epic monsters (used in the epic modes), <b>Health</b> and <b>Strength</b> against other players (used in the player modes)."],img:[]},
   bon:{t:["The <b>Health</b> and <b>Strength</b> bonus of each troop category: Guardsmen, Specialists, Monsters and Siege Engines."],img:[]},
   mb:{t:["Monster boost research in the Academy has 3 parts. Click I, II or III based on the latest research part you have already finished. For a partially finished part, e.g. no research is done for health at part III, still click III and adjust the health manually to 50."],img:[]},
