@@ -139,7 +139,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div style="margin-top:14px;text-align:right"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='8.2';
+const APP_VERSION='8.3';
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
   const me='v'+APP_VERSION;
@@ -574,6 +574,7 @@ let QNARROW=true;       // v317: the quick order that ranks the numbers of full 
 let WEAKMON=true;       // v317: the places Kn+1 beyond the army block (inside the full monster tiers) are free for the weak troops too: the rule Kn+1 comes BEFORE 'monsters last'
 let WEAKMONO=true;      // v328: the full monster tiers have outliers too: a monster group below the top monster group (a clearly lower SH, e.g. Fire Phoenix) may stand on a place Kn+1 like a weak army group; the damage decides between this order and the ones without it
 let WEAKPERM=true;      // 8.2: the weak groups of the order above (army AND monster outliers) are also tried in every other sequence on the places Kn+1: a weak monster may stand on the FIRST such place, not only behind the weak army troops; the damage decides
+let MONCAP=true;        // 8.3: no full monster stack is bigger (in health) than the army's level. A monster on the FIRST place has no stack in front of it that could hold it down, so it took the whole level the Dominance allowed (Ari_3: Fire Phoenix I 20 % above the army's level, the next stack far below it); the Dominance the others cannot use stays unspent
 let WEAKSLOTS=true;     // the weakest groups (lowest ratio first) stand on the places Kn+1, one troop per place; the rest of the army follows on the other places
 function ratioGroups(P,arr,split,tol=GTOL){                                           // split: army and monsters never share a group; tol: troops within this relative SH distance of the lowest of the group join it (default: equal SH only)
   const q6=x=>Math.round(x*1e6),ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(...t.vs);
@@ -1073,8 +1074,8 @@ function allocTight(P,live){
     let XF=0,XP=0,tp=0,invP=0,lvF=0;
     if(Pm.length){tp=Math.max(...Pm.map(s=>+s.r.slice(1)));invP=Pm.filter(s=>+s.r.slice(1)==tp).reduce((q,x)=>q+x.w*x.cost/x.hp,0)}      // the partial tier: only ONE tier is partial (the highest of them) - the tiers below it stay empty
     const settle=()=>{for(let g=0;g<30;g++){const before=cur.map(x=>x.n).join();chainT(cur);if(cur.map(x=>x.n).join()==before)break}};
-    const sizeMon=()=>{      // 3-, 4-, 6-, 8-stack: the monsters are sized from the Dominance like the army from the Leadership, with the same rules (no ceiling of their own): the full tiers on one level, the partial tier takes what is left
-      XF=invF?P.capM/invF:0;
+    const sizeMon=(lv=X)=>{      // 3-, 4-, 6-, 8-stack: the monsters are sized from the Dominance like the army from the Leadership, with the same rules (no ceiling of their own): the full tiers on one level, the partial tier takes what is left
+      XF=invF?Math.min(P.capM/invF,MONCAP&&A.length&&isFinite(lv)?lv:Infinity):0;      // MONCAP: the level of the army (of this pass) is the ceiling of the full monster tiers
       Fm.forEach(s=>{s.n=XF>0?Math.floor(XF*s.w/s.hp):0});Pm.forEach(s=>{s.n=0});settle();
       lvF=Math.max(0,...Fm.filter(s=>s.n>0).map(s=>s.n*s.hp/s.w));      // the level the full tiers really reached
       const left=P.capM-usedOf(Fm);
@@ -1088,7 +1089,7 @@ function allocTight(P,live){
     cur.forEach(s=>{s.tgt=(s.p=='A'?X:s.pt?(+s.r.slice(1)==tp?XP:0):lvF)*s.w});
     for(let g=0;g<30;g++){const before=cur.map(x=>x.n).join();chainT(cur);if(cur.map(x=>x.n).join()==before)break}
     if(!HO&&isFinite(X)&&A.length&&P.capA-usedOf(A)>0.002*P.capA){      // 3-, 4-, 6-, 8-stack: the rule check cut stacks and freed Leadership - the common level goes up (the first stack gets bigger and every stack behind it follows) until the budget is used again
-      const run=x=>{A.forEach(s=>{s.n=Math.floor(x*s.w/s.hp)});sizeMon();return usedOf(A)};      // the monsters follow the Dominance and the order rules (no ceiling)
+      const run=x=>{A.forEach(s=>{s.n=Math.floor(x*s.w/s.hp)});sizeMon(x);return usedOf(A)};      // the monsters follow the Dominance and the order rules (no ceiling)
       let lo=X,hi=X*Math.min(1.5,Math.max(1.0005,P.capA/Math.max(usedOf(A),1))*1.03);
       if(run(hi)<=P.capA)lo=hi;else for(let k=0;k<18;k++){const mid=(lo+hi)/2;if(run(mid)<=P.capA)lo=mid;else hi=mid}
       run(lo);
