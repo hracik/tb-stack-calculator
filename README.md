@@ -15,13 +15,24 @@ Open `index.html` in a browser or use the GitHub Pages site of this repository. 
 ```
 rules_version = '2';
 service cloud.firestore {
-  match /databases/{db}/documents {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'user') == 'admin';
+    }
     match /users/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.get('role', 'user') == 'user';
+      allow update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.get('role', 'user') == resource.data.get('role', 'user');
+      allow delete: if request.auth != null && request.auth.uid == uid;
     }
   }
 }
 ```
+
+**Roles (11.3).** Every account has the field `role` in its document `users/<uid>` (`user` by default; a document without it counts as `user`). The page also keeps the name and the e-mail in that document, so the Firebase console shows who is who. A user can never change the role (the rules above refuse it); **`admin` is set by the site owner in the Firebase console**: Firestore Database, Data, `users`, open the person's document (look at its `name` / `email` field), click the value of `role`, type `admin`, Update. The new rules must be published first (Firestore Database, Rules, Publish). An admin sees an **Admin** section in the account dropdown: *Show the users* lists the accounts (name, e-mail, last saved; the tabs themselves are not fetched for the list), and a click opens that user's tabs as a **read-only view**: a banner "Viewing <name>" with **Back to my tabs**; the tabs are held in memory only (`IMP`), `save()` and the sync do nothing meanwhile, so neither the user's nor the admin's tabs are changed, and a reload or Log out also ends the view. The panel's privacy line tells the users that admins can open their saved tabs.
 
 **Logo and Donate (9.2-10.0).** *Since 11.2 the Donate button is shown again in the menu bar (to hide it, add the word `hidden` to its `<a class="don" ...>` tag).* The page header shows the logo (the Sniper smiley behind a gold crosshair, with the title and the line "free fan-made stack calculator"). A gold **♥ Donate** button sits at the right of the header (in 9.1 it was a small button in the tab row). The version is plain small text at the bottom of the page since 9.4 (before: a badge in the header); the small diamond in front of it shows the update check (green: up to date). It is a plain link to a Stripe donation page that opens in a new tab; the donor types the amount there and pays by card on Stripe. The page itself handles no payment data and stores nothing about it.
 
