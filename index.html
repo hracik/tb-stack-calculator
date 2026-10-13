@@ -142,7 +142,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='10.1';
+const APP_VERSION='10.2';
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
   const me='v'+APP_VERSION;
@@ -481,7 +481,7 @@ function xRead(){
 // The page talks straight to Firebase's web API, no library: Identity Toolkit for the sign-in, Firestore for ONE document per user (users/<uid>, field "data" = all tabs as JSON; the Firestore rules let a user read and write only his own document).
 // The password goes only to Google's sign-in service and is never stored; the browser keeps a refresh token (localStorage key sc_acct). With FB.key empty the whole feature is off: no button, no network.
 // A saved tab is never overwritten without a choice: syncNow pushes this browser's changes, takes the account's tabs only when this browser has no changes of its own, and asks (keep both / account / this browser) when both changed.
-const FB={key:'',project:'krappycalculator'};      // key = the Web API key of the Firebase project (public by design)
+const FB={key:'AIzaSyCWQWxkwjaWnZ-AmLi6pmfosrbD5gp0m58',project:'krappycalculator'};      // key = the Web API key of the Firebase project (public by design)
 const AKEY='sc_acct';
 let AP=false,SY={rt:0,busy:false,t:0,st:'',err:false,conf:null,tok:null,exp:0,at:0};      // AP = the account panel is open; SY = the sync state (st = the text shown, conf = a conflict that waits for the user's choice, tok / exp = the id token and when it runs out)
 const aSes=()=>{try{const s=JSON.parse(localStorage.getItem(AKEY)||'null');return s&&s.rt&&s.uid?s:null}catch(e){return null}};
