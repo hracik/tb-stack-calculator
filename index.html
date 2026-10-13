@@ -142,7 +142,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='10.2';
+const APP_VERSION='10.3';
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
   const me='v'+APP_VERSION;
@@ -372,7 +372,8 @@ function tabClick(e){
     else if(k=='xcopy')xCopy();
     else if(k=='xread')xRead();
     else if(k=='xclose'){XPM=null;drawXP();drawTabs()}
-    else if(k=='acct'){AP=!AP;drawAP();drawTabs()}
+    else if(k=='acct'){AP=!AP;drawAP();drawTabs();if(AP&&!aSes())gLoad().catch(()=>{})}      // the Google library is fetched while the panel opens, so the Google window can open at once on the click
+    else if(k=='agoog')aGoogle();
     else if(k=='aclose'){AP=false;drawAP();drawTabs()}
     else if(k=='ain')aSign('signInWithPassword');
     else if(k=='aup')aSign('signUp');
@@ -579,6 +580,23 @@ async function aReset(){
   try{await fbCall(AU+'sendOobCode?key='+FB.key,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({requestType:'PASSWORD_RESET',email:em})});aMsg('If this e-mail has an account, a link to set a new password was sent.')}
   catch(e){aMsg(e.code=='EMAIL_NOT_FOUND'?'If this e-mail has an account, a link to set a new password was sent.':e.message)}
 }
+
+// Google sign-in: the small Firebase library (loaded only when the sign-in panel opens) shows the Google window; its tokens then go into the same direct-API session as an e-mail sign-in, the library keeps no session of its own.
+const FBSDK='https://www.gstatic.com/firebasejs/10.12.2/';
+let GSDK=null;
+const gLoad=()=>GSDK||(GSDK=Promise.all([import(FBSDK+'firebase-app.js'),import(FBSDK+'firebase-auth.js')]).then(([a,b])=>({a,b})).catch(e=>{GSDK=null;throw e}));
+const GERR={'auth/popup-closed-by-user':'The Google window was closed before the sign-in was finished.','auth/popup-blocked':'The browser blocked the Google window: allow pop-ups for this page and try again.','auth/unauthorized-domain':'This website is not on the list of authorized domains of the Firebase project (Authentication, Settings, Authorized domains).','auth/operation-not-allowed':'Google sign-in is not switched on in the Firebase project (Authentication, Sign-in method).','auth/network-request-failed':'No connection to the account service.','auth/account-exists-with-different-credential':'This e-mail already has an account with a password: sign in with the password.','auth/cancelled-popup-request':''};
+async function aGoogle(){
+  aMsg('Opening Google…');
+  let L;try{L=await gLoad()}catch(e){aMsg('Could not load the Google sign-in. Check the connection and try again.');return}
+  try{
+    const {a,b}=L,app=a.getApps().length?a.getApp():a.initializeApp({apiKey:FB.key,authDomain:FB.project+'.firebaseapp.com',projectId:FB.project}),auth=b.getAuth(app);
+    const u=(await b.signInWithPopup(auth,new b.GoogleAuthProvider())).user,tok=await u.getIdToken(),uid=u.uid,rt=u.refreshToken,em=u.email||'Google account';
+    try{await b.signOut(auth)}catch(e){}
+    aTok(tok,3600);const rc=aRec()[uid]||{};aSet({rt,uid,email:em,rev:rc.rev||null,h:rc.h||null});
+    SY.conf=null;AP=true;await syncNow();drawAP();
+  }catch(e){const c=e&&e.code;aMsg(c in GERR?GERR[c]:'Google sign-in failed ('+(c||(e&&e.message)||'error')+').')}
+}
 const aShort=e=>e.length>22?e.slice(0,19)+'…':e;
 const aLabel=()=>{const s=aSes();return s?aShort(s.email)+' '+(SY.err?'!':SY.busy?'…':'✓'):'Sign in'};
 function drawAP(){
@@ -587,7 +605,7 @@ function drawAP(){
   const names=a=>a.map(t=>esc(t.name)).join(', ');
   if(SY.conf)p.innerHTML=`<div class="mu"><b style="color:var(--tx)">The account and this browser both have saved tabs, and they differ.</b> Nothing has been changed yet. Choose what to do:</div><div class="acs"><button class="tl" data-act="aboth">Keep both (recommended)</button><span class="mu">The account's tabs are added next to this browser's, then everything is saved to the account.</span><button class="tl" data-act="aacct">Use the account's tabs</button><span class="mu">They replace the tabs in this browser (a backup copy of these is kept in this browser).</span><button class="tl" data-act="ahere">Use this browser's tabs</button><span class="mu">They replace the tabs on the account.</span></div><div class="mu">Account (${SY.conf.rem.tabs.length}): ${names(SY.conf.rem.tabs)}<br>This browser (${tabs.length}): ${names(tabs)}</div><div class="xr"><span class="mu" id="amsg"></span></div>`;
   else if(s)p.innerHTML=`<div class="mu">Signed in as <b style="color:var(--tx)">${esc(s.email)}</b>. Your tabs are saved to the account a moment after every change and open on every device you sign in on.</div><div class="xr"><button class="tl" data-act="async">Sync now</button><button class="tl" data-act="aout">Sign out</button><button class="tl" data-act="aclose">Close</button><span class="mu" id="amsg">${esc(SY.st)}</span></div>${priv}`;
-  else p.innerHTML=`<div class="mu">Sign in to keep your tabs on an account: they open on every device you sign in on. Without an account the tabs stay in this browser only, as before.</div><form class="ar" autocomplete="on"><input type="email" name="aem" placeholder="E-mail" autocomplete="username" aria-label="E-mail"><input type="password" name="apw" placeholder="Password (6 or more characters)" autocomplete="current-password" aria-label="Password"></form><div class="xr"><button class="tl" data-act="ain">Sign in</button><button class="tl" data-act="aup">Create account</button><button class="tl" data-act="arst">Forgot the password</button><button class="tl" data-act="aclose">Close</button><span class="mu" id="amsg"></span></div>${priv}`;
+  else p.innerHTML=`<div class="mu">Sign in to keep your tabs on an account: they open on every device you sign in on. Without an account the tabs stay in this browser only, as before.</div><form class="ar" autocomplete="on"><input type="email" name="aem" placeholder="E-mail" autocomplete="username" aria-label="E-mail"><input type="password" name="apw" placeholder="Password (6 or more characters)" autocomplete="current-password" aria-label="Password"></form><div class="xr"><button class="tl" data-act="ain">Sign in</button><button class="tl" data-act="aup">Create account</button><button class="tl" data-act="arst">Forgot the password</button><button class="tl" data-act="agoog" title="Sign in with a Google account (creates the account on first use)"><b style="color:#6ea8ff">G</b> Continue with Google</button><button class="tl" data-act="aclose">Close</button><span class="mu" id="amsg"></span></div>${priv}`;
 }
 document.addEventListener('submit',e=>{if(e.target.closest&&e.target.closest('#ap')){e.preventDefault();aSign('signInWithPassword')}});      // Enter in the password box = Sign in
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncNow()});
