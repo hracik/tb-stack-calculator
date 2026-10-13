@@ -215,8 +215,11 @@ All four modes use the same logic. They differ only in K, the number of enemy st
 | 4-stack | 4 | 5, 9, 13 ... | yes |
 | 6-stack | 6 | 7, 13, 19 ... | no |
 | 8-stack | 8 | 9, 17, 25 ... | yes |
+| 16-stack (5 players, 12.1) | 16 | none | yes |
 
 In the 3- and 6-stack modes the squad bonus is counted against melee, ranged and flying only, so many army troops show 0 % and ties are ordered by category and tier.
+
+**16-stack, five players (12.1).** Five players hit one epic monster at the same time. The monster has 16 stacks (4 of each kind, so every squad bonus counts, no mounted exception). Every player brings the same army, so the combined queue holds every stack of the order 5 times in a row (`PLAYERS16=5`, `P.copies`). The battle is fought on that whole queue (`strikesP`, 16 trades per round, the same rules as every other mode) and a stack gets the average strikes of its 5 copies, so the damage shown is for ONE player; the sum of the five is shown next to it. Nobody can agree who stands on which place, so the places `Kn+1` are not used (`kn1Place` returns false when `P.copies>1`): there are no sacrifices, the same engine builds the plain order (weakest first, strongest last, total strength and health never rising). The dying order, the hitting order and the battle report show the 5 copies (player 1 ... 5). On a sample setup without mercenaries the engineers (SH about half of the others) cost about 1 % damage in this mode, because without a place `Kn+1` they pull the stack behind them down to half their health (in the 4- and 8-stack modes the same setup loses 4-6 % without them). With mercenaries the result swings by several % either way when the engineers are switched off (4-stack +7.5 %, 8- and 16-stack -9 %); the cause is not investigated (the mercenary chain follows the last stack), so compare on your own setup.
 
 ### Leadership and Dominance
 
