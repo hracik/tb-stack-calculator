@@ -142,7 +142,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='10.4';
+const APP_VERSION='10.5';
 (function(){
   const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
   const me='v'+APP_VERSION;
@@ -341,7 +341,7 @@ function drawTabs(){
   $('tabs').innerHTML=tabs.map((t,i)=>`<button class="tab${i==active?' on':''}" data-t="${i}" title="${esc(t.name)} - double-click to rename">${esc(t.name)}</button>`).join('')+'<button class="tab add" data-add="1" title="New tab">+</button>';
   $('tabtools').innerHTML=delPending
     ?`<span>Delete “${esc(tabs[active].name)}”?</span><button class="tl" data-act="yes">Yes, delete</button><button class="tl" data-act="no">Cancel</button>`
-    :`<button class="tl" data-act="ren">✎ Rename</button><button class="tl" data-act="dup">⧉ Duplicate</button>${tabs.length>1?'<button class="tl" data-act="del">🗑 Delete</button>':''}<button class="tl${XPM=='exp'?' on':''}" data-act="exp" title="Show all inputs of this tab as text, to copy">⇪ Export</button><button class="tl${XPM=='imp'?' on':''}" data-act="imp" title="Paste exported text: it opens as a new tab">⇩ Import</button><span class="mu">Each tab keeps its own settings (saved in this browser${FB.key&&aSes()?' and on your account':''}).</span>`;
+    :`<button class="tl" data-act="ren">✎ Rename</button><button class="tl" data-act="dup">⧉ Duplicate</button>${tabs.length>1?'<button class="tl" data-act="del">🗑 Delete</button>':''}<button class="tl${XPM=='exp'?' on':''}" data-act="exp" title="Show all inputs of this tab as text, to copy">⇪ Export</button><button class="tl${XPM=='imp'?' on':''}" data-act="imp" title="Paste exported text: it opens as a new tab">⇩ Import</button>`;
 }
 function newName(){let n=tabs.length+1;while(tabs.some(t=>t.name==='Tab '+n))n++;return 'Tab '+n}
 function switchTab(i){if(i==active)return;save();active=i;delPending=false;load(tabs[i].data);drawTabs();refresh()}
