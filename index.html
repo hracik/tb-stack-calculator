@@ -147,7 +147,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.2';
+const APP_VERSION='14.3';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1230,7 +1230,7 @@ function chain(arr,eq,limit,limSP=Infinity){
     const sp=useSP;
     if(sp&&tot(s.n,su(s))>limSP)s.n=fitN(limSP,su(s));
     const h=tot(s.n,s.hp);
-    if(h>0){if(eq)gMin=Math.min(gMin,h);else{limit=h;if(sp)limSP=tot(s.n,su(s))}}
+    if(h>0){if(eq)gMin=Math.min(gMin,h);else{limit=h-1;if(sp)limSP=tot(s.n,su(s))-1}}      // 14.3: the next stack stays at least 1 below (no tie)
   });
   return limit;
 }
@@ -1304,7 +1304,7 @@ function allocMonsters(P,Mo,real,eq,o){
   Mo.forEach(s=>s.n=0);
   const ground=real.filter(s=>s.cat!='Flying'),refSP=ground.length?ground:real;   // flying stacks (Beast units) are left out of the strength reference
   const aHP=Math.min(...real.map(s=>tot(s.n,s.hp))),aSP=Math.min(...refSP.map(s=>tot(s.n,su(s))));
-  const capHP=o?o.capHP:isFinite(aHP)?aHP:Infinity,capSP=o?o.capSP:isFinite(aSP)?aSP:Infinity;      // no gap: the monsters go right after the army
+  const capHP=o?o.capHP:isFinite(aHP)?aHP-1:Infinity,capSP=o?o.capSP:isFinite(aSP)?aSP-1:Infinity;      // no gap: the monsters go right after the army, at least 1 below its smallest total (14.3: no tie)
   const tiers=[...new Set(Mo.map(s=>s.r))];
   if(tiers.length){
     // highest tier first; the lowest tier takes what is left and has the least health
@@ -1323,7 +1323,7 @@ function allocMonsters(P,Mo,real,eq,o){
     if(allFull)chain(main,eq,capHP,capSP);
     else [...new Set(main.map(s=>s.r))].forEach(g=>chain(main.filter(s=>s.r==g),eq,capHP,capSP));
     const live2=main.filter(s=>s.n>0);
-    const lim=live2.length?Math.min(...live2.map(s=>tot(s.n,s.hp))):capHP,limSP=live2.length?Math.min(...live2.map(s=>tot(s.n,su(s)))):capSP;
+    const lim=live2.length?Math.min(...live2.map(s=>tot(s.n,s.hp)))-1:capHP,limSP=live2.length?Math.min(...live2.map(s=>tot(s.n,su(s))))-1:capSP;
     fill(rest,P.capM-usedOf(main),lim,limSP);chain(rest,eq,lim,limSP);
   }
 }
