@@ -147,7 +147,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.3';
+const APP_VERSION='14.4';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -859,7 +859,7 @@ let WEAKMONO=true;      // v328: the full monster tiers have outliers too: a mon
 let WEAKPERM=true;      // 8.2: the weak groups of the order above (army AND monster outliers) are also tried in every other sequence on the places Kn+1: a weak monster may stand on the FIRST such place, not only behind the weak army troops; the damage decides
 let WEAKFRONT=false;     // 8.6: OFF. Weak troops (army and monsters) as a block on the FIRST places with the other weak groups on the places Kn+1 behind it (8.4 whole monster groups, 8.5 single troops) gave a little more damage (Ari_3 +1.8 %) but made the calculation 3-10 times slower (Ari_3 30 ms against 3 ms). The code stays as an idea and a benchmark: set it to true to see how much damage the order search leaves, when a new idea is tested
 const FRONTPOOL=5,FRONTLEN=3;      // the block in front is taken from the FRONTPOOL weakest troops, at most FRONTLEN of them
-let MONCAP=true;        // 8.3: no full monster stack is bigger (in health) than the army's level. A monster on the FIRST place has no stack in front of it that could hold it down, so it took the whole level the Dominance allowed (Ari_3: Fire Phoenix I 20 % above the army's level, the next stack far below it); the Dominance the others cannot use stays unspent
+let MONCAP=false;       // 8.3, OFF since 14.4 (set true to bring it back): no full monster stack is bigger (in health) than the army's level. A monster on the FIRST place has no stack in front of it that could hold it down, so it took the whole level the Dominance allowed (Ari_3: Fire Phoenix I 20 % above the army's level, the next stack far below it); the Dominance the others cannot use stays unspent
 let WEAKSLOTS=true;     // the weakest groups (lowest ratio first) stand on the places Kn+1, one troop per place; the rest of the army follows on the other places
 function ratioGroups(P,arr,split,tol=GTOL){                                           // split: army and monsters never share a group; tol: troops within this relative SH distance of the lowest of the group join it (default: equal SH only)
   const q6=x=>Math.round(x*1e6),ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(...t.vs);
