@@ -147,7 +147,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.1';
+const APP_VERSION='14.2';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -287,7 +287,7 @@ function drawSO(st,P){
   // squad bonus = the troop's own bonus against this enemy + the Double hit. "No squad bonus" = base strength x your strength multiplier only.
   const info=n=>{const t=TRN[n],m=vsRatio(t,P),dh=P.one?0:t.cls=='M'?(P['dh'+t.type]||0):t.beast?P.dhBeast:0,cnt=sb[n]?sb[n].n||0:0,hpu=sb[n]?sb[n].hp:t.hp*mults(t,P)[0],
     one=t.str*mults(t,P)[1],full=one*vsFactor(t,P)*dhf(t,P);
-    return`${t.cls}${t.tier} · ${vsText(t,P)}${dh>0?' · Double hit +'+dh+'%':''}<br>${[['SH',(hpu>0?one/hpu:0).toFixed(4)],['Health',num(cnt*hpu)],['Strength',num(cnt*one)],['Damage',num(cnt*full)]].map(([l,x])=>`<span style="white-space:nowrap">${l}: ${x}</span>`).join(' · ')}`};   // SH = strength without squad bonus and Double hit (only your strength multiplier) per health; Damage = strength with the squad bonus and Double hit
+    return`${t.cls}${t.tier} · ${vsText(t,P)}${dh>0?' · Double hit +'+dh+'%':''}<br>${[['SH',(hpu>0?one/hpu:0).toFixed(4)],['Health',num(tot(cnt,hpu))],['Strength',num(tot(cnt,one))],['Damage',num(tot(cnt,full))]].map(([l,x])=>`<span style="white-space:nowrap">${l}: ${x}</span>`).join(' · ')}`};   // SH = strength without squad bonus and Double hit (only your strength multiplier) per health; Damage = strength with the squad bonus and Double hit
   const one=(n,lbl)=>`<div class="oi" data-n="${esc(n)}"><span class="no"${String(lbl).includes('–')?' style="width:auto;padding:0 9px;border-radius:11px"':''}>${lbl}</span>${IC[n]?`<img class="ic2" src="${IC[n]}" alt="">`:''}<span class="nm">${esc(n)} <small class="mu">${info(n)}</small></span></div>`;
   let html='',pos=0,block=[];
   SOPOS={};
@@ -1180,23 +1180,32 @@ function profile(live,d){
   });
 }
 // rounding fix for the same rule: a unit is trimmed only where two neighbours flip
-const QS=1-1e-12;      // 14.1: no step down (it was 0.000001 % per place): a stack takes the most units that keep it strictly below the stack before it, so the gap is one unit at most; 1e-12 only guards float noise
+// 14.2: the total health / strength of a stack is a WHOLE number (rounded down, like the game). Every comparison of the rules is between whole numbers, so nothing needs a float-noise guard.
+const tot=(n,u)=>Math.floor(n*u*(1+1e-14));      // ... the one tolerance left: a product that lands a few ulps under a whole number (62 x 27,258,000 stored as 27257999.999999996 units) is that whole number
+const su=s=>s.str*(s.dh||1);                  // strength per unit with the Double hit (monsters and mercenaries)
+function fitN(lim,u){                          // the most units (unit value u) whose whole total stays at or below the whole number lim
+  if(!(lim<Infinity))return Infinity;
+  let n=Math.max(0,Math.floor(lim/u));
+  while(tot(n+1,u)<=lim)n++;
+  while(n>0&&tot(n,u)>lim)n--;
+  return n;
+}
 function chainT(live){
   if(HO){                                   // CP kill: the stacks of a group may be equal; a group stays strictly below the smallest total of the group before; no strength rule
     let limH=Infinity,cur=null,gMin=Infinity;
     live.forEach(s=>{
       const g=s.grp||s.r;
-      if(g!==cur){if(isFinite(gMin))limH=gMin*QS;cur=g;gMin=Infinity}
-      if(s.n*s.hp>limH)s.n=Math.floor(limH/s.hp);
-      if(s.n>0)gMin=Math.min(gMin,s.n*s.hp);
+      if(g!==cur){if(isFinite(gMin))limH=gMin-1;cur=g;gMin=Infinity}
+      if(tot(s.n,s.hp)>limH)s.n=fitN(limH,s.hp);
+      if(s.n>0)gMin=Math.min(gMin,tot(s.n,s.hp));
     });
     return;
   }
   let limH=Infinity,limT=Infinity;
   live.forEach(s=>{
-    if(s.n*s.hp>limH*QS)s.n=Math.floor(limH*QS/s.hp);                 // every stack stays below the one before it by at least the step (no equal totals = no tie in the order)
-    if(strRuled(s)&&s.n*s.str>limT*QS)s.n=Math.floor(limT*QS/s.str);
-    if(s.n>0){limH=s.n*s.hp;if(strRef(s))limT=s.n*s.str}
+    if(tot(s.n,s.hp)>=limH)s.n=fitN(limH-1,s.hp);                 // every stack stays below the one before it by at least one (no equal totals = no tie in the order)
+    if(strRuled(s)&&tot(s.n,s.str)>=limT)s.n=fitN(limT-1,s.str);
+    if(s.n>0){limH=tot(s.n,s.hp);if(strRef(s))limT=tot(s.n,s.str)}
   });
 }
 // balanced counts: every stack aims for X*w health, X limited by the budget, by a health cap and by a strength cap
@@ -1212,14 +1221,16 @@ function fill(arr,budget,cap,capSP=Infinity){
 // health never rises along the order (fixes rounding drift); for monsters strength must also stay below the army's
 function chain(arr,eq,limit,limSP=Infinity){
   const useSP=isFinite(limSP);
+  if(isFinite(limit))limit=Math.floor(limit);
+  if(useSP)limSP=Math.floor(limSP);
   let gMin=Infinity,cur=null;
   arr.forEach(s=>{
-    if(eq&&(s.grp||s.r)!==cur){limit=Math.min(limit,gMin);if(isFinite(gMin))limit*=QS;cur=s.grp||s.r;gMin=Infinity}   // a group is equal inside, but the next group stays strictly below the smallest total of the one before (G before S must show)
-    if(s.n*s.hp>limit)s.n=Math.floor(limit/s.hp);
+    if(eq&&(s.grp||s.r)!==cur){limit=Math.min(limit,gMin);if(isFinite(gMin))limit-=1;cur=s.grp||s.r;gMin=Infinity}   // a group is equal inside, but the next group stays strictly below the smallest total of the one before (G before S must show)
+    if(tot(s.n,s.hp)>limit)s.n=fitN(limit,s.hp);
     const sp=useSP;
-    if(sp&&s.n*s.str*(s.dh||1)>limSP)s.n=Math.floor(limSP/(s.str*(s.dh||1)));
-    const h=s.n*s.hp;
-    if(h>0){if(eq)gMin=Math.min(gMin,h);else{limit=h;if(sp)limSP=s.n*s.str*(s.dh||1)}}
+    if(sp&&tot(s.n,su(s))>limSP)s.n=fitN(limSP,su(s));
+    const h=tot(s.n,s.hp);
+    if(h>0){if(eq)gMin=Math.min(gMin,h);else{limit=h;if(sp)limSP=tot(s.n,su(s))}}
   });
   return limit;
 }
@@ -1246,8 +1257,8 @@ function topUp(seq,A,cap){
   });
   const may=c=>{const s=S[c],p=PV[c],f=RF[c];      // may stack c take one more unit (the cost apart)
     if(s.tgt!==undefined&&!s.pt&&s.n*s.hp>s.tgt*TOPTOL)return false;
-    if(p&&(s.n+1)*s.hp>p.n*p.hp*QS)return false;
-    if(f&&(s.n+1)*s.str>f.n*f.str*QS)return false;
+    if(p&&tot(s.n+1,s.hp)>=tot(p.n,p.hp))return false;
+    if(f&&tot(s.n+1,s.str)>=tot(f.n,f.str))return false;
     return true};
   const ok=[],R=[];
   for(let c=0;c<m;c++){ok[c]=may(c);R[c]=S[c].n*S[c].hp/S[c].w}
@@ -1266,11 +1277,11 @@ function topUpGroups(seq,A,cap){      // Renegades, CP kill, CP death: a group o
   for(let g=0;g<500000;g++){
     let best=null,br=Infinity,br2=Infinity;
     const bnd=new Map();let cur=null,curMin=Infinity,prev=Infinity;
-    for(const q of seq){const gq=q.grp||q.r;if(gq!==cur){if(isFinite(curMin))prev=curMin*QS;cur=gq;curMin=Infinity}bnd.set(q,prev);if(q.n>0)curMin=Math.min(curMin,q.n*q.hp)}
+    for(const q of seq){const gq=q.grp||q.r;if(gq!==cur){if(isFinite(curMin))prev=curMin-1;cur=gq;curMin=Infinity}bnd.set(q,prev);if(q.n>0)curMin=Math.min(curMin,tot(q.n,q.hp))}
     for(const s of A){
       if(!(s.n>0)||!(s.hp>0)||s.cost>left)continue;
       if(s.tgt!==undefined&&!s.pt&&s.n*s.hp>s.tgt*TOPTOL)continue;
-      if((s.n+1)*s.hp>bnd.get(s))continue;                       // inside a group nobody has to stay below another stack (the order there is equal / random)
+      if(tot(s.n+1,s.hp)>bnd.get(s))continue;                       // inside a group nobody has to stay below another stack (the order there is equal / random)
       const r=s.n*s.hp/s.w;
       if(r<br){br2=br;br=r;best=s}else if(r<br2)br2=r;
     }
@@ -1278,7 +1289,7 @@ function topUpGroups(seq,A,cap){      // Renegades, CP kill, CP death: a group o
     let k=1;
     if(HO){          // CP kill / CP death: the same units one by one would go to this stack until it is no longer the lowest, so they are added at once (the order of the units is the same, only faster)
       k=Math.floor(left/best.cost);
-      k=Math.min(k,Math.floor(bnd.get(best)/best.hp+1e-9)-best.n);
+      k=Math.min(k,fitN(bnd.get(best),best.hp)-best.n);
       if(best.tgt!==undefined&&!best.pt)k=Math.min(k,Math.floor(best.tgt*TOPTOL/best.hp)-best.n+1);
       if(isFinite(br2))k=Math.min(k,Math.ceil(br2*best.w/best.hp)-best.n);
       k=Math.max(1,k);
@@ -1292,7 +1303,7 @@ function allocMonsters(P,Mo,real,eq,o){
   // (my next striker is the strongest stack that has not struck yet - if a monster out-struck the stack about to die, that stack would die without striking)
   Mo.forEach(s=>s.n=0);
   const ground=real.filter(s=>s.cat!='Flying'),refSP=ground.length?ground:real;   // flying stacks (Beast units) are left out of the strength reference
-  const aHP=Math.min(...real.map(s=>s.n*s.hp)),aSP=Math.min(...refSP.map(s=>s.n*s.str*(s.dh||1)));
+  const aHP=Math.min(...real.map(s=>tot(s.n,s.hp))),aSP=Math.min(...refSP.map(s=>tot(s.n,su(s))));
   const capHP=o?o.capHP:isFinite(aHP)?aHP:Infinity,capSP=o?o.capSP:isFinite(aSP)?aSP:Infinity;      // no gap: the monsters go right after the army
   const tiers=[...new Set(Mo.map(s=>s.r))];
   if(tiers.length){
@@ -1312,7 +1323,7 @@ function allocMonsters(P,Mo,real,eq,o){
     if(allFull)chain(main,eq,capHP,capSP);
     else [...new Set(main.map(s=>s.r))].forEach(g=>chain(main.filter(s=>s.r==g),eq,capHP,capSP));
     const live2=main.filter(s=>s.n>0);
-    const lim=live2.length?Math.min(...live2.map(s=>s.n*s.hp)):capHP,limSP=live2.length?Math.min(...live2.map(s=>s.n*s.str*(s.dh||1))):capSP;
+    const lim=live2.length?Math.min(...live2.map(s=>tot(s.n,s.hp))):capHP,limSP=live2.length?Math.min(...live2.map(s=>tot(s.n,su(s)))):capSP;
     fill(rest,P.capM-usedOf(main),lim,limSP);chain(rest,eq,lim,limSP);
   }
 }
@@ -1480,8 +1491,8 @@ function allocRen(P,live){                 // Renegades: every group is equal in
   // the monsters only have to stay below the first 16 stacks. They get the same health as the rest of the block
   // (no step, no extra gap); when dominance runs out the lowest monster tier is smaller and so dies last.
   const head=A.filter(s=>s.grp!='REST'&&s.n>0),restA=A.filter(s=>s.grp=='REST'&&s.n>0);
-  const headMin=Math.min(...head.map(s=>s.n*s.hp));
-  const level=restA.length?Math.min(...restA.map(s=>s.n*s.hp)):(isFinite(headMin)?headMin*(1-P.d):Infinity);
+  const headMin=Math.min(...head.map(s=>tot(s.n,s.hp)));
+  const level=restA.length?Math.min(...restA.map(s=>tot(s.n,s.hp))):headMin;
   allocMonsters(P,Mo,[],true,{d:0,capHP:level,capSP:Infinity});
   return{A,Mo};
 }
@@ -1547,11 +1558,11 @@ function battleHtml(P,list,order,sc){
     if(r!==rd){rd=r;h+=`<div class="brh">Round ${r+1}</div>`}
     const s=L[i],img=IC[s.name]?`<img class="ic2" src="${IC[s.name]}" alt="">`:'<span class="ic2"></span>',nm=`<span class="bm"><b>#${i+1}</b> ${esc(s.name)}<small>${s.n.toLocaleString()} units</small></span>`;
     if(t=='o'){                                              // one strike: the damage of the whole stack WITHOUT the Double hit, and the part of it that comes from the squad bonus (always counted; no mounted enemy in the 3-stack and Killshot modes, see vsRatio)
-      const base=(P.pvp&&s.r&&s.r[0]=='S')?2:1,d=s.n*s.str*(s.f||1),bn=Math.max(0,s.n*s.str*((s.f||1)-base));
+      const base=(P.pvp&&s.r&&s.r[0]=='S')?2:1,d=tot(s.n,s.str*(s.f||1)),bn=tot(s.n,s.str*Math.max(0,(s.f||1)-base));
       const t0=TRN[s.name],dh=t0?(P.one?0:t0.cls=='M'?(P['dh'+t0.type]||0):t0.beast?P.dhBeast:0):0,      // the same line of facts as in the dying order list: the tier first (S8, M8 ...) and the Double hit, the bonus against the enemy at the end, before the damage
         nmh=`<span class="bm"><b>#${i+1}</b> ${esc(s.name)}<small>${s.n.toLocaleString()} units${t0?' \u00b7 '+t0.cls+t0.tier:''}${dh>0?' \u00b7 Double hit +'+dh+'%':''}</small></span>`;
       h+=`<div class="bl bo"><span class="bic">${img}</span>${nmh}<span class="bb"${bn>0?' title="The bonus listed on the troop itself against the enemy, and the damage it adds: units x the troop\'s own strength x that bonus. Your own bonuses are not part of it."':''}>${t0?vsText(t0,P):''}${bn>0?`<small>+${num(bn)}</small>`:''}</span><span class="bv"><b>+${num(d)}</b></span></div>`}
-    else{const d=s.n*s.hp;      // the stack is killed: the damage the enemy had to deal
+    else{const d=tot(s.n,s.hp);      // the stack is killed: the damage the enemy had to deal
       h+=`<div class="bl be"><span class="bic">${img}${XS}</span>${nm}<span class="bv"><b>\u2212${num(d)}</b></span></div>`}
   });
   h+='</div>';
@@ -1714,11 +1725,11 @@ function sizeChain(P,seq,H,T,idx,X){
   const ns=[];
   seq.forEach(s=>{
     const rs=kn1Stack(P,idx,s);                                              // the places Kn+1: the strength may be far lower, never higher; the next stack follows the strength before it, as everywhere
-    let n=Math.floor(X/s.hp+1e-9);
-    if(isFinite(H))n=Math.min(n,Math.floor(H*QS/s.hp));
-    if(!HO&&strRuled(s)&&isFinite(T))n=Math.min(n,Math.floor(T*QS/s.str));
+    let n=fitN(Math.floor(X),s.hp);
+    if(isFinite(H))n=Math.min(n,fitN(H-1,s.hp));
+    if(!HO&&strRuled(s)&&isFinite(T))n=Math.min(n,fitN(T-1,s.str));
     if(!(n>=1)){ns.push(0);return}                                           // no unit fits: the stack does not exist (the next places move up)
-    ns.push(n);H=n*s.hp;if(strRef(s,rs))T=n*s.str;idx++;
+    ns.push(n);H=tot(n,s.hp);if(strRef(s,rs))T=tot(n,s.str);idx++;
   });
   return ns;
 }
@@ -1729,14 +1740,14 @@ function allocMerc(P,ld,so,X){
   const ix={};so.forEach((n,i)=>ix[n]=i);
   const L=ld.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);
   let H=Infinity,T=Infinity;
-  L.forEach(s=>{H=s.n*s.hp;if(strRef(s))T=s.n*s.str});   // the last Leadership / Dominance stack: the chain goes on from its health and total strength
-  if(P.cp&&L.length){const lg=L[L.length-1].grp;if(lg)H=Math.min(...L.filter(s=>s.grp===lg).map(s=>s.n*s.hp))}      // CP kill: the mercenaries stay below the SMALLEST stack of the last group
+  L.forEach(s=>{H=tot(s.n,s.hp);if(strRef(s))T=tot(s.n,s.str)});   // the last Leadership / Dominance stack: the chain goes on from its health and total strength
+  if(P.cp&&L.length){const lg=L[L.length-1].grp;if(lg)H=Math.min(...L.filter(s=>s.grp===lg).map(s=>tot(s.n,s.hp)))}      // CP kill: the mercenaries stay below the SMALLEST stack of the last group
   const by={};all.forEach(s=>by[s.name]=s);
   const used=(seq,ns)=>ns.reduce((q,n,i)=>q+n*seq[i].cost,0);
   // EVERY mercenary stack that is on gets units. Without a limit each stack steps down from the one before it (the first from the last Leadership / Dominance stack), as far as the Authority reaches;
   // when the Authority is short, all the stacks stand about level: the common health level is the highest one the Authority pays for (level along the order, rounding apart).
   const sizeOf=seq=>{
-    const hi=L.length?H*QS:1e15,at=X=>sizeChain(P,seq,L.length?H:Infinity,L.length?T:Infinity,L.length,X);
+    const hi=L.length?H-1:1e15,at=X=>sizeChain(P,seq,L.length?H:Infinity,L.length?T:Infinity,L.length,X);
     let ns=at(hi);
     if(used(seq,ns)<=P.capU)return ns;                                        // the Authority is enough: the chain is the limit, what is left over stays unused
     let lo=0,top=hi;
