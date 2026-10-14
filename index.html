@@ -146,7 +146,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='12.5';
+const APP_VERSION='12.6';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1848,7 +1848,7 @@ function calcRun(){
 }
 function refresh(){sync();calc()}
 // ---- the tier check (the Tier check button, shown in a window): would one more or one less tier give more damage? ----
-// The same calculation is run again with one tier added or removed, per troop type, one calculation per timer tick. Only tiers BELOW the highest ticked tier are tried (the top tiers are the best ones, a higher tier is never suggested), going down one tier at a time: as soon as a lower tier gives no gain, the tiers below it are not tried. Tiers are also removed from the lowest ticked one upwards, while that gives more damage.
+// The same calculation is run again with one tier added or removed, per troop type, one calculation per timer tick. Only tiers BELOW the highest ticked tier are tried (the top tiers are the best ones, a higher tier is never suggested), going down one tier at a time: as soon as a lower tier gives no gain, the tiers below it are not tried. Tiers are also removed from the lowest ticked one upwards, while that gives more damage. 12.6, engineers only: with no engineer ticked the engineer tiers of the Guardsmen's level are tried (E9, then E9 + E8 ...), and every engineer tier off (the top one too) is tried as well.
 let HINTGEN=0;      // a newer check (or closing the window) cancels the one that is running
 const HGAIN=0.001;      // a change is suggested only when it gives more than 0.1 % more damage
 function evalSel(sel){      // the estimated damage of the tier selection sel: the same steps as calc, without drawing
@@ -1859,7 +1859,8 @@ async function tierHint(gen){
   const body=$('tcb');
   const P=getP(),sel0=[];
   ['E','S','G','M'].forEach(c=>{for(let i=1;i<=9;i++){const el=$('s'+c+i);if(el&&el.checked)sel0.push(c+i)}});
-  const types=[['G','capA'],['S','capA'],['E','capA'],['M','capM']].filter(([c,k])=>P[k]>0&&sel0.some(x=>x[0]==c));
+  const gT=(a=>a.length?a:sel0.filter(x=>x[0]=='S').map(x=>+x.slice(1)).sort((x,y)=>y-x))(sel0.filter(x=>x[0]=='G').map(x=>+x.slice(1)).sort((x,y)=>y-x));      // 12.6: the tiers of the Guardsmen (the Specialists when there is no Guardsmen tier), the highest first
+  const types=[['G','capA'],['S','capA'],['E','capA'],['M','capM']].filter(([c,k])=>P[k]>0&&(sel0.some(x=>x[0]==c)||(c=='E'&&gT.length)));      // the engineers are checked even when none is ticked
   if(!types.length){body.innerHTML='<p>Nothing to check: tick some tiers and enter Leadership or Dominance first.</p>';return}
   let n=0;
   const run=async s=>{body.innerHTML=`<p>Checking the tiers... calculation ${++n}</p>`;await new Promise(r=>setTimeout(r,0));return gen===HINTGEN?evalSel(s):null};      // one step per timer tick: the page stays usable; closing the window cancels the check
@@ -1868,7 +1869,14 @@ async function tierHint(gen){
     let changed=false;
     for(const[c]of types){
       const tiers=()=>cur.filter(x=>x[0]==c).map(x=>+x.slice(1)).sort((a,b)=>a-b);
-      let T=tiers();const top=T[T.length-1],lo=c=='M'?3:1;
+      let T=tiers();
+      if(c=='E'&&!T.length){      // 12.6: no engineer ticked: the engineer tiers of the same level as the Guardsmen (E9; then E9 and E8 ...) are tried, the best one with more than HGAIN gain is taken
+        let bc=null;
+        for(let k=1;k<=gT.length;k++){const cand=[...cur,...gT.slice(0,k).map(t=>'E'+t)],d=await run(cand);if(d==null)return;if(d>best*(1+HGAIN)&&(!bc||d>bc.d))bc={cand,d}}
+        if(bc){cur=bc.cand;best=bc.d;changed=true}
+        T=tiers();
+      }
+      const top=T[T.length-1],lo=c=='M'?3:1;
       for(let t=top-1;t>=lo;t--){      // add: from the tier just below the top, going down
         if(T.includes(t))continue;
         const cand=[...cur,c+t],d=await run(cand);if(d==null)return;
@@ -1880,6 +1888,10 @@ async function tierHint(gen){
         const cand=cur.filter(x=>x!=c+T[i]),d=await run(cand);if(d==null)return;
         if(d>best*(1+HGAIN)){cur=cand;best=d}else break;
         changed=true;
+      }
+      if(c=='E'){      // 12.6: are engineers worth bringing at all? Every engineer tier off, the top one too
+        T=tiers();
+        if(T.length){const cand=cur.filter(x=>x[0]!='E'),d=await run(cand);if(d==null)return;if(d>best*(1+HGAIN)){cur=cand;best=d;changed=true}}
       }
     }
     if(!changed)break;
