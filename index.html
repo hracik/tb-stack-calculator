@@ -147,7 +147,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.0';
+const APP_VERSION='14.1';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -204,7 +204,6 @@ const card=(n,k,h=0,sv=h)=>`<div class="bc"><b>${n}</b>${row('Health','bh_'+k,h)
 $('bon').innerHTML=[['Guardsmen','G',3466,6304],['Specialists','S',3466,6304],['Monsters','M',3461,6404],['Siege Engines','E',3466,6304]].map(([n,k,h,sv])=>card(n,k,h,sv)).join('');
 $('bonx').innerHTML=`<div class="bc ep" id="bcEpic"><b>Against epic monsters</b>${row('Strength','bs_Epic',3747)}</div>`+
   `<div class="bc ep" id="bcPlayers"><b>Against players</b>${row('Health','bh_Players',0)}${row('Strength','bs_Players',0)}</div>`;      // the Against boxes are in the Bonuses against enemies card; the Attack epics / Attack players switch (just above that card) hides and disables the one that does not count
-const STEP=0.000001/100;                                  // the step down per rank in the dying order: 0.000001 % (practically none, no setting)
 const DHV=Array.from({length:11},(_,i)=>i/2);                // Double hit: 0 - 5 % in steps of 0.5
 const snapDH=x=>{x=parseFloat(String(x).replace(',','.'));if(!isFinite(x))x=0;return Math.min(5,Math.max(0,Math.round(x*2)/2))};
 $('mb').innerHTML=TY.map(n=>`<div class="bc"><b>${n}</b>${row('Health','bh_'+n,100)}${row('Strength','bs_'+n,100)}<div class="bi"><span>Double hit</span><select id="dh_${n}">${DHV.map(x=>`<option value="${x}"${x==5?' selected':''}>${x}%</option>`).join('')}</select></div></div>`).join('');
@@ -750,7 +749,7 @@ const fmt=x=>x>=1e12?(x/1e12).toFixed(2)+' T':x>=1e9?(x/1e9).toFixed(2)+' B':x>=
 // ---- settings, read once per calculation ----
 function getP(){
   if($('mode').value=='maxl')$('mode').value='max';   // the near-maximum modes were removed (old saved tabs)
-  const p={d:STEP,kill:$('mode').value=='kill',ren:$('mode').value=='ren',capA:v('capA'),capM:v('capM'),capU:v('capU'),enemy:$('mode').value=='kill'?3:$('mode').value=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4,cat:DEFCAT.slice()};
+  const p={d:0,kill:$('mode').value=='kill',ren:$('mode').value=='ren',capA:v('capA'),capM:v('capM'),capU:v('capU'),enemy:$('mode').value=='kill'?3:$('mode').value=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4,cat:DEFCAT.slice()};
   ['G','S','M','E','Epic','Players','Giant','Elemental','Dragon','Beast','Melee','Mounted','Ranged','Flying'].forEach(k=>{p['h'+k]=$('bh_'+k)?v('bh_'+k):0;p['s'+k]=$('bs_'+k)?v('bs_'+k):0});
   ['Giant','Elemental','Dragon','Beast'].forEach(k=>{p['dh'+k]=$('dh_'+k)?snapDH($('dh_'+k).value):0});
   p.pm=$('mode').value=='pvpmax';                // PvP Max damage: a fully equipped enemy (4 stacks, every kind of troop), all bonuses and the Double hit count, no Epic strength
@@ -1147,7 +1146,7 @@ function buildStacks(P,order,X){
   ts.filter(t=>X.has(t.name)).forEach(t=>out.push(mk(t,0)));
   out.so=so.slice();return out;
 }
-// Health target factor w of every stack: a small step down along the dying order (this reproduces your reference numbers)
+// Health target factor w of every stack: no step down along the dying order (14.1; it was 0.000001 % per place): the gaps come from the whole units
 function weights(arr,eq,d,c0){
   const c={rank:-1,last:null,...(c0||{})};
   arr.forEach(s=>{
@@ -1166,7 +1165,7 @@ const strRuled=s=>true;                                                      // 
 const strRef=(s,rs=s.rs)=>!rs;                                               // the next stack follows this stack's strength (a place Kn+1 is no reference; no kind of troop is special)
 // Max damage: the stack that strikes first dies first. Along the dying order BOTH totals go down, never up: the total health (who dies first)
 // and the total strength without squad bonus (who strikes first). Every troop is held by both, the engineers too.
-// profile(): the health target of every stack (a share of the common level X). Every stack takes a small step down from the one before it, and where the
+// profile(): the health target of every stack (a share of the common level X). Every stack stands level with the one before it (the whole units set the gap), and where the
 // next troop has more strength per health, its health goes down a little further so that its total strength cannot rise either.
 // 3-, 4-, 6- and 8-stack: the stacks on the places Kn+1 (5, 9, 13 ... counted from the first place of the whole order, including the engineers) are only HALF exempt from the strength rule: their total strength may be
 // far LOWER than the stack before it, but never higher, and the next stack does not look at it (it follows the strength of the last stack before the place Kn+1). They follow the health of the stack before them. s.rs marks them.
@@ -1181,7 +1180,7 @@ function profile(live,d){
   });
 }
 // rounding fix for the same rule: a unit is trimmed only where two neighbours flip
-const QS=1-STEP;
+const QS=1-1e-12;      // 14.1: no step down (it was 0.000001 % per place): a stack takes the most units that keep it strictly below the stack before it, so the gap is one unit at most; 1e-12 only guards float noise
 function chainT(live){
   if(HO){                                   // CP kill: the stacks of a group may be equal; a group stays strictly below the smallest total of the group before; no strength rule
     let limH=Infinity,cur=null,gMin=Infinity;
@@ -1383,10 +1382,10 @@ function lpAlloc(P,live){
   const out=new Map();best.seq.forEach((s,i)=>out.set(s,best.n[i]));
   return out;
 }
-// Max vs. full stack: every stack has one rank in the dying order, army and monsters together (a step of d per rank). The army uses all
+// Max vs. full stack: every stack has one rank in the dying order, army and monsters together (d = 0: no step per rank, the whole units set the gap). The army uses all
 // Leadership; the monsters aim for the same health level (so the ranks interleave), highest tier first, the lowest tier gets what is left.
 // No monster gap and no strength cap - the Double hit is a damage bonus instead.
-// 3-, 4-, 6- and 8-stack: the counts are NOT chosen for damage. Every stack aims for the same health level (a share w of it: a tiny step down along the order, and further down only where the
+// 3-, 4-, 6- and 8-stack: the counts are NOT chosen for damage. Every stack aims for the same health level (a share w of it: level along the order, and further down only where the
 // total strength would otherwise rise - the places Kn+1 are exempt and just follow the health before them). The level is as high as the Leadership allows (all of it is spent);
 // the monsters get ONE common level, the army's level at most - lower when the Dominance is the smaller pool, so there is a single step between the army and the monsters. Rounding is repaired and the leftover is spent troop by troop.
 function allocTight(P,live){
@@ -1395,7 +1394,7 @@ function allocTight(P,live){
   for(let pass=0;pass<4;pass++){
     cur.forEach(s=>{s.n=0});
     const A=cur.filter(s=>s.p=='A'),Mo=cur.filter(s=>s.p=='M');
-    weights(cur,HO,d);markEx(P,cur);if(!HO)profile(cur,d);      // CP kill (HO): every group is equal inside, a small step down only between groups
+    weights(cur,HO,d);markEx(P,cur);if(!HO)profile(cur,d);      // CP kill (HO): every group is equal inside, a group stands strictly below the one before it
     fill(A,P.capA,Infinity,Infinity);
     const inv=A.reduce((q,x)=>q+x.w*x.cost/x.hp,0),X=inv&&P.capA>0?P.capA/inv:Infinity;
     if(HO&&free===null){const invM=Mo.reduce((q,x)=>q+x.w*x.cost/x.hp,0);free=P.capM>0&&invM>0&&(!isFinite(X)||P.capM/invM>X*1.001)}      // decided once, on the whole list: every monster tier on the army's level still cannot spend the Dominance
@@ -1475,7 +1474,7 @@ function allocWhole(P,live){                         // Killshot: the exact solu
   if(ok)topUp(live,Mo,P.capM);        // ... and the Dominance
   return{A,Mo};
 }
-function allocRen(P,live){                 // Renegades: every group is equal inside, a step only between groups
+function allocRen(P,live){                 // Renegades: every group is equal inside, a group stands strictly below the one before it
   const Mo=live.filter(s=>s.p=='M'),A=live.filter(s=>s.p=='A'),d=P.d;
   weights(A,true,d);fill(A,P.capA,Infinity);chain(A,true,Infinity);topUpGroups(A,A,P.capA);
   // the monsters only have to stay below the first 16 stacks. They get the same health as the rest of the block
@@ -1735,7 +1734,7 @@ function allocMerc(P,ld,so,X){
   const by={};all.forEach(s=>by[s.name]=s);
   const used=(seq,ns)=>ns.reduce((q,n,i)=>q+n*seq[i].cost,0);
   // EVERY mercenary stack that is on gets units. Without a limit each stack steps down from the one before it (the first from the last Leadership / Dominance stack), as far as the Authority reaches;
-  // when the Authority is short, all the stacks stand about level: the common health level is the highest one the Authority pays for (a tiny step down along the order, rounding apart).
+  // when the Authority is short, all the stacks stand about level: the common health level is the highest one the Authority pays for (level along the order, rounding apart).
   const sizeOf=seq=>{
     const hi=L.length?H*QS:1e15,at=X=>sizeChain(P,seq,L.length?H:Infinity,L.length?T:Infinity,L.length,X);
     let ns=at(hi);
