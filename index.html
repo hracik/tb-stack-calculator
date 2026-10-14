@@ -146,7 +146,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='12.3';
+const APP_VERSION='12.4';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -760,7 +760,8 @@ function getP(){
   if(!p.pvp){p.hPlayers=0;p.sPlayers=0}              // the Against players bonuses count only in the PvP modes (like the Against epic monsters Strength counts only against epic monsters)
   p.epic=!p.ren&&!p.pvp;                         // the enemy stacks are epic in every mode except Renegades and PvP: the bonus against epic enemies counts
   p.max4=$('mode').value=='max';                 // Max vs. 3 stack and Max vs. full stack: whole army ranking
-  p.copies=p.max4&&p.enemy==16?PLAYERS16:1;      // 16-stack (12.1): five players bring the same army, so every stack of the order stands PLAYERS16 times in a row in the combined queue; the places Kn+1 cannot be used (nobody can coordinate them)
+  p.copies=p.max4&&p.enemy==16?PLAYERS16:1;      // 16-stack (12.1): five players bring the same army, so every stack of the order stands PLAYERS16 times in a row in the combined queue; nobody can coordinate the places Kn+1, so they are not used
+  p.ne=p.copies>1?TR.filter(t=>t.cat=='Engineer'&&$('sE'+t.tier)&&$('sE'+t.tier).checked&&!XS.has(t.name)).length:0;      // 12.4: the engineer stacks that are on (ticked tiers, cards not switched off): in the 16-stack mode they stand first and are not bound by the strength rule
   p.minH=Math.min(p.hGiant,p.hElemental,p.hDragon,p.hBeast);p.minS=Math.min(p.sGiant,p.sElemental,p.sDragon,p.sBeast);
   return p;
 }
@@ -1159,7 +1160,7 @@ function weights(arr,eq,d,c0){
 // K = the number of enemy stacks (P.enemy). Along the dying order the total health never rises (a step down) and the total strength never rises either - for every troop, the engineers too.
 // The strength rule has a reference: the last stack before it that is not on a place Kn+1 (see markEx). The kind of troop never matters.
 const PLAYERS16=5;                                                           // the 16-stack mode: the number of players with the same army
-const kn1Place=(P,i)=>P.copies>1?false:i%P.enemy==0;                                          // the 0-based place i of the whole order (engineers counted) is a place Kn+1
+const kn1Place=(P,i)=>P.copies>1?i<P.ne:i%P.enemy==0;                                          // the 0-based place i of the whole order (engineers counted) is a place Kn+1
 const kn1Stack=(P,i,s)=>modeOf(P).kn1&&kn1Place(P,i);                        // ... any troop may stand on one, the engineers too (the first place, index 0, is one: the lowest SH stands there); the modes without the rule have no such place
 const strRuled=s=>true;                                                      // the strength rule applies to every stack (the engineers are NOT exempt)
 const strRef=(s,rs=s.rs)=>!rs;                                               // the next stack follows this stack's strength (a place Kn+1 is no reference; no kind of troop is special)
@@ -1786,7 +1787,7 @@ function mercTable(all){
 const MODEINFO={
   '4':['Regular · 4-stack','You hit a "full health" epic monster with 4 stacks, with the goal of maximizing damage by optimizing the number of troops used per stack.'],
   '8':['Regular · 8-stack','You hit a "full health" epic monster with 8 stacks, with the goal of maximizing damage by optimizing the number of troops used per stack.'],
-  '16':['Regular · 16-stack','Five players hit one "full health" epic monster at the same time. The monster has 16 stacks (4 of each kind). Every player brings the same army, so every stack stands 5 times in a row in the combined queue, and the damage shown is for one player (the sum of all five is shown next to it). The players cannot agree who stands on which place, so nobody uses sacrifice places: the weakest troops stand first, the strongest last.'],
+  '16':['Regular · 16-stack','Five players hit one "full health" epic monster at the same time. The monster has 16 stacks (4 of each kind). Every player brings the same army, so every stack stands 5 times in a row in the combined queue, and the damage shown is for one player (the sum of all five is shown next to it). The players cannot agree who stands on which place, so there are no sacrifice places; instead the engineers you ticked (for example E9 and E8) stand first and are not bound by the strength rule: they cost little, die without a hit and push every other stack back, so the army strikes more often. The rest of the army: the weakest troops first, the strongest last.'],
   '3':['Sniper · 3-stack','You hit a weakened epic monster with the goal of maximizing damage. The mounted units have already been killed or significantly weakened. Stacks are slightly different from the 4-stack mode, to reflect that there are no mounted units and only 3 enemies.'],
   '6':['Sniper · 6-stack','You hit a weakened epic monster with the goal of maximizing damage. The mounted units have already been killed or significantly weakened. Stacks are slightly different from the 8-stack mode, to reflect that there are no mounted units and only 6 enemies.'],
   'kill':['Sniper · Killshot v. 3','You hit an epic monster with the goal of killing it. The total damage to the enemy is a bit smaller than in the 3-stack or 4-stack modes, but the cost of reviving and training is significantly lower, which makes this mode very cost-effective.'],
