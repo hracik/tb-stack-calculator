@@ -147,7 +147,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.13';
+const APP_VERSION='14.14';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -303,12 +303,12 @@ function drawSO(st,P){
         k=m}
       block=[];return}
     block.forEach(n=>SOPOS[n]=block.length>1?first+'–'+last:first);
-    html+=`<div class="oi"><span class="no" style="width:auto;padding:0 9px;border-radius:11px">${block.length>1?first+'–'+last:first}</span><span class="nm">${P.ren&&blockG=='MON'?'Monsters and mercenaries':P.ren?'Rest of the Leadership':'Everything else'}: one block, random order <small class="mu">${block.length} stacks: ${block.map(esc).join(', ')}</small></span></div>`;
+    html+=`<div class="oi"><span class="no" style="width:auto;padding:0 9px;border-radius:11px">${block.length>1?first+'–'+last:first}</span><span class="nm">${P.ren?'Rest of the Leadership, monsters and mercenaries':'Everything else'}: one block, random order <small class="mu">${block.length} stacks: ${block.map(esc).join(', ')}</small></span></div>`;
     block=[];
   };
   st.so.forEach(n=>{
     if(!(sb[n]&&sb[n].n>0))return;                                // a troop with 0 units is not in the list (and takes no place number)
-    if(P.ren&&(grp[n]=='REST'||grp[n]=='MON')){if(block.length&&blockG!==grp[n])flush();blockG=grp[n];block.push(n);return}      // 14.11: two blocks - the rest of the Leadership, then the monsters with the mercenaries
+    if(P.ren&&grp[n]=='REST'){block.push(n);return}      // 14.14: the first 16 and the buffer zone stand alone, everything else is one block
     if(P.cp&&grp[n]){if(block.length&&blockG!==grp[n])flush();blockG=grp[n];block.push(n);return}
     flush();pos++;SOPOS[n]=pos;html+=one(n,pos);
   });
@@ -1130,7 +1130,12 @@ const MD={
     order:(P,{live,mkOut,nT})=>{
       const so=renOrder(P,live),out=mkOut(so,nT>=3?nT-1:nT);
       const top=[...new Set(out.filter(s=>s.p=='A'&&s.cat!='Engineer').map(s=>+s.r.slice(1)))].sort((a,b)=>b-a).slice(0,2);
-      out.forEach(s=>{s.grp=s.p=='M'?'MON':(s.cat=='Engineer'||!top.includes(+s.r.slice(1)))?'REST':s.name});   // 14.11: the rest of the Leadership (rest of the army and the engineers) is one block, the monsters (with the mercenaries) another; 14.8: every stack of the first 16 stands alone (health and strength both fall along the order)
+      // 14.14: the first 16 stacks (the two top tiers, G and S) stand alone. Behind them a BUFFER ZONE of stacks that stand alone as well: the engineers that are above the first stacks of the next tier in the order,
+      // and the first 4 stacks of that tier (4 x G, or 4 x S when there is no G of that tier). Everything else (the rest of the Leadership, the monsters, the mercenaries) is ONE block, equal inside, random order.
+      const armyOut=out.filter(s=>s.p=='A'&&s.cat!='Engineer'&&!top.includes(+s.r.slice(1))),f0=armyOut[0];
+      const bufU=f0?armyOut.filter(s=>s.r[0]==f0.r[0]&&+s.r.slice(1)==+f0.r.slice(1)).slice(0,4):[];
+      const bufE=out.filter(s=>s.p=='A'&&s.cat=='Engineer'&&(!f0||out.indexOf(s)<out.indexOf(f0)));      // no Guardsmen / Specialists below the two top tiers: the engineers alone are the buffer
+      out.forEach(s=>{s.buf=false;s.grp=(s.p=='A'&&s.cat!='Engineer'&&top.includes(+s.r.slice(1)))?s.name:(bufU.includes(s)||bufE.includes(s))?(s.buf=true,s.name):'REST'});
       return{so,out};}}
 };
 const modeOf=P=>rgm(P)?MD.epic:P.cp?MD.cp:P.kill?MD.kill:MD.ren;
@@ -1521,8 +1526,8 @@ function allocRen(P,live){                 // Renegades (14.8): the first 16 sta
   // the monsters only have to stay below the first 16 stacks. They get the same health as the rest of the block
   // (no step, no extra gap); when dominance runs out the lowest monster tier is smaller and so dies last.
   const headMin=lastHead(),restA=rest.filter(s=>s.n>0);
-  const level=(restA.length?Math.min(...restA.map(s=>tot(s.n,s.hp))):headMin)-1;      // 14.10: the monsters stand just a step below the block in health; their strength may be above the block but stays below the last of the 16
-  const capS=lastHeadS();
+  const level=restA.length?Math.min(...restA.map(s=>tot(s.n,s.hp))):headMin-1;      // 14.14: the monsters are in the block: the same health level as the rest of the Leadership (no step); their strength may be above the rest of the Leadership but stays below the last of the first 16
+  const h16=head.filter(s=>!s.buf&&s.n>0),capS=h16.length?tot(h16[h16.length-1].n,h16[h16.length-1].str):Infinity;
   allocMonsters(P,Mo,[],true,{d:0,capHP:level,capSP:isFinite(capS)?capS-1:Infinity});
   return{A,Mo};
 }
@@ -1566,8 +1571,8 @@ function score(P,list,order,eng){      // eng: the ranking of the order engine (
       if(b-a>1){const avg=hit.slice(a,b).reduce((q,x)=>q+x,0)/(b-a);for(let k=a;k<b;k++)hit[k]=avg}
       a=b}
   }
-  if(P.ren){                                                     // Renegades: two blocks with a random order inside - the rest of the Leadership, then the monsters with the mercenaries
-    ['REST','MON'].forEach(g=>{
+  if(P.ren){                                                     // Renegades: one block with a random order inside - the rest of the Leadership, the monsters and the mercenaries
+    ['REST'].forEach(g=>{
       const idx=L.map((s,i)=>s.grp==g?i:-1).filter(i=>i>=0);
       if(idx.length>1){
         const top=Math.max(...idx.map(i=>hp[i])),blk=idx.filter(i=>hp[i]>=0.9*top);   // partial stacks (much smaller) keep their place at the end
@@ -1762,23 +1767,23 @@ function sizeChain(P,seq,H,T,idx,X){
     if(isFinite(H))n=Math.min(n,fitN(H-1,s.hp));
     if(!HO&&strRuled(s)&&isFinite(T))n=Math.min(n,fitN(T-1,s.str));
     if(!(n>=1)){ns.push(0);return}                                           // no unit fits: the stack does not exist (the next places move up)
-    ns.push(n);H=tot(n,s.hp);if(strRef(s,rs))T=tot(n,s.str);idx++;
+    ns.push(n);if(!P.ren){H=tot(n,s.hp);if(strRef(s,rs))T=tot(n,s.str)}idx++;      // 14.14 Renegades: the mercenaries are one block, equal inside - no step from one to the next
   });
   return ns;
 }
 function allocMerc(P,ld,so,X){
   const all=MT.map(t=>mkM(t,P,X)),res={all,list:[],ord:[],used:0};
-  if(P.ren)all.forEach(s=>s.grp='MON');      // 14.11 Renegades: the mercenaries stand in one block with the monsters
+  if(P.ren)all.forEach(s=>s.grp='REST');      // 14.14 Renegades: the mercenaries stand in the one block with the rest of the Leadership and the monsters
   const act=MT.filter(t=>!X.has(t.name));
   if(!(P.capU>0)||!act.length)return res;
   const ix={};so.forEach((n,i)=>ix[n]=i);
   const L=ld.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);
   let H=Infinity,T=Infinity;
   L.forEach(s=>{H=tot(s.n,s.hp);if(strRef(s))T=tot(s.n,s.str)});   // the last Leadership / Dominance stack: the chain goes on from its health and total strength
-  if(P.ren){      // 14.10 Renegades: the mercenaries stand just a step below the block behind the first 16 in health; their strength may be above the block but stays below the last of the 16
-    const hd=L.filter(s=>s.p=='A'&&s.grp&&s.grp!='REST'),rs=L.filter(s=>s.p=='A'&&s.grp=='REST'),lh=hd.length?hd[hd.length-1]:null;
-    if(rs.length)H=Math.min(...rs.map(s=>tot(s.n,s.hp)));else if(lh)H=tot(lh.n,lh.hp);
-    if(lh)T=tot(lh.n,lh.str);
+  if(P.ren){      // 14.14 Renegades: the mercenaries are in the block with the rest of the Leadership and the monsters: the same health level, no step between them; their strength may be above the rest of the Leadership but stays below the last of the first 16
+    const hd=L.filter(s=>s.p=='A'&&s.grp&&s.grp!='REST'),rs=L.filter(s=>s.p=='A'&&s.grp=='REST'),lh=hd.length?hd[hd.length-1]:null,h16=hd.filter(s=>!s.buf),l16=h16.length?h16[h16.length-1]:null;
+    if(rs.length)H=Math.min(...rs.map(s=>tot(s.n,s.hp)))+1;else if(lh)H=tot(lh.n,lh.hp);      // sizeChain keeps a stack at most (H-1): the level of the block (the smallest rest-of-Leadership stack; one below the last stack before the block when there is none)
+    if(l16)T=tot(l16.n,l16.str);
   }
   if(P.cp&&L.length){const lg=L[L.length-1].grp;if(lg)H=Math.min(...L.filter(s=>s.grp===lg).map(s=>tot(s.n,s.hp)))}      // CP kill: the mercenaries stay below the SMALLEST stack of the last group
   const by={};all.forEach(s=>by[s.name]=s);
