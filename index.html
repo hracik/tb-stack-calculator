@@ -147,7 +147,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.6';
+const APP_VERSION='14.7';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1598,7 +1598,7 @@ function runBest(n){                                     // Max vs. 3 stack / fu
 }
 const PV1=true;                                          // Pv1 modes (CP kill, CP death): on. Set false to switch them off: their buttons are greyed out and a tab that was left in one falls back to the 4-stack mode.
 const PVM=false;                                         // PvMany modes (Max damage; One v. One has no rule yet): switched off for now, same behaviour. Set true to switch Max damage on.
-const RENEGADES=false;                                   // Renegades is switched off for now: its button is greyed out and a tab saved in Renegades opens in Max damage. Set true to switch it on again.
+const RENEGADES=true;                                    // Renegades is on (14.7). Set false to switch it off: its button is greyed out and a tab saved in Renegades opens in Max damage.
 function runRen(){                                       // Renegades: fixed rule, nothing is refined
   if(!RENEGADES)return;
   $('mode').value='ren';SO=[];
