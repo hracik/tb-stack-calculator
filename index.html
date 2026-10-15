@@ -147,7 +147,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.12';
+const APP_VERSION='14.13';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1871,12 +1871,7 @@ function calcRun(){
   REVM=REVCASES.some(c=>c[0]==$('revm').value)?$('revm').value:'top';SHOWTR=$('shw').value=='train'&&!noFood;
   const hl=[...A,...Mo,...U.list];
   TOPT={A:0,M:0,U:0};hl.forEach(s=>{if((s.n||0)>0){const t=TRN[s.name];if(t.tier>TOPT[t.pool])TOPT[t.pool]=t.tier}});      // the top line = the highest tier in use, for the Army, the Monsters and the Mercenaries
-  const dies=(()=>{      // 14.12 Renegades: the battle ends after round 1, so only the stacks the enemy kills there (the first ones of the dying order, one per trade) are revived; the others are alive and cost nothing. Every other mode: every stack counts
-    if(!P.ren)return()=>true;
-    const ix={};[...st.so,...U.ord].forEach((n,i)=>ix[n]=i);
-    const L=hl.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]),log=[];strikes(L,P.enemy,log,1);
-    const dead=new Set(log.filter(e=>e[1]=='e').map(e=>L[e[2]].name));return s=>dead.has(s.name)})();
-  const rv={A:0,M:0,U:0};hl.forEach(s=>{const t=TRN[s.name];if(t&&dies(s)&&(s.n||0)>0)rv[t.pool]+=Math.floor(s.n*REV/100)*(t.gold||0)});      // 13.1, 13.3: the revival gold of the whole hit in the full revive: REV % (90) of every stack, rounded DOWN per stack (a stack of 1 unit gets 0 back), at the revival gold of its troop, by group: Army (with the engineers), Monsters, Mercenaries
+  const {rv,dies}=fullRevive(P,hl,[...st.so,...U.ord]);      // 13.1, 13.3, 14.12: the revival gold of the whole hit in the full revive (see fullRevive)
   const tl=templeLv(),tf=tl>=1?TEMPLE[tl-1]:1,rcost=(rv.A+rv.M+rv.U)/tf;      // the Temple divides the cost
   const rvs=hl.filter(s=>dies(s)&&revives(s,REVM)).reduce((g,s)=>{const t=TRN[s.name];if(t&&(s.n||0)>0)g[t.pool]+=Math.floor(s.n*REV/100)*(t.gold||0);return g},{A:0,M:0,U:0}),scost=(rvs.A+rvs.M+rvs.U)/tf;      // 13.4: the same, only for the stacks that the Revive select brings back (none: 0, all: the same as the full revive)
   const rtip=`Revive cost in gold: selected / full. Selected = the stacks that the Revive select brings back (${REVCASES.find(c=>c[0]==REVM)[1]}), full = a full revive of the whole hit${P.ren?' (Renegades: only the stacks the enemy kills in round 1, the first '+hl.filter(dies).length+' of the dying order; the others stay alive)':''}. ${REV} % of each stack comes back (rounded down per stack, a stack of 1 unit gets nothing back), the revival gold of each troop x the revived units${tl>=1?', divided by the Temple factor of level '+tl+' ('+tf.toFixed(2)+')':' (no Temple level entered, no reduction)'}. Selected: Army (with engineers) ${num(rvs.A/tf)} \u00b7 Monsters ${num(rvs.M/tf)} \u00b7 Mercenaries ${num(rvs.U/tf)} gold. Full: Army (with engineers) ${num(rv.A/tf)} \u00b7 Monsters ${num(rv.M/tf)} \u00b7 Mercenaries ${num(rv.U/tf)} gold.`;
@@ -1913,9 +1908,24 @@ function refresh(){sync();calc()}
 // The same calculation is run again with one tier added or removed, per troop type, one calculation per timer tick. Only tiers BELOW the highest ticked tier are tried (the top tiers are the best ones, a higher tier is never suggested), going down one tier at a time: as soon as a lower tier gives no gain, the tiers below it are not tried. Tiers are also removed from the lowest ticked one upwards, while that gives more damage. 12.6, engineers only: with no engineer ticked the engineer tiers of the Guardsmen's level are tried (E9, then E9 + E8 ...). 12.7: every type (Guardsmen, Specialists, Engineers, Monsters) is also tried with all its tiers off, the top one too. 12.8: a type that was unticked completely is not touched again in the same check.
 let HINTGEN=0;      // a newer check (or closing the window) cancels the one that is running
 const HGAIN=0.001;      // a change is suggested only when it gives more than 0.1 % more damage
-function evalSel(sel){      // the estimated damage of the tier selection sel: the same steps as calc, without drawing
+// 13.1, 13.3: the revival gold of the whole hit in the full revive: REV % (90) of every stack, rounded DOWN per stack (a stack of 1 unit gets 0 back), at the revival gold of its troop, by group: Army (with the engineers), Monsters, Mercenaries.
+// 14.12 Renegades: the battle ends after round 1, so only the stacks the enemy kills there (the first ones of the dying order, one per trade) are revived; the others are alive and cost nothing. Every other mode: every stack counts.
+function fullRevive(P,hl,order){
+  let dies=()=>true;
+  if(P.ren){
+    const ix={};order.forEach((n,i)=>ix[n]=i);
+    const L=hl.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]),log=[];strikes(L,P.enemy,log,1);
+    const dead=new Set(log.filter(e=>e[1]=='e').map(e=>L[e[2]].name));dies=s=>dead.has(s.name);
+  }
+  const rv={A:0,M:0,U:0};hl.forEach(s=>{const t=TRN[s.name];if(t&&dies(s)&&(s.n||0)>0)rv[t.pool]+=Math.floor(s.n*REV/100)*(t.gold||0)});
+  return{rv,dies};
+}
+function evalSel(sel){      // the tier selection sel: the same steps as calc, without drawing. m = what the check maximizes: the estimated damage; Renegades (14.13): the damage per gold of the full revive
   const P=getP(),{st,A,Mo,U}=solve(P,[...sel].sort((a,b)=>key(a)-key(b)));
-  return score(P,[...A,...Mo,...U.list],[...st.so,...U.ord]).dmg;
+  const hl=[...A,...Mo,...U.list],dmg=score(P,hl,[...st.so,...U.ord]).dmg;
+  if(!P.ren)return{m:dmg,dmg};
+  const {rv}=fullRevive(P,hl,[...st.so,...U.ord]),tl=templeLv(),gold=(rv.A+rv.M+rv.U)/(tl>=1?TEMPLE[tl-1]:1);
+  return{m:gold>0?dmg/gold:0,dmg,gold};
 }
 async function tierHint(gen){
   const body=$('tcb');
@@ -1924,8 +1934,8 @@ async function tierHint(gen){
   const gT=(a=>a.length?a:sel0.filter(x=>x[0]=='S').map(x=>+x.slice(1)).sort((x,y)=>y-x))(sel0.filter(x=>x[0]=='G').map(x=>+x.slice(1)).sort((x,y)=>y-x));      // 12.6: the tiers of the Guardsmen (the Specialists when there is no Guardsmen tier), the highest first
   const types=[['G','capA'],['S','capA'],['E','capA'],['M','capM']].filter(([c,k])=>P[k]>0&&(sel0.some(x=>x[0]==c)||(c=='E'&&gT.length)));      // the engineers are checked even when none is ticked
   if(!types.length){body.innerHTML='<p>Nothing to check: tick some tiers and enter Leadership or Dominance first.</p>';return}
-  let n=0;
-  const run=async s=>{body.innerHTML=`<p>Checking the tiers... calculation ${++n}</p>`;await new Promise(r=>setTimeout(r,0));return gen===HINTGEN?evalSel(s):null};      // one step per timer tick: the page stays usable; closing the window cancels the check
+  let n=0;const det=new Map(),kk=s=>[...s].sort().join(',');      // det: the damage and the revive gold of every selection that was calculated (Renegades shows them)
+  const run=async s=>{body.innerHTML=`<p>Checking the tiers... calculation ${++n}</p>`;await new Promise(r=>setTimeout(r,0));if(gen!==HINTGEN)return null;const r=evalSel(s);det.set(kk(s),r);return r.m};      // one step per timer tick: the page stays usable; closing the window cancels the check
   let cur=sel0.slice();const base=await run(cur);if(base==null)return;let best=base;
   const dropped=new Set();      // 12.8: a type that was suggested to be unticked completely is left alone in the later passes (no "untick E6 and tick E9" in one result; a second check can still suggest the engineers)
   for(let pass=0;pass<3;pass++){
@@ -1963,6 +1973,11 @@ async function tierHint(gen){
   }
   if(gen!==HINTGEN)return;
   const add=cur.filter(x=>!sel0.includes(x)),rem=sel0.filter(x=>!cur.includes(x)),ls=a=>a.sort((x,y)=>key(x)-key(y)).join(', ');
+  if(P.ren){      // 14.13 Renegades: the best damage for the least gold of the full revive (damage per gold), not the highest damage
+    const d0=det.get(kk(sel0)),d1=det.get(kk(cur)),pc=(a,b)=>((a/b-1)*100).toFixed(1),sg=x=>(x>=0?'+':'')+x,fg=x=>Math.round(x).toLocaleString('en-US');
+    body.innerHTML=add.length||rem.length?`<p><b>Suggestion:</b> ${[add.length?'tick <b>'+ls(add)+'</b>':'',rem.length?'untick <b>'+ls(rem)+'</b>':''].filter(Boolean).join(' and ')}.</p><p>Damage per gold of the full revive: ${fmt(base)} &rarr; <b>${fmt(best)}</b> (${sg(pc(best,base))} %).</p><p>Estimated damage: ${fmt(d0.dmg)} &rarr; ${fmt(d1.dmg)} (${sg(pc(d1.dmg,d0.dmg))} %). Full revive cost: ${fg(d0.gold)} &rarr; ${fg(d1.gold)} gold (${sg(pc(d1.gold,d0.gold))} %).</p>`:`<p>No other choice of tiers gives more damage for the gold of the full revive.</p>`;
+    return;
+  }
   body.innerHTML=add.length||rem.length?`<p><b>Suggestion:</b> ${[add.length?'tick <b>'+ls(add)+'</b>':'',rem.length?'untick <b>'+ls(rem)+'</b>':''].filter(Boolean).join(' and ')}.</p><p>Estimated damage: ${fmt(base)} &rarr; <b>${fmt(best)}</b> (+${((best/base-1)*100).toFixed(1)} %).</p>`:`<p>No other choice of tiers gives more damage.</p>`;
 }
 function openTierCheck(){HINTGEN++;$('tcm').hidden=false;$('tcb').innerHTML='<p>Checking the tiers...</p>';$('tcx').focus();tierHint(HINTGEN)}
