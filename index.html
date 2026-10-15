@@ -151,7 +151,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.27';
+const APP_VERSION='14.28';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -398,7 +398,7 @@ function tabClick(e){
     else if(k=='help'){MM=false;HP=true;drawHP();drawMenu()}      // the 1-on-1 help window
     else if(k=='hclose')hpShut();
     else if(k=='fclose')fmShut();
-    else if(k=='fapply'){const fp=$('fmFood'),fr=$('fmRev'),ft=$('fmTemple');if(fp&&$('foodP'))$('foodP').value=fp.value;if(fr&&$('revm'))$('revm').value=fr.value;if(ft&&$('temple'))$('temple').value=ft.value;fmShut();calc()}
+    else if(k=='fapply'){const fp=$('fmFood'),fr=$('fmRev'),ft=$('fmTemple');if(fp&&$('foodP'))$('foodP').value=fp.value;if(fr&&$('revm'))$('revm').value=fr.value;if(ft&&$('temple'))$('temple').value=ft.value;fmShut(true);calc()}
     else if(k=='hcopy')hCopy();
     else if(k=='agoog')aGoogle();
     else if(k=='aclose'){AP=false;drawAP();drawTabs()}
@@ -764,7 +764,7 @@ function drawFM(){
     +'</div>'
     +'<div style="margin:14px 0 0;text-align:right"><button class="amp" data-act="fapply">Apply</button></div>';
 }
-const fmShut=()=>{if(FMP){FMP=false;drawFM()}};
+const fmShut=(applied)=>{if(FMP){FMP=false;if(!applied){$('shw').value='hit';calc()}drawFM()}};
 const apShut=()=>{if(AP&&!SY.conf){AP=false;drawAP();drawMenu()}};      // the window closes with the x, Escape, or a click on the dark area around it (not while the account/browser choice waits)
 const mmShut=()=>{if(MM){MM=false;drawMenu()}};      // the phone menu closes on a click outside it, on a menu item, or on Escape
 document.addEventListener('click',e=>{if(!MM)return;const pth=e.composedPath(),m=$('menu'),t=$('mnt');if(!pth.includes(t)&&(!pth.includes(m)||(e.target.closest&&e.target.closest('a.don'))))mmShut()});
