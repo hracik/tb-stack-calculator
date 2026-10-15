@@ -154,7 +154,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.47';
+const APP_VERSION='14.48';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2088,7 +2088,7 @@ const HELP={
   mb:{t:["Monster boost research in the Academy has 3 parts. Click I, II or III based on the latest research part you have already finished. For a partially finished part, e.g. no research is done for health at part III, still click III and adjust the health manually to 50."],img:[]},
   sb:{t:["Use these only if a specific category or type has a bonus on top of the class bonus above \u2014 e.g. unbalanced research, talents, or captain effects. Leave all on 0% if there are no imbalances."],img:[]},
   tiers:{t:["Tick the tiers of every troop type you want the calculation to use. Tiers you don't have, or don't want to send, stay unticked.","Click <b>Tier check</b> in the Result section to see potential suggestions for improvement."],img:[]},
-  mode:{t:["Choose the mode based on the hits you are planning to do most of the time.","<b>Renegades:</b> choose the <b>Level</b> of the enemy (1-45). Tick the top tier you have for every troop type. The Tier check then starts with every tier from 1 up to that top tier (the cheapest to revive) and takes the lowest ones out one by one (G1, S1, E1, G2, S2 ...) until the damage reaches the damage of that level. With no level chosen it looks for the most damage per gold of the full revive."],img:[]},
+  mode:{t:["Choose the mode based on the hits you are planning to do most of the time.""],img:[]},
   res:{t:["Click a troop card to turn it on or off.","Check the battle report and compare it with your in-game report, there should not be any difference except some rounding errors. If there is significant difference, either in hit/die order or the numbers, your inputs / bonuses are probably not correct, double check or ask for help.","The battle report does not display double damage hits and double hit, so these differences are normal to see, they are random, so can't be shown deterministically.","The battle report shows only one scenario, the one where you attack first. It is a 50/50 chance who attacks first, but the only change in the other scenario is the swap of the first couple of lines in round 1, until the enemy stops hitting."],img:[]}
 };
 function helpHtml(h,pl){return(pl&&h.tp?h.tp:h.t).map(x=>'<p class="ht"><i class="hm"></i>'+x+'</p>').join('')+(h.img||[]).map(m=>'<figure><img src="'+m.src+'" alt="'+(m.alt||'')+'" loading="lazy">'+(m.cap?'<figcaption>'+m.cap+'</figcaption>':'')+'</figure>').join('')}      // the tips of a Help panel as HTML; pl = the Attack players view (only the Bonuses against enemies card has its own text for it)
