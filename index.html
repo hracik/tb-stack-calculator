@@ -147,7 +147,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.11';
+const APP_VERSION='14.12';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1871,10 +1871,15 @@ function calcRun(){
   REVM=REVCASES.some(c=>c[0]==$('revm').value)?$('revm').value:'top';SHOWTR=$('shw').value=='train'&&!noFood;
   const hl=[...A,...Mo,...U.list];
   TOPT={A:0,M:0,U:0};hl.forEach(s=>{if((s.n||0)>0){const t=TRN[s.name];if(t.tier>TOPT[t.pool])TOPT[t.pool]=t.tier}});      // the top line = the highest tier in use, for the Army, the Monsters and the Mercenaries
-  const rv={A:0,M:0,U:0};hl.forEach(s=>{const t=TRN[s.name];if(t&&(s.n||0)>0)rv[t.pool]+=Math.floor(s.n*REV/100)*(t.gold||0)});      // 13.1, 13.3: the revival gold of the whole hit in the full revive: REV % (90) of every stack, rounded DOWN per stack (a stack of 1 unit gets 0 back), at the revival gold of its troop, by group: Army (with the engineers), Monsters, Mercenaries
+  const dies=(()=>{      // 14.12 Renegades: the battle ends after round 1, so only the stacks the enemy kills there (the first ones of the dying order, one per trade) are revived; the others are alive and cost nothing. Every other mode: every stack counts
+    if(!P.ren)return()=>true;
+    const ix={};[...st.so,...U.ord].forEach((n,i)=>ix[n]=i);
+    const L=hl.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]),log=[];strikes(L,P.enemy,log,1);
+    const dead=new Set(log.filter(e=>e[1]=='e').map(e=>L[e[2]].name));return s=>dead.has(s.name)})();
+  const rv={A:0,M:0,U:0};hl.forEach(s=>{const t=TRN[s.name];if(t&&dies(s)&&(s.n||0)>0)rv[t.pool]+=Math.floor(s.n*REV/100)*(t.gold||0)});      // 13.1, 13.3: the revival gold of the whole hit in the full revive: REV % (90) of every stack, rounded DOWN per stack (a stack of 1 unit gets 0 back), at the revival gold of its troop, by group: Army (with the engineers), Monsters, Mercenaries
   const tl=templeLv(),tf=tl>=1?TEMPLE[tl-1]:1,rcost=(rv.A+rv.M+rv.U)/tf;      // the Temple divides the cost
-  const rvs=hl.filter(s=>revives(s,REVM)).reduce((g,s)=>{const t=TRN[s.name];if(t&&(s.n||0)>0)g[t.pool]+=Math.floor(s.n*REV/100)*(t.gold||0);return g},{A:0,M:0,U:0}),scost=(rvs.A+rvs.M+rvs.U)/tf;      // 13.4: the same, only for the stacks that the Revive select brings back (none: 0, all: the same as the full revive)
-  const rtip=`Revive cost in gold: selected / full. Selected = the stacks that the Revive select brings back (${REVCASES.find(c=>c[0]==REVM)[1]}), full = a full revive of the whole hit. ${REV} % of each stack comes back (rounded down per stack, a stack of 1 unit gets nothing back), the revival gold of each troop x the revived units${tl>=1?', divided by the Temple factor of level '+tl+' ('+tf.toFixed(2)+')':' (no Temple level entered, no reduction)'}. Selected: Army (with engineers) ${num(rvs.A/tf)} \u00b7 Monsters ${num(rvs.M/tf)} \u00b7 Mercenaries ${num(rvs.U/tf)} gold. Full: Army (with engineers) ${num(rv.A/tf)} \u00b7 Monsters ${num(rv.M/tf)} \u00b7 Mercenaries ${num(rv.U/tf)} gold.`;
+  const rvs=hl.filter(s=>dies(s)&&revives(s,REVM)).reduce((g,s)=>{const t=TRN[s.name];if(t&&(s.n||0)>0)g[t.pool]+=Math.floor(s.n*REV/100)*(t.gold||0);return g},{A:0,M:0,U:0}),scost=(rvs.A+rvs.M+rvs.U)/tf;      // 13.4: the same, only for the stacks that the Revive select brings back (none: 0, all: the same as the full revive)
+  const rtip=`Revive cost in gold: selected / full. Selected = the stacks that the Revive select brings back (${REVCASES.find(c=>c[0]==REVM)[1]}), full = a full revive of the whole hit${P.ren?' (Renegades: only the stacks the enemy kills in round 1, the first '+hl.filter(dies).length+' of the dying order; the others stay alive)':''}. ${REV} % of each stack comes back (rounded down per stack, a stack of 1 unit gets nothing back), the revival gold of each troop x the revived units${tl>=1?', divided by the Temple factor of level '+tl+' ('+tf.toFixed(2)+')':' (no Temple level entered, no reduction)'}. Selected: Army (with engineers) ${num(rvs.A/tf)} \u00b7 Monsters ${num(rvs.M/tf)} \u00b7 Mercenaries ${num(rvs.U/tf)} gold. Full: Army (with engineers) ${num(rv.A/tf)} \u00b7 Monsters ${num(rv.M/tf)} \u00b7 Mercenaries ${num(rv.U/tf)} gold.`;
   const HIT={};REVCASES.forEach(([k])=>HIT[k]=hitsFor(food,v('foodP')*(100+FOODADD)/100,hl,k));      // hits the Food production pays for in every Training case
   MUL=HIT[REVM]>1?HIT[REVM]:1;      // the chosen Revive: the hits it pays for (1 = the food pays for one hit or less: the units to train are the stack itself)
   document.querySelectorAll('.sb').forEach(b=>b.classList.toggle('on',(b.dataset.sh=='train')==SHOWTR));
