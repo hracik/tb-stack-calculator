@@ -52,7 +52,7 @@ select{width:auto}.mu{color:var(--mu);font-size:13px}
 .oi.dg{opacity:.65;outline:2px solid var(--ac)}
 .hd{cursor:grab;touch-action:none;font-weight:700;padding:2px 6px}.oi.dg .hd{cursor:grabbing}
 .no{width:22px;height:22px;border-radius:50%;background:#2a2012;color:#e8dcc0;display:inline-flex;align-items:center;justify-content:center;font-size:12px}
-.oi.bz{border-left:5px solid #2c7480}.oi.bz .no{background:#2c7480;color:#fff}.oz{display:flex;align-items:center;gap:8px;margin:12px 0 2px;color:#7cc2cc;font-size:13px}.oz::after{content:'';flex:1;border-top:1px dashed currentColor;opacity:.55}      /* 14.21: the buffer zone of Renegades looks different from the first 16 in the dying order list */
+.oi.bz{border-left:5px solid #2c7480}.oi.bz .no{background:#2c7480;color:#fff}.oz{margin:12px 0 2px;color:#7cc2cc;font-size:13px}      /* 14.21: the buffer zone of Renegades looks different from the first 16 in the dying order list */
 .nm{flex:1}
 button{background:#8a6a2c;color:#fff;border:0;border-radius:5px;padding:1px 6px;cursor:pointer;margin-left:3px;font:inherit}
 #rst{padding:3px 10px;margin:0}
@@ -150,7 +150,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.22';
+const APP_VERSION='14.23';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -311,7 +311,9 @@ function drawSO(st,P){
         k=m}
       block=[];return}
     block.forEach(n=>SOPOS[n]=block.length>1?first+'–'+last:first);
-    html+=`<div class="oi"><span class="no" style="width:auto;padding:0 9px;border-radius:11px">${block.length>1?first+'–'+last:first}</span><span class="nm">${P.ren?'Rest of the Leadership, monsters and mercenaries':'Everything else'}: one block, random order <small class="mu">${block.length} stacks: ${block.map(esc).join(', ')}</small></span></div>`;
+    const lbl=block.length>1?first+'–'+last:first;
+    if(P.ren)html+=`<div class="oz">Rest of the army, random order</div><div class="oi"><span class="no" style="width:auto;padding:0 9px;border-radius:11px">${lbl}</span><span class="nm">${block.length} ${block.length==1?'stack':'stacks'} <small class="mu">${block.map(esc).join(', ')}</small></span></div>`;      // 14.23: Renegades: a heading like the Buffer zone one, the number of stacks as the headline of the block, the troops below it
+    else html+=`<div class="oi"><span class="no" style="width:auto;padding:0 9px;border-radius:11px">${lbl}</span><span class="nm">Everything else: one block, random order <small class="mu">${block.length} stacks: ${block.map(esc).join(', ')}</small></span></div>`;
     block=[];
   };
   st.so.forEach(n=>{
