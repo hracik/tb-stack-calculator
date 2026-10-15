@@ -150,7 +150,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.23';
+const APP_VERSION='14.24';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -318,7 +318,7 @@ function drawSO(st,P){
   };
   st.so.forEach(n=>{
     if(!(sb[n]&&sb[n].n>0))return;                                // a troop with 0 units is not in the list (and takes no place number)
-    if(P.ren&&grp[n]=='REST'){block.push(n);return}      // 14.14: the first 16 and the buffer zone stand alone, everything else is one block
+    if(P.ren&&grp[n]=='REST'){block.push(n);return}      // 14.14: the ordered stacks and the buffer zone stand alone, everything else is one block
     if(P.cp&&grp[n]){if(block.length&&blockG!==grp[n])flush();blockG=grp[n];block.push(n);return}
     flush();if(BUFN[n]&&!bufHead){bufHead=true;html+='<div class="oz">Buffer zone</div>'}pos++;SOPOS[n]=pos;html+=one(n,pos);
   });
@@ -1060,24 +1060,23 @@ function killOrder(P,names,c){
   let k=0;for(let i=0;i<F;i++)if(!out[i])out[i]=body[k++];
   return[...out,...sp.rest.flatMap(tt=>by(mons.filter(t=>t.tier==tt)))].map(t=>t.name);
 }
-// Renegades: the first 16 stacks - tier 9 before 8, Guardsmen before Specialists (G9, S9, G8, S8), inside each group the weakest first.
-// Then the engineers of the tiers from the one below them upwards (E9, E8, E7), then the units of that tier, then for every lower tier
-// its engineer first and then its units (E6, units 6, E5, units 5 ...). All of that is one equal group (no step). Then the monsters from the top tier down.
+// Renegades: the first 12 stacks (14.24; 16 before) - tier 9 before 8, Guardsmen before Specialists (G9, S9, G8 ...), inside each group the weakest first.
+const RENHEAD=3;      // 14.24: the number of groups (a class and a tier, up to 4 stacks: G9, S9, G8 ...) that stand alone in front: 3 groups = 12 stacks (4 groups = 16 stacks until 14.23)
 function renOrder(P,names){
   const ts=TR.filter(t=>names.has(t.name)),ci=t=>DEFCAT.indexOf(t.cat),cat=(a,b)=>ci(a)-ci(b),{rank}=ranker(P);
   const army=ts.filter(t=>t.pool=='A'&&t.cls!='E'),eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier);
-  const top=[...new Set(army.map(t=>t.tier))].sort((a,b)=>b-a).slice(0,2);
-  const units=tt=>['G','S'].flatMap(c=>army.filter(t=>t.tier==tt&&t.cls==c).sort(cat));
-  const t0=top.length?top[top.length-1]-1:9;                       // first tier below the two top army tiers
-  const seq=eng.filter(e=>e.tier>=t0);
-  for(let t=t0;t>=1;t--){if(t<t0)seq.push(...eng.filter(e=>e.tier==t));seq.push(...units(t))}
-  const head=top.flatMap(tt=>['G','S'].flatMap(c=>rank(army.filter(t=>t.tier==tt&&t.cls==c))));
-  // 14.17: the buffer zone comes right behind the first 16: the engineers of a tier ABOVE the buffer's tier (G7 or S7 buffer: E8, E9; E7 and the lower engineers are not in it), then the first 4 stacks of the next tier (4 x G, or 4 x S when that tier has no G).
-  // Without any Guardsmen / Specialists below the two top tiers the engineers alone are the buffer. Everything else follows in the order it had (the block, random order inside), the monsters last.
-  let tb=0;for(let t=t0;t>=1;t--)if(units(t).length){tb=t;break}
-  const bu=tb?units(tb):[],bufU=bu.length?bu.filter(t=>t.cls==bu[0].cls).slice(0,4):[],bufE=tb?eng.filter(e=>e.tier>tb):eng.slice();
-  const rest=seq.filter(t=>!bufU.includes(t)&&!bufE.includes(t));
-  return[...head,...bufE,...bufU,...rest,...ts.filter(t=>t.pool=='M').sort((a,b)=>b.tier-a.tier||cat(a,b))].map(t=>t.name);
+  const tiers=[...new Set(army.map(t=>t.tier))].sort((a,b)=>b-a);
+  const units=(tt,c)=>army.filter(t=>t.tier==tt&&t.cls==c).sort(cat);
+  const groups=[];tiers.forEach(tt=>['G','S'].forEach(c=>{const g=units(tt,c);if(g.length)groups.push(g)}));      // G9, S9, G8, S8 ...
+  const head=groups.slice(0,RENHEAD).flatMap(g=>rank(g));
+  // 14.24: the buffer zone comes right behind the first 12: the next group in the order (S8 after G9, S9, G8; up to 4 stacks) and the engineers of a tier ABOVE the tier of that group (S8: E9; a G7 or S7 group: E8, E9).
+  // Without any Guardsmen / Specialists behind the first 12 the engineers alone are the buffer. Everything else follows in the order it had (the block, random order inside), the monsters last.
+  const nx=groups[RENHEAD],tb=nx?nx[0].tier:0,bufU=nx?nx.slice(0,4):[],bufE=tb?eng.filter(e=>e.tier>tb):eng.slice();
+  const seq=[];for(let t=9;t>=1;t--){seq.push(...eng.filter(e=>e.tier==t));['G','S'].forEach(c=>seq.push(...units(t,c)))}
+  const rest=seq.filter(t=>!head.includes(t)&&!bufU.includes(t)&&!bufE.includes(t));
+  const res=[...head,...bufE,...bufU,...rest,...ts.filter(t=>t.pool=='M').sort((a,b)=>b.tier-a.tier||cat(a,b))].map(t=>t.name);
+  res.head=new Set(head.map(t=>t.name));res.bufN=new Set([...bufE,...bufU].map(t=>t.name));      // the stacks that stand alone in front and the buffer zone: the Renegades grouping (MD.ren) reads them
+  return res;
 }
 // CP kill (PvP, one flying enemy): a FIXED order, nothing is ranked by strength. All the engineers first (higher tier first), then the army tier by tier from the top,
 // Guardsmen before Specialists (G9, S9, G8, S8 ...), the monsters last, tier by tier from the top. Inside a class and tier the troops with the SMALLER squad bonus against
@@ -1145,13 +1144,9 @@ const MD={
   ren:{kn1:false,ho:false,size:allocRen,        // Renegades: fixed rule, nothing is refined; the lowest tier is the partial one when 3 or more tiers are chosen
     order:(P,{live,mkOut,nT})=>{
       const so=renOrder(P,live),out=mkOut(so,nT>=3?nT-1:nT);
-      const top=[...new Set(out.filter(s=>s.p=='A'&&s.cat!='Engineer').map(s=>+s.r.slice(1)))].sort((a,b)=>b-a).slice(0,2);
-      // 14.14: the first 16 stacks (the two top tiers, G and S) stand alone. Behind them a BUFFER ZONE of stacks that stand alone as well: the engineers that are above the first stacks of the next tier in the order,
-      // and the first 4 stacks of that tier (4 x G, or 4 x S when there is no G of that tier). Everything else (the rest of the Leadership, the monsters, the mercenaries) is ONE block, equal inside, random order.
-      const armyOut=out.filter(s=>s.p=='A'&&s.cat!='Engineer'&&!top.includes(+s.r.slice(1))),f0=armyOut[0];
-      const bufU=f0?armyOut.filter(s=>s.r[0]==f0.r[0]&&+s.r.slice(1)==+f0.r.slice(1)).slice(0,4):[];
-      const bufE=out.filter(s=>s.p=='A'&&s.cat=='Engineer'&&(!f0||out.indexOf(s)<out.indexOf(f0)));      // no Guardsmen / Specialists below the two top tiers: the engineers alone are the buffer
-      out.forEach(s=>{s.buf=false;s.grp=(s.p=='A'&&s.cat!='Engineer'&&top.includes(+s.r.slice(1)))?s.name:(bufU.includes(s)||bufE.includes(s))?(s.buf=true,'BUF'):'REST'});
+      // 14.24: the first 12 stacks (the groups G9, S9, G8) stand alone. Behind them a BUFFER ZONE of stacks that stand alone as well: the next group in the order (S8: up to 4 stacks) and the engineers of a tier above it.
+      // Everything else (the rest of the Leadership, the monsters, the mercenaries) is ONE block, equal inside, random order. renOrder says which stack is where (so.head, so.bufN).
+      out.forEach(s=>{s.buf=false;s.grp=so.head.has(s.name)?s.name:so.bufN.has(s.name)?(s.buf=true,'BUF'):'REST'});
       return{so,out};}}
 };
 const modeOf=P=>rgm(P)?MD.epic:P.cp?MD.cp:P.kill?MD.kill:MD.ren;
@@ -1507,7 +1502,7 @@ function allocWhole(P,live){                         // Killshot: the exact solu
   if(ok)topUp(live,Mo,P.capM);        // ... and the Dominance
   return{A,Mo};
 }
-function topUpRen(head,buf,rest,cap){      // Renegades: the leftover goes to the stack furthest below the level that may take a unit. A stack of the first 16 stays strictly below the one before it in health AND strength; a stack of the buffer zone stays below the last of the 16 in health AND strength (no rule between the buffer stacks); a stack of the block stays below the whole buffer zone in health and below the last of the 16 in strength (14.16)
+function topUpRen(head,buf,rest,cap){      // Renegades: the leftover goes to the stack furthest below the level that may take a unit. A stack of the ordered head stays strictly below the one before it in health AND strength; a stack of the buffer zone stays below the last of the 16 in health AND strength (no rule between the buffer stacks); a stack of the block stays below the whole buffer zone in health and below the last of the 16 in strength (14.16)
   const A=[...head,...buf,...rest];let left=cap-usedOf(A);
   if(!(left>0))return;
   const hs=head.filter(s=>s.n>0),bs=buf.filter(s=>s.n>0),rs=rest.filter(s=>s.n>0);
@@ -1517,7 +1512,7 @@ function topUpRen(head,buf,rest,cap){      // Renegades: the leftover goes to th
     const l16=hs.length?hs[hs.length-1]:null;
     if(k=='h'){const p=s.i16>0?hs[s.i16-1]:null;return !p||(tot(s.n+1,s.hp)<tot(p.n,p.hp)&&tot(s.n+1,s.str)<tot(p.n,p.str))}
     if(k=='b')return !l16||(tot(s.n+1,s.hp)<tot(l16.n,l16.hp)&&tot(s.n+1,s.str)<tot(l16.n,l16.str));
-    const lo=bs.length?Math.min(...bs.map(x=>tot(x.n,x.hp))):l16?tot(l16.n,l16.hp):Infinity;      // the block: below the smallest stack of the buffer zone (below the last of the 16 when there is none) in health
+    const lo=bs.length?Math.min(...bs.map(x=>tot(x.n,x.hp))):l16?tot(l16.n,l16.hp):Infinity;      // the block: below the smallest stack of the buffer zone (below the last ordered stack when there is none) in health
     return tot(s.n+1,s.hp)<lo&&(!l16||tot(s.n+1,s.str)<tot(l16.n,l16.str))};
   hs.forEach((s,k)=>s.i16=k);
   for(let g=0;g<500000;g++){
@@ -1529,13 +1524,13 @@ function topUpRen(head,buf,rest,cap){      // Renegades: the leftover goes to th
     b.n++;left-=b.cost;
   }
 }
-function allocRen(P,live){                 // Renegades (14.8, 14.14, 14.16): the first 16 stand alone like in every mode - the total health AND the total strength fall along the order, each at least 1 below the stack before. The buffer zone behind them (the engineers and 4 stacks of the next tier) has no rule inside, every stack of it is below the last of the 16 in health AND strength. The block behind it (the rest of the Leadership, the monsters, the mercenaries) is below the buffer zone in health and below the last of the 16 in strength; the common level goes up until the Leadership is used
+function allocRen(P,live){                 // Renegades (14.8, 14.14, 14.16): the ordered head (12 stacks since 14.24) stands alone like in every mode - the total health AND the total strength fall along the order, each at least 1 below the stack before. The buffer zone behind them (the engineers and 4 stacks of the next tier) has no rule inside, every stack of it is below the last of the 16 in health AND strength. The block behind it (the rest of the Leadership, the monsters, the mercenaries) is below the buffer zone in health and below the last of the 16 in strength; the common level goes up until the Leadership is used
   const Mo=live.filter(s=>s.p=='M'),A=live.filter(s=>s.p=='A'),d=P.d;
   const head=A.filter(s=>s.grp!='REST'&&!s.buf),buf=A.filter(s=>s.buf),rest=A.filter(s=>s.grp=='REST');
   weights(A,true,d);
   const inv=A.reduce((q,x)=>q+x.w*x.cost/x.hp,0),X0=inv&&P.capA>0?P.capA/inv:0;
   const l16=()=>{const h=head.filter(s=>s.n>0);return h.length?h[h.length-1]:null};
-  const H16=()=>{const l=l16();return l?tot(l.n,l.hp):Infinity},S16=()=>{const l=l16();return l?tot(l.n,l.str):Infinity};      // the health and the strength of the last of the first 16 (the buffer zone is no reference for the strength of the block)
+  const H16=()=>{const l=l16();return l?tot(l.n,l.hp):Infinity},S16=()=>{const l=l16();return l?tot(l.n,l.str):Infinity};      // the health and the strength of the last of the ordered head (the buffer zone is no reference for the strength of the block)
   const lowBuf=()=>{const b=buf.filter(s=>s.n>0);return b.length?Math.min(...b.map(s=>tot(s.n,s.hp))):H16()};      // the level the block stays below: the smallest stack of the buffer zone (the last of the 16 when there is no buffer)
   const run=x=>{
     A.forEach(s=>{s.n=Math.floor(x*s.w/s.hp)});chainT(head);
@@ -1569,7 +1564,7 @@ function solve(P,order){const st=buildStacks(P,order,XS),{A,Mo}=allocate(P,st.fi
 // The rounds repeat while anybody is alive. SEQ=false switches back to the old simple count: the stack in place p of the dying order strikes ceil(p/K) times.
 // The damage is sum(strikes x damage per strike).
 // Renegades (14.10): the battle ends after round 1 (maxRd=1) - the enemy is defeated by then, every stack strikes once.
-// Renegades: the block after the first 16 has a random order - every stack in it gets the average strikes of the block's places.
+// Renegades: the block after the ordered head and the buffer zone has a random order - every stack in it gets the average strikes of the block's places.
 let SEQ=true;
 let HALFHEALTHY=0.5;      // 8.4 rule for the ORDER ENGINE only: when it ranks the orders (score(...,true)) only this share (50 %) of the damage of the healthiest stack counts. The estimate shown to the person is always the full 100 %
 function strikes(L,K,log,maxRd=Infinity){                                     // strikes of every stack; L is in the dying order. log (optional): the events of the battle in their order, [round, 'o' (our hit) | 'e' (the enemy kills the stack), index in L]
