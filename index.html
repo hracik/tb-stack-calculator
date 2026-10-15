@@ -84,7 +84,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 .vb{padding:6px 10px;margin:0 6px 8px 0;font:inherit;min-width:84px}.vb.on{background:var(--ac);color:#000}.vb:disabled{opacity:.4;cursor:not-allowed}
 .vwl.c2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:8px}.vwr{position:relative;display:flex;align-items:center;gap:12px;background:#dcc791;color:#2a2012;border:1px solid #8a6a2c;border-radius:6px;padding:6px 12px;margin:0 0 6px;cursor:pointer}.vwr .ic{margin:0;flex:none;width:48px;height:48px}.vwt{min-width:0;padding-right:34px}.vwn{font-size:14px;color:#5b4721;line-height:1.2}.vwc{font-size:17px;font-weight:700;line-height:1.3}.vwr .kp{top:50%;right:12px;transform:translateY(-50%);font-size:12px}@media(max-width:560px){.vwl.c2 .vwt{padding-right:0}.vwl.c2 .vwr{gap:6px;padding:5px 6px}.vwl.c2 .vwr .ic{width:40px;height:40px}.vwl.c2 .vwn{font-size:12px;padding-right:24px}.vwl.c2 .vwc{font-size:15px}.vwl.c2 .vwc .n2{font-size:12px}.vwl.c2 .vwr .kp{top:3px;right:5px;transform:none;font-size:11px}}@media(max-width:340px){.vwl.c2{column-gap:5px}.vwl.c2 .vwr{gap:4px;padding:4px}.vwl.c2 .vwr .ic{width:32px;height:32px}.vwl.c2 .vwn{font-size:11px;padding-right:20px}.vwl.c2 .vwc{font-size:14px}.vwl.c2 .vwr .kp{right:3px;font-size:10px}}.vwr.off,.vwr.zero{opacity:.35}
 #tabrow{margin:12px 0 6px}
-#tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}#tabs::-webkit-scrollbar{height:6px}#tabs::-webkit-scrollbar-track{background:transparent}#tabs::-webkit-scrollbar-thumb{background:#8a6a2c;border-radius:3px}@supports (-moz-appearance:none){#tabs{scrollbar-width:thin;scrollbar-color:#8a6a2c transparent}}
+#tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}#tabs::-webkit-scrollbar{height:6px}#tabs::-webkit-scrollbar-track{background:transparent}#tabs::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}@supports (-moz-appearance:none){#tabs{scrollbar-width:thin;scrollbar-color:var(--bd) transparent}}
 #tabsin{display:flex;flex-wrap:nowrap;align-items:flex-end;gap:20px;box-sizing:border-box;min-width:100%;width:max-content;border-bottom:1px solid var(--bd)}
 #tabtools{display:flex;flex-wrap:nowrap;gap:8px;align-items:center;margin:0 0 6px;font-size:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;padding-bottom:2px}
 .tab{background:transparent;color:var(--mu);border:0;border-bottom:3px solid transparent;border-radius:0;padding:8px 2px;margin:0;font:inherit;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}
@@ -154,7 +154,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.42';
+const APP_VERSION='14.43';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
