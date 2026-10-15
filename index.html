@@ -87,7 +87,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 #tabs{display:flex;flex-wrap:nowrap;align-items:flex-end;gap:20px;flex:1 1 auto;min-width:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;padding-bottom:0}
 #tabtools{display:flex;flex-wrap:nowrap;gap:8px;align-items:center;margin:0 0 6px;font-size:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;padding-bottom:2px}
 .tab{background:transparent;color:var(--mu);border:0;border-bottom:3px solid transparent;border-radius:0;padding:8px 2px;margin:0;font:inherit;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}
-.tab.on{color:var(--ac);border-bottom-color:var(--ac);font-weight:600}.tab.add{flex:none;color:var(--ac);font:600 18px 'Cinzel',Georgia,serif;padding:8px 6px}
+.tab.on{color:var(--ac);border-bottom-color:var(--ac);font-weight:600}.tab.add{flex:none;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;background:var(--card);color:var(--ac);border:1px solid var(--bd);border-radius:7px;font:600 18px 'Cinzel',Georgia,serif;padding:0;margin:0 0 1px}.tab.add:hover{border-color:var(--ac)}
 @media(max-width:480px){#tabtools{flex-wrap:wrap}#tabtools>*{flex:1 1 72px;text-align:center}}
 .tabin{width:150px;padding:5px 8px;background:#e2cf9e;color:#2a2012;border:1px solid #8a6a2c;border-radius:8px;font:inherit}
 .tli{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;background:var(--card);color:var(--mu);border:1px solid var(--bd);border-radius:7px;cursor:pointer;padding:0;margin:0;flex:0 0 auto}.tli:hover{color:var(--tx);border-color:var(--ac)}.tli svg{display:block}
@@ -153,7 +153,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.36';
+const APP_VERSION='14.37';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
