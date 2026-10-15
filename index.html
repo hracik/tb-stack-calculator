@@ -148,7 +148,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.17';
+const APP_VERSION='14.18';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1958,43 +1958,56 @@ async function tierHint(gen){
   const types=[['G','capA'],['S','capA'],['E','capA'],['M','capM']].filter(([c,k])=>P[k]>0&&(sel0.some(x=>x[0]==c)||(c=='E'&&gT.length)));      // the engineers are checked even when none is ticked
   if(!types.length){body.innerHTML='<p>Nothing to check: tick some tiers and enter Leadership or Dominance first.</p>';return}
   let n=0;const det=new Map(),kk=s=>[...s].sort().join(',');      // det: the damage and the revive gold of every selection that was calculated (Renegades shows them)
-  const run=async s=>{body.innerHTML=`<p>Checking the tiers... calculation ${++n}</p>`;await new Promise(r=>setTimeout(r,0));if(gen!==HINTGEN)return null;const r=evalSel(s);det.set(kk(s),r);return r.m};      // one step per timer tick: the page stays usable; closing the window cancels the check
-  let cur=sel0.slice();const base=await run(cur);if(base==null)return;let best=base;
-  const dropped=new Set();      // 12.8: a type that was suggested to be unticked completely is left alone in the later passes (no "untick E6 and tick E9" in one result; a second check can still suggest the engineers)
-  for(let pass=0;pass<3;pass++){
+  const run=async s=>{const k=kk(s);if(det.has(k))return det.get(k).m;body.innerHTML=`<p>Checking the tiers... calculation ${++n}</p>`;await new Promise(r=>setTimeout(r,0));if(gen!==HINTGEN)return null;const r=evalSel(s);det.set(k,r);return r.m};      // one step per timer tick: the page stays usable; closing the window cancels the check
+  const base=await run(sel0);if(base==null)return;
+  const climb=async(cur,best)=>{      // the passes from one start set; null = the check was cancelled
+  // 14.18: the passes go on until a whole pass changes nothing (at most 12), so the suggestion is a set that the check itself would leave as it is: ticking it and running the check again says "no other choice". (Before, 3 passes and a type that was unticked completely was never looked at again, so a second run could ask for more.)
+  for(let pass=0;pass<12;pass++){
     let changed=false;
     for(const[c]of types){
-      if(dropped.has(c))continue;
       const tiers=()=>cur.filter(x=>x[0]==c).map(x=>+x.slice(1)).sort((a,b)=>a-b);
       let T=tiers();
       if(c=='E'&&!T.length){      // 12.6: no engineer ticked: the engineer tiers of the same level as the Guardsmen (E9; then E9 and E8 ...) are tried, the best one with more than HGAIN gain is taken
         let bc=null;
-        for(let k=1;k<=gT.length;k++){const cand=[...cur,...gT.slice(0,k).map(t=>'E'+t)],d=await run(cand);if(d==null)return;if(d>best*(1+HGAIN)&&(!bc||d>bc.d))bc={cand,d}}
+        for(let k=1;k<=gT.length;k++){const cand=[...cur,...gT.slice(0,k).map(t=>'E'+t)],d=await run(cand);if(d==null)return null;if(d>best*(1+HGAIN)&&(!bc||d>bc.d))bc={cand,d}}
         if(bc){cur=bc.cand;best=bc.d;changed=true}
         T=tiers();
       }
       const top=T[T.length-1],lo=c=='M'?3:1;
       for(let t=top-1;t>=lo;t--){      // add: from the tier just below the top, going down
         if(T.includes(t))continue;
-        const cand=[...cur,c+t],d=await run(cand);if(d==null)return;
+        const cand=[...cur,c+t],d=await run(cand);if(d==null)return null;
         if(d>best*(1+HGAIN)){cur=cand;best=d;changed=true;T=tiers()}
         else if(t<T[0])break;      // below the lowest ticked tier and no gain: the tiers below it can only be worse
       }
       T=tiers();
       for(let i=0;i<T.length-1;i++){      // remove: the lowest ticked tier first, never the top one
-        const cand=cur.filter(x=>x!=c+T[i]),d=await run(cand);if(d==null)return;
+        const cand=cur.filter(x=>x!=c+T[i]),d=await run(cand);if(d==null)return null;
         if(d>best*(1+HGAIN)){cur=cand;best=d}else break;
         changed=true;
       }
       {      // 12.6 (engineers), 12.7 (every type): is the type worth bringing at all? Every tier of it off, the top one too (never when nothing would be left)
         T=tiers();
         const cand=cur.filter(x=>x[0]!=c);
-        if(T.length&&cand.length){const d=await run(cand);if(d==null)return;if(d>best*(1+HGAIN)){cur=cand;best=d;changed=true;dropped.add(c)}}
+        if(T.length&&cand.length){const d=await run(cand);if(d==null)return null;if(d>best*(1+HGAIN)){cur=cand;best=d;changed=true}}
       }
     }
     if(!changed)break;
   }
+  return{cur,best};
+  };
+  // 14.18: the check starts from your ticks AND from a few plain starts (the top tier of every type with 0 to 3 tiers below it) and takes the best set it reaches: the result no longer depends on which tiers happen to be ticked
+  let res=await climb(sel0.slice(),base);if(!res)return;
+  const topOf=c=>Math.max(0,...sel0.filter(x=>x[0]==c).map(x=>+x.slice(1)));
+  for(const k of [0,1,2,3,5]){
+    const seed=[];['E','S','G','M'].forEach(c=>{const tp=topOf(c);if(!tp)return;for(let t=tp;t>=Math.max(c=='M'?3:1,tp-k);t--)seed.push(c+t)});
+    if(!seed.length)continue;
+    const b0=await run(seed);if(b0==null)return;
+    const r2=await climb(seed,b0);if(!r2)return;
+    if(r2.best>res.best*(1+HGAIN))res=r2;
+  }
   if(gen!==HINTGEN)return;
+  const cur=res.cur,best=res.best;
   const add=cur.filter(x=>!sel0.includes(x)),rem=sel0.filter(x=>!cur.includes(x)),ls=a=>a.sort((x,y)=>key(x)-key(y)).join(', ');
   if(P.ren){      // 14.13 Renegades: the best damage for the least gold of the full revive (damage per gold), not the highest damage
     const d0=det.get(kk(sel0)),d1=det.get(kk(cur)),pc=(a,b)=>((a/b-1)*100).toFixed(1),sg=x=>(x>=0?'+':'')+x,fg=x=>Math.round(x).toLocaleString('en-US');
