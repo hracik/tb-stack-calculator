@@ -59,7 +59,8 @@ button{background:#8a6a2c;color:#fff;border:0;border-radius:5px;padding:1px 6px;
 #res th.gl{width:auto;text-align:left;padding:8px 2px 0}
 .glh{padding:8px 2px 0 10px;color:var(--ac);font-weight:600;font-size:14px}.gs{overflow-x:auto;scrollbar-width:thin;scrollbar-color:#8a6a2c transparent}.gs.ov{cursor:grab;user-select:none;-webkit-user-select:none}.gs.ov.dg{cursor:grabbing}.gs img{-webkit-user-drag:none}
 #res table.gt{min-width:0}#res table.gt td{min-width:0}
-@media(max-width:480px){#res table.gt td{padding:16px 3px 8px}#res table.gt .ic{width:48px;height:48px}#res table.gt .kp{top:3px;right:5px;font-size:10px}}      /* on a phone the place number gets a line of its own above the picture */
+@media(max-width:480px){#res table.gt{width:calc(var(--n,4)*112px)!important}#res .gs{overflow:visible}#res .sci{width:max-content;min-width:100%}#res .sci .glh{position:sticky;left:0;width:max-content;max-width:calc(100vw - 48px)}      /* 14.15: on a phone the cards keep their size (112 px a card, about square) and the whole list of a section scrolls sideways; the label of a group stays at the left edge */
+  #res table.gt td{padding:16px 3px 8px}#res table.gt .ic{width:48px;height:48px}#res table.gt .kp{top:3px;right:5px;font-size:10px}}      /* on a phone the place number gets a line of its own above the picture */
 #res td{background:#dcc791;color:#2a2012;border:1px solid #8a6a2c;border-radius:6px;text-align:center;padding:8px 10px}
 #res td:empty{background:transparent;border:0}
 #res td .mu{color:#5b4721;font-size:12px}#res td .n{font-size:17px;font-weight:700}
@@ -147,7 +148,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.14';
+const APP_VERSION='14.16';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1135,7 +1136,7 @@ const MD={
       const armyOut=out.filter(s=>s.p=='A'&&s.cat!='Engineer'&&!top.includes(+s.r.slice(1))),f0=armyOut[0];
       const bufU=f0?armyOut.filter(s=>s.r[0]==f0.r[0]&&+s.r.slice(1)==+f0.r.slice(1)).slice(0,4):[];
       const bufE=out.filter(s=>s.p=='A'&&s.cat=='Engineer'&&(!f0||out.indexOf(s)<out.indexOf(f0)));      // no Guardsmen / Specialists below the two top tiers: the engineers alone are the buffer
-      out.forEach(s=>{s.buf=false;s.grp=(s.p=='A'&&s.cat!='Engineer'&&top.includes(+s.r.slice(1)))?s.name:(bufU.includes(s)||bufE.includes(s))?(s.buf=true,s.name):'REST'});
+      out.forEach(s=>{s.buf=false;s.grp=(s.p=='A'&&s.cat!='Engineer'&&top.includes(+s.r.slice(1)))?s.name:(bufU.includes(s)||bufE.includes(s))?(s.buf=true,'BUF'):'REST'});
       return{so,out};}}
 };
 const modeOf=P=>rgm(P)?MD.epic:P.cp?MD.cp:P.kill?MD.kill:MD.ren;
@@ -1491,43 +1492,54 @@ function allocWhole(P,live){                         // Killshot: the exact solu
   if(ok)topUp(live,Mo,P.capM);        // ... and the Dominance
   return{A,Mo};
 }
-function topUpRen(head,rest,cap){      // Renegades: the leftover goes to the stack furthest below the level that may take a unit: a head stack stays strictly below the head stack before it in health AND strength, a stack of the block stays below the last head stack in health AND strength
-  const A=[...head,...rest];let left=cap-usedOf(A);
+function topUpRen(head,buf,rest,cap){      // Renegades: the leftover goes to the stack furthest below the level that may take a unit. A stack of the first 16 stays strictly below the one before it in health AND strength; a stack of the buffer zone stays below the last of the 16 in health AND strength (no rule between the buffer stacks); a stack of the block stays below the whole buffer zone in health and below the last of the 16 in strength (14.16)
+  const A=[...head,...buf,...rest];let left=cap-usedOf(A);
   if(!(left>0))return;
-  const hs=head.filter(s=>s.n>0),rs=rest.filter(s=>s.n>0);
-  if(!hs.length&&!rs.length)return;
+  const hs=head.filter(s=>s.n>0),bs=buf.filter(s=>s.n>0),rs=rest.filter(s=>s.n>0);
+  if(!hs.length&&!bs.length&&!rs.length)return;
   const ok=(s,k)=>{
     if(s.cost>left||!(s.hp>0))return false;
-    if(k>=0){const p=k>0?hs[k-1]:null;return !p||(tot(s.n+1,s.hp)<tot(p.n,p.hp)&&tot(s.n+1,s.str)<tot(p.n,p.str))}
-    const l=hs.length?hs[hs.length-1]:null;return !l||(tot(s.n+1,s.hp)<tot(l.n,l.hp)&&tot(s.n+1,s.str)<tot(l.n,l.str))};
+    const l16=hs.length?hs[hs.length-1]:null;
+    if(k=='h'){const p=s.i16>0?hs[s.i16-1]:null;return !p||(tot(s.n+1,s.hp)<tot(p.n,p.hp)&&tot(s.n+1,s.str)<tot(p.n,p.str))}
+    if(k=='b')return !l16||(tot(s.n+1,s.hp)<tot(l16.n,l16.hp)&&tot(s.n+1,s.str)<tot(l16.n,l16.str));
+    const lo=bs.length?Math.min(...bs.map(x=>tot(x.n,x.hp))):l16?tot(l16.n,l16.hp):Infinity;      // the block: below the smallest stack of the buffer zone (below the last of the 16 when there is none) in health
+    return tot(s.n+1,s.hp)<lo&&(!l16||tot(s.n+1,s.str)<tot(l16.n,l16.str))};
+  hs.forEach((s,k)=>s.i16=k);
   for(let g=0;g<500000;g++){
     let b=null,br=Infinity;
-    hs.forEach((s,k)=>{const r=s.n*s.hp;if(r<br&&ok(s,k)){br=r;b=s}});
-    rs.forEach(s=>{const r=s.n*s.hp;if(r<br&&ok(s,-1)){br=r;b=s}});
+    hs.forEach(s=>{const r=s.n*s.hp;if(r<br&&ok(s,'h')){br=r;b=s}});
+    bs.forEach(s=>{const r=s.n*s.hp;if(r<br&&ok(s,'b')){br=r;b=s}});
+    rs.forEach(s=>{const r=s.n*s.hp;if(r<br&&ok(s,'r')){br=r;b=s}});
     if(!b)break;
     b.n++;left-=b.cost;
   }
 }
-function allocRen(P,live){                 // Renegades (14.8): the first 16 stacks stand alone like in every mode - the total health AND the total strength fall along the order, each at least 1 below the stack before; the block behind them is equal inside and stays below the last of them
+function allocRen(P,live){                 // Renegades (14.8, 14.14, 14.16): the first 16 stand alone like in every mode - the total health AND the total strength fall along the order, each at least 1 below the stack before. The buffer zone behind them (the engineers and 4 stacks of the next tier) has no rule inside, every stack of it is below the last of the 16 in health AND strength. The block behind it (the rest of the Leadership, the monsters, the mercenaries) is below the buffer zone in health and below the last of the 16 in strength; the common level goes up until the Leadership is used
   const Mo=live.filter(s=>s.p=='M'),A=live.filter(s=>s.p=='A'),d=P.d;
-  const head=A.filter(s=>s.grp!='REST'),rest=A.filter(s=>s.grp=='REST');
+  const head=A.filter(s=>s.grp!='REST'&&!s.buf),buf=A.filter(s=>s.buf),rest=A.filter(s=>s.grp=='REST');
   weights(A,true,d);
   const inv=A.reduce((q,x)=>q+x.w*x.cost/x.hp,0),X0=inv&&P.capA>0?P.capA/inv:0;
-  const lastHead=()=>{const h=head.filter(s=>s.n>0);return h.length?tot(h[h.length-1].n,h[h.length-1].hp):Infinity};
-  const lastHeadS=()=>{const h=head.filter(s=>s.n>0);return h.length?tot(h[h.length-1].n,h[h.length-1].str):Infinity};
-  const run=x=>{A.forEach(s=>{s.n=Math.floor(x*s.w/s.hp)});chainT(head);chain(rest,true,lastHead()-1);const T=lastHeadS();if(isFinite(T))rest.forEach(s=>{if(tot(s.n,s.str)>=T)s.n=fitN(T-1,s.str)});return usedOf(A)};      // 14.10: the block behind the 16 stays below the last of them in health AND strength
+  const l16=()=>{const h=head.filter(s=>s.n>0);return h.length?h[h.length-1]:null};
+  const H16=()=>{const l=l16();return l?tot(l.n,l.hp):Infinity},S16=()=>{const l=l16();return l?tot(l.n,l.str):Infinity};      // the health and the strength of the last of the first 16 (the buffer zone is no reference for the strength of the block)
+  const lowBuf=()=>{const b=buf.filter(s=>s.n>0);return b.length?Math.min(...b.map(s=>tot(s.n,s.hp))):H16()};      // the level the block stays below: the smallest stack of the buffer zone (the last of the 16 when there is no buffer)
+  const run=x=>{
+    A.forEach(s=>{s.n=Math.floor(x*s.w/s.hp)});chainT(head);
+    const H=H16(),S=S16();
+    if(isFinite(H))buf.forEach(s=>{if(tot(s.n,s.hp)>=H)s.n=fitN(H-1,s.hp);if(tot(s.n,s.str)>=S)s.n=fitN(S-1,s.str)});
+    chain(rest,true,lowBuf()-1);
+    if(isFinite(S))rest.forEach(s=>{if(tot(s.n,s.str)>=S)s.n=fitN(S-1,s.str)});
+    return usedOf(A)};
   if(X0>0){      // the highest level the rules and the budget allow (the cuts of the strength rule free Leadership; the level goes up until it is used)
     let lo=X0,hi=X0*1.1;
     for(let k=0;k<14&&run(hi)<=P.capA;k++){lo=hi;hi*=1.5}
     if(run(hi)<=P.capA)lo=hi;else for(let k=0;k<45;k++){const mid=(lo+hi)/2;if(run(mid)<=P.capA)lo=mid;else hi=mid}
     run(lo);
   }else A.forEach(s=>s.n=0);
-  topUpRen(head,rest,P.capA);
-  // the monsters only have to stay below the first 16 stacks. They get the same health as the rest of the block
-  // (no step, no extra gap); when dominance runs out the lowest monster tier is smaller and so dies last.
-  const headMin=lastHead(),restA=rest.filter(s=>s.n>0);
-  const level=restA.length?Math.min(...restA.map(s=>tot(s.n,s.hp))):headMin-1;      // 14.14: the monsters are in the block: the same health level as the rest of the Leadership (no step); their strength may be above the rest of the Leadership but stays below the last of the first 16
-  const h16=head.filter(s=>!s.buf&&s.n>0),capS=h16.length?tot(h16[h16.length-1].n,h16[h16.length-1].str):Infinity;
+  topUpRen(head,buf,rest,P.capA);
+  // the monsters are in the block: the same health level as the rest of the Leadership (no step, no extra gap; below the buffer zone when there is no rest of the Leadership), their strength below the last of the first 16;
+  // when dominance runs out the lowest monster tier is smaller and so dies last.
+  const restA=rest.filter(s=>s.n>0);
+  const level=restA.length?Math.min(...restA.map(s=>tot(s.n,s.hp))):lowBuf()-1,capS=S16();
   allocMonsters(P,Mo,[],true,{d:0,capHP:level,capSP:isFinite(capS)?capS-1:Infinity});
   return{A,Mo};
 }
@@ -1673,13 +1685,13 @@ function table(st){
   const cell=s=>`<td class="${s.off?'off':!(s.n>0)?'zero':''}" data-troop="${esc(s.name)}" title="${s.off?'Click to turn this troop on':'Click to turn this troop off'}">${IC[s.name]?`<img class="ic" src="${IC[s.name]}" alt="">`:'<div class="ic ph"></div>'}<span class="kp">${KP[s.name]?'#'+KP[s.name]:''}</span><span class="mu">${s.name}</span>${cnt(s,(s.n||0).toLocaleString())}</td>`;
   // one block per tier (all engineer tiers share one block): the label, then the cards in ONE line, 4 cards wide. A block with more than 4 cards is one line that scrolls sideways (finger, wheel, scrollbar or dragging with the mouse), so it never wraps into a second line. A block with fewer than 4 cards is padded with blank cells, so all blocks line up.
   const keys=[];st.forEach(s=>{const k=s.cat=='Engineer'?'E*':s.r;if(!keys.includes(k))keys.push(k)});
-  let o='<div class="sc">';
+  let o='<div class="sc"><div class="sci">';
   keys.forEach(k=>{
     const list=k=='E*'?st.filter(s=>s.cat=='Engineer').sort((a,b)=>+b.r.slice(1)-+a.r.slice(1)):st.filter(x=>x.r==k).sort((a,b)=>DISP_KEY(a)-DISP_KEY(b));
     const n=Math.max(4,list.length),row=list.map(cell);while(row.length<n)row.push('<td></td>');
-    o+=`<div class="glh">${k=='E*'?'Engineer Corps':`${NM[k[0]]} ${k.slice(1)}`}</div><div class="gs${list.length>4?' ov':''}"><table class="gt" style="width:${n*25}%"><colgroup>${'<col>'.repeat(n)}</colgroup><tr>${row.join('')}</tr></table></div>`;
+    o+=`<div class="glh">${k=='E*'?'Engineer Corps':`${NM[k[0]]} ${k.slice(1)}`}</div><div class="gs${list.length>4?' ov':''}"><table class="gt" style="width:${n*25}%;--n:${n}"><colgroup>${'<col>'.repeat(n)}</colgroup><tr>${row.join('')}</tr></table></div>`;
   });
-  return o+'</div>';
+  return o+'</div></div>';
 }
 // the order the cards of table() are shown in, as one list
 function flatOrder(st){
@@ -1780,9 +1792,10 @@ function allocMerc(P,ld,so,X){
   const L=ld.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);
   let H=Infinity,T=Infinity;
   L.forEach(s=>{H=tot(s.n,s.hp);if(strRef(s))T=tot(s.n,s.str)});   // the last Leadership / Dominance stack: the chain goes on from its health and total strength
-  if(P.ren){      // 14.14 Renegades: the mercenaries are in the block with the rest of the Leadership and the monsters: the same health level, no step between them; their strength may be above the rest of the Leadership but stays below the last of the first 16
-    const hd=L.filter(s=>s.p=='A'&&s.grp&&s.grp!='REST'),rs=L.filter(s=>s.p=='A'&&s.grp=='REST'),lh=hd.length?hd[hd.length-1]:null,h16=hd.filter(s=>!s.buf),l16=h16.length?h16[h16.length-1]:null;
-    if(rs.length)H=Math.min(...rs.map(s=>tot(s.n,s.hp)))+1;else if(lh)H=tot(lh.n,lh.hp);      // sizeChain keeps a stack at most (H-1): the level of the block (the smallest rest-of-Leadership stack; one below the last stack before the block when there is none)
+  if(P.ren){      // 14.14, 14.16 Renegades: the mercenaries are in the block with the rest of the Leadership and the monsters: the same health level, no step between them. Below the buffer zone in health, below the last of the first 16 in strength
+    const hd=L.filter(s=>s.p=='A'&&s.grp&&s.grp!='REST'&&!s.buf),bf=L.filter(s=>s.p=='A'&&s.buf),rs=L.filter(s=>s.p=='A'&&s.grp=='REST'),l16=hd.length?hd[hd.length-1]:null;
+    const lowBuf=bf.length?Math.min(...bf.map(s=>tot(s.n,s.hp))):l16?tot(l16.n,l16.hp):Infinity;
+    if(rs.length)H=Math.min(...rs.map(s=>tot(s.n,s.hp)))+1;else if(isFinite(lowBuf))H=lowBuf;      // sizeChain keeps a stack at most (H-1): the level of the block (the smallest rest-of-Leadership stack; one below the buffer zone when there is none)
     if(l16)T=tot(l16.n,l16.str);
   }
   if(P.cp&&L.length){const lg=L[L.length-1].grp;if(lg)H=Math.min(...L.filter(s=>s.grp===lg).map(s=>tot(s.n,s.hp)))}      // CP kill: the mercenaries stay below the SMALLEST stack of the last group
