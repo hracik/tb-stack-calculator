@@ -147,7 +147,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.5';
+const APP_VERSION='14.6';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1441,12 +1441,14 @@ function allocTight(P,live){
       const setM=xa=>{const l=lv(xa);Fm.forEach(s=>{s.n=Math.floor(l.f*s.w/s.hp)});Pm.forEach(s=>{s.n=+s.r.slice(1)==tp?Math.floor(l.p*s.w/s.hp):0})};
       const run=x=>{A.forEach(s=>{s.n=Math.floor(x*s.w/s.hp)});if(fol)setM(x);else Mo.forEach((s,i)=>{s.n=mn[i]});for(let g=0;g<30;g++){const b=cur.map(q=>q.n).join();chainT(cur);if(cur.map(q=>q.n).join()==b)break}return usedOf(A)};
       let lo=X,hi=X*1.1;
+      for(let k=0;k<14&&run(hi)<=P.capA;k++){lo=hi;hi*=1.5}      // 14.6: still under the budget - the stacks behind a smaller stack are held flat, so the stacks that are free have to rise further (it was 10 % at most)
       if(run(hi)<=P.capA)lo=hi;else for(let k=0;k<45;k++){const mid=(lo+hi)/2;if(run(mid)<=P.capA)lo=mid;else hi=mid}
       run(lo);A.forEach(s=>{s.tgt=lo*s.w});
       if(fol){const l=lv(lo);Fm.forEach(s=>{s.tgt=l.f*s.w});Pm.forEach(s=>{s.tgt=(+s.r.slice(1)==tp?l.p:0)*s.w})}
     }
     const up=HO?topUpGroups:topUp;
     TOPTOL=1.005;up(cur,A,P.capA);up(cur,Mo,P.capM);
+    if(P.capA-usedOf(A)>0){TOPTOL=1.03;up(cur,A,P.capA);TOPTOL=1.005}      // 14.6: Leadership still left over - the stacks that can take a unit may go up to 3 % above the level (as the monsters do with the Dominance)
     if(P.capM-usedOf(Mo)>0.003*P.capM){TOPTOL=1.03;up(cur,Mo,P.capM);TOPTOL=1.005}      // Dominance left over: the monsters may go up to 3 % above the level (the first monster stands far below the army anyway)
     if(!cur.some(s=>!(s.n>0)))break;
     cur=cur.filter(s=>s.n>0);                      // a stack that got no troop leaves the order: the places Kn+1 move up
