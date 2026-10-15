@@ -148,7 +148,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.16';
+const APP_VERSION='14.17';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1062,7 +1062,12 @@ function renOrder(P,names){
   const seq=eng.filter(e=>e.tier>=t0);
   for(let t=t0;t>=1;t--){if(t<t0)seq.push(...eng.filter(e=>e.tier==t));seq.push(...units(t))}
   const head=top.flatMap(tt=>['G','S'].flatMap(c=>rank(army.filter(t=>t.tier==tt&&t.cls==c))));
-  return[...head,...seq,...ts.filter(t=>t.pool=='M').sort((a,b)=>b.tier-a.tier||cat(a,b))].map(t=>t.name);
+  // 14.17: the buffer zone comes right behind the first 16: the engineers of a tier ABOVE the buffer's tier (G7 or S7 buffer: E8, E9; E7 and the lower engineers are not in it), then the first 4 stacks of the next tier (4 x G, or 4 x S when that tier has no G).
+  // Without any Guardsmen / Specialists below the two top tiers the engineers alone are the buffer. Everything else follows in the order it had (the block, random order inside), the monsters last.
+  let tb=0;for(let t=t0;t>=1;t--)if(units(t).length){tb=t;break}
+  const bu=tb?units(tb):[],bufU=bu.length?bu.filter(t=>t.cls==bu[0].cls).slice(0,4):[],bufE=tb?eng.filter(e=>e.tier>tb):eng.slice();
+  const rest=seq.filter(t=>!bufU.includes(t)&&!bufE.includes(t));
+  return[...head,...bufE,...bufU,...rest,...ts.filter(t=>t.pool=='M').sort((a,b)=>b.tier-a.tier||cat(a,b))].map(t=>t.name);
 }
 // CP kill (PvP, one flying enemy): a FIXED order, nothing is ranked by strength. All the engineers first (higher tier first), then the army tier by tier from the top,
 // Guardsmen before Specialists (G9, S9, G8, S8 ...), the monsters last, tier by tier from the top. Inside a class and tier the troops with the SMALLER squad bonus against
