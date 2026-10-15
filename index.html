@@ -147,7 +147,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.10';
+const APP_VERSION='14.11';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -303,12 +303,12 @@ function drawSO(st,P){
         k=m}
       block=[];return}
     block.forEach(n=>SOPOS[n]=block.length>1?first+'–'+last:first);
-    html+=`<div class="oi"><span class="no" style="width:auto;padding:0 9px;border-radius:11px">${block.length>1?first+'–'+last:first}</span><span class="nm">Everything else: one block, random order <small class="mu">${block.length} stacks: ${block.map(esc).join(', ')}</small></span></div>`;
+    html+=`<div class="oi"><span class="no" style="width:auto;padding:0 9px;border-radius:11px">${block.length>1?first+'–'+last:first}</span><span class="nm">${P.ren&&blockG=='MON'?'Monsters and mercenaries':P.ren?'Rest of the Leadership':'Everything else'}: one block, random order <small class="mu">${block.length} stacks: ${block.map(esc).join(', ')}</small></span></div>`;
     block=[];
   };
   st.so.forEach(n=>{
     if(!(sb[n]&&sb[n].n>0))return;                                // a troop with 0 units is not in the list (and takes no place number)
-    if(P.ren&&grp[n]=='REST'){block.push(n);return}
+    if(P.ren&&(grp[n]=='REST'||grp[n]=='MON')){if(block.length&&blockG!==grp[n])flush();blockG=grp[n];block.push(n);return}      // 14.11: two blocks - the rest of the Leadership, then the monsters with the mercenaries
     if(P.cp&&grp[n]){if(block.length&&blockG!==grp[n])flush();blockG=grp[n];block.push(n);return}
     flush();pos++;SOPOS[n]=pos;html+=one(n,pos);
   });
@@ -1130,7 +1130,7 @@ const MD={
     order:(P,{live,mkOut,nT})=>{
       const so=renOrder(P,live),out=mkOut(so,nT>=3?nT-1:nT);
       const top=[...new Set(out.filter(s=>s.p=='A'&&s.cat!='Engineer').map(s=>+s.r.slice(1)))].sort((a,b)=>b-a).slice(0,2);
-      out.forEach(s=>{s.grp=(s.p=='M'||s.cat=='Engineer'||!top.includes(+s.r.slice(1)))?'REST':s.name});   // rest of the army, engineers and monsters: one block; 14.8: every stack of the first 16 stands alone (health and strength both fall along the order)
+      out.forEach(s=>{s.grp=s.p=='M'?'MON':(s.cat=='Engineer'||!top.includes(+s.r.slice(1)))?'REST':s.name});   // 14.11: the rest of the Leadership (rest of the army and the engineers) is one block, the monsters (with the mercenaries) another; 14.8: every stack of the first 16 stands alone (health and strength both fall along the order)
       return{so,out};}}
 };
 const modeOf=P=>rgm(P)?MD.epic:P.cp?MD.cp:P.kill?MD.kill:MD.ren;
@@ -1566,12 +1566,14 @@ function score(P,list,order,eng){      // eng: the ranking of the order engine (
       if(b-a>1){const avg=hit.slice(a,b).reduce((q,x)=>q+x,0)/(b-a);for(let k=a;k<b;k++)hit[k]=avg}
       a=b}
   }
-  if(P.ren){
-    const idx=L.map((s,i)=>s.grp=='REST'?i:-1).filter(i=>i>=0);
-    if(idx.length>1){
-      const top=Math.max(...idx.map(i=>hp[i])),blk=idx.filter(i=>hp[i]>=0.9*top);   // partial stacks (much smaller) keep their place at the end
-      const avg=blk.reduce((q,i)=>q+hit[i],0)/blk.length;blk.forEach(i=>hit[i]=avg);
-    }
+  if(P.ren){                                                     // Renegades: two blocks with a random order inside - the rest of the Leadership, then the monsters with the mercenaries
+    ['REST','MON'].forEach(g=>{
+      const idx=L.map((s,i)=>s.grp==g?i:-1).filter(i=>i>=0);
+      if(idx.length>1){
+        const top=Math.max(...idx.map(i=>hp[i])),blk=idx.filter(i=>hp[i]>=0.9*top);   // partial stacks (much smaller) keep their place at the end
+        const avg=blk.reduce((q,i)=>q+hit[i],0)/blk.length;blk.forEach(i=>hit[i]=avg);
+      }
+    });
   }
   return{dmg:dm.reduce((q,x,i)=>q+x*hit[i],0),hits,stacks:L.length};
 }
@@ -1766,6 +1768,7 @@ function sizeChain(P,seq,H,T,idx,X){
 }
 function allocMerc(P,ld,so,X){
   const all=MT.map(t=>mkM(t,P,X)),res={all,list:[],ord:[],used:0};
+  if(P.ren)all.forEach(s=>s.grp='MON');      // 14.11 Renegades: the mercenaries stand in one block with the monsters
   const act=MT.filter(t=>!X.has(t.name));
   if(!(P.capU>0)||!act.length)return res;
   const ix={};so.forEach((n,i)=>ix[n]=i);
