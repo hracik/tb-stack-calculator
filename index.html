@@ -52,6 +52,7 @@ select{width:auto}.mu{color:var(--mu);font-size:13px}
 .oi.dg{opacity:.65;outline:2px solid var(--ac)}
 .hd{cursor:grab;touch-action:none;font-weight:700;padding:2px 6px}.oi.dg .hd{cursor:grabbing}
 .no{width:22px;height:22px;border-radius:50%;background:#2a2012;color:#e8dcc0;display:inline-flex;align-items:center;justify-content:center;font-size:12px}
+.oi.bz{border-left:5px solid #2c7480}.oi.bz .no{background:#2c7480;color:#fff}.oz{display:flex;align-items:center;gap:8px;margin:12px 0 2px;color:#7cc2cc;font-size:13px}.oz::after{content:'';flex:1;border-top:1px dashed currentColor;opacity:.55}.kp.kb{color:#1d6470;font-weight:600}      /* 14.21: the buffer zone of Renegades looks different from the first 16 */
 .nm{flex:1}
 button{background:#8a6a2c;color:#fff;border:0;border-radius:5px;padding:1px 6px;cursor:pointer;margin-left:3px;font:inherit}
 #rst{padding:3px 10px;margin:0}
@@ -149,7 +150,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.20';
+const APP_VERSION='14.21';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -275,7 +276,7 @@ const cnt=(s,n)=>SHOWTR&&!s.off?`<span class="n nw">${unitsTxt(s)}</span>`:`<br>
 let EBINFO='';   // the stack split (army / full monster / partial monster / engineer), part of the result summary line
 const pct=m=>Math.round(m*100).toLocaleString('en-US')+'%';   // bonus ratio -> percent text (6.67 -> 667%)
 const num=x=>Math.round(x).toLocaleString('en-US');                // whole number with thousands separators
-let SOPOS={};
+let SOPOS={},BUFN={};      // BUFN: the stacks of the Renegades buffer zone (name -> 1)
 // the bonus text of an order row: "+333% vs. mounted" = the troop's best bonus against a class of the enemy (the best one that counts in this mode; when none counts, its best one anyway)
 function vsText(t,P){return vsText0(t,P)+(P.pm&&t.cls=='S'?' · double damage':'')}      // PvP Max damage: the Specialists deal double damage, too
 function vsText0(t,P){
@@ -294,10 +295,11 @@ function drawSO(st,P){
   const info=n=>{const t=TRN[n],m=vsRatio(t,P),dh=P.one?0:t.cls=='M'?(P['dh'+t.type]||0):t.beast?P.dhBeast:0,cnt=sb[n]?sb[n].n||0:0,hpu=sb[n]?sb[n].hp:t.hp*mults(t,P)[0],
     one=t.str*mults(t,P)[1],full=one*vsFactor(t,P)*dhf(t,P);
     return`${t.cls}${t.tier} · ${vsText(t,P)}${dh>0?' · Double hit +'+dh+'%':''}<br>${[['SH',(hpu>0?one/hpu:0).toFixed(4)],['Health',num(tot(cnt,hpu))],['Strength',num(tot(cnt,one))],['Damage',num(tot(cnt,full))]].map(([l,x])=>`<span style="white-space:nowrap">${l}: ${x}</span>`).join(' · ')}`};   // SH = strength without squad bonus and Double hit (only your strength multiplier) per health; Damage = strength with the squad bonus and Double hit
-  const one=(n,lbl)=>`<div class="oi" data-n="${esc(n)}"><span class="no"${String(lbl).includes('–')?' style="width:auto;padding:0 9px;border-radius:11px"':''}>${lbl}</span>${IC[n]?`<img class="ic2" src="${IC[n]}" alt="">`:''}<span class="nm">${esc(n)} <small class="mu">${info(n)}</small></span></div>`;
+  BUFN={};if(P.ren)st.forEach(x=>{if(x.buf&&x.n>0)BUFN[x.name]=1});      // 14.21: the stacks of the buffer zone (Renegades)
+  const one=(n,lbl)=>`<div class="oi${BUFN[n]?' bz':''}" data-n="${esc(n)}"${BUFN[n]?' title="Buffer zone: below the 16th stack in health and strength"':''}><span class="no"${String(lbl).includes('–')?' style="width:auto;padding:0 9px;border-radius:11px"':''}>${lbl}</span>${IC[n]?`<img class="ic2" src="${IC[n]}" alt="">`:''}<span class="nm">${esc(n)} <small class="mu">${info(n)}</small></span></div>`;
   let html='',pos=0,block=[];
   SOPOS={};
-  let blockG=null;
+  let blockG=null,bufHead=false;
   const flush=()=>{
     if(!block.length)return;
     const first=pos+1,last=pos+block.length;pos=last;
@@ -316,7 +318,7 @@ function drawSO(st,P){
     if(!(sb[n]&&sb[n].n>0))return;                                // a troop with 0 units is not in the list (and takes no place number)
     if(P.ren&&grp[n]=='REST'){block.push(n);return}      // 14.14: the first 16 and the buffer zone stand alone, everything else is one block
     if(P.cp&&grp[n]){if(block.length&&blockG!==grp[n])flush();blockG=grp[n];block.push(n);return}
-    flush();pos++;SOPOS[n]=pos;html+=one(n,pos);
+    flush();if(BUFN[n]&&!bufHead){bufHead=true;html+='<div class="oz">Buffer zone: each stack below the 16th in health and strength</div>'}pos++;SOPOS[n]=pos;html+=one(n,pos);
   });
   flush();
   $('os').innerHTML=html;
@@ -1693,7 +1695,7 @@ let KP={};
 const MON_DISP=['Kraken II','Fire Phoenix II','Devastator II','Trickster II','Kraken I','Fire Phoenix I','Devastator I','Trickster I','Wind Lord','Black Dragon','Destructive Colossus','Ancient Terror'];
 const DISP_KEY=s=>{if(s.c=='Engineer')return -1;const m=MON_DISP.indexOf(s.name);return m>=0?m-100:DISP.indexOf(s.cat||s.c)};
 function table(st){
-  const cell=s=>`<td class="${s.off?'off':!(s.n>0)?'zero':''}" data-troop="${esc(s.name)}" title="${s.off?'Click to turn this troop on':'Click to turn this troop off'}">${IC[s.name]?`<img class="ic" src="${IC[s.name]}" alt="">`:'<div class="ic ph"></div>'}<span class="kp">${KP[s.name]?'#'+KP[s.name]:''}</span><span class="mu">${s.name}</span>${cnt(s,(s.n||0).toLocaleString())}</td>`;
+  const cell=s=>`<td class="${s.off?'off':!(s.n>0)?'zero':''}" data-troop="${esc(s.name)}" title="${s.off?'Click to turn this troop on':'Click to turn this troop off'}">${IC[s.name]?`<img class="ic" src="${IC[s.name]}" alt="">`:'<div class="ic ph"></div>'}<span class="kp${KP[s.name]&&BUFN[s.name]?' kb':''}"${KP[s.name]&&BUFN[s.name]?' title="Buffer zone: below the 16th stack in health and strength"':''}>${KP[s.name]?'#'+KP[s.name]+(BUFN[s.name]?' buf':''):''}</span><span class="mu">${s.name}</span>${cnt(s,(s.n||0).toLocaleString())}</td>`;
   // one block per tier (all engineer tiers share one block): the label, then the cards in ONE line, 4 cards wide. A block with more than 4 cards is one line that scrolls sideways (finger, wheel, scrollbar or dragging with the mouse), so it never wraps into a second line. A block with fewer than 4 cards is padded with blank cells, so all blocks line up.
   const keys=[];st.forEach(s=>{const k=s.cat=='Engineer'?'E*':s.r;if(!keys.includes(k))keys.push(k)});
   let o='<div class="sc"><div class="sci">';
@@ -1711,7 +1713,7 @@ function flatOrder(st){
 }
 // MOBILE view: one unit per line - the picture, to the right the name and below it the number of units (click = turn off / on, like a card)
 function mobList(items){
-  return`<div class="vwl${VIEW=='computer'?' c2':''}">`+items.map(s=>`<div class="vwr${s.off?' off':!(s.n>0)?' zero':''}" data-troop="${esc(s.name)}" title="${s.off?'Click to turn this troop on':'Click to turn this troop off'}">${IC[s.name]?`<img class="ic" src="${IC[s.name]}" alt="">`:'<div class="ic ph"></div>'}<span class="kp">${KP[s.name]?'#'+KP[s.name]:''}</span><div class="vwt"><div class="vwn">${esc(s.name)}</div><div class="vwc">${shown(s,(s.n||0).toLocaleString())}</div></div></div>`).join('')+'</div>';
+  return`<div class="vwl${VIEW=='computer'?' c2':''}">`+items.map(s=>`<div class="vwr${s.off?' off':!(s.n>0)?' zero':''}" data-troop="${esc(s.name)}" title="${s.off?'Click to turn this troop on':'Click to turn this troop off'}">${IC[s.name]?`<img class="ic" src="${IC[s.name]}" alt="">`:'<div class="ic ph"></div>'}<span class="kp${KP[s.name]&&BUFN[s.name]?' kb':''}"${KP[s.name]&&BUFN[s.name]?' title="Buffer zone: below the 16th stack in health and strength"':''}>${KP[s.name]?'#'+KP[s.name]+(BUFN[s.name]?' buf':''):''}</span><div class="vwt"><div class="vwn">${esc(s.name)}</div><div class="vwc">${shown(s,(s.n||0).toLocaleString())}</div></div></div>`).join('')+'</div>';
 }
 // MOBILE order, inside every section: the single unit's own (original) health, the biggest first. The same health: the order of this list (mercenaries), then the higher tier,
 // Guardsmen before Specialists, then Flying, Mounted, Ranged, Melee (so ranged before melee), then the order of the cards in the Grouped view.
