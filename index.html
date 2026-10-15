@@ -150,7 +150,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.32';
+const APP_VERSION='14.33';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -358,9 +358,9 @@ function drawTabs(){
   drawMenu();
   if(XPM=='exp'&&XTAB!==tabs[active]){XPM=null;drawXP()}      // the export text belongs to the tab it was made in
   const tools=delPending
-    ?`<span style=”white-space:nowrap”>Delete “${esc(tabs[active].name)}”?</span><button class=”tl” data-act=”yes”>Yes, delete</button><button class=”tl” data-act=”no”>Cancel</button>`
-    :`<button class=”tl” data-act=”ren”>✎ Rename</button><button class=”tl” data-act=”dup”>⧉ Duplicate</button>${tabs.length>1?'<button class=”tl” data-act=”del”>🗑 Delete</button>':''}<button class=”tl${XPM=='exp'?' on':''}” data-act=”exp” title=”Show all inputs of this tab as text, to copy”>⇪ Export</button><button class=”tl${XPM=='imp'?' on':''}” data-act=”imp” title=”Paste exported text: it opens as a new tab”>⇩ Import</button>`;
-  $('tabs').innerHTML=tabs.map((t,i)=>`<button class=”tab${i==active?' on':''}” data-t=”${i}” title=”${esc(t.name)} - double-click to rename”>${esc(t.name)}</button>`).join('')+'<button class=”tab add” data-add=”1” title=”New tab”>+</button>';
+    ?`<span style="white-space:nowrap">Delete "${esc(tabs[active].name)}"?</span><button class="tl" data-act="yes">Yes, delete</button><button class="tl" data-act="no">Cancel</button>`
+    :`<button class="tl" data-act="ren">✎ Rename</button><button class="tl" data-act="dup">⧉ Duplicate</button>${tabs.length>1?'<button class="tl" data-act="del">🗑 Delete</button>':''}<button class="tl${XPM=='exp'?' on':''}" data-act="exp" title="Show all inputs of this tab as text, to copy">⇪ Export</button><button class="tl${XPM=='imp'?' on':''}" data-act="imp" title="Paste exported text: it opens as a new tab">⇩ Import</button>`;
+  $('tabs').innerHTML=tabs.map((t,i)=>`<button class="tab${i==active?' on':''}" data-t="${i}" title="${esc(t.name)} - double-click to rename">${esc(t.name)}</button>`).join('')+'<button class="tab add" data-add="1" title="New tab">+</button>';
   $('tabtools').innerHTML=tools;
 }
 function newName(){let n=tabs.length+1;while(tabs.some(t=>t.name==='Tab '+n))n++;return 'Tab '+n}
