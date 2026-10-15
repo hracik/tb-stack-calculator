@@ -155,7 +155,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.51';
+const APP_VERSION='14.52';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -365,6 +365,7 @@ const ICODEL='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke
 const ICOIMP='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>';
 const ICOEXP='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>';
 $('tabs').addEventListener('scroll',()=>{const t=$('tabs');t.classList.add('sc');clearTimeout(t._st);t._st=setTimeout(()=>t.classList.remove('sc'),900)},{passive:true});
+function tabVis(el){const s=$('tabs');if(!el||!s)return;const r=el.getBoundingClientRect(),q=s.getBoundingClientRect(),R=42;if(r.right>q.right-R)s.scrollLeft+=r.right-(q.right-R);else if(r.left<q.left)s.scrollLeft-=q.left-r.left}      // keeps a tab / the name box clear of the pinned + button
 function drawTabs(){
   drawMenu();
   if(XPM=='exp'&&XTAB!==tabs[active]){XPM=null;drawXP()}      // the export text belongs to the tab it was made in
@@ -372,7 +373,7 @@ function drawTabs(){
     ?`<span style="white-space:nowrap">Delete "${esc(tabs[active].name)}"?</span><button class="tl" data-act="yes">Yes, delete</button><button class="tl" data-act="no">Cancel</button>`
     :`<button class="tli" data-act="ren" aria-label="Rename" title="Rename">${ICOREN}</button><button class="tli" data-act="dup" aria-label="Duplicate" title="Duplicate">${ICODUP}</button>${tabs.length>1?`<button class="tli" data-act="del" aria-label="Delete" title="Delete">${ICODEL}</button>`:''}<button class="tli${XPM=='imp'?' on':''}" data-act="imp" aria-label="Import" title="Paste exported text: it opens as a new tab">${ICOIMP}</button><button class="tl${XPM=='exp'?' on':''}" data-act="exp" title="Show all inputs of this tab as text, to copy">${ICOEXP}Export</button>`;
   $('tabs').innerHTML='<div id="tabsin">'+tabs.map((t,i)=>`<button class="tab${i==active?' on':''}" data-t="${i}" title="${esc(t.name)} - double-click to rename">${esc(t.name)}</button>`).join('')+'<button type="button" class="tab add" id="tabadd" data-add="1" title="New tab">+</button></div>';
-  $('tabtools').innerHTML=tools;
+  $('tabtools').innerHTML=tools;tabVis(document.querySelector('#tabs .tab.on'));
 }
 function newName(){let n=tabs.length+1;while(tabs.some(t=>t.name==='Tab '+n))n++;return 'Tab '+n}
 function switchTab(i){if(i==active)return;save();active=i;delPending=false;load(tabs[i].data);drawTabs();refresh()}
@@ -382,7 +383,7 @@ function delTab(){tabs.splice(active,1);active=Math.min(active,tabs.length-1);de
 function rename(i){
   const b=document.querySelector(`.tab[data-t="${i}"]`);if(!b)return;
   const inp=document.createElement('input');inp.type='text';inp.className='tabin';inp.value=tabs[i].name;inp.maxLength=24;
-  b.replaceWith(inp);inp.focus();inp.select();
+  b.replaceWith(inp);inp.focus({preventScroll:true});inp.select();tabVis(inp);
   let done=false;
   const fin=ok=>{if(done)return;done=true;if(ok){const n=inp.value.trim();if(n)tabs[i].name=n}drawTabs();if(ready){const t=$('rtitle');if(t)t.textContent='Result — '+tabs[active].name}save()};
   inp.addEventListener('keydown',e=>{if(e.key=='Enter')fin(true);else if(e.key=='Escape')fin(false)});
