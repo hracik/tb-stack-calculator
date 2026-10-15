@@ -255,6 +255,8 @@ The button is in the PvMany row. **On since 14.7** (the constant `RENEGADES = tr
 
 Highest troop types die first, G before S, up to 16 stacks. Then all the rest of the army is equal and dies at random. These rules maximize the damage and reduce the cost of attacks.
 
+**The first 16 stacks follow health and strength (14.8).** Each of them stands alone (before 14.8 the stacks of one class and tier were a group of equals): the total health and the total strength both fall along the order, each at least 1 below the stack before it, as in every other mode. The block behind them (the rest of the army, the engineers and the monsters) is equal inside and stays below the last of the 16. The common level goes up until the Leadership is used. The strength rule is why the levels drop where a Specialist follows a Guardsman: a Specialist has twice the strength per health, so with the same strength it has half the health, and the block behind the last of the 16 stands at that lower level (default setups: the Dominance cannot be used in full, the damage is 9 to 26 % lower than with the old equal groups, which broke both rules).
+
 ### Killshot v. 3
 
 Killshot is a special type of the 3-stack mode. The enemy is the same (3 stacks, no mounted one) and the damage is counted the same way, but a little of the total damage is sacrificed for a drastically reduced cost of training and reviving. With the default inputs it deals under 1 % less than the 3-stack mode.
