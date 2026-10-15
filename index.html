@@ -147,7 +147,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.9';
+const APP_VERSION='14.10';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -749,7 +749,7 @@ const fmt=x=>x>=1e12?(x/1e12).toFixed(2)+' T':x>=1e9?(x/1e9).toFixed(2)+' B':x>=
 // ---- settings, read once per calculation ----
 function getP(){
   if($('mode').value=='maxl')$('mode').value='max';   // the near-maximum modes were removed (old saved tabs)
-  const p={d:0,kill:$('mode').value=='kill',ren:$('mode').value=='ren',capA:v('capA'),capM:v('capM'),capU:v('capU'),enemy:$('mode').value=='kill'?3:$('mode').value=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4,cat:DEFCAT.slice()};
+  const p={d:0,kill:$('mode').value=='kill',ren:$('mode').value=='ren',capA:v('capA'),capM:v('capM'),capU:v('capU'),enemy:$('mode').value=='kill'?3:$('mode').value=='ren'?8:$('mode').value=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4,cat:DEFCAT.slice()};
   ['G','S','M','E','Epic','Players','Giant','Elemental','Dragon','Beast','Melee','Mounted','Ranged','Flying'].forEach(k=>{p['h'+k]=$('bh_'+k)?v('bh_'+k):0;p['s'+k]=$('bs_'+k)?v('bs_'+k):0});
   ['Giant','Elemental','Dragon','Beast'].forEach(k=>{p['dh'+k]=$('dh_'+k)?snapDH($('dh_'+k).value):0});
   p.pm=$('mode').value=='pvpmax';                // PvP Max damage: a fully equipped enemy (4 stacks, every kind of troop), all bonuses and the Double hit count, no Epic strength
@@ -1486,7 +1486,7 @@ function allocWhole(P,live){                         // Killshot: the exact solu
   if(ok)topUp(live,Mo,P.capM);        // ... and the Dominance
   return{A,Mo};
 }
-function topUpRen(head,rest,cap){      // Renegades: the leftover goes to the stack furthest below the level that may take a unit: a head stack stays strictly below the head stack before it in health AND strength, a stack of the block stays below the last head stack
+function topUpRen(head,rest,cap){      // Renegades: the leftover goes to the stack furthest below the level that may take a unit: a head stack stays strictly below the head stack before it in health AND strength, a stack of the block stays below the last head stack in health AND strength
   const A=[...head,...rest];let left=cap-usedOf(A);
   if(!(left>0))return;
   const hs=head.filter(s=>s.n>0),rs=rest.filter(s=>s.n>0);
@@ -1494,7 +1494,7 @@ function topUpRen(head,rest,cap){      // Renegades: the leftover goes to the st
   const ok=(s,k)=>{
     if(s.cost>left||!(s.hp>0))return false;
     if(k>=0){const p=k>0?hs[k-1]:null;return !p||(tot(s.n+1,s.hp)<tot(p.n,p.hp)&&tot(s.n+1,s.str)<tot(p.n,p.str))}
-    const l=hs.length?hs[hs.length-1]:null;return !l||tot(s.n+1,s.hp)<tot(l.n,l.hp)};
+    const l=hs.length?hs[hs.length-1]:null;return !l||(tot(s.n+1,s.hp)<tot(l.n,l.hp)&&tot(s.n+1,s.str)<tot(l.n,l.str))};
   for(let g=0;g<500000;g++){
     let b=null,br=Infinity;
     hs.forEach((s,k)=>{const r=s.n*s.hp;if(r<br&&ok(s,k)){br=r;b=s}});
@@ -1509,7 +1509,8 @@ function allocRen(P,live){                 // Renegades (14.8): the first 16 sta
   weights(A,true,d);
   const inv=A.reduce((q,x)=>q+x.w*x.cost/x.hp,0),X0=inv&&P.capA>0?P.capA/inv:0;
   const lastHead=()=>{const h=head.filter(s=>s.n>0);return h.length?tot(h[h.length-1].n,h[h.length-1].hp):Infinity};
-  const run=x=>{A.forEach(s=>{s.n=Math.floor(x*s.w/s.hp)});chainT(head);chain(rest,true,lastHead()-1);return usedOf(A)};
+  const lastHeadS=()=>{const h=head.filter(s=>s.n>0);return h.length?tot(h[h.length-1].n,h[h.length-1].str):Infinity};
+  const run=x=>{A.forEach(s=>{s.n=Math.floor(x*s.w/s.hp)});chainT(head);chain(rest,true,lastHead()-1);const T=lastHeadS();if(isFinite(T))rest.forEach(s=>{if(tot(s.n,s.str)>=T)s.n=fitN(T-1,s.str)});return usedOf(A)};      // 14.10: the block behind the 16 stays below the last of them in health AND strength
   if(X0>0){      // the highest level the rules and the budget allow (the cuts of the strength rule free Leadership; the level goes up until it is used)
     let lo=X0,hi=X0*1.1;
     for(let k=0;k<14&&run(hi)<=P.capA;k++){lo=hi;hi*=1.5}
@@ -1520,8 +1521,9 @@ function allocRen(P,live){                 // Renegades (14.8): the first 16 sta
   // the monsters only have to stay below the first 16 stacks. They get the same health as the rest of the block
   // (no step, no extra gap); when dominance runs out the lowest monster tier is smaller and so dies last.
   const headMin=lastHead(),restA=rest.filter(s=>s.n>0);
-  const level=restA.length?Math.min(...restA.map(s=>tot(s.n,s.hp))):headMin-1;
-  allocMonsters(P,Mo,[],true,{d:0,capHP:level,capSP:Infinity});
+  const level=(restA.length?Math.min(...restA.map(s=>tot(s.n,s.hp))):headMin)-1;      // 14.10: the monsters stand just a step below the block in health; their strength may be above the block but stays below the last of the 16
+  const capS=lastHeadS();
+  allocMonsters(P,Mo,[],true,{d:0,capHP:level,capSP:isFinite(capS)?capS-1:Infinity});
   return{A,Mo};
 }
 function allocate(P,live){const md=modeOf(P);HO=md.ho;return md.size(P,live)}      // the sizing of the mode (HO: health only, read by the shared helpers)
@@ -1534,15 +1536,16 @@ function solve(P,order){const st=buildStacks(P,order,XS),{A,Mo}=allocate(P,st.fi
 // other living stacks strike. A stack killed before its turn never strikes (an early, weak stack - Engineers - can die without ever hitting).
 // The rounds repeat while anybody is alive. SEQ=false switches back to the old simple count: the stack in place p of the dying order strikes ceil(p/K) times.
 // The damage is sum(strikes x damage per strike).
+// Renegades (14.10): the battle ends after round 1 (maxRd=1) - the enemy is defeated by then, every stack strikes once.
 // Renegades: the block after the first 16 has a random order - every stack in it gets the average strikes of the block's places.
 let SEQ=true;
 let HALFHEALTHY=0.5;      // 8.4 rule for the ORDER ENGINE only: when it ranks the orders (score(...,true)) only this share (50 %) of the damage of the healthiest stack counts. The estimate shown to the person is always the full 100 %
-function strikes(L,K,log){                                     // strikes of every stack; L is in the dying order. log (optional): the events of the battle in their order, [round, 'o' (our hit) | 'e' (the enemy kills the stack), index in L]
+function strikes(L,K,log,maxRd=Infinity){                                     // strikes of every stack; L is in the dying order. log (optional): the events of the battle in their order, [round, 'o' (our hit) | 'e' (the enemy kills the stack), index in L]
   const N=L.length;
   if(!SEQ)return L.map((_,i)=>Math.ceil((i+1)/K));
   const T=L.map(s=>s.n*s.str),by=L.map((_,i)=>i).sort((a,b)=>T[b]-T[a]||a-b),cnt=new Array(N).fill(0);
   K=Math.max(1,K|0);let head=0;                                // head = the first stack still alive in the dying order
-  for(let rd=0;head<N;rd++){
+  for(let rd=0;head<N&&rd<maxRd;rd++){      // maxRd: Renegades (14.10) - the battle ends after round 1, the enemy is defeated by then
     let pos=0;const nx=()=>{while(pos<N&&by[pos]<head)pos++;return pos<N?by[pos++]:-1};   // the strongest living stack that has not struck in this round
     for(let j=0;j<K&&head<N;j++){                              // the K trades of the round
       if(rd===0){const s=nx();if(s>=0){cnt[s]++;if(log)log.push([rd,'o',s])}if(log)log.push([rd,'e',head]);head++}         // round 1: we strike first, then the enemy kills
@@ -1555,7 +1558,7 @@ function strikes(L,K,log){                                     // strikes of eve
 function score(P,list,order,eng){      // eng: the ranking of the order engine (the healthiest stack counts HALFHEALTHY); without it the full damage
   const K=P.enemy,ix={};order.forEach((n,i)=>ix[n]=i);
   const L=list.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);
-  const dm=L.map(s=>s.n*dpu(s)),hit=strikes(L,K),hp=L.map(s=>s.n*s.hp);
+  const dm=L.map(s=>s.n*dpu(s)),hit=strikes(L,K,undefined,P.ren?1:Infinity),hp=L.map(s=>s.n*s.hp);
   if(eng&&HALFHEALTHY<1&&dm.length)dm[hp.indexOf(Math.max(...hp))]*=HALFHEALTHY;      // 8.4: the healthiest stack (the first one in the dying order) counts only HALFHEALTHY of its damage when the engine ranks the orders
   let hits=hit.reduce((q,x)=>q+x,0);
   if(P.cp){                                                      // CP kill: the game picks the order inside a group of equals, so each of its stacks strikes the average of the group's places
@@ -1578,7 +1581,7 @@ function battleHtml(P,list,order,sc){
   const K=P.enemy,ix={};order.forEach((n,i)=>ix[n]=i);
   const L=list.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);
   if(!L.length)return '<p class="mu">No units.</p>';
-  const log=[];strikes(L,K,log);
+  const log=[];strikes(L,K,log,P.ren?1:Infinity);
   const num=x=>Math.round(x).toLocaleString();
   const XP='M4.1 5.9C6.9 6.9 9.5 8.6 11.7 11.5C14 14.4 17.2 17.4 20.3 18.9M4.7 4.8C7.6 7.3 10.2 9.4 12.4 12.1C14.6 14.8 17.3 17.9 19.4 20.2M19.5 4.3C16.9 6.7 13.9 9.6 11.2 12.9C8.8 15.8 6.6 18.4 4.3 19.9M20.2 5.2C17.3 8.1 14.4 11.4 12 14.2C10 16.5 7.6 19.2 5.2 20.7',XS='<svg class="bx" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="'+XP+'" stroke="rgba(0,0,0,.5)" stroke-width="3.6"/><path d="'+XP+'" stroke="#e5402a" stroke-width="1.7"/></g></svg>'; // a hand-drawn red X: four uneven pen strokes
   let rd=-1,h='<div class="br">';
@@ -1594,7 +1597,7 @@ function battleHtml(P,list,order,sc){
       h+=`<div class="bl be"><span class="bic">${img}${XS}</span>${nm}<span class="bv"><b>\u2212${num(d)}</b></span></div>`}
   });
   h+='</div>';
-  if(P.cp||P.ren)h+='<p class="mu bf">In this mode the game picks the order inside a group of equals, so this report shows one possible order.</p>';
+  if(P.cp||P.ren)h+='<p class="mu bf">In this mode the game picks the order inside a group of equals, so this report shows one possible order.'+(P.ren?' The battle ends after round 1: the enemy is defeated by then.':'')+'</p>';
   return h;
 }
 // The hitting order: who hits the enemy in round 1, in that order (the same battle as the report: strikes() with a log)
@@ -1602,7 +1605,7 @@ function hitHtml(P,list,order){
   const K=P.enemy,ix={};order.forEach((n,i)=>ix[n]=i);
   const L=list.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);
   if(!L.length)return '<p class="mu">No units.</p>';
-  const log=[];strikes(L,K,log);
+  const log=[];strikes(L,K,log,P.ren?1:Infinity);
   let h='',k=0;
   log.forEach(([r,t,i])=>{if(r!==0||t!=='o')return;const s=L[i];k++;
     h+=`<div class="oi"><span class="no"${k>99?' style="width:auto;padding:0 9px;border-radius:11px"':''}>${k}</span>${IC[s.name]?`<img class="ic2" src="${IC[s.name]}" alt="">`:''}<span class="nm">${esc(s.name)} <small class="mu">${s.n.toLocaleString()} units \u00b7 #${i+1} in the dying order</small></span></div>`});
@@ -1769,6 +1772,11 @@ function allocMerc(P,ld,so,X){
   const L=ld.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);
   let H=Infinity,T=Infinity;
   L.forEach(s=>{H=tot(s.n,s.hp);if(strRef(s))T=tot(s.n,s.str)});   // the last Leadership / Dominance stack: the chain goes on from its health and total strength
+  if(P.ren){      // 14.10 Renegades: the mercenaries stand just a step below the block behind the first 16 in health; their strength may be above the block but stays below the last of the 16
+    const hd=L.filter(s=>s.p=='A'&&s.grp&&s.grp!='REST'),rs=L.filter(s=>s.p=='A'&&s.grp=='REST'),lh=hd.length?hd[hd.length-1]:null;
+    if(rs.length)H=Math.min(...rs.map(s=>tot(s.n,s.hp)));else if(lh)H=tot(lh.n,lh.hp);
+    if(lh)T=tot(lh.n,lh.str);
+  }
   if(P.cp&&L.length){const lg=L[L.length-1].grp;if(lg)H=Math.min(...L.filter(s=>s.grp===lg).map(s=>tot(s.n,s.hp)))}      // CP kill: the mercenaries stay below the SMALLEST stack of the last group
   const by={};all.forEach(s=>by[s.name]=s);
   const used=(seq,ns)=>ns.reduce((q,n,i)=>q+n*seq[i].cost,0);
