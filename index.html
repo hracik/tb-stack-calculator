@@ -165,7 +165,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.19';
+const APP_VERSION='19.0.20';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1655,11 +1655,13 @@ function score(P,list,order,eng){      // eng: the ranking of the order engine (
       }
     });
   }
-  const dsf=1+(P.dsA||0)/100;      // 19.0.9: whole-army double strike chance: on average that many more strikes
-  // 19.0.16: the spread of the damage when Double damage / Double strike are chances: every strike of a stack is its own roll (the class chance, the army chance and the army Double strike are independent), so the damage of a strike is its average x F/mean(F); F = the product of (1 + a 0/1 roll). The strikes are independent: the variances add up.
-  const pa=(P.ddA||0)/100,ps=(P.dsA||0)/100;let vr=0;
-  L.forEach((s,i)=>{const t0=TRN[s.name],pm=t0?dsp(t0,P):0,cm=pm&&t0?dsc(t0,P):0,pc=(P['dd'+s.r[0]]||0)/100,rv=(1+3*pc)*(1+3*pa)*(1+3*ps)*(1+(2*cm+cm*cm)*pm)/(Math.pow(1+pc,2)*Math.pow(1+pa,2)*Math.pow(1+ps,2)*Math.pow(1+cm*pm,2))-1;vr+=Math.pow(dm[i]*dsf,2)*rv*hit[i]});
-  return{dmg:dm.reduce((q,x,i)=>q+x*hit[i],0)*dsf,hits:hits*dsf,stacks:L.length,sd:Math.sqrt(vr),hsd:Math.sqrt(hits*ps*(1-ps))};
+  // Army Double strike (a chance in %): a strike is repeated. On 3 and 4 enemy stacks the 2nd strike does NOT apply the squad bonus (the bonus against the enemy): it deals the base strength only = c x the first strike, c = base / (base + squad bonus) = 1/f (the Specialists' PvP double damage is part of base); on 6 and 8 stacks c = 1 (the whole strike again).
+  // 19.0.20: the spread: every strike of a stack is its own roll (the class Double damage, the army Double damage, the monsters' Double strike and the army Double strike are independent): the damage of a strike is its average x F/mean(F), F = the product of (1 + a 0/1 roll) per source. The strikes are independent: the variances add up.
+  const pa=(P.ddA||0)/100,ps=(P.dsA||0)/100,E1=(c,p)=>1+c*p,E2=(c,p)=>1+(2*c+c*c)*p;let vr=0,dmg=0;
+  L.forEach((s,i)=>{const t0=TRN[s.name],pm=t0?dsp(t0,P):0,cm=pm&&t0?dsc(t0,P):0,pc=(P['dd'+s.r[0]]||0)/100,cs=P.enemy<=4?(P.pvp&&s.r[0]=='S'?2:1)/(s.f||1):1,
+      rv=E2(1,pc)*E2(1,pa)*E2(cm,pm)*E2(cs,ps)/(Math.pow(E1(1,pc)*E1(1,pa)*E1(cm,pm)*E1(cs,ps),2))-1,M=dm[i]*E1(cs,ps);
+    dmg+=M*hit[i];vr+=M*M*rv*hit[i]});
+  return{dmg,hits:hits*(1+ps),stacks:L.length,sd:Math.sqrt(vr),hsd:Math.sqrt(hits*ps*(1-ps))};
 }
 // ---- Battle report (v298): the same battle as the damage estimate (strikes(): K trades per round), told event by event until no unit is left ----
 let BRD=null;
