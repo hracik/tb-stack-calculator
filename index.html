@@ -164,7 +164,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.15';
+const APP_VERSION='19.0.16';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1651,7 +1651,10 @@ function score(P,list,order,eng){      // eng: the ranking of the order engine (
     });
   }
   const dsf=1+(P.dsA||0)/100;      // 19.0.9: whole-army double strike chance: on average that many more strikes
-  return{dmg:dm.reduce((q,x,i)=>q+x*hit[i],0)*dsf,hits:hits*dsf,stacks:L.length};
+  // 19.0.16: the spread of the damage when Double damage / Double strike are chances: every strike of a stack is its own roll (the class chance, the army chance and the army Double strike are independent), so the damage of a strike is its average x F/mean(F); F = the product of (1 + a 0/1 roll). The strikes are independent: the variances add up.
+  const pa=(P.ddA||0)/100,ps=(P.dsA||0)/100;let vr=0;
+  L.forEach((s,i)=>{const pc=(P['dd'+s.r[0]]||0)/100,rv=(1+3*pc)*(1+3*pa)*(1+3*ps)/(Math.pow(1+pc,2)*Math.pow(1+pa,2)*Math.pow(1+ps,2))-1;vr+=Math.pow(dm[i]*dsf,2)*rv*hit[i]});
+  return{dmg:dm.reduce((q,x,i)=>q+x*hit[i],0)*dsf,hits:hits*dsf,stacks:L.length,sd:Math.sqrt(vr),hsd:Math.sqrt(hits*ps*(1-ps))};
 }
 // ---- Battle report (v298): the same battle as the damage estimate (strikes(): K trades per round), told event by event until no unit is left ----
 let BRD=null;
@@ -2013,8 +2016,10 @@ function calcRun(){
   const tgt=P.ren?renTarget():0,lvN=Math.floor(+$('renLv').value);      // 14.19: Renegades with a Level: is the target reached?
   const kmb=x=>{let v=Math.abs(x),i=0;const up=t=>{if(t<=0)return 0;const p=Math.pow(10,Math.floor(Math.log10(t))-2);return Math.ceil(+(t/p).toFixed(6))*p};while(v>=1e3&&i<3){v/=1e3;i++}let c=i?up(v):Math.ceil(v);if(c>=1e3&&i<3){c=up(c/1e3);i++}return (x<0?'-':'')+(i?(+c.toPrecision(3)).toString()+'KMB'[i-1]:String(c))};      // rounded UP to 3 digits: 1,900,949 -> 1.91M, 626,252 -> 627K, 42,300 -> 42.3K, 8,650 -> 8.65K, 999,999 -> 1M
   const enTxt=P.one?'one flying enemy stack':P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks';
+  const RZ=1.645,rg=(a,b)=>{const A=fmt(a).split(' '),B=fmt(b).split(' ');return A[1]==B[1]?A[0]+'\u2013'+B[0]+(B[1]?' '+B[1]:''):fmt(a)+' \u2013 '+fmt(b)};      // 19.0.16: a range, e.g. 4.90\u20135.30 T
+  const dRange=sc.sd>0?[Math.max(0,sc.dmg-RZ*sc.sd),sc.dmg+RZ*sc.sd]:null,hRange=sc.hsd>0?[Math.max(0,sc.hits-RZ*sc.hsd),sc.hits+RZ*sc.hsd]:null;
   const tile=(c,l,v,sub,tip)=>`<div class="stt ${c}"${tip?` title="${esc(tip)}"`:''}><div class="stl">${l}</div><div class="stv">${v}</div>${sub?`<div class="sts">${sub}</div>`:''}</div>`;
-  $('rsm').innerHTML=`<div class="stl stch">Summary</div><div class="stg">${tile('std','Estimated damage',fmt(sc.dmg),tgt?`level ${lvN} ${sc.dmg>=tgt?'reached':'short by '+((1-sc.dmg/tgt)*100).toFixed(1)+' %'}`:'',tgt?`Level ${lvN}: the stacks must reach ${tgt.toLocaleString('en-US')} damage.`:'')}${tile('','Strikes',Math.round(sc.hits*10)/10,'','Strikes against '+enTxt)}${tile('','Stacks',sc.stacks,'')}${tile('','Revive cost',scost==rcost?kmb(scost):`${kmb(scost)} <span class="stu">/</span> ${kmb(rcost)}`,'',rtip+' ('+(scost==rcost?num(scost):num(scost)+' / '+num(rcost))+' gold)')}</div>${hitsRow?`<div class="stl stch">Hits per revive mode</div><div class="stc">${REVCASES.map(([k,l])=>`<div class="stt${k==REVM?' stm':''}"><div class="stv">${HIT[k].toFixed(2)}</div><div class="sts">${l}</div></div>`).join('')}</div>`:''}`;      // 19.0.2: the summary as tiles (damage, strikes, stacks, revive cost); the army / monster / engineer count is gone
+  $('rsm').innerHTML=`<div class="stl stch">Summary</div><div class="stg">${tile('std','Estimated damage',dRange?rg(dRange[0],dRange[1]):fmt(sc.dmg),dRange?'average '+fmt(sc.dmg):tgt?`level ${lvN} ${sc.dmg>=tgt?'reached':'short by '+((1-sc.dmg/tgt)*100).toFixed(1)+' %'}`:'',dRange?'90 % of the battles end between these two numbers (every strike rolls its own Double strike / Double damage chance)':tgt?`Level ${lvN}: the stacks must reach ${tgt.toLocaleString('en-US')} damage.`:'')}${tile('','Strikes',hRange?Math.round(hRange[0])+'\u2013'+Math.round(hRange[1]):Math.round(sc.hits*10)/10,hRange?'average '+Math.round(sc.hits*10)/10:'','Strikes against '+enTxt+(hRange?' (90 % range)':''))}${tile('','Stacks',sc.stacks,'')}${tile('','Revive cost',scost==rcost?kmb(scost):`${kmb(scost)} <span class="stu">/</span> ${kmb(rcost)}`,'',rtip+' ('+(scost==rcost?num(scost):num(scost)+' / '+num(rcost))+' gold)')}</div>${hitsRow?`<div class="stl stch">Hits per revive mode</div><div class="stc">${REVCASES.map(([k,l])=>`<div class="stt${k==REVM?' stm':''}"><div class="stv">${HIT[k].toFixed(2)}</div><div class="sts">${l}</div></div>`).join('')}</div>`:''}`;      // 19.0.2: the summary as tiles (damage, strikes, stacks, revive cost); the army / monster / engineer count is gone
   $('res').innerHTML=secs;
   {const tcb=document.querySelector('.tc');if(tcb)tcb.disabled=pvOff||!(P.capA>0||P.capM>0)}      // the Tier check button: nothing to check without a capacity
   save();
