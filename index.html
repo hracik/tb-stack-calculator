@@ -145,6 +145,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 </div>
 
 <div class="card" data-help="res"><h2><span id="rtitle">Result</span></h2>
+<div id="rsm"></div>
 <div id="osd" style="margin:0 0 12px"><div class="mu" style="margin:0 0 6px">Battle in detail:</div><div class="obrow"><button type="button" class="ob" data-o="die" aria-expanded="false" title="Show the dying order, troop by troop">Dying order</button><button type="button" class="ob" data-o="hit" aria-expanded="false" title="Show the hitting order: the order in which the units hit the enemy in round 1">Hitting order</button><button type="button" class="ob" data-o="rep" aria-expanded="false" title="Show the battle report: our hits and the enemy hits, round by round, until no unit is left">Battle report</button></div>
 <div class="ol sbx" id="os" hidden></div><div class="sbx" id="ho" hidden></div><div class="sbx" id="br" hidden></div></div>
 <div style="margin:0 0 12px"><div class="mu" style="margin:0 0 6px">View:</div><div class="pbrow"><button type="button" class="vb" data-v="grouped" title="Cards in groups, 4 per line; a group with more cards scrolls sideways">Grouped</button><button type="button" class="vb" data-v="mobile" title="One unit per line: picture, name and number of units">Mobile</button><button type="button" class="vb" data-v="computer" title="Two units per line, in the same order as Mobile">Computer</button></div></div>
@@ -155,7 +156,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.58';
+const APP_VERSION='14.59';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1963,8 +1964,8 @@ function calcRun(){
   const hitsRow=Math.max(...REVCASES.map(c=>HIT[c[0]]))>1;      // the hits of every revive mode, after the food consumption in the second row (only when one of them pays for more than 1 hit)
   {const rc=$('rtitle').closest('.card');if(rc)rc.style.display=!pvOff&&(P.capA>0||P.capM>0||P.capU>0)?'':'none'}      // Leadership, Dominance and Authority all 0: nothing to show, the whole Result section is hidden
   const tgt=P.ren?renTarget():0,lvN=Math.floor(+$('renLv').value),lvTxt=tgt?` · <span class="nb" title="Level ${lvN}: the stacks must reach ${tgt.toLocaleString('en-US')} damage."><b>level ${lvN} ${sc.dmg>=tgt?'reached':'short by '+((1-sc.dmg/tgt)*100).toFixed(1)+' %'}</b></span>`:'';      // 14.19: Renegades with a Level: is the target reached?
-  $('res').innerHTML=`<p class="mu" style="margin:0 0 ${hitsRow?3:8}px">Summary: ${sc.stacks} stacks · ${EBINFO} · ${sc.hits} strikes against ${P.one?'one flying enemy stack':P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks'} · <b>estimated damage ${fmt(sc.dmg)}</b>${lvTxt} · <span class="nb" title="${esc(rtip)}">revive cost <b>${num(scost)} / ${num(rcost)} gold</b></span></p>${hitsRow?`<p class="mu" style="margin:0 0 8px">Hits per revive mode:&nbsp;${REVCASES.map(([k,l])=>`<span class="nb">${k==REVM?`<b>${HIT[k].toFixed(2)} ${l}</b>`:`${HIT[k].toFixed(2)} ${l}`}</span>`).join(' · ')}</p>`:''}
-  ${secs}`;
+  $('rsm').innerHTML=`<p class="mu" style="margin:0 0 ${hitsRow?3:8}px">Summary: ${sc.stacks} stacks · ${EBINFO} · ${sc.hits} strikes against ${P.one?'one flying enemy stack':P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks'} · <b>estimated damage ${fmt(sc.dmg)}</b>${lvTxt} · <span class="nb" title="${esc(rtip)}">revive cost <b>${num(scost)} / ${num(rcost)} gold</b></span></p>${hitsRow?`<p class="mu" style="margin:0 0 8px">Hits per revive mode:&nbsp;${REVCASES.map(([k,l])=>`<span class="nb">${k==REVM?`<b>${HIT[k].toFixed(2)} ${l}</b>`:`${HIT[k].toFixed(2)} ${l}`}</span>`).join(' · ')}</p>`:''}`;      // 14.59: the summary stands above the buttons (Battle in detail, View, Action)
+  $('res').innerHTML=secs;
   {const tcb=document.querySelector('.tc');if(tcb)tcb.disabled=pvOff||!(P.capA>0||P.capM>0)}      // the Tier check button: nothing to check without a capacity
   save();
 }
