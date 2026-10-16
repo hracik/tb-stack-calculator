@@ -155,7 +155,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.57';
+const APP_VERSION='14.58';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -377,7 +377,7 @@ function drawTabs(){
 }
 function newName(){let n=tabs.length+1;while(tabs.some(t=>t.name==='Tab '+n))n++;return 'Tab '+n}
 function switchTab(i){if(i==active)return;save();active=i;delPending=false;load(tabs[i].data);drawTabs();refresh()}
-function addTab(){save();tabs.push({name:newName(),data:clone(BLANK)});active=tabs.length-1;delPending=false;load(tabs[active].data);drawTabs();refresh();rename(active)}
+function addTab(){save();tabs.push({name:newName(),data:clone(BLANK)});active=tabs.length-1;delPending=false;load(tabs[active].data);drawTabs();refresh()}
 function dupTab(){save();const src=tabs[active];tabs.splice(active+1,0,{name:src.name+' copy',data:clone(src.data)});active++;delPending=false;drawTabs();refresh()}
 function delTab(){tabs.splice(active,1);active=Math.min(active,tabs.length-1);delPending=false;load(tabs[active].data);drawTabs();refresh()}
 function rename(i){
