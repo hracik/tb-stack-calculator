@@ -164,7 +164,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.14';
+const APP_VERSION='19.0.15';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -219,7 +219,7 @@ Object.keys(BYG).forEach(g=>{if(g[0]=='M')BYG[g].sort((a,b)=>CO.indexOf(a.cat)-C
 const row=(l,id,val=0)=>`<div class="bi"><span>${l}</span><input id="${id}" type="text" inputmode="decimal" step="0.5" value="${val}"></div>`;
 const card=(n,k,h=0,sv=h)=>`<div class="bc"><b>${n}</b>${row('Health','bh_'+k,h)}${row('Strength','bs_'+k,sv)}</div>`;
 $('bon').innerHTML=[['Guardsmen','G',3466,6304],['Specialists','S',3466,6304],['Monsters','M',3461,6404],['Siege Engines','E',3466,6304]].map(([n,k,h,sv])=>card(n,k,h,sv)).join('');
-$('rare').innerHTML=[['Guardsmen','G'],['Specialists','S'],['Siege Engines','E']].map(([n,k])=>`<div class="bc"><b>${n}</b>${k=='E'?'':`<div class="bi pl"><span>Strength vs players</span><input id="bs_${k}Pl" type="text" inputmode="decimal" step="0.5" value="0"></div>`}${row('Double damage','dd_'+k,0)}</div>`).join('');      // 19.0.14: the rare bonuses of the classes (Strength vs players shows only in the Attack players view; Double damage is a % chance, counted on average)
+$('rare').innerHTML=[['Guardsmen','G'],['Specialists','S'],['Siege Engines','E']].map(([n,k])=>`<div class="bc"><b>${n}</b>${k=='E'?'':`<div class="bi pl"><span>Strength against players</span><input id="bs_${k}Pl" type="text" inputmode="decimal" step="0.5" value="0"></div>`}${row('Double damage','dd_'+k,0)}</div>`).join('');      // 19.0.14: the rare bonuses of the classes (Strength against players shows only in the Attack players view; Double damage is a % chance, counted on average)
 $('bonx').innerHTML=`<div class="bi" id="bcEpic"><span>Strength against epic monsters</span><input id="bs_Epic" type="text" inputmode="decimal" step="0.5" value="3747"></div>`+
   `<div id="bcPlayers">${row('Health against players','bh_Players',0)}${row('Strength against players','bs_Players',0)}</div>`+
   row('Double strike','ds_A',0)+row('Double damage','dd_A',0);      // 19.0.12: the Army bonuses are plain rows, no blocks (the epic / players rows follow the Attack switch; Double strike and Double damage are the chance of the whole army in %, counted on average)
@@ -1963,7 +1963,7 @@ function calcRun(){
   [['mrE1',ep],['mrE2',ep],['mrP1',!ep],['mrPM',!ep]].forEach(([id,on])=>{const el=$(id);if(el)el.hidden=!on});      // the settings of the chosen view
   {const o=$('osd');if(o)o.hidden=pvOff}
   [['bcEpic',['bs_Epic'],ep],['bcPlayers',['bh_Players','bs_Players'],!ep]].forEach(([c,ids,on])=>{const el=$(c);if(el)el.hidden=!on;ids.forEach(i=>{const x=$(i);if(x)x.disabled=!on})});
-  document.querySelectorAll('#rare .bi.pl').forEach(r=>{r.hidden=ep;const x=r.querySelector('input');if(x)x.disabled=ep});      // 19.0.11: Strength vs players (Guardsmen, Specialists) shows only in the Attack players view
+  document.querySelectorAll('#rare .bi.pl').forEach(r=>{r.hidden=ep;const x=r.querySelector('input');if(x)x.disabled=ep});      // 19.0.11: Strength against players (Guardsmen, Specialists) shows only in the Attack players view
   //      // the Against box that does not count in the chosen view is hidden and its inputs are disabled
   if(!RENEGADES&&$('mode').value=='ren'){$('mode').value='max';SO=[]}      // Renegades is off: a tab saved in it falls back to Max damage
   {const rb=document.querySelector('.cm[data-m=ren]');if(rb){rb.disabled=!RENEGADES;rb.title=RENEGADES?'':'Switched off for now'}}
@@ -2131,7 +2131,7 @@ const HELP={
   bonx:{t:["Bonus against epic monsters can be found by clicking on a troop in the battle report or in the city.","When checking the bonus in the city, have only the attacking captain/captains/hero in the city, with the equipment that goes into the battle on them."],tp:["Bonuses against players can be found by clicking on a troop in the battle report or in the city.","When checking the bonuses in the city, have only the attacking captain/captains/hero in the city, with the equipment that goes into the battle on them."],img:[]},      // 13.10: tp = the text of the Attack players view (t is the Attack epics one); calc switches the panel
   bon:{t:["The <b>Health</b> and <b>Strength</b> bonuses of each troop category (Guardsmen, Specialists, Monsters and Siege Engines) can be found by clicking on a troop in the battle report or in the city.","When checking the bonuses in the city, have only the attacking captain/captains/hero in the city, with the equipment that goes into the battle on them.","Do not check the Guardsmen/Specialists bonuses on troops that are both Guardsmen/Specialists and Beasts: the flying G5-G7 and S8-S9."],img:[]},
   mb:{t:["Monster boost research in the Academy has 3 parts. Click I, II or III based on the latest research part you have already finished. For a partially finished part, e.g. no research is done for health at part III, still click III and adjust the health manually to 50."],img:[]},
-  rare:{t:["Rarely used bonuses. Strength vs players counts only in the Attack players view; Double damage is the chance in % and is counted on average.","Combat type bonuses: use these only if a specific category or type has a bonus on top of the class bonus above \u2014 e.g. unbalanced research, talents, or captain effects. Leave all on 0% if there are no imbalances."],img:[]},
+  rare:{t:["Rarely used bonuses. Strength against players counts only in the Attack players view; Double damage is the chance in % and is counted on average.","Combat type bonuses: use these only if a specific category or type has a bonus on top of the class bonus above \u2014 e.g. unbalanced research, talents, or captain effects. Leave all on 0% if there are no imbalances."],img:[]},
   sb:{t:["Use these only if a specific category or type has a bonus on top of the class bonus above \u2014 e.g. unbalanced research, talents, or captain effects. Leave all on 0% if there are no imbalances."],img:[]},
   tiers:{t:["Tick the tiers of every troop type you want the calculation to use. Tiers you don't have, or don't want to send, stay unticked.","Click <b>Tier check</b> in the Result section to see potential suggestions for improvement."],img:[]},
   mode:{t:["Choose the mode based on the hits you are planning to do most of the time."],img:[]},
