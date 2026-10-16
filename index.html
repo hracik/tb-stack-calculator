@@ -33,7 +33,7 @@ select{width:auto}.mu{color:var(--mu);font-size:13px}
 .bi{display:grid;grid-template-columns:var(--lw) minmax(0,1fr);align-items:center;gap:var(--rg);margin:5px 0}
       /* the label column is the same width everywhere, the box takes the whole rest of the row */
 .fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));column-gap:24px}
-.bi>span{color:var(--tx);text-align:left;white-space:nowrap}.bi input,.bi select{width:100%;min-width:0;box-sizing:border-box;height:32px;padding:3px 6px}.bc.ep{align-self:start}
+.bc.rr .bi{grid-template-columns:minmax(0,1fr) 72px}.bc.rr .bi>span{white-space:normal;line-height:1.2}.bi>span{color:var(--tx);text-align:left;white-space:nowrap}.bi input,.bi select{width:100%;min-width:0;box-sizing:border-box;height:32px;padding:3px 6px}.bc.ep{align-self:start}
 .tt{table-layout:fixed;min-width:620px}.tt td:first-child{width:130px;text-align:left}.tt td,.tt th{text-align:center}
 .tt label{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
 .ol{max-width:none}
@@ -164,7 +164,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.8';
+const APP_VERSION='19.0.10';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -220,7 +220,8 @@ const row=(l,id,val=0)=>`<div class="bi"><span>${l}</span><input id="${id}" type
 const card=(n,k,h=0,sv=h)=>`<div class="bc"><b>${n}</b>${row('Health','bh_'+k,h)}${row('Strength','bs_'+k,sv)}</div>`;
 $('bon').innerHTML=[['Guardsmen','G',3466,6304],['Specialists','S',3466,6304],['Monsters','M',3461,6404],['Siege Engines','E',3466,6304]].map(([n,k,h,sv])=>card(n,k,h,sv)).join('');
 $('bonx').innerHTML=`<div class="bc ep" id="bcEpic"><b>Against epic monsters</b>${row('Strength','bs_Epic',3747)}</div>`+
-  `<div class="bc ep" id="bcPlayers"><b>Against players</b>${row('Health','bh_Players',0)}${row('Strength','bs_Players',0)}</div>`;      // the Against boxes are in the Bonuses against enemies card; the Attack epics / Attack players switch (just above that card) hides and disables the one that does not count
+  `<div class="bc ep" id="bcPlayers"><b>Against players</b>${row('Health','bh_Players',0)}${row('Strength','bs_Players',0)}</div>`+
+  `<div class="bc rr" id="bcRare"><b>Rare bonuses</b>${row('G / S strength vs players','bs_GSPl',0)}${row('Guards double damage','dd_G',0)}${row('Specialists double damage','dd_S',0)}${row('Engineers double damage','dd_E',0)}${row('Army double strike','ds_A',0)}${row('Army double damage','dd_A',0)}</div>`;      // 19.0.9: rarely used bonuses, all in % chance (counted on average): Guardsmen + Specialists strength against players (players only), double damage per class, whole-army double strike and double damage      // the Against boxes are in the Bonuses against enemies card; the Attack epics / Attack players switch (just above that card) hides and disables the one that does not count
 const DHV=Array.from({length:11},(_,i)=>i/2);                // Double hit: 0 - 5 % in steps of 0.5
 const snapDH=x=>{x=parseFloat(String(x).replace(',','.'));if(!isFinite(x))x=0;return Math.min(5,Math.max(0,Math.round(x*2)/2))};
 $('mb').innerHTML=TY.map(n=>`<div class="bc"><b>${n}</b>${row('Health','bh_'+n,100)}${row('Strength','bs_'+n,100)}<div class="bi"><span>Double hit</span><select id="dh_${n}">${DHV.map(x=>`<option value="${x}"${x==5?' selected':''}>${x}%</option>`).join('')}</select></div></div>`).join('');
@@ -814,7 +815,8 @@ function getP(){
   p.pvp=p.cp||p.ren;                             // PvP rules (CP kill, CP death, Max damage and, since 14.9, Renegades): no Epic strength, no bonus against epic enemies, the Against players bonuses count, Specialists deal double damage before the squad bonus (damage, never strength)
   if(p.one)p.enemy=1;
   if(p.pvp)p.sEpic=0;
-  if(!p.pvp){p.hPlayers=0;p.sPlayers=0}              // the Against players bonuses count only in the PvP modes (like the Against epic monsters Strength counts only against epic monsters)
+  p.sGSPl=v('bs_GSPl');p.ddG=v('dd_G');p.ddS=v('dd_S');p.ddE=v('dd_E');p.ddA=v('dd_A');p.dsA=v('ds_A');      // 19.0.9 rare bonuses
+  if(!p.pvp){p.hPlayers=0;p.sPlayers=0;p.sGSPl=0}              // the Against players bonuses count only in the PvP modes (like the Against epic monsters Strength counts only against epic monsters)
   p.epic=!p.ren&&!p.pvp;                         // the enemy stacks are epic in every mode except Renegades and PvP: the bonus against epic enemies counts
   p.max4=$('mode').value=='max';                 // Max vs. 3 stack and Max vs. full stack: whole army ranking
   p.minH=Math.min(p.hGiant,p.hElemental,p.hDragon,p.hBeast);p.minS=Math.min(p.sGiant,p.sElemental,p.sDragon,p.sBeast);
@@ -824,7 +826,7 @@ function getP(){
 function mults(t,P){                                    // [health multiplier, strength multiplier, strength multiplier (the same since 14.9)]
   if(t.cls=='E'){const ms=1+(P.sE+P.sEpic+P.sPlayers)/100;return[1+(P.hE+P.hPlayers)/100,ms,ms]}
   if(t.cls=='M'){const ms=1+(P.sM+P.sEpic+P.sPlayers+(P['s'+t.cat]||0)+Math.max(0,(P['s'+t.type]||0)-P.minS))/100;return[1+(P.hM+P.hPlayers+(P['h'+t.cat]||0)+Math.max(0,(P['h'+t.type]||0)-P.minH))/100,ms,ms]}
-  const b=t.beast,ms=1+(P['s'+t.cls]+P.sEpic+P.sPlayers+(P['s'+t.cat]||0)+(b?P.sBeast:0))/100;
+  const b=t.beast,ms=1+(P['s'+t.cls]+P.sEpic+P.sPlayers+(P.sGSPl||0)+(P['s'+t.cat]||0)+(b?P.sBeast:0))/100;
   return[1+(P['h'+t.cls]+P.hPlayers+(P['h'+t.cat]||0)+(b?P.hBeast:0))/100,ms,ms];   // 14.9: the Specialists' double damage is in the damage (vsFactor, every PvP mode incl. Renegades), the strength - and with it the order - stays the single strength
 }
 // 3-stack and 6-stack (= two 3-stacks): the enemy has no mounted stack. Killshot is a 3-stack too.
@@ -841,7 +843,8 @@ const TRN={};TR.forEach(t=>TRN[t.name]=t);
 // Strength per health is the strength multiplier divided by the health multiplier (Beast army units carry +Beast health, so they hit a little
 // less per health). The modes only differ in the BLOCKS they cut the army into; inside a block the weakest value dies first, strictly.
 // Only troops with exactly the same value are ordered by: smaller unused bonus, then Melee -> Ranged -> Mounted -> Flying, then the lower tier.
-const dhf=(t,P)=>P.one?1:t.cls=='M'?1+(P['dh'+t.type]||0)/100:t.beast?1+P.dhBeast/100:1;     // monsters: their group's Double hit; Beast army units (Royal Lion, Battle Griffin): the Beast group's. CP kill / CP death: the only enemy is ONE stack, there is no second enemy to hit, so the Double hit is unused (x 1)
+const ddf=(t,P)=>(1+(P['dd'+t.cls]||0)/100)*(1+(P.ddA||0)/100);      // 19.0.9: double damage chance of the class and of the whole army, on average
+const dhf=(t,P)=>ddf(t,P)*(P.one?1:t.cls=='M'?1+(P['dh'+t.type]||0)/100:t.beast?1+P.dhBeast/100:1);     // monsters: their group's Double hit; Beast army units (Royal Lion, Battle Griffin): the Beast group's. CP kill / CP death: the only enemy is ONE stack, there is no second enemy to hit, so the Double hit is unused (x 1)
 // ONE damage computation for every mode: base strength x (1 + class strength + epic strength + monster strength + troop-type strength (where they
 // apply) + the troop's own bonus against this enemy, all ADDED in one pool), then x (1 + Double hit) for monsters. The modes differ only in the dying-order rule.
 const dmgFactor=(t,P)=>vsFactor(t,P)*dhf(t,P);            // what the troop's own bonus and Double hit add to the same stack without them
@@ -1646,7 +1649,8 @@ function score(P,list,order,eng){      // eng: the ranking of the order engine (
       }
     });
   }
-  return{dmg:dm.reduce((q,x,i)=>q+x*hit[i],0),hits,stacks:L.length};
+  const dsf=1+(P.dsA||0)/100;      // 19.0.9: whole-army double strike chance: on average that many more strikes
+  return{dmg:dm.reduce((q,x,i)=>q+x*hit[i],0)*dsf,hits:hits*dsf,stacks:L.length};
 }
 // ---- Battle report (v298): the same battle as the damage estimate (strikes(): K trades per round), told event by event until no unit is left ----
 let BRD=null;
@@ -2007,7 +2011,7 @@ function calcRun(){
   const kmb=x=>{let v=Math.abs(x),i=0;const up=t=>{if(t<=0)return 0;const p=Math.pow(10,Math.floor(Math.log10(t))-2);return Math.ceil(+(t/p).toFixed(6))*p};while(v>=1e3&&i<3){v/=1e3;i++}let c=i?up(v):Math.ceil(v);if(c>=1e3&&i<3){c=up(c/1e3);i++}return (x<0?'-':'')+(i?(+c.toPrecision(3)).toString()+'KMB'[i-1]:String(c))};      // rounded UP to 3 digits: 1,900,949 -> 1.91M, 626,252 -> 627K, 42,300 -> 42.3K, 8,650 -> 8.65K, 999,999 -> 1M
   const enTxt=P.one?'one flying enemy stack':P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks';
   const tile=(c,l,v,sub,tip)=>`<div class="stt ${c}"${tip?` title="${esc(tip)}"`:''}><div class="stl">${l}</div><div class="stv">${v}</div>${sub?`<div class="sts">${sub}</div>`:''}</div>`;
-  $('rsm').innerHTML=`<div class="stl stch">Summary</div><div class="stg">${tile('std','Estimated damage',fmt(sc.dmg),tgt?`level ${lvN} ${sc.dmg>=tgt?'reached':'short by '+((1-sc.dmg/tgt)*100).toFixed(1)+' %'}`:'',tgt?`Level ${lvN}: the stacks must reach ${tgt.toLocaleString('en-US')} damage.`:'')}${tile('','Strikes',sc.hits,'','Strikes against '+enTxt)}${tile('','Stacks',sc.stacks,'')}${tile('','Revive cost',scost==rcost?kmb(scost):`${kmb(scost)} <span class="stu">/</span> ${kmb(rcost)}`,'',rtip+' ('+(scost==rcost?num(scost):num(scost)+' / '+num(rcost))+' gold)')}</div>${hitsRow?`<div class="stl stch">Hits per revive mode</div><div class="stc">${REVCASES.map(([k,l])=>`<div class="stt${k==REVM?' stm':''}"><div class="stv">${HIT[k].toFixed(2)}</div><div class="sts">${l}</div></div>`).join('')}</div>`:''}`;      // 19.0.2: the summary as tiles (damage, strikes, stacks, revive cost); the army / monster / engineer count is gone
+  $('rsm').innerHTML=`<div class="stl stch">Summary</div><div class="stg">${tile('std','Estimated damage',fmt(sc.dmg),tgt?`level ${lvN} ${sc.dmg>=tgt?'reached':'short by '+((1-sc.dmg/tgt)*100).toFixed(1)+' %'}`:'',tgt?`Level ${lvN}: the stacks must reach ${tgt.toLocaleString('en-US')} damage.`:'')}${tile('','Strikes',Math.round(sc.hits*10)/10,'','Strikes against '+enTxt)}${tile('','Stacks',sc.stacks,'')}${tile('','Revive cost',scost==rcost?kmb(scost):`${kmb(scost)} <span class="stu">/</span> ${kmb(rcost)}`,'',rtip+' ('+(scost==rcost?num(scost):num(scost)+' / '+num(rcost))+' gold)')}</div>${hitsRow?`<div class="stl stch">Hits per revive mode</div><div class="stc">${REVCASES.map(([k,l])=>`<div class="stt${k==REVM?' stm':''}"><div class="stv">${HIT[k].toFixed(2)}</div><div class="sts">${l}</div></div>`).join('')}</div>`:''}`;      // 19.0.2: the summary as tiles (damage, strikes, stacks, revive cost); the army / monster / engineer count is gone
   $('res').innerHTML=secs;
   {const tcb=document.querySelector('.tc');if(tcb)tcb.disabled=pvOff||!(P.capA>0||P.capM>0)}      // the Tier check button: nothing to check without a capacity
   save();
