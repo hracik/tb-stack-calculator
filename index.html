@@ -87,6 +87,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 #tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}#tabs::-webkit-scrollbar{height:6px}#tabs::-webkit-scrollbar-track{background:transparent}#tabs::-webkit-scrollbar-thumb{background:transparent;border-radius:3px;transition:background .3s}#tabs.sc::-webkit-scrollbar-thumb,#tabs:hover::-webkit-scrollbar-thumb{background:var(--bd)}@supports (-moz-appearance:none){#tabs{scrollbar-width:thin;scrollbar-color:transparent transparent}#tabs.sc,#tabs:hover{scrollbar-color:var(--bd) transparent}}
 #tabsin{display:flex;flex-wrap:nowrap;align-items:flex-end;gap:10px;box-sizing:border-box;min-width:100%;width:max-content;border-bottom:1px solid var(--bd)}
 #tabtools{display:flex;flex-wrap:nowrap;gap:8px;align-items:center;margin:0 0 6px;font-size:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;padding-bottom:2px}
+.tab.rdg{background:var(--bg);color:var(--ac);opacity:.85;position:relative;z-index:3;cursor:grabbing}.tab.rdl{box-shadow:inset 3px 0 0 var(--ac)}.tab.rdr{box-shadow:inset -3px 0 0 var(--ac)}#tabs .tab{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .tab{width:104px;text-align:center;background:transparent;color:var(--mu);border:0;border-bottom:3px solid transparent;border-radius:0;padding:8px 2px;margin:0;font:inherit;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}
 .tab.on{color:var(--ac);border-bottom-color:var(--ac);font-weight:600}.tab.add{flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:var(--bg);color:var(--ac);border:1px solid var(--bd);border-radius:999px;font:600 17px 'Cinzel',Georgia,serif;padding:0;margin:0 0 6px auto;position:sticky;right:0}
 @media(max-width:480px){#tabtools{flex-wrap:wrap}#tabtools .tl{flex:1 1 72px;text-align:center;justify-content:center}}
@@ -162,7 +163,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='17.0';
+const APP_VERSION='17.1';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1724,11 +1725,32 @@ function runKill(){                                      // Killshot: the rule d
 // a group with more than 4 cards scrolls sideways: a mouse drag scrolls it (touch and the wheel scroll it natively); a drag is not a click, so it never turns a troop on or off
 (function(){let d=null,moved=false;
   document.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse'||e.button!==0)return;const g=e.target.closest&&!e.target.closest('input')&&e.target.closest('.gs.ov,#tabs');if(!g)return;d={g,x:e.clientX,l:g.scrollLeft};moved=false});
-  document.addEventListener('pointermove',e=>{if(!d)return;const dx=e.clientX-d.x;if(!moved&&Math.abs(dx)>5){moved=true;d.g.classList.add('dg')}if(moved)d.g.scrollLeft=d.l-dx});
+  document.addEventListener('pointermove',e=>{if(!d||window.RORD)return;const dx=e.clientX-d.x;if(!moved&&Math.abs(dx)>5){moved=true;d.g.classList.add('dg')}if(moved)d.g.scrollLeft=d.l-dx});
   const end=()=>{if(d){d.g.classList.remove('dg');d=null;setTimeout(()=>{moved=false},0)}};
   document.addEventListener('pointerup',end);document.addEventListener('pointercancel',end);
   document.addEventListener('click',e=>{if(moved){e.stopPropagation();e.preventDefault();moved=false}},true);
   document.addEventListener('dragstart',e=>{if(e.target.closest&&e.target.closest('.gs'))e.preventDefault()});
+})();
+// 17.1: reorder the tabs - hold a tab (about 0.3 s), then drag it left or right; a line shows where it will land. A quick drag still scrolls the tab row
+(function(){let h=null,tm=0;const HOLD=320;
+  const slot=x=>{const bs=[...document.querySelectorAll('#tabs .tab[data-t]')];for(const b of bs){const r=b.getBoundingClientRect();if(x<r.left+r.width/2)return +b.dataset.t}return bs.length};      // the index the tab would be put before
+  const clr=()=>document.querySelectorAll('#tabs .rdl,#tabs .rdr,#tabs .rdg').forEach(b=>b.classList.remove('rdl','rdr','rdg'));
+  const stop=()=>{clearTimeout(tm);if(h&&h.on)setTimeout(()=>{window.RORD=false},0);h=null;clr()};
+  document.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;const b=e.target.closest&&e.target.closest('#tabs .tab[data-t]');if(!b||tabs.length<2)return;
+    h={i:+b.dataset.t,b,x:e.clientX,on:false,to:null};clearTimeout(tm);
+    tm=setTimeout(()=>{if(!h)return;h.on=true;window.RORD=true;b.classList.add('rdg');if(navigator.vibrate)try{navigator.vibrate(15)}catch(_){}},HOLD)});
+  document.addEventListener('pointermove',e=>{if(!h)return;
+    if(!h.on){if(Math.abs(e.clientX-h.x)>8)clearTimeout(tm);return}      // moved before the hold ended: it is a scroll, not a reorder
+    const s=$('tabs'),q=s.getBoundingClientRect();if(e.clientX>q.right-40)s.scrollLeft+=12;else if(e.clientX<q.left+40)s.scrollLeft-=12;
+    h.to=slot(e.clientX);document.querySelectorAll('#tabs .rdl,#tabs .rdr').forEach(b=>b.classList.remove('rdl','rdr'));
+    const bs=[...document.querySelectorAll('#tabs .tab[data-t]')];if(h.to>=bs.length)bs[bs.length-1].classList.add('rdr');else bs[h.to].classList.add('rdl')});
+  document.addEventListener('touchmove',e=>{if(window.RORD&&e.cancelable)e.preventDefault()},{passive:false});      // the hold has started: the finger drags the tab, the page does not scroll
+  document.addEventListener('contextmenu',e=>{if(e.target.closest&&e.target.closest('#tabs .tab'))e.preventDefault()});
+  const drop=()=>{if(!h)return;const o=h;if(o.on&&o.to!=null){let t=o.to;if(t>o.i)t--;
+      if(t!==o.i){save();const act=tabs[active],m=tabs.splice(o.i,1)[0];tabs.splice(t,0,m);active=tabs.indexOf(act);delPending=false;stop();drawTabs();save();return}}
+    stop()};
+  document.addEventListener('pointerup',drop);document.addEventListener('pointercancel',()=>{stop()});
+  document.addEventListener('click',e=>{if(window.RORD){e.stopPropagation();e.preventDefault()}},true);      // the drop is not a click: it must not switch the tab
 })();
 let KP={};
 const MON_DISP=['Kraken II','Fire Phoenix II','Devastator II','Trickster II','Kraken I','Fire Phoenix I','Devastator I','Trickster I','Wind Lord','Black Dragon','Destructive Colossus','Ancient Terror'];
