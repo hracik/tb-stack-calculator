@@ -161,7 +161,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='16.4';
+const APP_VERSION='16.5';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1736,10 +1736,10 @@ function table(st){
   const cell=s=>`<td class="${s.off?'off':!(s.n>0)?'zero':''}" data-troop="${esc(s.name)}" title="${s.off?'Click to turn this troop on':'Click to turn this troop off'}">${IC[s.name]?`<img class="ic" src="${IC[s.name]}" alt="">`:'<div class="ic ph"></div>'}<span class="kp">${KP[s.name]?'#'+KP[s.name]:''}</span><span class="mu">${s.name}</span>${cnt(s,(s.n||0).toLocaleString())}</td>`;
   // one block per tier (all engineer tiers share one block): the label, then the cards in ONE line, 4 cards wide. A block with more than 4 cards is one line that scrolls sideways (finger, wheel, scrollbar or dragging with the mouse), so it never wraps into a second line. A block with fewer than 4 cards is padded with blank cells, so all blocks line up.
   const keys=[];st.forEach(s=>{const k=s.cat=='Engineer'?'E*':s.r;if(!keys.includes(k))keys.push(k)});
-  if(prepMob()&&VIEW=='grouped'&&keys.length){const ti=k=>k=='E*'?Math.max(...st.filter(s=>s.cat=='Engineer').map(s=>+s.r.slice(1))):+k.slice(1),top=Math.max(...keys.map(ti));keys.sort((a,b)=>tierKey(ti(a),top)-tierKey(ti(b),top))}      // 16.4 Preparation: the top tier's blocks first, then the other tiers from the lowest up
+  if(prepMob()&&VIEW=='grouped'&&keys.length){const ti=k=>k=='E*'?Math.max(...st.filter(s=>s.cat=='Engineer').map(s=>+s.r.slice(1))):+k.slice(1),cr={E:0,G:1,S:2,M:0},top={};keys.forEach(k=>{top[k[0]]=Math.max(top[k[0]]||0,ti(k))});keys.sort((a,b)=>cr[a[0]]-cr[b[0]]||tierKey(ti(a),top[a[0]])-tierKey(ti(b),top[b[0]]))}      // 16.5 Preparation: the Engineers, then all the Guardsmen blocks, then all the Specialists blocks; inside a class the top tier first, then the other tiers from the lowest up
   let o='<div class="sc"><div class="sci">';
   keys.forEach(k=>{
-    const list=k=='E*'?st.filter(s=>s.cat=='Engineer').sort((a,b)=>+b.r.slice(1)-+a.r.slice(1)):st.filter(x=>x.r==k).sort((a,b)=>prepMob()&&VIEW=='grouped'?prepIdx(a.name)-prepIdx(b.name)||DISP_KEY(a)-DISP_KEY(b):DISP_KEY(a)-DISP_KEY(b));
+    const list=k=='E*'?st.filter(s=>s.cat=='Engineer').sort((a,b)=>+b.r.slice(1)-+a.r.slice(1)):st.filter(x=>x.r==k).sort((a,b)=>prepMob()&&VIEW=='grouped'?(k[0]=='M'?prepIdx(a.name)-prepIdx(b.name):prepCat(a)-prepCat(b))||DISP_KEY(a)-DISP_KEY(b):DISP_KEY(a)-DISP_KEY(b));
     const n=Math.max(4,list.length),row=list.map(cell);while(row.length<n)row.push('<td></td>');
     o+=`<div class="glh">${k=='E*'?'Engineer Corps':`${NM[k[0]]} ${k.slice(1)}`}</div><div class="gs${list.length>4?' ov':''}"><table class="gt" data-n="${n}"><colgroup>${'<col>'.repeat(n)}</colgroup><tr>${row.join('')}</tr></table></div>`;
   });
@@ -1765,7 +1765,8 @@ const COMPM=['Wyvern','Warden','Eternal Cannoneer','Demonic Salamander','Warrega
 const COMPA=['Royal Lion II','Corax II','Corax I','Royal Lion I','Josephine II','Josephine I','Smiter II','Whitemane II','Smiter I','Whitemane I','Purifier II','Punisher II','Legitimist II','Duelist II','Legitimist I','Punisher I','Duelist I','Purifier I'];
 // 16.1 Preparation in the Mobile and Grouped views: the Monsters section stands first, inside a tier the monsters stand in this order; the tiers: the top one first, then the others from the lowest up
 const MOBP=['Trickster II','Kraken II','Devastator II','Fire Phoenix II','Trickster I','Kraken I','Devastator I','Fire Phoenix I','Destructive Colossus','Wind Lord','Ancient Terror','Black Dragon','Crystal Dragon','Jungle Destroyer','Ruby Golem','Troll Rider','Ettin','Desert Vanquisher','Flaming Centaur','Fearsome Manticore','Magic Dragon','Gorgon Medusa','Many-Armed Guardian','Ice Phoenix','Water Elemental','Battle Boar','Emerald Dragon','Stone Gargoyle'];
-const prepMob=()=>SHOWTR&&VIEW!='computer',prepIdx=n=>{const i=MOBP.indexOf(n);return i<0?999:i},tierKey=(t,top)=>t==top?-1:t,      // 16.4 Preparation: the top tier first, the other tiers then from the lowest up (9 7 8, or 9 3 4 5 6 7 8); the order inside a tier stays as it is
+const PREPCAT=['Ranged','Melee','Mounted','Flying'],prepCat=s=>{const i=PREPCAT.indexOf(s.cat);return i<0?99:i},      // inside a block of the Preparation Grouped view: ranged, melee, mounted, flying
+  prepMob=()=>SHOWTR&&VIEW!='computer',prepIdx=n=>{const i=MOBP.indexOf(n);return i<0?999:i},tierKey=(t,top)=>t==top?-1:t,      // 16.4 Preparation: the top tier first, the other tiers then from the lowest up (9 7 8, or 9 3 4 5 6 7 8); the order inside a tier stays as it is
   topTier=l=>Math.max(...l.map(s=>+s.r.slice(1))),
   prepTier=l=>{if(!(prepMob()&&VIEW=='mobile'&&l.length))return l;const top=topTier(l);return l.slice().sort((a,b)=>tierKey(+a.r.slice(1),top)-tierKey(+b.r.slice(1),top))},
   prepMon=l=>{if(!(VIEW=='mobile'&&prepMob()&&l.length))return l;const top=topTier(l);return l.slice().sort((a,b)=>tierKey(+a.r.slice(1),top)-tierKey(+b.r.slice(1),top)||prepIdx(a.name)-prepIdx(b.name))};
