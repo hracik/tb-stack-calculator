@@ -33,7 +33,7 @@ select{width:auto}.mu{color:var(--mu);font-size:13px}
 .bi{display:grid;grid-template-columns:var(--lw) minmax(0,1fr);align-items:center;gap:var(--rg);margin:5px 0}
       /* the label column is the same width everywhere, the box takes the whole rest of the row */
 .fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));column-gap:24px}
-.bc.rr .bi{grid-template-columns:minmax(0,1fr) 72px}.bc.rr .bi>span{white-space:normal;line-height:1.2}.bi>span{color:var(--tx);text-align:left;white-space:nowrap}.bi input,.bi select{width:100%;min-width:0;box-sizing:border-box;height:32px;padding:3px 6px}.bc.ep{align-self:start}
+.bi[hidden]{display:none}#bon{--lw:132px}.bc.rr .bi{grid-template-columns:minmax(0,1fr) 72px}.bc.rr .bi>span{white-space:normal;line-height:1.2}.bi>span{color:var(--tx);text-align:left;white-space:nowrap}.bi input,.bi select{width:100%;min-width:0;box-sizing:border-box;height:32px;padding:3px 6px}.bc.ep{align-self:start}
 .tt{table-layout:fixed;min-width:620px}.tt td:first-child{width:130px;text-align:left}.tt td,.tt th{text-align:center}
 .tt label{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
 .ol{max-width:none}
@@ -127,7 +127,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <label class="bi" id="templl" title="Your Temple level (0-45). The revival gold cost of the troops is divided by the factor of that level (level 45: 5.91 times cheaper). 0 = no Temple."><span>Temple</span><select id="temple"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option><option value="32">32</option><option value="33">33</option><option value="34">34</option><option value="35">35</option><option value="36">36</option><option value="37">37</option><option value="38">38</option><option value="39">39</option><option value="40">40</option><option value="41">41</option><option value="42">42</option><option value="43">43</option><option value="44">44</option><option value="45" selected>45</option></select></label></div></div>
 
 <div class="atk" id="atk"><button type="button" class="ab" data-a="epics" title="Hit epic monsters">Attack epics</button><button type="button" class="ab" data-a="players" title="Hit other players">Attack players</button></div>
-<div class="card" data-help="bonx"><h2>Bonuses against enemies (%)</h2><div class="bg" id="bonx"></div></div>
+<div class="card" data-help="bonx"><h2>Army bonuses (%)</h2><div class="bg" id="bonx"></div></div>
 <div class="card" data-help="bon"><h2>Category bonuses (%)</h2><div class="bg" id="bon"></div></div>
 
 <details class="card" open data-help="mb"><summary><h2>Monster boost research bonuses (%)</h2></summary>
@@ -164,7 +164,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.10';
+const APP_VERSION='19.0.11';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -218,10 +218,10 @@ Object.keys(BYG).forEach(g=>{if(g[0]=='M')BYG[g].sort((a,b)=>CO.indexOf(a.cat)-C
 // bonuses
 const row=(l,id,val=0)=>`<div class="bi"><span>${l}</span><input id="${id}" type="text" inputmode="decimal" step="0.5" value="${val}"></div>`;
 const card=(n,k,h=0,sv=h)=>`<div class="bc"><b>${n}</b>${row('Health','bh_'+k,h)}${row('Strength','bs_'+k,sv)}</div>`;
-$('bon').innerHTML=[['Guardsmen','G',3466,6304],['Specialists','S',3466,6304],['Monsters','M',3461,6404],['Siege Engines','E',3466,6304]].map(([n,k,h,sv])=>card(n,k,h,sv)).join('');
+$('bon').innerHTML=[['Guardsmen','G',3466,6304],['Specialists','S',3466,6304],['Monsters','M',3461,6404],['Siege Engines','E',3466,6304]].map(([n,k,h,sv])=>card(n,k,h,sv).replace(/<\/div>$/,(k=='G'||k=='S'?`<div class="bi pl">${'<span>Strength vs players</span>'}<input id="bs_${k}Pl" type="text" inputmode="decimal" step="0.5" value="0"></div>`:'')+(k!='M'?row('Double damage','dd_'+k,0):'')+'</div>')).join('');      // 19.0.11: Guardsmen / Specialists: strength against players (only in the Attack players view) and double damage; Siege Engines: double damage (% chance, counted on average)
 $('bonx').innerHTML=`<div class="bc ep" id="bcEpic"><b>Against epic monsters</b>${row('Strength','bs_Epic',3747)}</div>`+
   `<div class="bc ep" id="bcPlayers"><b>Against players</b>${row('Health','bh_Players',0)}${row('Strength','bs_Players',0)}</div>`+
-  `<div class="bc rr" id="bcRare"><b>Rare bonuses</b>${row('G / S strength vs players','bs_GSPl',0)}${row('Guards double damage','dd_G',0)}${row('Specialists double damage','dd_S',0)}${row('Engineers double damage','dd_E',0)}${row('Army double strike','ds_A',0)}${row('Army double damage','dd_A',0)}</div>`;      // 19.0.9: rarely used bonuses, all in % chance (counted on average): Guardsmen + Specialists strength against players (players only), double damage per class, whole-army double strike and double damage      // the Against boxes are in the Bonuses against enemies card; the Attack epics / Attack players switch (just above that card) hides and disables the one that does not count
+  `<div class="bc rr" id="bcArmy"><b>Whole army</b>${row('Double strike','ds_A',0)}${row('Double damage','dd_A',0)}</div>`;      // 19.0.11: the whole army's rare bonuses (% chance, counted on average)      // 19.0.9: rarely used bonuses, all in % chance (counted on average): Guardsmen + Specialists strength against players (players only), double damage per class, whole-army double strike and double damage      // the Against boxes are in the Bonuses against enemies card; the Attack epics / Attack players switch (just above that card) hides and disables the one that does not count
 const DHV=Array.from({length:11},(_,i)=>i/2);                // Double hit: 0 - 5 % in steps of 0.5
 const snapDH=x=>{x=parseFloat(String(x).replace(',','.'));if(!isFinite(x))x=0;return Math.min(5,Math.max(0,Math.round(x*2)/2))};
 $('mb').innerHTML=TY.map(n=>`<div class="bc"><b>${n}</b>${row('Health','bh_'+n,100)}${row('Strength','bs_'+n,100)}<div class="bi"><span>Double hit</span><select id="dh_${n}">${DHV.map(x=>`<option value="${x}"${x==5?' selected':''}>${x}%</option>`).join('')}</select></div></div>`).join('');
@@ -815,8 +815,8 @@ function getP(){
   p.pvp=p.cp||p.ren;                             // PvP rules (CP kill, CP death, Max damage and, since 14.9, Renegades): no Epic strength, no bonus against epic enemies, the Against players bonuses count, Specialists deal double damage before the squad bonus (damage, never strength)
   if(p.one)p.enemy=1;
   if(p.pvp)p.sEpic=0;
-  p.sGSPl=v('bs_GSPl');p.ddG=v('dd_G');p.ddS=v('dd_S');p.ddE=v('dd_E');p.ddA=v('dd_A');p.dsA=v('ds_A');      // 19.0.9 rare bonuses
-  if(!p.pvp){p.hPlayers=0;p.sPlayers=0;p.sGSPl=0}              // the Against players bonuses count only in the PvP modes (like the Against epic monsters Strength counts only against epic monsters)
+  p.sGPl=v('bs_GPl');p.sSPl=v('bs_SPl');p.ddG=v('dd_G');p.ddS=v('dd_S');p.ddE=v('dd_E');p.ddA=v('dd_A');p.dsA=v('ds_A');      // 19.0.9 rare bonuses
+  if(!p.pvp){p.hPlayers=0;p.sPlayers=0;p.sGPl=0;p.sSPl=0}              // the Against players bonuses count only in the PvP modes (like the Against epic monsters Strength counts only against epic monsters)
   p.epic=!p.ren&&!p.pvp;                         // the enemy stacks are epic in every mode except Renegades and PvP: the bonus against epic enemies counts
   p.max4=$('mode').value=='max';                 // Max vs. 3 stack and Max vs. full stack: whole army ranking
   p.minH=Math.min(p.hGiant,p.hElemental,p.hDragon,p.hBeast);p.minS=Math.min(p.sGiant,p.sElemental,p.sDragon,p.sBeast);
@@ -826,7 +826,7 @@ function getP(){
 function mults(t,P){                                    // [health multiplier, strength multiplier, strength multiplier (the same since 14.9)]
   if(t.cls=='E'){const ms=1+(P.sE+P.sEpic+P.sPlayers)/100;return[1+(P.hE+P.hPlayers)/100,ms,ms]}
   if(t.cls=='M'){const ms=1+(P.sM+P.sEpic+P.sPlayers+(P['s'+t.cat]||0)+Math.max(0,(P['s'+t.type]||0)-P.minS))/100;return[1+(P.hM+P.hPlayers+(P['h'+t.cat]||0)+Math.max(0,(P['h'+t.type]||0)-P.minH))/100,ms,ms]}
-  const b=t.beast,ms=1+(P['s'+t.cls]+P.sEpic+P.sPlayers+(P.sGSPl||0)+(P['s'+t.cat]||0)+(b?P.sBeast:0))/100;
+  const b=t.beast,ms=1+(P['s'+t.cls]+P.sEpic+P.sPlayers+(P['s'+t.cls+'Pl']||0)+(P['s'+t.cat]||0)+(b?P.sBeast:0))/100;
   return[1+(P['h'+t.cls]+P.hPlayers+(P['h'+t.cat]||0)+(b?P.hBeast:0))/100,ms,ms];   // 14.9: the Specialists' double damage is in the damage (vsFactor, every PvP mode incl. Renegades), the strength - and with it the order - stays the single strength
 }
 // 3-stack and 6-stack (= two 3-stacks): the enemy has no mounted stack. Killshot is a 3-stack too.
@@ -1961,7 +1961,9 @@ function calcRun(){
   {const hb=$('hp-bonx');if(hb&&hb.dataset.v!==ATK){hb.dataset.v=ATK;hb.innerHTML=helpHtml(HELP.bonx,ATK=='players')}}      // 13.10: the Help of Bonuses against enemies follows the Attack epics / Attack players view
   [['mrE1',ep],['mrE2',ep],['mrP1',!ep],['mrPM',!ep]].forEach(([id,on])=>{const el=$(id);if(el)el.hidden=!on});      // the settings of the chosen view
   {const o=$('osd');if(o)o.hidden=pvOff}
-  [['bcEpic',['bs_Epic'],ep],['bcPlayers',['bh_Players','bs_Players'],!ep]].forEach(([c,ids,on])=>{const el=$(c);if(el)el.hidden=!on;ids.forEach(i=>{const x=$(i);if(x)x.disabled=!on})});      // the Against box that does not count in the chosen view is hidden and its inputs are disabled
+  [['bcEpic',['bs_Epic'],ep],['bcPlayers',['bh_Players','bs_Players'],!ep]].forEach(([c,ids,on])=>{const el=$(c);if(el)el.hidden=!on;ids.forEach(i=>{const x=$(i);if(x)x.disabled=!on})});
+  document.querySelectorAll('#bon .bi.pl').forEach(r=>{r.hidden=ep;const x=r.querySelector('input');if(x)x.disabled=ep});      // 19.0.11: Strength vs players (Guardsmen, Specialists) shows only in the Attack players view
+  //      // the Against box that does not count in the chosen view is hidden and its inputs are disabled
   if(!RENEGADES&&$('mode').value=='ren'){$('mode').value='max';SO=[]}      // Renegades is off: a tab saved in it falls back to Max damage
   {const rb=document.querySelector('.cm[data-m=ren]');if(rb){rb.disabled=!RENEGADES;rb.title=RENEGADES?'':'Switched off for now'}}
   const P=getP(),{st,A,Mo,U}=solve(P,O);
