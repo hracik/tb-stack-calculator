@@ -155,7 +155,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.55';
+const APP_VERSION='14.56';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2028,8 +2028,8 @@ async function tierHint(gen){
       const tiers=()=>cur.filter(x=>x[0]==c).map(x=>+x.slice(1)).sort((a,b)=>a-b);
       let T=tiers();
       if(c=='E'&&!T.length){      // 12.6: no engineer ticked: the engineer tiers of the same level as the Guardsmen (E9; then E9 and E8 ...) are tried, the best one with more than HGAIN gain is taken
-        let bc=null;
-        for(let k=1;k<=gT.length;k++){const cand=[...cur,...gT.slice(0,k).map(t=>'E'+t)],d=await run(cand);if(d==null)return null;if(d>best*(1+HGAIN)&&(!bc||d>bc.d))bc={cand,d}}
+        let bc=null,pv=-1;
+        for(let k=1;k<=gT.length;k++){const cand=[...cur,...gT.slice(0,k).map(t=>'E'+t)],d=await run(cand);if(d==null)return null;if(pv>=0&&d<pv)break;pv=d;if(d>best*(1+HGAIN)&&(!bc||d>bc.d))bc={cand,d}}      // 14.56: one more engineer tier and the damage falls: stop
         if(bc){cur=bc.cand;best=bc.d;changed=true}
         T=tiers();
       }
@@ -2046,11 +2046,6 @@ async function tierHint(gen){
         if(d>best*(1+HGAIN)){cur=cand;best=d}else break;
         changed=true;
       }
-      {      // 12.6 (engineers), 12.7 (every type): is the type worth bringing at all? Every tier of it off, the top one too (never when nothing would be left)
-        T=tiers();
-        const cand=cur.filter(x=>x[0]!=c);
-        if(T.length&&cand.length){const d=await run(cand);if(d==null)return null;if(d>best*(1+HGAIN)){cur=cand;best=d;changed=true}}
-      }
     }
     if(!changed)break;
   }
@@ -2062,6 +2057,9 @@ async function tierHint(gen){
   let res={cur:sel0.slice(),best:base};
   {const seed=[];['E','S','G','M'].forEach(c=>{const tp=topOf(c);if(tp)seed.push(c+tp)});
    if(seed.length){const b0=await run(seed);if(b0==null)return;const r2=await climb(seed,b0);if(!r2)return;if(r2.best>base*(1+HGAIN))res=r2}}
+  for(let g=0;g<4;g++){      // 14.56: is a whole type worth bringing at all? Checked once after the climb (every tier of the type off, the top one too, never when nothing would be left); a gain starts the climb again from that set
+    let bd=null;for(const[c]of types){const cand=res.cur.filter(x=>x[0]!=c);if(cand.length==res.cur.length||!cand.length)continue;const d=await run(cand);if(d==null)return;if(d>res.best*(1+HGAIN)&&(!bd||d>bd.d))bd={cand,d}}
+    if(!bd)break;const r3=await climb(bd.cand,bd.d);if(!r3)return;res=r3.best>bd.d?r3:{cur:bd.cand,best:bd.d}}
   if(gen!==HINTGEN)return;
   const cur=res.cur,best=res.best;
   const add=cur.filter(x=>!sel0.includes(x)),rem=sel0.filter(x=>!cur.includes(x)),ls=a=>a.sort((x,y)=>key(x)-key(y)).join(', ');
