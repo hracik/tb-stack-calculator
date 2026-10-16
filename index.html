@@ -155,7 +155,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.56';
+const APP_VERSION='14.57';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2057,9 +2057,6 @@ async function tierHint(gen){
   let res={cur:sel0.slice(),best:base};
   {const seed=[];['E','S','G','M'].forEach(c=>{const tp=topOf(c);if(tp)seed.push(c+tp)});
    if(seed.length){const b0=await run(seed);if(b0==null)return;const r2=await climb(seed,b0);if(!r2)return;if(r2.best>base*(1+HGAIN))res=r2}}
-  for(let g=0;g<4;g++){      // 14.56: is a whole type worth bringing at all? Checked once after the climb (every tier of the type off, the top one too, never when nothing would be left); a gain starts the climb again from that set
-    let bd=null;for(const[c]of types){const cand=res.cur.filter(x=>x[0]!=c);if(cand.length==res.cur.length||!cand.length)continue;const d=await run(cand);if(d==null)return;if(d>res.best*(1+HGAIN)&&(!bd||d>bd.d))bd={cand,d}}
-    if(!bd)break;const r3=await climb(bd.cand,bd.d);if(!r3)return;res=r3.best>bd.d?r3:{cur:bd.cand,best:bd.d}}
   if(gen!==HINTGEN)return;
   const cur=res.cur,best=res.best;
   const add=cur.filter(x=>!sel0.includes(x)),rem=sel0.filter(x=>!cur.includes(x)),ls=a=>a.sort((x,y)=>key(x)-key(y)).join(', ');
