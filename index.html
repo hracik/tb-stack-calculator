@@ -163,7 +163,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='18.0';
+const APP_VERSION='18.1';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1793,7 +1793,7 @@ const secRank=t=>t.startsWith('Soldiers')?0:t.startsWith('Monsters')?1:2,      /
   PREPCAT=['Ranged','Melee','Mounted','Flying'],prepCat=s=>{const i=PREPCAT.indexOf(s.cat);return i<0?99:i},      // inside a block of the Preparation Grouped view: ranged, melee, mounted, flying
   prepMob=()=>SHOWTR&&VIEW!='computer',prepIdx=n=>{const i=MOBP.indexOf(n);return i<0?999:i},tierKey=(t,top)=>t==top?-1:t,      // 16.4 Preparation: the top tier first, the other tiers then from the lowest up (9 7 8, or 9 3 4 5 6 7 8); the order inside a tier stays as it is
   topTier=l=>Math.max(...l.map(s=>+s.r.slice(1))),
-  prepTier=l=>{if(!(prepMob()&&VIEW=='mobile'&&l.length))return l;const cr={G:0,S:1,E:2},top={};l.forEach(s=>{top[s.r[0]]=Math.max(top[s.r[0]]||0,+s.r.slice(1))});return l.slice().sort((a,b)=>(cr[a.r[0]]??9)-(cr[b.r[0]]??9)||tierKey(+a.r.slice(1),top[a.r[0]])-tierKey(+b.r.slice(1),top[b.r[0]]))},      // 16.6 Preparation, Mobile: the Guardsmen, then the Specialists, then the Engineers; inside a class the top tier first, then the others from the lowest up
+  prepTier=l=>{if(!(prepMob()&&VIEW=='mobile'&&l.length))return l;const cr={G:0,S:1,E:2},top={};l.forEach(s=>{top[s.r[0]]=Math.max(top[s.r[0]]||0,+s.r.slice(1))});return l.slice().sort((a,b)=>(cr[a.r[0]]??9)-(cr[b.r[0]]??9)||tierKey(+a.r.slice(1),top[a.r[0]])-tierKey(+b.r.slice(1),top[b.r[0]])||prepCat(a)-prepCat(b))},      // 16.6 Preparation, Mobile: the Guardsmen, then the Specialists, then the Engineers; inside a class the top tier first, then the others from the lowest up
   prepMon=l=>{if(!(VIEW=='mobile'&&prepMob()&&l.length))return l;const top=topTier(l);return l.slice().sort((a,b)=>tierKey(+a.r.slice(1),top)-tierKey(+b.r.slice(1),top)||prepIdx(a.name)-prepIdx(b.name))};
 const compOrder=(list,pri)=>{const o=list.slice(),sl=[];o.forEach((s,i)=>{if(pri.includes(s.name))sl.push(i)});const it=sl.map(i=>o[i]).sort((a,b)=>pri.indexOf(a.name)-pri.indexOf(b.name));sl.forEach((i,k)=>{o[i]=it[k]});return o};
 // MERCENARIES: hired troops, they use Authority only (not Leadership / Dominance) and every one of them lasts 7 days. [class, tier, name, category, health, strength, Authority per unit, vs melee/ranged/mounted/flying, jungle guardian 1/0, type, bonus vs epic, revival cost in gold (attack)] - straight from the troop JSON; the swarm bonus of a jungle guardian sits in the same vs column as a regular bonus.
