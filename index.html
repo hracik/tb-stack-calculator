@@ -161,7 +161,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='16.1';
+const APP_VERSION='16.2';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1762,8 +1762,8 @@ const mobOrder=list=>{const cr={G:0,S:1,E:2,M:3},mi=n=>{const i=MOBM.indexOf(n);
 // Mobile order, in the order of the list.
 const COMPM=['Wyvern','Warden','Eternal Cannoneer','Demonic Salamander','Warregal','Jago','Ariel','Superior Epic Monster Hunter','Quicksand','Galloper','Highlander','Scarface','Pounder','Slavic Warrior','Grace'];
 const COMPA=['Royal Lion II','Corax II','Corax I','Royal Lion I','Josephine II','Josephine I','Smiter II','Whitemane II','Smiter I','Whitemane I','Purifier II','Punisher II','Legitimist II','Duelist II','Legitimist I','Punisher I','Duelist I','Purifier I'];
-// 16.1 Preparation in the Mobile view: the Monsters section stands first, the families in this order (the higher tier of a family first)
-const MOBP=['Trickster II','Trickster I','Kraken II','Kraken I','Devastator II','Devastator I','Fire Phoenix II','Fire Phoenix I','Destructive Colossus','Wind Lord','Ancient Terror','Black Dragon','Crystal Dragon','Jungle Destroyer','Ruby Golem','Troll Rider','Ettin','Desert Vanquisher','Flaming Centaur','Fearsome Manticore','Magic Dragon','Gorgon Medusa','Many-Armed Guardian','Ice Phoenix','Water Elemental','Battle Boar','Emerald Dragon','Stone Gargoyle'];
+// 16.1 Preparation in the Mobile view: the Monsters section stands first, the tier II of the four big families, then their tier I, then the other monsters in this order
+const MOBP=['Trickster II','Kraken II','Devastator II','Fire Phoenix II','Trickster I','Kraken I','Devastator I','Fire Phoenix I','Destructive Colossus','Wind Lord','Ancient Terror','Black Dragon','Crystal Dragon','Jungle Destroyer','Ruby Golem','Troll Rider','Ettin','Desert Vanquisher','Flaming Centaur','Fearsome Manticore','Magic Dragon','Gorgon Medusa','Many-Armed Guardian','Ice Phoenix','Water Elemental','Battle Boar','Emerald Dragon','Stone Gargoyle'];
 const prepMob=()=>SHOWTR&&VIEW=='mobile',prepMon=l=>{if(!prepMob())return l;const pi=n=>{const i=MOBP.indexOf(n);return i<0?999:i};return l.slice().sort((a,b)=>pi(a.name)-pi(b.name))};
 const compOrder=(list,pri)=>{const o=list.slice(),sl=[];o.forEach((s,i)=>{if(pri.includes(s.name))sl.push(i)});const it=sl.map(i=>o[i]).sort((a,b)=>pri.indexOf(a.name)-pri.indexOf(b.name));sl.forEach((i,k)=>{o[i]=it[k]});return o};
 // MERCENARIES: hired troops, they use Authority only (not Leadership / Dominance) and every one of them lasts 7 days. [class, tier, name, category, health, strength, Authority per unit, vs melee/ranged/mounted/flying, jungle guardian 1/0, type, bonus vs epic, revival cost in gold (attack)] - straight from the troop JSON; the swarm bonus of a jungle guardian sits in the same vs column as a regular bonus.
