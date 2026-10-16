@@ -100,6 +100,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 .ic{display:block;width:56px;height:56px;margin:0 auto 4px;border-radius:6px}.ic.ph{background:rgba(42,32,18,.15)}
 .pw{position:relative;max-width:400px;margin:10px 0 0;padding:8px 12px;background:#2a2112;color:var(--tx);border:1px solid var(--ac);border-radius:8px;font-size:14px;line-height:1.35}.pw::before{content:'';position:absolute;left:50%;top:-6px;width:10px;height:10px;margin-left:-5px;background:#2a2112;border-left:1px solid var(--ac);border-top:1px solid var(--ac);transform:rotate(45deg)}
 /* 15.2: classes that replace the inline style attributes */
+.stg{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:0 0 12px}.stt{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;min-width:0}.stt.stm{border-color:var(--ac)}.stl{color:var(--mu);font-size:11px;text-transform:uppercase;letter-spacing:.04em}.stv{color:var(--tx);font-size:20px;font-weight:700;line-height:1.25;margin-top:2px;overflow-wrap:anywhere}.stt.stm .stv{color:var(--ac);font-size:24px}.sts{color:var(--mu);font-size:12px;margin-top:1px}.stu{color:var(--mu);font-weight:400}.stg+.rl8{margin-top:-4px}
 .ctl{margin:0 0 12px}.ctl>.mu:first-child{margin:0 0 6px}.mbb{margin:0 0 10px}.fmi{margin:0 0 14px}.rl3{margin:0 0 3px}.sh2{margin-top:26px}
 #renlt{align-self:center;margin:5px 0}.btnr{margin:14px 0 0;text-align:right}
 .no.wd{width:auto;padding:0 9px;border-radius:11px}.mu.er{color:#e88a74}.gb{color:#6ea8ff}.cbx{position:fixed;opacity:0}
@@ -163,7 +164,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.1';
+const APP_VERSION='19.0.2';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2002,8 +2003,10 @@ function calcRun(){
     ...(P.capA>0?[[`Soldiers — Leadership ${usedOf(A).toLocaleString()} / ${P.capA.toLocaleString()}`,Aall.length?(mob?mobList(prepTier(ord(flatOrder(Aall),COMPA)),prepMob()&&VIEW=='mobile'):table(Aall)):'<p class="mu">No army tiers selected.</p>']]:[])].sort((x,y)=>prepMob()?secRank(x[0])-secRank(y[0]):0).map(([t,b],k)=>`<h2${k?' class="sh2"':''}>${t}</h2>${b}`).join('');
   const hitsRow=Math.max(...REVCASES.map(c=>HIT[c[0]]))>1;      // the hits of every revive mode, after the food consumption in the second row (only when one of them pays for more than 1 hit)
   {const rc=$('rtitle').closest('.card');if(rc)rc.hidden=!(!pvOff&&(P.capA>0||P.capM>0||P.capU>0))}      // Leadership, Dominance and Authority all 0: nothing to show, the whole Result section is hidden
-  const tgt=P.ren?renTarget():0,lvN=Math.floor(+$('renLv').value),lvTxt=tgt?` · <span class="nb" title="Level ${lvN}: the stacks must reach ${tgt.toLocaleString('en-US')} damage."><b>level ${lvN} ${sc.dmg>=tgt?'reached':'short by '+((1-sc.dmg/tgt)*100).toFixed(1)+' %'}</b></span>`:'';      // 14.19: Renegades with a Level: is the target reached?
-  $('rsm').innerHTML=`<p class="mu ${hitsRow?'rl3':'rl8'}">Summary: ${sc.stacks} stacks · ${EBINFO} · ${sc.hits} strikes against ${P.one?'one flying enemy stack':P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks'} · <b>estimated damage ${fmt(sc.dmg)}</b>${lvTxt} · <span class="nb" title="${esc(rtip)}">revive cost <b>${num(scost)} / ${num(rcost)} gold</b></span></p>${hitsRow?`<p class="mu rl8">Hits per revive mode:&nbsp;${REVCASES.map(([k,l])=>`<span class="nb">${k==REVM?`<b>${HIT[k].toFixed(2)} ${l}</b>`:`${HIT[k].toFixed(2)} ${l}`}</span>`).join(' · ')}</p>`:''}`;      // 14.59: the summary stands above the buttons (Battle in detail, View, Action)
+  const tgt=P.ren?renTarget():0,lvN=Math.floor(+$('renLv').value);      // 14.19: Renegades with a Level: is the target reached?
+  const enTxt=P.one?'one flying enemy stack':P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks';
+  const tile=(c,l,v,sub,tip)=>`<div class="stt ${c}"${tip?` title="${esc(tip)}"`:''}><div class="stl">${l}</div><div class="stv">${v}</div>${sub?`<div class="sts">${sub}</div>`:''}</div>`;
+  $('rsm').innerHTML=`<div class="stg${hitsRow?' sg3':''}">${tile('stm','Estimated damage',fmt(sc.dmg),tgt?`level ${lvN} ${sc.dmg>=tgt?'reached':'short by '+((1-sc.dmg/tgt)*100).toFixed(1)+' %'}`:'',tgt?`Level ${lvN}: the stacks must reach ${tgt.toLocaleString('en-US')} damage.`:'')}${tile('','Strikes',sc.hits,'vs '+enTxt)}${tile('','Stacks',sc.stacks,'')}${tile('','Revive cost',`${num(scost)} <span class="stu">/</span> ${num(rcost)}`,'gold',rtip)}</div>${hitsRow?`<p class="mu rl8">Hits per revive mode:&nbsp;${REVCASES.map(([k,l])=>`<span class="nb">${k==REVM?`<b>${HIT[k].toFixed(2)} ${l}</b>`:`${HIT[k].toFixed(2)} ${l}`}</span>`).join(' · ')}</p>`:''}`;      // 19.0.2: the summary as tiles (damage, strikes, stacks, revive cost); the army / monster / engineer count is gone
   $('res').innerHTML=secs;
   {const tcb=document.querySelector('.tc');if(tcb)tcb.disabled=pvOff||!(P.capA>0||P.capM>0)}      // the Tier check button: nothing to check without a capacity
   save();
