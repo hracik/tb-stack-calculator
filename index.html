@@ -162,8 +162,8 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div class="btnr"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
-// Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='19.0';
+// Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
+const APP_VERSION='19.0.1';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -176,7 +176,7 @@ const HELP_RATE='\u20ac25 / hour',HELP_URL='';
   const base=/\.github\.io$/.test(location.hostname)?location.origin+location.pathname.replace(/[^\/]*$/,''):LIVE;
   const tried=()=>{let t=null;try{t=sessionStorage.getItem('sc_reload')}catch(e){}return t||(/^sc_reload=/.test(window.name)?window.name.slice(10):null)};
   const mark=n=>{try{sessionStorage.setItem('sc_reload',n)}catch(e){}window.name='sc_reload='+n};
-  const vnum=x=>{const m=/^(\d+)\.(\d+)$/.exec(String(x));return m?+m[1]*100000+ +m[2]:0};      // 8.1 -> 800001: the major counts first, then the minor
+  const vnum=x=>{const m=/^(\d+)\.(\d+)(?:\.(\d+))?$/.exec(String(x));return m?+m[1]*1e8+ +m[2]*1e4+ +(m[3]||0):0};      // 19.1.2 -> 1901000 + 2: the major counts first, then the minor, then the patch (a two-number version counts as .0)
   let last=0;
   const check=()=>{
     const now=Date.now();if(now-last<300000)return;last=now;
