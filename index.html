@@ -33,7 +33,7 @@ select{width:auto}.mu{color:var(--mu);font-size:13px}
 .bi{display:grid;grid-template-columns:var(--lw) minmax(0,1fr);align-items:center;gap:var(--rg);margin:5px 0}
       /* the label column is the same width everywhere, the box takes the whole rest of the row */
 .fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));column-gap:24px}
-.bi[hidden]{display:none}#bon{--lw:132px}.bc.rr .bi{grid-template-columns:minmax(0,1fr) 72px}.bc.rr .bi>span{white-space:normal;line-height:1.2}.bi>span{color:var(--tx);text-align:left;white-space:nowrap}.bi input,.bi select{width:100%;min-width:0;box-sizing:border-box;height:32px;padding:3px 6px}.bc.ep{align-self:start}
+.bi[hidden]{display:none}#bon{--lw:132px}#bonx .bi{grid-template-columns:minmax(0,1fr) 84px}#bonx .bi>span{white-space:normal;line-height:1.2}.bi>span{color:var(--tx);text-align:left;white-space:nowrap}.bi input,.bi select{width:100%;min-width:0;box-sizing:border-box;height:32px;padding:3px 6px}.bc.ep{align-self:start}
 .tt{table-layout:fixed;min-width:620px}.tt td:first-child{width:130px;text-align:left}.tt td,.tt th{text-align:center}
 .tt label{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
 .ol{max-width:none}
@@ -127,7 +127,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <label class="bi" id="templl" title="Your Temple level (0-45). The revival gold cost of the troops is divided by the factor of that level (level 45: 5.91 times cheaper). 0 = no Temple."><span>Temple</span><select id="temple"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option><option value="32">32</option><option value="33">33</option><option value="34">34</option><option value="35">35</option><option value="36">36</option><option value="37">37</option><option value="38">38</option><option value="39">39</option><option value="40">40</option><option value="41">41</option><option value="42">42</option><option value="43">43</option><option value="44">44</option><option value="45" selected>45</option></select></label></div></div>
 
 <div class="atk" id="atk"><button type="button" class="ab" data-a="epics" title="Hit epic monsters">Attack epics</button><button type="button" class="ab" data-a="players" title="Hit other players">Attack players</button></div>
-<div class="card" data-help="bonx"><h2>Army bonuses (%)</h2><div class="bg" id="bonx"></div></div>
+<div class="card" data-help="bonx"><h2>Army bonuses (%)</h2><div id="bonx"></div></div>
 <div class="card" data-help="bon"><h2>Category bonuses (%)</h2><div class="bg" id="bon"></div></div>
 
 <details class="card" open data-help="mb"><summary><h2>Monster boost research bonuses (%)</h2></summary>
@@ -164,7 +164,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.11';
+const APP_VERSION='19.0.12';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -219,12 +219,12 @@ Object.keys(BYG).forEach(g=>{if(g[0]=='M')BYG[g].sort((a,b)=>CO.indexOf(a.cat)-C
 const row=(l,id,val=0)=>`<div class="bi"><span>${l}</span><input id="${id}" type="text" inputmode="decimal" step="0.5" value="${val}"></div>`;
 const card=(n,k,h=0,sv=h)=>`<div class="bc"><b>${n}</b>${row('Health','bh_'+k,h)}${row('Strength','bs_'+k,sv)}</div>`;
 $('bon').innerHTML=[['Guardsmen','G',3466,6304],['Specialists','S',3466,6304],['Monsters','M',3461,6404],['Siege Engines','E',3466,6304]].map(([n,k,h,sv])=>card(n,k,h,sv).replace(/<\/div>$/,(k=='G'||k=='S'?`<div class="bi pl">${'<span>Strength vs players</span>'}<input id="bs_${k}Pl" type="text" inputmode="decimal" step="0.5" value="0"></div>`:'')+(k!='M'?row('Double damage','dd_'+k,0):'')+'</div>')).join('');      // 19.0.11: Guardsmen / Specialists: strength against players (only in the Attack players view) and double damage; Siege Engines: double damage (% chance, counted on average)
-$('bonx').innerHTML=`<div class="bc ep" id="bcEpic"><b>Against epic monsters</b>${row('Strength','bs_Epic',3747)}</div>`+
-  `<div class="bc ep" id="bcPlayers"><b>Against players</b>${row('Health','bh_Players',0)}${row('Strength','bs_Players',0)}</div>`+
-  `<div class="bc rr" id="bcArmy"><b>Whole army</b>${row('Double strike','ds_A',0)}${row('Double damage','dd_A',0)}</div>`;      // 19.0.11: the whole army's rare bonuses (% chance, counted on average)      // 19.0.9: rarely used bonuses, all in % chance (counted on average): Guardsmen + Specialists strength against players (players only), double damage per class, whole-army double strike and double damage      // the Against boxes are in the Bonuses against enemies card; the Attack epics / Attack players switch (just above that card) hides and disables the one that does not count
-const DHV=Array.from({length:11},(_,i)=>i/2);                // Double hit: 0 - 5 % in steps of 0.5
+$('bonx').innerHTML=`<div class="bi" id="bcEpic"><span>Strength against epic monsters</span><input id="bs_Epic" type="text" inputmode="decimal" step="0.5" value="3747"></div>`+
+  `<div id="bcPlayers">${row('Health against players','bh_Players',0)}${row('Strength against players','bs_Players',0)}</div>`+
+  row('Double strike %','ds_A',0)+row('Double damage %','dd_A',0);      // 19.0.12: the Army bonuses are plain rows, no blocks (the epic / players rows follow the Attack switch; Double strike and Double damage are the chance of the whole army in %, counted on average)
+const DHV=Array.from({length:11},(_,i)=>i/2);                // Double strike: 0 - 5 % in steps of 0.5
 const snapDH=x=>{x=parseFloat(String(x).replace(',','.'));if(!isFinite(x))x=0;return Math.min(5,Math.max(0,Math.round(x*2)/2))};
-$('mb').innerHTML=TY.map(n=>`<div class="bc"><b>${n}</b>${row('Health','bh_'+n,100)}${row('Strength','bs_'+n,100)}<div class="bi"><span>Double hit</span><select id="dh_${n}">${DHV.map(x=>`<option value="${x}"${x==5?' selected':''}>${x}%</option>`).join('')}</select></div></div>`).join('');
+$('mb').innerHTML=TY.map(n=>`<div class="bc"><b>${n}</b>${row('Health','bh_'+n,100)}${row('Strength','bs_'+n,100)}<div class="bi"><span>Double strike</span><select id="dh_${n}">${DHV.map(x=>`<option value="${x}"${x==5?' selected':''}>${x}%</option>`).join('')}</select></div></div>`).join('');
 $('sb').innerHTML=CO.map(n=>card(n,n)).join('');
 
 // tier checkboxes, aligned in a grid
@@ -257,7 +257,7 @@ document.addEventListener('click',e=>{
   const eb=e.target.closest('.eb');if(eb){runBest(+eb.dataset.e);return}
   const tc=e.target.closest('[data-troop]');if(tc){const nm=tc.dataset.troop;if(XS.has(nm))XS.delete(nm);else XS.add(nm);calc();return}
   const pb=e.target.closest('.pb');
-  if(pb){TY.forEach(t=>{$('bh_'+t).value=pb.dataset.p;$('bs_'+t).value=pb.dataset.p;if(pb.dataset.dh!==undefined)$('dh_'+t).value=pb.dataset.dh});calc();return}   // research I and II set Double hit to 0, III to 5 % for every group
+  if(pb){TY.forEach(t=>{$('bh_'+t).value=pb.dataset.p;$('bs_'+t).value=pb.dataset.p;if(pb.dataset.dh!==undefined)$('dh_'+t).value=pb.dataset.dh});calc();return}   // research I and II set Double strike to 0, III to 5 % for every group
 });
 
 let VIEW='grouped';try{const sv=localStorage.getItem('sc_view');if(sv=='mobile'||sv=='computer')VIEW=sv}catch(e){}      // result view: Grouped (cards in groups), Mobile (one unit per line) or Computer (two units per line, same order as Mobile). One setting for all tabs.
@@ -306,10 +306,10 @@ function vsText0(t,P){
 function drawSO(st,P){
   const grp={};st.forEach(x=>grp[x.name]=x.grp);
   const sb={};st.forEach(x=>sb[x.name]=x);
-  // squad bonus = the troop's own bonus against this enemy + the Double hit. "No squad bonus" = base strength x your strength multiplier only.
+  // squad bonus = the troop's own bonus against this enemy + the Double strike. "No squad bonus" = base strength x your strength multiplier only.
   const info=n=>{const t=TRN[n],m=vsRatio(t,P),dh=P.one?0:t.cls=='M'?(P['dh'+t.type]||0):t.beast?P.dhBeast:0,cnt=sb[n]?sb[n].n||0:0,hpu=sb[n]?sb[n].hp:t.hp*mults(t,P)[0],
     one=t.str*mults(t,P)[1],full=one*vsFactor(t,P)*dhf(t,P);
-    return`${t.cls}${t.tier} · ${vsText(t,P)}${dh>0?' · Double hit +'+dh+'%':''}<br>${[['SH',(hpu>0?one/hpu:0).toFixed(4)],['Health',num(tot(cnt,hpu))],['Strength',num(tot(cnt,one))],['Damage',num(tot(cnt,full))]].map(([l,x])=>`<span class="nb">${l}: ${x}</span>`).join(' · ')}`};   // SH = strength without squad bonus and Double hit (only your strength multiplier) per health; Damage = strength with the squad bonus and Double hit
+    return`${t.cls}${t.tier} · ${vsText(t,P)}${dh>0?' · Double strike +'+dh+'%':''}<br>${[['SH',(hpu>0?one/hpu:0).toFixed(4)],['Health',num(tot(cnt,hpu))],['Strength',num(tot(cnt,one))],['Damage',num(tot(cnt,full))]].map(([l,x])=>`<span class="nb">${l}: ${x}</span>`).join(' · ')}`};   // SH = strength without squad bonus and Double strike (only your strength multiplier) per health; Damage = strength with the squad bonus and Double strike
   BUFN={};if(P.ren)st.forEach(x=>{if(x.buf&&x.n>0)BUFN[x.name]=1});      // 14.21: the stacks of the buffer zone (Renegades)
   const one=(n,lbl)=>`<div class="oi${BUFN[n]?' bz':''}" data-n="${esc(n)}"><span class="no${String(lbl).includes('–')?' wd':''}">${lbl}</span>${IC[n]?`<img class="ic2" src="${IC[n]}" alt="">`:''}<span class="nm">${esc(n)} <small class="mu">${info(n)}</small></span></div>`;
   let html='',pos=0,block=[];
@@ -443,7 +443,7 @@ function tabClick(e){
 }
 // ---- export / import: every input of the open tab as a short text, and back. An import opens as a NEW tab: nothing that is already saved is overwritten ----
 // The text: a title line, then  key=value  pieces (one space between them). A box that holds the blank value (0) is left out, a number has no thousands commas, a space in a name is _ ; the key is short:
-// L Leadership, U Authority, D Dominance, F Food prod., R Revive, Tp Temple level (13.1; left out when it is 45), A Action; hG / sG = health / strength bonus of Guardsmen (S, M, E, and Gi El Dr Be Me Mo Ra Fl Ep Pl the same way), dGi = Double hit; T = the ticked tiers (E89S89G89M789 = E8 E9 S8 S9 G8 G9 M7 M8 M9);
+// L Leadership, U Authority, D Dominance, F Food prod., R Revive, Tp Temple level (13.1; left out when it is 45), A Action; hG / sG = health / strength bonus of Guardsmen (S, M, E, and Gi El Dr Be Me Mo Ra Fl Ep Pl the same way), dGi = Double strike; T = the ticked tiers (E89S89G89M789 = E8 E9 S8 S9 G8 G9 M7 M8 M9);
 // n = name, x = switched-off troops (3 characters each, see xcode), at = Attack players, mo / en / le / lp = attack mode. Text of the first version (JSON, "Stack Calculator inputs") is still read.
 const XMODES=['max','ren','pvpmax','cpd','cp','kill'],XENEMY=['3','4','6','8'],XHEAD='Krappy Calculator',XFIX={capA:'L',capU:'U',capM:'D',foodP:'F',revm:'R',shw:'A',temple:'Tp',renLv:'Lv'},XSUF={Epic:'Ep',Players:'Pl',Giant:'Gi',Elemental:'El',Dragon:'Dr',Beast:'Be',Melee:'Me',Mounted:'Mo',Ranged:'Ra',Flying:'Fl'};
 const xkey=id=>{const m=/^(bh|bs|dh)_(.+)$/.exec(id);return XFIX[id]||(m?{bh:'h',bs:'s',dh:'d'}[m[1]]+(XSUF[m[2]]||m[2]):id)};      // bh_G -> hG, bs_G -> sG, dh_Giant -> dGi, bs_Epic -> sEp
@@ -808,9 +808,9 @@ function getP(){
   const p={d:0,kill:$('mode').value=='kill',ren:$('mode').value=='ren',capA:v('capA'),capM:v('capM'),capU:v('capU'),enemy:$('mode').value=='kill'?3:$('mode').value=='ren'?8:$('mode').value=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4,cat:DEFCAT.slice()};
   ['G','S','M','E','Epic','Players','Giant','Elemental','Dragon','Beast','Melee','Mounted','Ranged','Flying'].forEach(k=>{p['h'+k]=$('bh_'+k)?v('bh_'+k):0;p['s'+k]=$('bs_'+k)?v('bs_'+k):0});
   ['Giant','Elemental','Dragon','Beast'].forEach(k=>{p['dh'+k]=$('dh_'+k)?snapDH($('dh_'+k).value):0});
-  p.pm=$('mode').value=='pvpmax';                // PvP Max damage: a fully equipped enemy (4 stacks, every kind of troop), all bonuses and the Double hit count, no Epic strength
+  p.pm=$('mode').value=='pvpmax';                // PvP Max damage: a fully equipped enemy (4 stacks, every kind of troop), all bonuses and the Double strike count, no Epic strength
   p.cpd=$('mode').value=='cpd'||p.pm;            // CP death: the order that gives the most damage (PvP Max damage uses the same rules)
-  p.one=$('mode').value=='cp'||$('mode').value=='cpd';   // CP kill and CP death (PvP): ONE flying enemy stack - only the bonus against flying counts, the Double hit is unused
+  p.one=$('mode').value=='cp'||$('mode').value=='cpd';   // CP kill and CP death (PvP): ONE flying enemy stack - only the bonus against flying counts, the Double strike is unused
   p.cp=p.one||p.pm;                              // the PvP engine of the CP modes: tight stacks by health only, groups of equals
   p.pvp=p.cp||p.ren;                             // PvP rules (CP kill, CP death, Max damage and, since 14.9, Renegades): no Epic strength, no bonus against epic enemies, the Against players bonuses count, Specialists deal double damage before the squad bonus (damage, never strength)
   if(p.one)p.enemy=1;
@@ -839,23 +839,23 @@ function vsRatio(t,P){if(P.one)return t.vs[3]||0;      // CP kill: the only enem
 function vsFactor(t,P){return (P.pvp&&t.cls=='S'?2:1)+vsRatio(t,P)/mults(t,P)[2]}      // PvP: a Specialist deals DOUBLE its strength (all your bonuses in), the squad bonus is added to that and is not doubled: damage = base x (2 x multiplier + squad bonus)
 const TRN={};TR.forEach(t=>TRN[t.name]=t);
 // DYING ORDER. ONE ranking value for every mode: the damage a stack of EQUAL health deals per strike
-//   = (strength per health) x (1 + your bonus against this enemy, added into the strength pool) x (1 + Double hit).
+//   = (strength per health) x (1 + your bonus against this enemy, added into the strength pool) x (1 + Double strike).
 // Strength per health is the strength multiplier divided by the health multiplier (Beast army units carry +Beast health, so they hit a little
 // less per health). The modes only differ in the BLOCKS they cut the army into; inside a block the weakest value dies first, strictly.
 // Only troops with exactly the same value are ordered by: smaller unused bonus, then Melee -> Ranged -> Mounted -> Flying, then the lower tier.
 const ddf=(t,P)=>(1+(P['dd'+t.cls]||0)/100)*(1+(P.ddA||0)/100);      // 19.0.9: double damage chance of the class and of the whole army, on average
-const dhf=(t,P)=>ddf(t,P)*(P.one?1:t.cls=='M'?1+(P['dh'+t.type]||0)/100:t.beast?1+P.dhBeast/100:1);     // monsters: their group's Double hit; Beast army units (Royal Lion, Battle Griffin): the Beast group's. CP kill / CP death: the only enemy is ONE stack, there is no second enemy to hit, so the Double hit is unused (x 1)
+const dhf=(t,P)=>ddf(t,P)*(P.one?1:t.cls=='M'?1+(P['dh'+t.type]||0)/100:t.beast?1+P.dhBeast/100:1);     // monsters: their group's Double strike; Beast army units (Royal Lion, Battle Griffin): the Beast group's. CP kill / CP death: the only enemy is ONE stack, there is no second enemy to hit, so the Double strike is unused (x 1)
 // ONE damage computation for every mode: base strength x (1 + class strength + epic strength + monster strength + troop-type strength (where they
-// apply) + the troop's own bonus against this enemy, all ADDED in one pool), then x (1 + Double hit) for monsters. The modes differ only in the dying-order rule.
-const dmgFactor=(t,P)=>vsFactor(t,P)*dhf(t,P);            // what the troop's own bonus and Double hit add to the same stack without them
+// apply) + the troop's own bonus against this enemy, all ADDED in one pool), then x (1 + Double strike) for monsters. The modes differ only in the dying-order rule.
+const dmgFactor=(t,P)=>vsFactor(t,P)*dhf(t,P);            // what the troop's own bonus and Double strike add to the same stack without them
 const dpu=s=>s.str*(s.f||1)*(s.dh||1);                    // damage per unit of a stack (str already holds the pooled strength bonuses)
 const dIdx=(t,P)=>{const[mh,ms]=mults(t,P);return ms/mh*dmgFactor(t,P)};   // damage per strike of an equal-health stack, own bonus included
 // RANKING VALUE, every mode: damage per health WITH the squad bonus = strength per health with all your inputs, the troop's own bonus against
-// this enemy (added into the strength pool) and the Double hit. (The squad bonus is left out only in the strike order of Max damage, see allocWhole.)
+// this enemy (added into the strength pool) and the Double strike. (The squad bonus is left out only in the strike order of Max damage, see allocWhole.)
 const rgm=P=>P.max4;    // 3-, 4-, 6- and 8-stack: ONE engine (ratio groups, damage search, tight stacks). Only K = the number of enemy stacks differs: the outliers stand on the places Kn+1; the squad bonus counts no mounted enemy for K = 3 and 6
-// Max damage ONLY: the ranking value is the SQUAD BONUS alone (no health, no cost) - the smaller the bonus, the earlier the troop dies. For a troop with Double hit the
-// Double hit is turned into the same kind of bonus: it multiplies the exact strength total (your multiplier + the troop's own bonus), so the extra it adds,
-// (multiplier + own bonus) x Double hit, is a "squad double hit bonus" in the same % as the own bonus. Own bonus + squad double hit bonus are counted together.
+// Max damage ONLY: the ranking value is the SQUAD BONUS alone (no health, no cost) - the smaller the bonus, the earlier the troop dies. For a troop with Double strike the
+// Double strike is turned into the same kind of bonus: it multiplies the exact strength total (your multiplier + the troop's own bonus), so the extra it adds,
+// (multiplier + own bonus) x Double strike, is a "squad double strike bonus" in the same % as the own bonus. Own bonus + squad double strike bonus are counted together.
 // All other modes keep the damage per health.
 const sqb=(t,P)=>{const vs=vsRatio(t,P),dd=(mults(t,P)[2]+vs)*(dhf(t,P)-1);return{vs,dd,tot:vs+dd}};
 function ranker(P){
@@ -1129,10 +1129,10 @@ function renOrder(P,names){
 // Guardsmen before Specialists (G9, S9, G8, S8 ...), the monsters last, tier by tier from the top. Inside a class and tier the troops with the SMALLER squad bonus against
 // flying come first (then the smaller SH ratio first). Troops with the same class, tier, squad bonus and SH ratio (for example every G9 without a bonus) are ONE GROUP of equals: the game picks their order at random,
 // so they get the same health and share the places of the group (see cpGroup, allocTight and score).
-// The squad bonus is the bonus against flying ONLY. The Double hit is unused in the CP modes (one enemy stack, no second enemy to hit - see dhf), so the Beast units
+// The squad bonus is the bonus against flying ONLY. The Double strike is unused in the CP modes (one enemy stack, no second enemy to hit - see dhf), so the Beast units
 // (Royal Lion, Battle Griffin) and the monsters count as troops without a bonus when they have none against flying.
-const cpBonus=(t,P)=>P.pm?sqb(t,P).tot:vsRatio(t,P);      // PvP Max damage: the whole squad bonus (every kind of enemy present, the Double hit counted as a bonus); CP kill / CP death: the bonus against flying
-const cpSH=(t,P)=>Math.round(ratioOf(t,P)*1e9);       // strength per health with your multipliers only (no squad bonus, no Double hit)
+const cpBonus=(t,P)=>P.pm?sqb(t,P).tot:vsRatio(t,P);      // PvP Max damage: the whole squad bonus (every kind of enemy present, the Double strike counted as a bonus); CP kill / CP death: the bonus against flying
+const cpSH=(t,P)=>Math.round(ratioOf(t,P)*1e9);       // strength per health with your multipliers only (no squad bonus, no Double strike)
 // Group of equals = the troops with the same squad bonus AND the same SH ratio (strength per health): they get about the same health and share their places. The troops with a different
 // SH ratio are NOT forced to the same health - the SH ratio decides the order first (the smaller ratio first, see cpdOrder), only the troops with the same ratio form a group.
 // CP kill: class + tier + bonus + SH ratio. CP death: Guardsmen and monsters count as one kind, no tier: kind + bonus + SH ratio (G9 and G8 without a bonus: the same SH ratio, one group).
@@ -1149,7 +1149,7 @@ function cpOrder(P,names){
 // down to tier 1 - stand together and are one group with about the same health); the Guardsmen and the full monsters WITH a bonus, mixed, the LOWEST bonus first (it dies first; the same bonus: the smaller SH ratio first);
 // the Specialists the same way (no bonus by the rising SH ratio, then with a bonus, the lowest first); and behind all of them the PARTIAL monster tier (the tier where the Dominance runs out, and the tiers below it;
 // the same rules inside): it has the lowest health, so it stands last and cannot pull the Specialists down; it is what spends the Dominance that is left.
-// A troop "has a bonus" when it has a squad bonus against flying (the Double hit is unused). c = the number of full monster tiers (the top c tiers); the damage decides which c is used (see buildStacks).
+// A troop "has a bonus" when it has a squad bonus against flying (the Double strike is unused). c = the number of full monster tiers (the top c tiers); the damage decides which c is used (see buildStacks).
 function cpdOrder(P,names,c){
   const ts=TR.filter(t=>names.has(t.name)),ci=t=>DEFCAT.indexOf(t.cat),bon=t=>cpBonus(t,P)>0,sp=monSplit(ts,c);
   const eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier),army=ts.filter(t=>t.pool=='A'&&t.cls!='E'),mon=ts.filter(t=>t.pool=='M');
@@ -1212,7 +1212,7 @@ function buildStacks(P,order,X){
 function weights(arr,eq,d,c0){
   const c={rank:-1,last:null,...(c0||{})};
   arr.forEach(s=>{
-    s.rho=s.str*(s.dh||1)/s.hp;                          // monsters: strength x Double hit (the damage they really deal)
+    s.rho=s.str*(s.dh||1)/s.hp;                          // monsters: strength x Double strike (the damage they really deal)
     if(eq){const g=s.grp||s.r;if(g!==c.last){c.rank++;c.last=g}}else c.rank++;
     s.w=Math.max(0.01,1-d*c.rank);
   });
@@ -1244,7 +1244,7 @@ function profile(live,d){
 // rounding fix for the same rule: a unit is trimmed only where two neighbours flip
 // 14.2: the total health / strength of a stack is a WHOLE number (rounded down, like the game). Every comparison of the rules is between whole numbers, so nothing needs a float-noise guard.
 const tot=(n,u)=>Math.floor(n*u*(1+1e-14));      // ... the one tolerance left: a product that lands a few ulps under a whole number (62 x 27,258,000 stored as 27257999.999999996 units) is that whole number
-const su=s=>s.str*(s.dh||1);                  // strength per unit with the Double hit (monsters and mercenaries)
+const su=s=>s.str*(s.dh||1);                  // strength per unit with the Double strike (monsters and mercenaries)
 function fitN(lim,u){                          // the most units (unit value u) whose whole total stays at or below the whole number lim
   if(!(lim<Infinity))return Infinity;
   let n=Math.max(0,Math.floor(lim/u));
@@ -1361,7 +1361,7 @@ function topUpGroups(seq,A,cap){      // Renegades, CP kill, CP death: a group o
 }
 function allocMonsters(P,Mo,real,eq,o){
   const d=o?o.d:P.d;
-  // monsters die after the army, so they must stay below its smallest health AND its smallest strength - a monster's strength counts with its Double hit
+  // monsters die after the army, so they must stay below its smallest health AND its smallest strength - a monster's strength counts with its Double strike
   // (my next striker is the strongest stack that has not struck yet - if a monster out-struck the stack about to die, that stack would die without striking)
   Mo.forEach(s=>s.n=0);
   const ground=real.filter(s=>s.cat!='Flying'),refSP=ground.length?ground:real;   // flying stacks (Beast units) are left out of the strength reference
@@ -1457,7 +1457,7 @@ function lpAlloc(P,live){
 }
 // Max vs. full stack: every stack has one rank in the dying order, army and monsters together (d = 0: no step per rank, the whole units set the gap). The army uses all
 // Leadership; the monsters aim for the same health level (so the ranks interleave), highest tier first, the lowest tier gets what is left.
-// No monster gap and no strength cap - the Double hit is a damage bonus instead.
+// No monster gap and no strength cap - the Double strike is a damage bonus instead.
 // 3-, 4-, 6- and 8-stack: the counts are NOT chosen for damage. Every stack aims for the same health level (a share w of it: level along the order, and further down only where the
 // total strength would otherwise rise - the places Kn+1 are exempt and just follow the health before them). The level is as high as the Leadership allows (all of it is spent);
 // the monsters get ONE common level, the army's level at most - lower when the Dominance is the smaller pool, so there is a single step between the army and the monsters. Rounding is repaired and the leftover is spent troop by troop.
@@ -1604,7 +1604,7 @@ function allocate(P,live){const md=modeOf(P);HO=md.ho;return md.size(P,live)}   
 // the whole calculation of the engine: the order, the Leadership / Dominance stacks, then the mercenaries (they come last: the numbers before are final)
 function solve(P,order){const st=buildStacks(P,order,XS),{A,Mo}=allocate(P,st.filter(s=>!s.off)),U=allocMerc(P,[...A,...Mo],st.so,XS);return{st,A,Mo,U}}
 // ---- total damage from the dying order alone (the same calculation in every mode) ----
-// The enemy has K stacks, so every round has K trades: my strongest living stack (total strength n x str - no squad bonus, no Double hit: the Double hit only adds damage, it does not decide who strikes first) strikes and the
+// The enemy has K stacks, so every round has K trades: my strongest living stack (total strength n x str - no squad bonus, no Double strike: the Double strike only adds damage, it does not decide who strikes first) strikes and the
 // enemy hits - it kills ONE of my stacks, always the first one still alive in the dying order. Round 1 starts with my strike (strike, kill, strike, kill ...);
 // every later round starts with the enemy (kill, strike, kill, strike ...), so the stack killed there does not strike in that round. After the K trades the
 // other living stacks strike. A stack killed before its turn never strikes (an early, weak stack - Engineers - can die without ever hitting).
@@ -1665,10 +1665,10 @@ function battleHtml(P,list,order,sc){
   log.forEach(([r,t,i])=>{
     if(r!==rd){rd=r;h+=`<div class="brh">Round ${r+1}</div>`}
     const s=L[i],img=IC[s.name]?`<img class="ic2" src="${IC[s.name]}" alt="">`:'<span class="ic2"></span>',nm=`<span class="bm"><b>#${i+1}</b> ${esc(s.name)}<small>${s.n.toLocaleString()} units</small></span>`;
-    if(t=='o'){                                              // one strike: the damage of the whole stack WITHOUT the Double hit, and the part of it that comes from the squad bonus (always counted; no mounted enemy in the 3-stack and Killshot modes, see vsRatio)
+    if(t=='o'){                                              // one strike: the damage of the whole stack WITHOUT the Double strike, and the part of it that comes from the squad bonus (always counted; no mounted enemy in the 3-stack and Killshot modes, see vsRatio)
       const base=(P.pvp&&s.r&&s.r[0]=='S')?2:1,d=tot(s.n,s.str*(s.f||1)),bn=tot(s.n,s.str*Math.max(0,(s.f||1)-base));
-      const t0=TRN[s.name],dh=t0?(P.one?0:t0.cls=='M'?(P['dh'+t0.type]||0):t0.beast?P.dhBeast:0):0,      // the same line of facts as in the dying order list: the tier first (S8, M8 ...) and the Double hit, the bonus against the enemy at the end, before the damage
-        nmh=`<span class="bm"><b>#${i+1}</b> ${esc(s.name)}<small>${s.n.toLocaleString()} units${t0?' \u00b7 '+t0.cls+t0.tier:''}${dh>0?' \u00b7 Double hit +'+dh+'%':''}</small></span>`;
+      const t0=TRN[s.name],dh=t0?(P.one?0:t0.cls=='M'?(P['dh'+t0.type]||0):t0.beast?P.dhBeast:0):0,      // the same line of facts as in the dying order list: the tier first (S8, M8 ...) and the Double strike, the bonus against the enemy at the end, before the damage
+        nmh=`<span class="bm"><b>#${i+1}</b> ${esc(s.name)}<small>${s.n.toLocaleString()} units${t0?' \u00b7 '+t0.cls+t0.tier:''}${dh>0?' \u00b7 Double strike +'+dh+'%':''}</small></span>`;
       h+=`<div class="bl bo"><span class="bic">${img}</span>${nmh}<span class="bb"${bn>0?' title="The bonus listed on the troop itself against the enemy, and the damage it adds: units x the troop\'s own strength x that bonus. Your own bonuses are not part of it."':''}>${t0?vsText(t0,P):''}${bn>0?`<small>+${num(bn)}</small>`:''}</span><span class="bv"><b>+${num(d)}</b></span></div>`}
     else{const d=tot(s.n,s.hp);      // the stack is killed: the damage the enemy had to deal
       h+=`<div class="bl be"><span class="bic">${img}${XS}</span>${nm}<span class="bv"><b>\u2212${num(d)}</b></span></div>`}
@@ -2133,7 +2133,7 @@ const HELP={
   sb:{t:["Use these only if a specific category or type has a bonus on top of the class bonus above \u2014 e.g. unbalanced research, talents, or captain effects. Leave all on 0% if there are no imbalances."],img:[]},
   tiers:{t:["Tick the tiers of every troop type you want the calculation to use. Tiers you don't have, or don't want to send, stay unticked.","Click <b>Tier check</b> in the Result section to see potential suggestions for improvement."],img:[]},
   mode:{t:["Choose the mode based on the hits you are planning to do most of the time."],img:[]},
-  res:{t:["Click a troop card to turn it on or off.","Check the battle report and compare it with your in-game report, there should not be any difference except some rounding errors. If there is significant difference, either in hit/die order or the numbers, your inputs / bonuses are probably not correct, double check or ask for help.","The battle report does not display double damage hits and double hit, so these differences are normal to see, they are random, so can't be shown deterministically.","The battle report shows only one scenario, the one where you attack first. It is a 50/50 chance who attacks first, but the only change in the other scenario is the swap of the first couple of lines in round 1, until the enemy stops hitting."],img:[]}
+  res:{t:["Click a troop card to turn it on or off.","Check the battle report and compare it with your in-game report, there should not be any difference except some rounding errors. If there is significant difference, either in hit/die order or the numbers, your inputs / bonuses are probably not correct, double check or ask for help.","The battle report does not display double damage hits and double strike, so these differences are normal to see, they are random, so can't be shown deterministically.","The battle report shows only one scenario, the one where you attack first. It is a 50/50 chance who attacks first, but the only change in the other scenario is the swap of the first couple of lines in round 1, until the enemy stops hitting."],img:[]}
 };
 function helpHtml(h,pl){return(pl&&h.tp?h.tp:h.t).map(x=>'<p class="ht"><i class="hm"></i>'+x+'</p>').join('')+(h.img||[]).map(m=>'<figure><img src="'+m.src+'" alt="'+(m.alt||'')+'" loading="lazy">'+(m.cap?'<figcaption>'+m.cap+'</figcaption>':'')+'</figure>').join('')}      // the tips of a Help panel as HTML; pl = the Attack players view (only the Bonuses against enemies card has its own text for it)
 (function(){
@@ -2162,7 +2162,7 @@ document.addEventListener('dblclick',e=>{const t=e.target.closest&&e.target.clos
 // start: dying order for a full enemy stack, with the default tiers
 runBest(4);
 DEF=snap();
-// Every tab starts blank: Leadership, Dominance, the basic bonuses, the monster bonuses (with the Double hit) and the Food production are all 0. BLANK is also the fallback for a saved tab that lacks a box (a box added by a newer version), so a release never puts a number of ours into a tab. The numbers a tab has saved are never replaced by a release: they live in localStorage under KEY, which must stay the same forever.
+// Every tab starts blank: Leadership, Dominance, the basic bonuses, the monster bonuses (with the Double strike) and the Food production are all 0. BLANK is also the fallback for a saved tab that lacks a box (a box added by a newer version), so a release never puts a number of ours into a tab. The numbers a tab has saved are never replaced by a release: they live in localStorage under KEY, which must stay the same forever.
 const BLANK=clone(DEF);
 ['capA','capM','foodP','bh_G','bs_G','bh_S','bs_S','bh_M','bs_M','bh_E','bs_E','bs_Epic','bh_Players','bs_Players',...['Giant','Elemental','Dragon','Beast'].flatMap(k=>['bh_'+k,'bs_'+k,'dh_'+k])].forEach(id=>{if(id in BLANK.vals)BLANK.vals[id]='0'});
 const START_TABS=['1 cap','3 cap','Hero','Hero+3 cap'];    // the tabs a new page starts with; they are ordinary tabs (rename, duplicate, delete)
