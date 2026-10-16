@@ -155,7 +155,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR (the pill shows it, the update check compares it with version.json). The minor counts the releases since the last push to the live site, a push starts the next major (8.3 -> 9.0). Every release: raise it and write the same value into version.json ({"version":"MAJOR.MINOR"}).
-const APP_VERSION='14.54';
+const APP_VERSION='14.55';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2058,14 +2058,10 @@ async function tierHint(gen){
   };
   // 14.18: the check starts from your ticks AND from a few plain starts (the top tier of every type with 0 to 3 tiers below it) and takes the best set it reaches: the result no longer depends on which tiers happen to be ticked
   const topOf=c=>Math.max(0,...sel0.filter(x=>x[0]==c).map(x=>+x.slice(1)));
-  let res=await climb(sel0.slice(),base);if(!res)return;
-  for(const k of [0,1,2,3,5]){
-    const seed=[];['E','S','G','M'].forEach(c=>{const tp=topOf(c);if(!tp)return;for(let t=tp;t>=Math.max(c=='M'?3:1,tp-k);t--)seed.push(c+t)});
-    if(!seed.length)continue;
-    const b0=await run(seed);if(b0==null)return;
-    const r2=await climb(seed,b0);if(!r2)return;
-    if(r2.best>res.best*(1+HGAIN))res=r2;
-  }
+  // 14.55: one start only: the top tier of every type, then down one tier at a time while the damage rises (the first tier that gives no gain stops it); your own ticks are the result only when they are better
+  let res={cur:sel0.slice(),best:base};
+  {const seed=[];['E','S','G','M'].forEach(c=>{const tp=topOf(c);if(tp)seed.push(c+tp)});
+   if(seed.length){const b0=await run(seed);if(b0==null)return;const r2=await climb(seed,b0);if(!r2)return;if(r2.best>base*(1+HGAIN))res=r2}}
   if(gen!==HINTGEN)return;
   const cur=res.cur,best=res.best;
   const add=cur.filter(x=>!sel0.includes(x)),rem=sel0.filter(x=>!cur.includes(x)),ls=a=>a.sort((x,y)=>key(x)-key(y)).join(', ');
