@@ -186,7 +186,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.104';
+const APP_VERSION='19.0.105';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1969,7 +1969,7 @@ function cmpUpdate(){
     d=(a,b,low)=>{if(!(b>0))return'<td></td>';const p=(a/b-1)*100,g=low?p<=0:p>=0;return`<td class="${Math.abs(p)<0.05?'':g?'cmg':'cmb'}">${p>0?'+':''}${p.toFixed(1)} %</td>`};
   const EPS=X.EP&&X.EP.st&&X.EP.score?X.EP:null,th=EPS?EPS.st.reduce((q,x)=>q+x[0]*x[1],0):0,f=x=>Math.min(1,x/th)*(EPS?EPS.score:0);
   const Z=1.96,lo=(m,sd)=>Math.max(0,m-Z*sd),hi=(m,sd)=>m+Z*sd,rn=(a,b,fm)=>sd0(a,b)?'':`<small class="cmr">${fm(a)}\u2013${fm(b)}</small>`,sd0=(a,b)=>!(b>a),
-    cell=(m,sd,fm,fr)=>fm(m)+(sd>0?rn(fr(lo(m,sd)),fr(hi(m,sd)),fm):'');
+    cell=(m,sd,fm,fr)=>fm(fr(m))+(sd>0?rn(fr(lo(m,sd)),fr(hi(m,sd)),fm):'');
   const rows=[['Estimated damage',cell(pr.sc.dmg,pr.sc.sd,fmt,x=>x),cell(sc.dmg,sc.sd,fmt,x=>x),d(sc.dmg,pr.sc.dmg)]];
   if(EPS)rows.push([esc(X.EP.n)+' score',cell(pr.sc.dmg,pr.sc.sd,scf,f),cell(sc.dmg,sc.sd,scf,f),d(sc.dmg,pr.sc.dmg)]);
   rows.push(['Revive cost',scost==rcost?fmt(pr.scost):fmt(pr.scost)+' / '+fmt(pr.rcost),scost==rcost?fmt(scost):fmt(scost)+' / '+fmt(rcost),d(scost,pr.scost,true)],['Strikes',cell(pr.sc.hits,pr.sc.hsd,x=>Math.round(x),x=>x),cell(sc.hits,sc.hsd,x=>Math.round(x),x=>x),d(sc.hits,pr.sc.hits)]);
