@@ -186,7 +186,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.106';
+const APP_VERSION='19.0.107';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2189,7 +2189,8 @@ function calcRun(){
   {const el=$('epicl');if(el)el.hidden=true}      // 19.0.37: the epic is chosen on the score tile of the Result (the select stays hidden: it holds the choice for the tab, the export and the import)
   const ep=ATK=='epics',pvOff=!ep&&!okP.length;      // pvOff: the Attack players view while no PvP mode is switched on (nothing to calculate)
   document.querySelectorAll('.ab').forEach(b=>b.classList.toggle('on',b.dataset.a==ATK));{const t=$('atk');if(t)t.dataset.v=ATK}
-  {const hb=$('hp-bonx');if(hb&&hb.dataset.v!==ATK){hb.dataset.v=ATK;hb.innerHTML=helpHtml(HELP.bonx,ATK=='players')}}      // 13.10: the Help of Bonuses against enemies follows the Attack epics / Attack players view
+  {const hb=$('hp-bonx');if(hb&&hb.dataset.v!==ATK){hb.dataset.v=ATK;hb.innerHTML=helpHtml(HELP.bonx,ATK=='players')}}
+  {const hr=$('hp-rare');if(hr&&hr.dataset.v!==ATK){hr.dataset.v=ATK;hr.innerHTML=helpHtml(HELP.rare,ATK=='players')}}      // 13.10: the Help of Bonuses against enemies follows the Attack epics / Attack players view
   [['mrE',ep],['mrP',!ep]].forEach(([id,on])=>{const el=$(id);if(el)el.hidden=!on});      // the settings of the chosen view
   {const o=$('osd');if(o)o.hidden=pvOff}
   [['bcEpic',['bs_Epic'],ep],['bcPlayers',['bh_Players','bs_Players'],!ep]].forEach(([c,ids,on])=>{const el=$(c);if(el)el.hidden=!on;ids.forEach(i=>{const x=$(i);if(x)x.disabled=!on})});
@@ -2385,7 +2386,7 @@ const HELP={
   bonx:{t:["Bonus against epic monsters can be found by clicking on a troop in the battle report or in the city.","When checking the bonus in the city, have only the attacking captain/captains/hero in the city, with the equipment that goes into the battle on them."],tp:["Bonuses against players can be found by clicking on a troop in the battle report or in the city.","When checking the bonuses in the city, have only the attacking captain/captains/hero in the city, with the equipment that goes into the battle on them."],img:[]},      // 13.10: tp = the text of the Attack players view (t is the Attack epics one); calc switches the panel
   bon:{t:["The <b>Health</b> and <b>Strength</b> bonuses of each troop category (Guardsmen, Specialists, Monsters and Siege Engines) can be found by clicking on a troop in the battle report or in the city.","When checking the bonuses in the city, have only the attacking captain/captains/hero in the city, with the equipment that goes into the battle on them.","Do not check the Guardsmen/Specialists bonuses on troops that are both Guardsmen/Specialists and Beasts: the flying G5-G7 and S8-S9."],img:[]},
   mb:{t:["Monster boost research in the Academy has 3 parts. Click I, II or III based on the latest research part you have already finished. For a partially finished part, e.g. no research is done for health at part III, still click III and adjust the health manually to 50."],img:[]},
-  rare:{t:["Rarely used bonuses. Strength against players counts only in the Attack players view; Double damage is the chance in % and is counted on average.","Combat type bonuses: use these only if a specific category or type has a bonus on top of the class bonus above \u2014 e.g. unbalanced research, talents, or captain effects. Leave all on 0% if there are no imbalances."],img:[]},
+  rare:{t:["These should be rarely used bonuses. More often than not you don't need to input anything and can leave them at 0.","Category bonus Double damage comes only from <b>standard equipment</b> that can be crafted for Guardsmen, Specialists or Engineers.","Combat type bonuses: use these only if a specific category or type has a bonus on top of the class bonus above \u2014 e.g. unbalanced research, talents, or captain effects. Leave all on 0% if there are no imbalances."],tp:["These should be rarely used bonuses. More often than not you don't need to input anything and can leave them at 0.","Category bonus Strength against players comes only from <b>tournament equipment</b> that can be crafted for Guardsmen or Specialists.","Combat type bonuses: use these only if a specific category or type has a bonus on top of the class bonus above \u2014 e.g. unbalanced research, talents, or captain effects. Leave all on 0% if there are no imbalances."],img:[]},      // 19.0.107: tp = the text of the Attack players view (the Rare bonuses card follows the view like Army bonuses)
   sb:{t:["Use these only if a specific category or type has a bonus on top of the class bonus above \u2014 e.g. unbalanced research, talents, or captain effects. Leave all on 0% if there are no imbalances."],img:[]},
   tiers:{t:["Tick the tiers of every troop type you want the calculation to use. Tiers you don't have, or don't want to send, stay unticked.","Click <b>Tier check</b> under the tiers to see potential suggestions for improvement in a bubble below."],img:[]},
   mode:{t:["Choose the mode based on the hits you are planning to do most of the time."],img:[]},
@@ -2397,7 +2398,7 @@ function helpHtml(h,pl){return(pl&&h.tp?h.tp:h.t).map(x=>'<p class="ht"><i class
     const k=card.dataset.help,h=HELP[k],head=[...card.children].find(x=>x.tagName=='H2'||x.tagName=='SUMMARY');if(!h||!head)return;
     const id='hp-'+k,b=document.createElement('button');b.type='button';b.className='hq';b.setAttribute('aria-expanded','false');b.setAttribute('aria-controls',id);b.title='Show help';b.setAttribute('aria-label','Help');b.innerHTML='?';head.appendChild(b);
     const p=document.createElement('div');p.className='hp';p.id=id;p.hidden=true;
-    p.innerHTML=helpHtml(h,k=='bonx'&&ATK=='players');
+    p.innerHTML=helpHtml(h,(k=='bonx'||k=='rare')&&ATK=='players');
     head.after(p);
   });
   document.addEventListener('click',e=>{
