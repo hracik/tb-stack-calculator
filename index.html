@@ -184,7 +184,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.80';
+const APP_VERSION='19.0.81';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1902,11 +1902,11 @@ function readNumber(d,W,bar){      // the digits of the bar: the cream pixels, g
 async function scanShot(file,names){      // one screenshot -> [{name, n, d}] (d = how far the picture is from the troop: smaller is better)
   const bm=await createImageBitmap(file),sc=1080/bm.width,W=1080,H=Math.round(bm.height*sc),cv=document.createElement('canvas');cv.width=W;cv.height=H;
   const g=cv.getContext('2d',{willReadFrequently:true});g.drawImage(bm,0,0,W,H);const d=g.getImageData(0,0,W,H).data;
-  const bars=findBars(d,W,H),tpl={};for(const n of names)tpl[n]=await tplOf(n);
+  const want=new Set(names),all=[...new Set([...names,...Object.keys(IC)])],bars=findBars(d,W,H),tpl={};for(const n of all)tpl[n]=await tplOf(n);      // every known troop is a candidate, so a square of a troop that is not in the list (a tier not ticked) is not taken for a similar one (E9 for E8)
   const tiles=bars.map(b=>{const x0=b.x-14,y1=b.y+b.h+8,y0=y1-(b.w+28),sz=b.w+28;return{bar:b,f:tileFeat(tilePrep(cv,x0,y0,sz,sz))}});
-  const pairs=[];tiles.forEach((t,i)=>names.forEach(n=>{if(tpl[n])pairs.push([tileDist(t.f,tpl[n]),i,n])}));
+  const pairs=[];tiles.forEach((t,i)=>all.forEach(n=>{if(tpl[n])pairs.push([tileDist(t.f,tpl[n]),i,n])}));
   pairs.sort((a,b)=>a[0]-b[0]);const usedT=new Set(),usedN=new Set(),out=[];      // one troop per square: the best pairs first
-  for(const [dd,i,n] of pairs){if(usedT.has(i)||usedN.has(n)||dd>1.9)continue;usedT.add(i);usedN.add(n);const s=readNumber(d,W,tiles[i].bar);out.push({name:n,n:s?+s:0,d:dd})}
+  for(const [dd,i,n] of pairs){if(usedT.has(i)||usedN.has(n)||dd>1.9)continue;usedT.add(i);usedN.add(n);if(!want.has(n))continue;const s=readNumber(d,W,tiles[i].bar);out.push({name:n,n:s?+s:0,d:dd})}
   return{found:bars.length,list:out}}
 async function cmpRead(){
   const fi=$('cmpfile'),st=$('cmpst'),bt=$('cmpshot');const files=[...fi.files];fi.value='';
