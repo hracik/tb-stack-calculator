@@ -72,7 +72,8 @@ button{background:#8a6a2c;color:#fff;border:0;border-radius:5px;padding:1px 6px;
 @media(max-width:480px){#res table.gt,#cmpb table.gt{width:calc(var(--n,4)*112px)!important}#res .gs,#cmpb .gs{overflow:visible}#res .sci,#cmpb .sci{width:max-content;min-width:100%}#res .sci .glh,#cmpb .sci .glh{position:sticky;left:0;width:max-content;max-width:calc(100vw - 48px)}      /* 14.15: on a phone the cards keep their size (112 px a card, about square) and the whole list of a section scrolls sideways; the label of a group stays at the left edge */
   #res table.gt td, the label of a group stays at the left edge */
   #cmpb table.gt td{padding:16px 3px 8px}#res table.gt .ic,#cmpb table.gt .ic{width:48px;height:48px}#res table.gt .kp,#cmpb table.gt .kp{top:3px;right:5px;font-size:10px}}      /* on a phone the place number gets a line of its own above the picture */
-#res td{background:#dcc791;color:#2a2012;border:1px solid #8a6a2c;border-radius:6px;text-align:center;padding:8px 10px;position:relative;min-width:104px}
+#res td,
+#cmpb td{background:#dcc791;color:#2a2012;border:1px solid #8a6a2c;border-radius:6px;text-align:center;padding:8px 10px;position:relative;min-width:104px}
 #res td:empty,
 #cmpb td:empty{background:transparent;border:0}
 #res td .n,
@@ -182,7 +183,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.64';
+const APP_VERSION='19.0.65';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
