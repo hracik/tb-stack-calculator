@@ -186,7 +186,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.105';
+const APP_VERSION='19.0.106';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -288,7 +288,7 @@ document.addEventListener('click',e=>{
   const ab=e.target.closest('.ab');if(ab){if(ab.dataset.a!=ATK){ATK=ab.dataset.a;refresh()}return}      // Attack epics / Attack players
   const sb=e.target.closest('.sb');if(sb&&!sb.disabled){if(SHOWCMP){SHOWCMP=false;try{localStorage.setItem('sc_cmp','0')}catch(x){}}$('shw').value=sb.dataset.sh;calc();if(sb.dataset.sh=='train'&&!(v('foodP')>0)){FMP=true;drawFM()}return}
   if(e.target.closest('.tc')){if(!e.target.closest('.tc').disabled)tierBubble();return}      // the Tier check button
-  const vb=e.target.closest('.vb');if(vb&&vb.id=='cmpbtn'){SHOWCMP=!SHOWCMP;try{localStorage.setItem('sc_cmp',SHOWCMP?'1':'0')}catch(x){}calc();return}
+  const vb=e.target.closest('.vb');if(vb&&vb.id=='cmpbtn'){SHOWCMP=true;try{localStorage.setItem('sc_cmp',SHOWCMP?'1':'0')}catch(x){}calc();return}
   if(vb){if(!vb.disabled&&vb.dataset.v!=VIEW){VIEW=vb.dataset.v;try{localStorage.setItem('sc_view',VIEW)}catch(x){}calc()}return}
   const cm=e.target.closest('.cm');if(cm){if(!cm.disabled){if(cm.dataset.m=='kill')runKill();else if(cm.dataset.m=='kill4')runKill4();else if(cm.dataset.m=='ren')runRen();else if(cm.dataset.m=='cp')runCP();else if(cm.dataset.m=='cpd')runCPD();else if(cm.dataset.m=='pvpmax')runPM()}return}
   const eb=e.target.closest('.eb');if(eb){runBest(+eb.dataset.e);return}
@@ -1966,14 +1966,14 @@ function cmpUpdate(){
   const rvs=own.filter(s=>dies(s)&&revives(s,REVM)).reduce((g,s)=>{const t=TRN[s.name];if(t)g[t.pool]+=Math.floor(s.n*REV/100)*(t.gold||0);return g},{A:0,M:0,U:0}),scost=(rvs.A+rvs.M+rvs.U)/tf;
   const chips=Object.entries(CMPPOOL).filter(([k,[,c]])=>use[k]>0||P[c]>0).map(([k,[nm,c]])=>`<span>${nm} <b>${use[k].toLocaleString()}</b>${use[k]!=(P[c]||0)?' <small>(typed above: '+(P[c]||0).toLocaleString()+')</small>':''}</span>`).join('');
   const scf=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3))+' '+u[i]},
-    d=(a,b,low)=>{if(!(b>0))return'<td></td>';const p=(a/b-1)*100,g=low?p<=0:p>=0;return`<td class="${Math.abs(p)<0.05?'':g?'cmg':'cmb'}">${p>0?'+':''}${p.toFixed(1)} %</td>`};
+    d=(a,b,low)=>{if(!(b>0))return'<td></td>';const p=(a/b-1)*100,t=Math.abs(p)<0.05,pb=!t&&(low?p>0:p<0);return`<td data-w="${pb?'p':'y'}" class="${t?'':pb?'cmg':'cmb'}">${p>0?'+':''}${p.toFixed(1)} %</td>`};
   const EPS=X.EP&&X.EP.st&&X.EP.score?X.EP:null,th=EPS?EPS.st.reduce((q,x)=>q+x[0]*x[1],0):0,f=x=>Math.min(1,x/th)*(EPS?EPS.score:0);
   const Z=1.96,lo=(m,sd)=>Math.max(0,m-Z*sd),hi=(m,sd)=>m+Z*sd,rn=(a,b,fm)=>sd0(a,b)?'':`<small class="cmr">${fm(a)}\u2013${fm(b)}</small>`,sd0=(a,b)=>!(b>a),
     cell=(m,sd,fm,fr)=>fm(fr(m))+(sd>0?rn(fr(lo(m,sd)),fr(hi(m,sd)),fm):'');
   const rows=[['Estimated damage',cell(pr.sc.dmg,pr.sc.sd,fmt,x=>x),cell(sc.dmg,sc.sd,fmt,x=>x),d(sc.dmg,pr.sc.dmg)]];
   if(EPS)rows.push([esc(X.EP.n)+' score',cell(pr.sc.dmg,pr.sc.sd,scf,f),cell(sc.dmg,sc.sd,scf,f),d(sc.dmg,pr.sc.dmg)]);
   rows.push(['Revive cost',scost==rcost?fmt(pr.scost):fmt(pr.scost)+' / '+fmt(pr.rcost),scost==rcost?fmt(scost):fmt(scost)+' / '+fmt(rcost),d(scost,pr.scost,true)],['Strikes',cell(pr.sc.hits,pr.sc.hsd,x=>Math.round(x),x=>x),cell(sc.hits,sc.hsd,x=>Math.round(x),x=>x),d(sc.hits,pr.sc.hits)]);
-  out.innerHTML=`<div class="cmu">${chips}</div><table class="cmt"><tr><th></th><th>Proposed</th><th>Yours</th><th>Difference</th></tr>${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="cmy">${r[2]}</td>${r[3]}</tr>`).join('')}</table><p class="mu cmn">Small numbers: the 95 % range.</p>`;
+  out.innerHTML=`<div class="cmu">${chips}</div><table class="cmt"><tr><th></th><th>Proposed</th><th>Yours</th><th>Difference</th></tr>${rows.map(r=>{const w=(r[3].match(/data-w="(.)"/)||[])[1]=='p';return`<tr><td>${r[0]}</td><td${w?' class="cmy"':''}>${r[1]}</td><td${w?'':' class="cmy"'}>${r[2]}</td>${r[3]}</tr>`}).join('')}</table><p class="mu cmn">Small numbers: the 95 % range.</p>`;
 }
 document.addEventListener('input',e=>{const i=e.target.closest&&e.target.closest('.cmi');if(!i)return;
   const c=i.value.replace(/\D/g,'').replace(/^0+(?=\d)/,'');if(c!==i.value)i.value=c;cmpFit(i);
