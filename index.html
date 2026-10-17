@@ -176,13 +176,13 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <div class="ctl"><div class="mu">View:</div><div class="pbrow"><button type="button" class="vb" data-v="grouped" title="Cards in groups, 4 per line; a group with more cards scrolls sideways">Grouped</button><button type="button" class="vb" data-v="mobile" title="One unit per line: picture, name and number of units">Mobile</button><button type="button" class="vb" data-v="computer" title="Two units per line, in the same order as Mobile">Computer</button></div></div>
 <div class="ctl"><div class="mu">Action:</div><input type="hidden" id="shw" value="hit"><div class="pbrow"><button type="button" class="vb sb" data-sh="hit" title="The units for one hit: the numbers to hit with">Hitting</button><button type="button" class="vb sb" data-sh="train" title="The units to prepare for the hits your Food production pays for, with the chosen Revive setting. The range goes from the units needed for the whole hits to the units needed for all the hits, including the partial one.">Preparation</button><button type="button" class="tc" title="Check whether one more or one less tier of each troop type gives more damage">Tier check</button></div><div id="prepw" class="pw" hidden></div></div>
 <div id="res"></div></div>
-<div class="card" id="cmpc" hidden><h2>Compare with your army</h2><p class="mu cmh">Type the units of your own stacks, with the same Leadership, Dominance and Authority. The battle is run with your stacks (they stand in the game's order: the most health first) and compared with the proposed ones. Empty = none.</p><div class="cmup" id="cmup" hidden><button type="button" id="cmpshot" title="Choose screenshots of your army: Claude reads the unit numbers and fills the boxes (you can still change them)">Read from screenshots</button><input type="file" id="cmpfile" accept="image/*" multiple hidden><span class="mu" id="cmpst"></span></div><div id="cmpb"></div><div id="cmpr"></div></div>
+<div class="card" id="cmpc" hidden><h2>Compare with your army</h2><p class="mu cmh">Type the units of your own stacks, with the same Leadership, Dominance and Authority. The battle is run with your stacks (they stand in the game's order: the most health first) and compared with the proposed ones. Empty = none.</p><div class="cmup" id="cmup"><button type="button" id="cmpshot" title="Choose screenshots of your army (troop squares with a number on a red bar): the numbers are read and put into the boxes (you can still change them)">Read from screenshots</button><input type="file" id="cmpfile" accept="image/*" multiple hidden><span class="mu" id="cmpst"></span></div><div id="cmpb"></div><div id="cmpr"></div></div>
 
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div class="btnr"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.59';
+const APP_VERSION='19.0.60';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1832,33 +1832,87 @@ function cmpSet(X){
   cmpUpdate();
 }
 const cmpFit=i=>{const n=i.value.length;i.style.fontSize=i.closest('.vwr')?'':n>=11?'11px':n>=10?'12px':n>=9?'13px':n>=8?'14px':''};      // a long number gets a smaller font, so it always fits the box
-// Read the unit numbers from screenshots: Claude (the artifact's sample capability) reads them; the button shows only where this view can send images to Claude (not on a copy of the page outside claude.ai)
-let CMPSM=null;
-(async()=>{try{if(!(window.claude&&claude.use))return;const sm=await claude.use('sample');if(!sm)return;const lim=await sm.limits();if(!lim||!lim.images)return;CMPSM={sm,lim};$('cmpfile').accept=lim.images.mediaTypes.join(',');$('cmup').hidden=false}catch(e){}})();
-async function cmpSheet(names){      // a picture of the page's own troop icons with their names: it lets Claude match the screenshots (icons with a tier badge and a number, no names) to the troops
-  const W=118,H=128,cols=6,rows=Math.ceil(names.length/cols),cv=document.createElement('canvas');cv.width=cols*W;cv.height=rows*H;
-  const g=cv.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,cv.width,cv.height);g.textAlign='center';g.fillStyle='#000';g.font='bold 12px sans-serif';
-  await Promise.all(names.map((n,i)=>new Promise(res=>{const x=(i%cols)*W,y=Math.floor(i/cols)*H,im=new Image();
-    im.onload=()=>{g.drawImage(im,x+11,y+4,96,96);res()};im.onerror=()=>res();im.src=IC[n]||''})));
-  names.forEach((n,i)=>{const x=(i%cols)*W,y=Math.floor(i/cols)*H;g.fillText(n.length>17?n.slice(0,16)+'.':n,x+W/2,y+116)});
-  return new Promise(r=>cv.toBlob(r,'image/png'));
-}
+// ---- Read the unit numbers from screenshots (Journal / army screens: a square troop picture with a tier badge and a red bar with the number) - no AI, plain image matching ----
+// 1) the red number bars are found by colour; 2) the picture above each bar is compared with the troop icons of the page (Lab colour + brightness correlation, the red X and the bar left out, a few pixels of shift allowed, one troop per square); 3) the digits in the bar are read by comparing each glyph with templates of the game's number font.
+const GLY={'0':'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000013320000000000000135666653000000000005787678874000000000378753468872000000016885000278740000000288730000688610000004886200005888200000048851000047882000001588510000378820000015885100003788300000158851000037882000000488510000478820000004886200005887100000038873000168861000000178851003787300000000478742368851000000001578777876300000000001578887520000000000000122210000000000000000000000000000000000000000000000000000000000000000000000000000000000000000', '1':'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000110000000000000002346400000000000002468886000000000000488888860000000000001666888600000000000002137886000000000000000168860000000000000001688600000000000000016886000000000000000168860000000000000001688600000000000000016886000000000000000168860000000000000001688600000000000000016886000000000000133588874320000000003888888888620000000038888888886100000000001110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000', '2':'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000012100000000000000345666541000000000027887788840000000000477645788840000000000420002788500000000000000016886000000000000000168860000000000000002888400000000000000048862000000000000002688400000000000000058861000000000000004787200000000000000378630000000000000026874000000000000002688520000000000000158887555554000000014888888888871000000158888888888610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000', '3':'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000012100000000000000135566541000000000005787788862000000000168744688860000000000220001688710000000000000006887100000000000000178860000000000000036885100000000000004688630000000000000178886300000000000001688887500000000000000248887200000000000000157884000000000000000168861000000000000000688510000000000000016884000000000000000478720000000000000148886000000000334456788510000000005788887641000000000036777752000000000000000000000000000000000000000000000000', '4':'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000021000000000000000002664100000000000000268873000000000000004888730000000000000378887300000000000016888873000000000000488888730000000000028865887300000000001587438873000000000048841288730000000002787002887300000000068750038874000000003887644588864100000268888888888885100001688888888888840000001222223588763000000000000002887300000000000000028873000000000000000288730000000000000002887400000000000000027774000000000000000000000000000000000000000000000', '5':'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001111111110000000000356666666400000000005888888886100000000058887777750000000000588510000000000000005874100000000000000058842110000000000000588754211000000000005777776420000000000034456788520000000000000036888500000000000000026887200000000000000047873000000000000000278740000000000000013787300000000000001157862000000000111113677510000000001111367764000000000333456776300000000015667766430000000000035665420000000000000000000000000000000000000000000000000', '6':'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001233332100000000000257888886200000000026888778875000000001688632124540000000048874000012100000001688500000000000000028874111110000000000488752333210000000004888778888520000000058888888888620000001588753235888510000015886300016887100000048862000057872000000488620000478720000003887300004787100000027884111157871000000157862111687500000000378753347862000000001577877876300000000000478887620000000000000012210000000000000000000000000000000000000000000000000000000000000000000000000000000000000000', '7':'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000122222222221000000025666666666641000000467777777888510000004556666668874000000000000001488620000000000000015874100000000000000268720000000000000015775100000000000000268730000000000000004775100000000000000168740000000000000003785200000000000000158740000000000000003686200000000000000158751000000000000002686200000000000000047851000000000000001576400000000000000025652000000000000000356300000000000000014441000000000000000001100000000000000000000000000000000', '8':'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001222221100000000000134555542100000000013677667862000000000168754468851000000003787211478610000000047872113785200000000368732247741000000002578644665300000000003588667642000000000015888886300000000000247767864100000000013575567763100000000356643468861000000014775211578830000000168751003788410000001687522236874100000016765333456541000000156653333554310000000355543344432000000002345555543200000000001344443320000000000000111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000', '9':'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000123211100000000000145666541100000000015887778741000000001588754678841000000037873002588610000000488510003787400000015884100017886100000258841000068871000002588511000688710000015786311127887100000047776322478871000000257776666888710000000246666667887000000000034443478860000000000000002888500000000011000138863000000000111112688510000000131111158873000000003654335677410000000036776677641000000000146666664000000000000001110000000000000000000000000000000'},GCW=20,GCH=34,GTPL={};
+Object.entries(GLY).forEach(([d,t])=>{GTPL[d]=Float32Array.from(t,c=>+c/9)});
+const SCN=48;
+const rgb2lab=(r,g,b)=>{const f=u=>{u/=255;return u>.04045?Math.pow((u+.055)/1.055,2.4):u/12.92},R=f(r),G=f(g),B=f(b),X=(.4124*R+.3576*G+.1805*B)/.95047,Y=.2126*R+.7152*G+.0722*B,Z=(.0193*R+.1192*G+.9505*B)/1.08883,h=t=>t>.008856?Math.cbrt(t):7.787*t+16/116;return[116*h(Y)-16,500*(h(X)-h(Y)),200*(h(Y)-h(Z))]};
+function ccl(m,W,H,c8){      // connected components of a 0/1 mask: bounding box and area of each
+  const seen=new Uint8Array(W*H),out=[],st=new Int32Array(W*H);
+  for(let i0=0;i0<W*H;i0++){if(!m[i0]||seen[i0])continue;
+    let sp=0,x0=W,y0=H,x1=0,y1=0,ar=0;st[sp++]=i0;seen[i0]=1;
+    while(sp){const i=st[--sp],x=i%W,y=(i-x)/W;ar++;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;if(!c8&&dx&&dy)continue;const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=W||ny>=H)continue;const j=ny*W+nx;if(m[j]&&!seen[j]){seen[j]=1;st[sp++]=j}}}
+    out.push({x:x0,y:y0,w:x1-x0+1,h:y1-y0+1,a:ar})}
+  return out}
+function boxMax(m,W,H,kw,kh){      // dilation by a kw x kh box (separable, running count)
+  const t=new Uint8Array(W*H),o=new Uint8Array(W*H),rx=kw>>1,ry=kh>>1;
+  for(let y=0;y<H;y++){let c=0;const b=y*W;for(let x=0;x<Math.min(W,rx);x++)c+=m[b+x];for(let x=0;x<W;x++){if(x+rx<W)c+=m[b+x+rx];if(x-rx-1>=0)c-=m[b+x-rx-1];t[b+x]=c>0?1:0}}
+  for(let x=0;x<W;x++){let c=0;for(let y=0;y<Math.min(H,ry);y++)c+=t[y*W+x];for(let y=0;y<H;y++){if(y+ry<H)c+=t[(y+ry)*W+x];if(y-ry-1>=0)c-=t[(y-ry-1)*W+x];o[y*W+x]=c>0?1:0}}
+  return o}
+function findBars(d,W,H){      // the dark red number bars: closed horizontally (the digits cut them), then boxes about 4.3 times as wide as high
+  const m=new Uint8Array(W*H);for(let i=0;i<W*H;i++){const r=d[4*i],g=d[4*i+1],b=d[4*i+2];m[i]=r>100&&r<145&&g<32&&b<22?1:0}
+  const dl=boxMax(m,W,H,31,3),inv=dl.map(v=>1-v),er=boxMax(inv,W,H,31,3).map(v=>1-v);      // closing = dilation, then erosion
+  return ccl(er,W,H,true).filter(c=>c.w>=60&&c.h>=25&&c.h<=70&&c.w/c.h>=3&&c.w/c.h<=6.5&&c.a>.4*c.w*c.h).sort((a,b)=>Math.round(a.y/60)-Math.round(b.y/60)||a.x-b.x)}
+function tilePrep(src,sx,sy,sw,sh){const c=document.createElement('canvas');c.width=c.height=SCN;const g=c.getContext('2d',{willReadFrequently:true});g.imageSmoothingQuality='high';g.drawImage(src,sx,sy,sw,sh,0,0,SCN,SCN);return g.getImageData(0,0,SCN,SCN).data}
+function tileFeat(d){      // Lab of every pixel, the mask of the pixels that count (no red X glow), the badge colour
+  const n=SCN*SCN,L=new Float32Array(n),A=new Float32Array(n),B=new Float32Array(n),ok=new Uint8Array(n);
+  for(let i=0;i<n;i++){const r=d[4*i],g=d[4*i+1],b=d[4*i+2],l=rgb2lab(r,g,b);L[i]=l[0];A[i]=l[1];B[i]=l[2];ok[i]=(r>150&&r-g>55&&r-b>45)?0:1}
+  const m=new Uint8Array(n);for(let y=0;y<SCN;y++)for(let x=0;x<SCN;x++){let k=1;for(let dy=-1;dy<=1&&k;dy++)for(let dx=-1;dx<=1;dx++){const yy=y+dy,xx=x+dx;if(yy<0||xx<0||yy>=SCN||xx>=SCN||!ok[yy*SCN+xx]){k=0;break}}m[y*SCN+x]=k}
+  const b0=Math.floor(.04*SCN),b1=Math.floor(.26*SCN);let br=0,bg=0,bb=0,bn=0;for(let y=b0;y<b1;y++)for(let x=b0;x<b1;x++){const i=y*SCN+x;br+=d[4*i];bg+=d[4*i+1];bb+=d[4*i+2];bn++}
+  const bs=br+bg+bb+1e-6;return{L,A,B,m,bad:[br/bs,bg/bs,bb/bs]}}
+function ncc(x,y){const n=x.length;let sx=0,sy=0;for(let i=0;i<n;i++){sx+=x[i];sy+=y[i]}sx/=n;sy/=n;let xx=0,yy=0,xy=0;for(let i=0;i<n;i++){const a=x[i]-sx,b=y[i]-sy;xx+=a*a;yy+=b*b;xy+=a*b}return xy/(Math.sqrt(xx*yy)+1e-6)}
+function tileDist(t,p){
+  const y0=Math.floor(.10*SCN),y1=Math.floor(.72*SCN),x0=Math.floor(.12*SCN),x1=Math.floor(.88*SCN),idx=[];
+  for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++)if(t.m[y*SCN+x])idx.push([x,y]);
+  if(idx.length<80)return 9;
+  const ta=idx.map(([x,y])=>t.L[y*SCN+x]),tb=idx.map(([x,y])=>t.A[y*SCN+x]),tc=idx.map(([x,y])=>t.B[y*SCN+x]);let best=9;
+  for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++){
+    const pa=idx.map(([x,y])=>p.L[(y+dy)*SCN+x+dx]),pb=idx.map(([x,y])=>p.A[(y+dy)*SCN+x+dx]),pc=idx.map(([x,y])=>p.B[(y+dy)*SCN+x+dx]);
+    const d=1-ncc(ta,pa)+.6*(1-.5*(ncc(tb,pb)+ncc(tc,pc)));if(d<best)best=d}
+  return best+3*(Math.abs(t.bad[0]-p.bad[0])+Math.abs(t.bad[1]-p.bad[1])+Math.abs(t.bad[2]-p.bad[2]))}
+const GTL={};      // the icons of the page, prepared once
+async function tplOf(n){if(GTL[n])return GTL[n];if(!IC[n])return null;const im=new Image();im.src=IC[n];await im.decode();return GTL[n]=tileFeat(tilePrep(im,0,0,im.naturalWidth,im.naturalHeight))}
+function readNumber(d,W,bar){      // the digits of the bar: the cream pixels, glyph by glyph
+  const {x:bx,y:by,w:bw,h:bh}=bar,f=38/bh,m=new Uint8Array(bw*bh),gr=new Float32Array(bw*bh);
+  for(let y=0;y<bh;y++)for(let x=0;x<bw;x++){const i=4*((by+y)*W+bx+x),r=d[i],g=d[i+1],b=d[i+2];m[y*bw+x]=r>190&&g>150&&b>120?1:0;gr[y*bw+x]=Math.min(1,Math.max(0,(Math.min(r,g,b)-60)/140))}
+  const cs=ccl(m,bw,bh,true).filter(c=>c.a>=6&&c.w*f<=20&&c.h*f>=11).sort((a,b)=>a.x-b.x);
+  let s='';
+  for(const c of cs){
+    const x0=Math.max(0,c.x-2),y0=Math.max(0,c.y-2),x1=Math.min(bw,c.x+c.w+2),y1=Math.min(bh,c.y+c.h+2),cw=Math.max(1,Math.round((x1-x0)*f)),ch=Math.max(1,Math.round((y1-y0)*f)),can=new Float32Array(GCW*GCH);
+    const ox=Math.floor((GCW-cw)/2),oy=Math.round(y0*f);
+    for(let yy=0;yy<ch;yy++)for(let xx=0;xx<cw;xx++){      // area average of the source pixels that fall into this canvas pixel
+      const sy0=y0+yy/f,sy1=y0+(yy+1)/f,sx0=x0+xx/f,sx1=x0+(xx+1)/f;let sum=0,n=0;
+      for(let sy=Math.floor(sy0);sy<Math.min(y1,Math.ceil(sy1));sy++)for(let sx=Math.floor(sx0);sx<Math.min(x1,Math.ceil(sx1));sx++){sum+=gr[sy*bw+sx];n++}
+      const X=ox+xx,Y=oy+yy;if(n&&X>=0&&X<GCW&&Y>=0&&Y<GCH)can[Y*GCW+X]=sum/n}
+    let bd=null,bs=1e9;
+    for(const dg in GTPL){const t=GTPL[dg];let best=1e9;
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){let e=0;for(let y=0;y<GCH;y++)for(let x=0;x<GCW;x++){const yy=((y-dy)%GCH+GCH)%GCH,xx=((x-dx)%GCW+GCW)%GCW;e+=Math.abs(t[y*GCW+x]-can[yy*GCW+xx])}if(e<best)best=e}
+      if(best<bs){bs=best;bd=dg}}
+    s+=bd}
+  return s}
+async function scanShot(file,names){      // one screenshot -> [{name, n, d}] (d = how far the picture is from the troop: smaller is better)
+  const bm=await createImageBitmap(file),sc=1080/bm.width,W=1080,H=Math.round(bm.height*sc),cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const g=cv.getContext('2d',{willReadFrequently:true});g.drawImage(bm,0,0,W,H);const d=g.getImageData(0,0,W,H).data;
+  const bars=findBars(d,W,H),tpl={};for(const n of names)tpl[n]=await tplOf(n);
+  const tiles=bars.map(b=>{const x0=b.x-14,y1=b.y+b.h+8,y0=y1-(b.w+28),sz=b.w+28;return{bar:b,f:tileFeat(tilePrep(cv,x0,y0,sz,sz))}});
+  const pairs=[];tiles.forEach((t,i)=>names.forEach(n=>{if(tpl[n])pairs.push([tileDist(t.f,tpl[n]),i,n])}));
+  pairs.sort((a,b)=>a[0]-b[0]);const usedT=new Set(),usedN=new Set(),out=[];      // one troop per square: the best pairs first
+  for(const [dd,i,n] of pairs){if(usedT.has(i)||usedN.has(n)||dd>1.9)continue;usedT.add(i);usedN.add(n);const s=readNumber(d,W,tiles[i].bar);out.push({name:n,n:s?+s:0,d:dd})}
+  return{found:bars.length,list:out}}
 async function cmpRead(){
-  const fi=$('cmpfile'),st=$('cmpst'),bt=$('cmpshot');let files=[...fi.files];fi.value='';
-  if(!files.length||!CMPSM||!CMPX)return;
-  const {sm,lim}=CMPSM,mx=lim.images.maxCount,names=CMPX.items.map(s=>s.name);let note='';
-  if(files.length>mx-1){files=files.slice(0,mx-1);note=' Only the first '+(mx-1)+' screenshots were read.'}      // one image of the call is the reference sheet
-  st.textContent='Reading '+files.length+' screenshot'+(files.length>1?'s':'')+' ...';bt.disabled=true;
+  const fi=$('cmpfile'),st=$('cmpst'),bt=$('cmpshot');const files=[...fi.files];fi.value='';
+  if(!files.length||!CMPX)return;
+  const names=CMPX.items.map(s=>s.name);st.textContent='Reading '+files.length+' screenshot'+(files.length>1?'s':'')+' ...';bt.disabled=true;
   try{
-    const sheet=await cmpSheet(names);
-    const r=await sm.json('The FIRST image is a reference sheet: the pictures of the troops with their names under them (the picture has the tier badge in its corner: I, II or a Roman number). The other images are screenshots from the game Total Battle: each troop is a square picture with a tier badge and a number of units on a bar at the bottom (the red X marks mean lost units). Read the number of units of every troop in the screenshots and match each square to a troop of the reference sheet by the picture AND the tier badge. These are the possible troops: '+names.join(', ')+'. Return ONLY a JSON object: {"units":{"<troop name exactly as in the list>":<integer>},"unclear":["<anything you saw but could not match or read>"]}. Numbers may have thousands separators or K / M suffixes: return the full integer. A troop that is in more than one screenshot counts once. Do not guess.',{images:[sheet,...files],modelTier:'default',cache:false});
-    let ok=0;const bad=[];
-    Object.entries((r&&r.units)||{}).forEach(([k,v])=>{const n=Math.floor(+String(v).replace(/[^\d.]/g,''));if(names.includes(k)&&n>0){CMPV[k]=String(n);ok++}else bad.push(k)});
+    const got={};let squares=0;
+    for(const f of files){const r=await scanShot(f,names);squares+=r.found;r.list.forEach(x=>{if(x.n>0&&(got[x.name]==null||x.n>got[x.name]))got[x.name]=x.n})}
+    const ok=Object.keys(got).length;Object.entries(got).forEach(([k,v])=>CMPV[k]=String(v));
     $('cmpb').querySelectorAll('.cmi').forEach(i=>{i.value=CMPV[i.dataset.n]||'';cmpFit(i)});
     cmpUpdate();save();
-    const un=[...(Array.isArray(r&&r.unclear)?r.unclear:[]),...bad.map(x=>x+' (not in the list)')];
-    st.textContent='Read '+ok+' troop'+(ok==1?'':'s')+'. Check the numbers.'+(un.length?' Not read: '+un.join('; ')+'.':'')+note;
-  }catch(e){st.textContent=e&&e.code=='not_granted'?'Reading screenshots is not allowed for this page.':e&&e.code=='rate_limited'?'Too many requests, try again in a minute.':'Could not read the screenshots'+(e&&e.message?': '+e.message:'.')}
+    st.textContent=squares?'Read '+ok+' troop'+(ok==1?'':'s')+' from '+squares+' squares. Check the numbers.'+(squares>ok?' '+(squares-ok)+' square'+(squares-ok==1?'':'s')+' not matched to a troop of the list (a tier that is not ticked?), or shown twice.':''):'No troop squares with a red number bar found in the screenshot'+(files.length>1?'s':'')+'.';
+  }catch(e){st.textContent='Could not read the screenshots'+(e&&e.message?': '+e.message:'.')}
   finally{bt.disabled=false}
 }
 $('cmpshot').addEventListener('click',()=>$('cmpfile').click());$('cmpfile').addEventListener('change',cmpRead);
