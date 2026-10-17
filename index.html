@@ -184,7 +184,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.81';
+const APP_VERSION='19.0.82';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1938,7 +1938,7 @@ function cmpDiff(pn){      // under every box: how many units your stack has mor
 function cmpUpdate(){
   const X=CMPX,out=$('cmpr');if(!X||$('cmpc').hidden)return;
   const P=X.P,own=X.items.map(s=>({...s,n:Math.floor(+CMPV[s.name]||0)})).filter(s=>s.n>0);
-  if(!own.length){out.innerHTML='<p class="mu">Type the units of your stacks above to see the comparison.</p>';return}
+  if(!own.length){out.innerHTML='';return}
   const ix=new Map(X.ordp.map((n,i)=>[n,i]));
   own.sort((a,b)=>b.n*b.hp-a.n*a.hp||b.n*b.str-a.n*a.str||(ix.get(a.name)??999)-(ix.get(b.name)??999));      // the game's order: the most total health first, then the most total strength
   const use={A:0,M:0,U:0};own.forEach(s=>use[s.p]+=s.n*s.cost);
