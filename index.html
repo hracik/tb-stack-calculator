@@ -184,7 +184,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.86';
+const APP_VERSION='19.0.87';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2329,8 +2329,9 @@ async function tierHint(gen,body0){
   {const seed=[];['E','S','G','M'].forEach(c=>{const tp=topOf(c);if(tp)seed.push(c+tp)});
    if(seed.length){const b0=await run(seed);if(b0==null)return;const r2=await climb(seed,b0);if(!r2)return;if(r2.best>base*(1+HGAIN))res=r2}}
   {const r3=await climb(sel0.slice(),base);if(!r3)return;if(r3.best>res.best*(1+1e-9)&&r3.best>base*(1+HGAIN))res=r3}      // 19.1: a second climb from YOUR ticks too (the climb from the top tiers can stop at a worse set than yours, e.g. E9+E7 where E9+E8 is better); the best set of the two wins
-  {const tops={};types.forEach(([c])=>{const t=c=='E'&&!topOf('E')?(gT[0]||0):topOf(c);if(t)tops[c]=t});      // 19.1: a grid of the sets that go down from the top tier of every type by 1 to 4 tiers (up to 256 calculations): tiers that only pay together (E8 + S8 + M7) are found, which one-by-one steps never see
-    const cs=Object.keys(tops),opts=cs.map(c=>{const lo=c=='M'?3:1,o=[];for(let k=1;k<=4;k++){const a=[];for(let t=tops[c];t>tops[c]-k&&t>=lo;t--)a.push(c+t);if(a.length&&!o.some(x=>x.length==a.length))o.push(a)}return o});
+  {const tops={};types.forEach(([c])=>{const t=c=='E'&&!topOf('E')?(gT[0]||0):topOf(c);if(t)tops[c]=t});      // 19.1: a grid of the sets that go down from the top tier of every type by 1 to 3 tiers: tiers that only pay together (E8 + S8 + M7) are found, which one-by-one steps never see
+    const gs=[];Object.keys(tops).forEach(c=>{const g=gs.find(x=>(x[0]=='G'&&c=='S')||(x[0]=='S'&&c=='G'));if(g)g.push(c);else gs.push([c])});      // Guardsmen and Specialists share one depth (in every test the best set had them equal; the one-by-one steps below fix the rest): 3 x 3 x 3 = 27 calculations instead of 256
+    const cs=gs,opts=gs.map(g=>{const o=[];for(let k=1;k<=3;k++){const a=[];g.forEach(c=>{const lo=c=='M'?3:1;for(let t=tops[c];t>tops[c]-k&&t>=lo;t--)a.push(c+t)});if(a.length&&!o.some(x=>x.length==a.length))o.push(a)}return o});
     let bs=null,bd=0;const rec=async(i,acc)=>{if(i==cs.length){const d=await run(acc);if(d==null)return false;if(d>bd){bd=d;bs=acc}return true}for(const a of opts[i])if(!(await rec(i+1,[...acc,...a])))return false;return true};
     if(cs.length){if(!(await rec(0,[])))return;if(bs){const r4=await climb(bs.slice(),bd);if(!r4)return;if(r4.best>res.best*(1+1e-9)&&r4.best>base*(1+HGAIN))res=r4}}}
   if(gen!==HINTGEN)return;
