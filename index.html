@@ -165,7 +165,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.22';
+const APP_VERSION='19.0.23';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -392,7 +392,7 @@ function drawTabs(){
 }
 function newName(){let n=tabs.length+1;while(tabs.some(t=>t.name==='Tab '+n))n++;return 'Tab '+n}
 function switchTab(i){if(i==active)return;save();active=i;delPending=false;load(tabs[i].data);drawTabs();refresh()}
-function addTab(){save();tabs.push({name:newName(),data:clone(BLANK)});active=tabs.length-1;delPending=false;load(tabs[active].data);drawTabs();refresh()}
+function addTab(){save();tabs.push({name:newName(),data:clone(NEWDEF||BLANK)});active=tabs.length-1;delPending=false;load(tabs[active].data);drawTabs();refresh()}
 function dupTab(){save();const src=tabs[active];tabs.splice(active+1,0,{name:src.name+' copy',data:clone(src.data)});active++;delPending=false;drawTabs();refresh()}
 function delTab(){tabs.splice(active,1);active=Math.min(active,tabs.length-1);delPending=false;load(tabs[active].data);drawTabs();refresh()}
 function rename(i){
@@ -502,15 +502,7 @@ function parseKrappy(txt){      // the short text -> the same object the first (
   }
   return r;
 }
-function importText(txt){
-  let r=parseKrappy(txt);
-  if(!r){      // the first version: JSON between the first { and the last }
-    const a=txt.indexOf('{'),b=txt.lastIndexOf('}');if(a<0||b<a)return{ok:false,msg:'No inputs found in the text.'};
-    try{r=JSON.parse(txt.slice(a,b+1))}catch(e){return{ok:false,msg:'The text is incomplete or was changed: paste the whole exported text.'}}
-    if(!r||typeof r!='object'||!r.vals||typeof r.vals!='object')return{ok:false,msg:'No inputs found in the text.'};
-    r.got=Object.keys(r.vals).length;
-  }
-  if(!r.got)return{ok:false,msg:'No inputs found in the text.'};
+function krappyData(r){      // the inputs of an export as a tab's data (used by the import and by the default set of a new tab)
   const d=clone(BLANK),list=x=>x.filter(q=>typeof q=='string'&&q.length<=40).slice(0,300),own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
   let n=0;
   for(const [id,val] of Object.entries(r.vals)){      // only the boxes this page has; a box the text lacks keeps the blank value (0)
@@ -528,6 +520,18 @@ function importText(txt){
   d.mode=XMODES.includes(r.mode)?r.mode:'max';d.enemy=XENEMY.includes(String(r.enemy))?String(r.enemy):'4';
   d.le=r.le&&typeof r.le=='object'&&XMODES.includes(r.le.mode)&&XENEMY.includes(String(r.le.enemy))?{mode:r.le.mode,enemy:String(r.le.enemy)}:{mode:'max',enemy:'4'};
   d.lp=['cp','cpd','pvpmax','ren'].includes(r.lp)?r.lp:'cp';
+  return{d,n};
+}
+function importText(txt){
+  let r=parseKrappy(txt);
+  if(!r){      // the first version: JSON between the first { and the last }
+    const a=txt.indexOf('{'),b=txt.lastIndexOf('}');if(a<0||b<a)return{ok:false,msg:'No inputs found in the text.'};
+    try{r=JSON.parse(txt.slice(a,b+1))}catch(e){return{ok:false,msg:'The text is incomplete or was changed: paste the whole exported text.'}}
+    if(!r||typeof r!='object'||!r.vals||typeof r.vals!='object')return{ok:false,msg:'No inputs found in the text.'};
+    r.got=Object.keys(r.vals).length;
+  }
+  if(!r.got)return{ok:false,msg:'No inputs found in the text.'};
+  const {d,n}=krappyData(r);
   let nm=typeof r.name=='string'&&r.name.trim()?r.name.trim().slice(0,24):'Imported';const base=nm;let k=2;
   while(tabs.some(t=>t.name===nm))nm=base.slice(0,20)+' '+k++;
   save();tabs.push({name:nm,data:d});active=tabs.length-1;delPending=false;load(d);drawTabs();refresh();
@@ -2186,6 +2190,10 @@ DEF=snap();
 // Every tab starts blank: Leadership, Dominance, the basic bonuses, the monster bonuses (with the Double strike) and the Food production are all 0. BLANK is also the fallback for a saved tab that lacks a box (a box added by a newer version), so a release never puts a number of ours into a tab. The numbers a tab has saved are never replaced by a release: they live in localStorage under KEY, which must stay the same forever.
 const BLANK=clone(DEF);
 ['capA','capM','foodP','bh_G','bs_G','bh_S','bs_S','bh_M','bs_M','bh_E','bs_E','bs_Epic','bh_Players','bs_Players',...['Giant','Elemental','Dragon','Beast'].flatMap(k=>['bh_'+k,'bs_'+k,'dh_'+k])].forEach(id=>{if(id in BLANK.vals)BLANK.vals[id]='0'});
+const NEWTAB_TXT=`Krappy Calculator v19
+n=Default L=1847938 D=318582 F=22334400 R=all epic=Arcanomancer sEp=5101 ds_A=26 dd_A=40.3 hG=2492 sG=5526.5 hS=2492 sS=5382.5 hM=2487 sM=5482.5 hE=2492 sE=5382.5 hGi=100 sGi=100 dGi=5 hEl=100 sEl=100 dEl=5 hDr=100 sDr=100 dDr=5 hBe=100 sBe=100 dBe=5 T=E89S89G89M789 lp=cp
+`;      // 19.0.23 the default set of a NEW tab (+) and of the tabs of a fresh page; a saved tab never changes, and BLANK (0) stays the fallback for a box a saved tab lacks
+const NEWDEF=(()=>{try{const r=parseKrappy(NEWTAB_TXT);return r&&r.got?krappyData(r).d:null}catch(e){return null}})();
 const START_TABS=['1 cap','3 cap','Hero','Hero+3 cap'];    // the tabs a new page starts with; they are ordinary tabs (rename, duplicate, delete)
 try{
   const r=JSON.parse(localStorage.getItem(KEY)||'null');
@@ -2194,7 +2202,7 @@ try{
     // an older save with only the single default tab "Main": the four start tabs replace it, all with that tab's settings
     if((r.ver|0)<3&&tabs.length==1&&tabs[0].name==='Main'){const base=tabs[0].data;tabs=START_TABS.map(n=>({name:n,data:clone(base)}));active=0}}
 }catch(e){}
-if(!tabs)tabs=START_TABS.map(n=>({name:n,data:clone(BLANK)}));
+if(!tabs)tabs=START_TABS.map(n=>({name:n,data:clone(NEWDEF||BLANK)}));
 load(tabs[active].data);
 ready=true;
 drawTabs();
