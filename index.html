@@ -165,7 +165,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.25';
+const APP_VERSION='19.0.26';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -850,7 +850,8 @@ const TRN={};TR.forEach(t=>TRN[t.name]=t);
 const ddf=(t,P)=>(1+(P['dd'+t.cls]||0)/100)*(1+(P.ddA||0)/100);      // 19.0.9: double damage chance of the class and of the whole army, on average
 const dsp=(t,P)=>P.one?0:t.cls=='M'?(P['dh'+t.type]||0)/100:t.beast?(P.dhBeast||0)/100:0;      // 19.0.17: the Double strike chance of a monster / Beast unit
 const dsc=(t,P)=>P.enemy<=4?(P.pvp&&t.cls=='S'?2:1)/vsFactor(t,P):1;      // the share of the first hit that the 2nd hit of the Double strike deals: 3 and 4 enemy stacks: the 2nd hit has NO squad bonus (base strength only); 6 and 8 stacks (2 mounted stacks and so on): it can still use its bonus, so the whole first hit again (1)
-const dhf=(t,P)=>{const d=ddf(t,P),p=dsp(t,P);return p?d*(1+p*dsc(t,P)):d};      // the average damage factor of the troop: Double damage x the second hit of the Double strike. On 3 and 4 enemy stacks the 2nd hit does NOT apply the squad bonus (the bonus against the enemy): it deals the base strength only, so it adds p x base / (base + squad bonus) to the damage of the first hit; on 6 and 8 stacks it adds p x the whole first hit
+const dst=(t,P)=>P.one?0:Math.min(1,dsp(t,P)+(P.dsA||0)/100);      // 19.0.26: the whole Double strike chance of a unit = its own (monster / Beast) + the army's, in ONE roll
+const dhf=(t,P)=>{const d=ddf(t,P),p=dst(t,P);return p?d*(1+p*dsc(t,P)):d};      // the average damage factor of the troop: Double damage x the second hit of the Double strike. On 3 and 4 enemy stacks the 2nd hit does NOT apply the squad bonus (the bonus against the enemy): it deals the base strength only, so it adds p x base / (base + squad bonus) to the damage of the first hit; on 6 and 8 stacks it adds p x the whole first hit
 // ONE damage computation for every mode: base strength x (1 + class strength + epic strength + monster strength + troop-type strength (where they
 // apply) + the troop's own bonus against this enemy, all ADDED in one pool), then x (1 + Double strike) for monsters. The modes differ only in the dying-order rule.
 const dmgFactor=(t,P)=>vsFactor(t,P)*dhf(t,P);            // what the troop's own bonus and Double strike add to the same stack without them
@@ -1659,8 +1660,8 @@ function score(P,list,order,eng){      // eng: the ranking of the order engine (
   // 19.0.20: the spread: every strike of a stack is its own roll (the class Double damage, the army Double damage, the monsters' Double strike and the army Double strike are independent): the damage of a strike is its average x F/mean(F), F = the product of (1 + a 0/1 roll) per source. The strikes are independent: the variances add up.
   const pa=(P.ddA||0)/100,ps=(P.dsA||0)/100,E1=(c,p)=>1+c*p,E2=(c,p)=>1+(2*c+c*c)*p;let vr=0,dmg=0,H=0,hv=0;
   L.forEach((s,i)=>{const t0=TRN[s.name],pm=t0?dsp(t0,P):0,pc=(P['dd'+s.r[0]]||0)/100,cs=P.enemy<=4?(P.pvp&&s.r[0]=='S'?2:1)/(s.f||1):1,
-      pt=Math.min(1,pm+ps),      // 19.0.21: a monster / Beast unit has ONE Double strike chance: its own group chance and the army chance ADDED together (one roll); dm already holds the monster's own part (dhf)
-      rv=E2(1,pc)*E2(1,pa)*E2(cs,pt)/(Math.pow(E1(1,pc)*E1(1,pa)*E1(cs,pt),2))-1,M=dm[i]*E1(cs,pt)/E1(cs,pm);
+      pt=P.one?0:Math.min(1,pm+ps),      // 19.0.21: a monster / Beast unit has ONE Double strike chance: its own group chance and the army chance ADDED together (one roll); dm already holds the monster's own part (dhf)
+      rv=E2(1,pc)*E2(1,pa)*E2(cs,pt)/(Math.pow(E1(1,pc)*E1(1,pa)*E1(cs,pt),2))-1,M=dm[i]*E1(cs,pt)/E1(cs,t0?pt:0);
     dmg+=M*hit[i];vr+=M*M*rv*hit[i];H+=hit[i]*(1+pt);hv+=hit[i]*pt*(1-pt)});
   return{dmg,hits:H,stacks:L.length,sd:Math.sqrt(vr),hsd:Math.sqrt(hv)};
 }
