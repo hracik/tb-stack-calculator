@@ -19,8 +19,8 @@ input::placeholder{color:var(--mu);opacity:.55}
 @media(max-width:480px){h1{font-size:19px}}
 @media(max-width:380px){h1{font-size:17px}}h2{font-size:15px;margin:0 0 10px;color:var(--ac);border-bottom:1px solid var(--bd);padding-bottom:6px}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin:12px 0}
-.mdi{position:relative;margin:12px 0 4px;padding:10px 14px;background:#27230f;border:1px solid var(--bd);border-radius:10px;color:var(--tx);font-size:15px;line-height:1.45}
-.mdi::before{content:"";position:absolute;top:-7px;left:30px;width:12px;height:12px;background:#27230f;border-left:1px solid var(--bd);border-top:1px solid var(--bd);transform:rotate(45deg)}
+.mdi{position:relative;margin:12px 0 4px;padding:8px 12px;background:#2a2112;border:1px solid var(--ac);border-radius:8px;color:var(--tx);font-size:14px;line-height:1.35}
+.mdi::before{content:"";position:absolute;top:-6px;left:50%;width:10px;height:10px;margin-left:-5px;background:#2a2112;border-left:1px solid var(--ac);border-top:1px solid var(--ac);transform:rotate(45deg)}
 .mdi[hidden],.mrow[hidden],.bc[hidden],.mod[hidden],.mnt .mnx,.mnt[aria-expanded=true] .mni,.menu[hidden],.don[hidden],.mbar .hlp[hidden],.amo[hidden],#ap[hidden],#hp[hidden],#fmp[hidden],#epp[hidden],.imp[hidden],.pw[hidden]{display:none}.mdi b{color:var(--ac);font-weight:600;letter-spacing:.2px}.mdi:not([hidden]){display:flex;align-items:center;gap:14px}.mdi .mi{width:64px;flex:none}#mrE button,#mrP button{width:128px!important;flex:0 0 128px;margin:0}#mrE,#mrP{gap:8px}#mrE,#mrP{border-top:0;margin-top:0;padding-top:0}
 .sc{overflow-x:auto}table{border-collapse:collapse;width:100%}
 th,td{padding:4px 8px;text-align:left;font-size:14px;white-space:nowrap}th{color:var(--mu);font-weight:600}
@@ -184,7 +184,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.73';
+const APP_VERSION='19.0.74';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
