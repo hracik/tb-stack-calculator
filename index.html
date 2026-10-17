@@ -186,7 +186,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.91';
+const APP_VERSION='19.0.92';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -245,8 +245,17 @@ $('rare').innerHTML=[['Guardsmen','G'],['Specialists','S'],['Siege Engines','E']
 $('bonx').innerHTML=`<div class="bc"><b>Entire army</b>`+`<div class="bi" id="bcEpic"><span>Strength vs. epics</span><input id="bs_Epic" type="text" inputmode="decimal" step="0.5" value="3747"></div>`+
   `<div id="bcPlayers">${row('Health vs. players','bh_Players',0)}${row('Strength vs. players','bs_Players',0)}</div>`+
   row('Double damage','dd_A',0)+row('Double strike','ds_A',0)+'</div>';      // 19.0.12: the Army bonuses are plain rows, no blocks (the epic / players rows follow the Attack switch; Double strike and Double damage are the chance of the whole army in %, counted on average)
-const EPICS=[{n:'Arcanomancer',      // raid:true marks a Raid epic: the 2nd hit of the Double strike keeps the squad bonus (4-stack rules otherwise)
-  score:800e6,st:[[47771360,210000],[58666640,171000],[54000000,300000],[4133333360,2160]]}];      // 19.0.19 the epic monsters: name, the total score, the stacks [units, health of one unit]
+const EPICS=[      // the epic monsters, alphabetical: n = name, score = the total score (null: not set yet), st = the stacks [units, health of one unit] (null: not set yet), en = the attack modes it can be hit in (the enemy stacks: 3-4 or 6-8), raid:true marks a Raid epic: the 2nd hit of the Double strike keeps the squad bonus (4-stack rules otherwise)
+  {n:'Arachne',score:300e6,st:null,en:[6,8]},
+  {n:'Arcanomancer',score:800e6,st:[[47771360,210000],[58666640,171000],[54000000,300000],[4133333360,2160]],en:[3,4]},
+  {n:'Armageddon/Basilisk',score:750e6,st:null,en:[3,4]},
+  {n:'Briareus',score:null,st:null,en:[3,4]},
+  {n:'Doomsday',score:50e6,st:null,en:[6,8]},
+  {n:'Fenrir',score:750e6,st:null,en:[3,4]},
+  {n:'Hellforge',score:150e6,st:null,en:[3,4]},
+  {n:'J\u00f6rmungandr/Chimera',score:750e6,st:null,en:[3,4],raid:true}];      // 19.0.19 the epic monsters
+const enemyNow=()=>{const m=$('mode').value;return m=='kill'?3:m=='kill4'?4:m=='ren'?8:m=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4},      // the number of enemy stacks of the chosen attack mode
+  epOk=e=>e.en.includes(enemyNow()),epCur=()=>{const e=EPICS.find(x=>x.n==$('epic').value);return e&&epOk(e)?e:null};      // an epic counts only in the modes it can be hit in
 $('epic').innerHTML='<option value="">-</option>'+EPICS.map(e=>`<option value="${e.n}">${e.n}</option>`).join('');
 const DHV=Array.from({length:11},(_,i)=>i/2);                // Double strike: 0 - 5 % in steps of 0.5
 const snapDH=x=>{x=parseFloat(String(x).replace(',','.'));if(!isFinite(x))x=0;return Math.min(5,Math.max(0,Math.round(x*2)/2))};
@@ -807,7 +816,7 @@ function drawEP(){
   if(!EPM){p.innerHTML='';return}
   const cur=$('epic').value;
   p.innerHTML='<div class="amh"><div class="amt">Choose the epic monster</div><button class="amx" data-act="eclose" aria-label="Close" title="Close">\u00d7</button></div>'
-    +'<div class="epl">'+EPICS.map(e=>'<button type="button" data-act="epick" data-e="'+esc(e.n)+'"'+(e.n==cur?' class="on"':'')+'><span>'+esc(e.n)+'</span><small>'+sh0(e.score)+' score</small></button>').join('')
+    +'<div class="epl">'+EPICS.filter(epOk).map(e=>'<button type="button" data-act="epick" data-e="'+esc(e.n)+'"'+(e.n==cur?' class="on"':'')+'><span>'+esc(e.n)+'</span><small>'+(e.score?sh0(e.score)+' score':'score not set yet')+'</small></button>').join('')
     +'<button type="button" data-act="epick" data-e=""'+(cur?'':' class="on"')+'><span>None</span><small>no score estimate</small></button></div>';
 }
 const sh0=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3)).toString()+' '+u[i]};
@@ -848,7 +857,7 @@ const fmt=x=>x>=1e12?(x/1e12).toFixed(2)+' T':x>=1e9?(x/1e9).toFixed(2)+' B':x>=
 // ---- settings, read once per calculation ----
 function getP(){
   if($('mode').value=='maxl')$('mode').value='max';   // the near-maximum modes were removed (old saved tabs)
-  const p={d:0,kill:$('mode').value=='kill'||$('mode').value=='kill4',kill4:$('mode').value=='kill4',raid:!!(EPICS.find(e=>e.n==$('epic').value)||{}).raid,ren:$('mode').value=='ren',capA:v('capA'),capM:v('capM'),capU:v('capU'),enemy:$('mode').value=='kill'?3:$('mode').value=='kill4'?4:$('mode').value=='ren'?8:$('mode').value=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4,cat:DEFCAT.slice()};
+  const p={d:0,kill:$('mode').value=='kill'||$('mode').value=='kill4',kill4:$('mode').value=='kill4',raid:!!(epCur()||{}).raid,ren:$('mode').value=='ren',capA:v('capA'),capM:v('capM'),capU:v('capU'),enemy:enemyNow(),cat:DEFCAT.slice()};
   ['G','S','M','E','Epic','Players','Giant','Elemental','Dragon','Beast','Melee','Mounted','Ranged','Flying'].forEach(k=>{p['h'+k]=$('bh_'+k)?v('bh_'+k):0;p['s'+k]=$('bs_'+k)?v('bs_'+k):0});
   ['Giant','Elemental','Dragon','Beast'].forEach(k=>{p['dh'+k]=$('dh_'+k)?snapDH($('dh_'+k).value):0});
   p.pm=$('mode').value=='pvpmax';                // PvP Max damage: a fully equipped enemy (4 stacks, every kind of troop), all bonuses and the Double strike count, no Epic strength
@@ -1956,9 +1965,9 @@ function cmpUpdate(){
   const chips=Object.entries(CMPPOOL).filter(([k,[,c]])=>use[k]>0||P[c]>0).map(([k,[nm,c]])=>`<span>${nm} <b>${use[k].toLocaleString()}</b>${use[k]!=(P[c]||0)?' <small>(typed above: '+(P[c]||0).toLocaleString()+')</small>':''}</span>`).join('');
   const scf=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3))+' '+u[i]},
     d=(a,b,low)=>{if(!(b>0))return'<td></td>';const p=(a/b-1)*100,g=low?p<=0:p>=0;return`<td class="${Math.abs(p)<0.05?'':g?'cmg':'cmb'}">${p>0?'+':''}${p.toFixed(1)} %</td>`};
-  const th=X.EP?X.EP.st.reduce((q,x)=>q+x[0]*x[1],0):0,f=x=>Math.min(1,x/th)*X.EP.score;
+  const EPS=X.EP&&X.EP.st&&X.EP.score?X.EP:null,th=EPS?EPS.st.reduce((q,x)=>q+x[0]*x[1],0):0,f=x=>Math.min(1,x/th)*(EPS?EPS.score:0);
   const rows=[['Estimated damage',fmt(pr.sc.dmg),fmt(sc.dmg),d(sc.dmg,pr.sc.dmg)]];
-  if(X.EP)rows.push([esc(X.EP.n)+' score',scf(f(pr.sc.dmg)),scf(f(sc.dmg)),d(sc.dmg,pr.sc.dmg)]);
+  if(EPS)rows.push([esc(X.EP.n)+' score',scf(f(pr.sc.dmg)),scf(f(sc.dmg)),d(sc.dmg,pr.sc.dmg)]);
   rows.push(['Revive cost',scost==rcost?fmt(pr.scost):fmt(pr.scost)+' / '+fmt(pr.rcost),scost==rcost?fmt(scost):fmt(scost)+' / '+fmt(rcost),d(scost,pr.scost,true)],['Strikes',Math.round(pr.sc.hits),Math.round(sc.hits),d(sc.hits,pr.sc.hits)]);
   out.innerHTML=`<div class="cmu">${chips}</div><table class="cmt"><tr><th></th><th>Proposed</th><th>Yours</th><th>Difference</th></tr>${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="cmy">${r[2]}</td>${r[3]}</tr>`).join('')}</table>`;
 }
@@ -2227,11 +2236,12 @@ function calcRun(){
   const RZ=2.576,rg=(a,b)=>{const A=fmt(a).split(' '),B=fmt(b).split(' ');return A[1]==B[1]?A[0]+'\u2013'+B[0]+(B[1]?' '+B[1]:''):fmt(a)+' \u2013 '+fmt(b)};      // 19.0.16: a range, e.g. 4.90\u20135.30 T
   const dRange=sc.sd>0?[Math.max(0,sc.dmg-RZ*sc.sd),sc.dmg+RZ*sc.sd]:null,hRange=sc.hsd>0?[Math.max(0,sc.hits-RZ*sc.hsd),sc.hits+RZ*sc.hsd]:null;
   const tile=(c,l,v,sub,tip)=>`<div class="stt ${c}"${tip?` title="${esc(tip)}"`:''}><div class="stl">${l}</div><div class="stv">${v}</div>${sub?`<div class="sts">${sub}</div>`:''}</div>`;
-  const EP=ATK=='epics'?EPICS.find(e=>e.n==$('epic').value):null;
+  const EP=ATK=='epics'?epCur():null;
   const sh=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return[(+v.toPrecision(3)).toString(),u[i]]};      // 118000000 -> ['118','M']
   let scoreTile='';
   if(ATK=='epics'&&!EP)scoreTile=tile('std ste','Epic score','<span class="epb">Choose epic \u25be</span>','','').replace('<div class="stt','<div data-act="eopen" class="stt');
-  if(EP){const th=EP.st.reduce((q,x)=>q+x[0]*x[1],0),f=d=>Math.min(1,d/th)*EP.score,lo=f(dRange?dRange[0]:sc.dmg),hi=f(dRange?dRange[1]:sc.dmg),[a,ua]=sh(lo),[b,ub]=sh(hi);
+  if(EP&&!(EP.st&&EP.score))scoreTile=tile('std',esc(EP.n)+' score \u25be','\u2013',EP.score?'stacks not set yet':'score not set yet','').replace('<div class="stt','<div data-act="eopen" class="stt');
+  else if(EP){const th=EP.st.reduce((q,x)=>q+x[0]*x[1],0),f=d=>Math.min(1,d/th)*EP.score,lo=f(dRange?dRange[0]:sc.dmg),hi=f(dRange?dRange[1]:sc.dmg),[a,ua]=sh(lo),[b,ub]=sh(hi);
     scoreTile=tile('std',esc(EP.n)+' score \u25be',(dRange&&a!=b)||(!dRange&&false)?(ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub):a+' '+ua,(dRange?'99 % range \u00b7 average '+sh(f(sc.dmg)).join(' '):''),'').replace('<div class="stt','<div data-act="eopen" class="stt')}
   $('rsm').innerHTML=`<div class="stl stch">Summary</div><div class="stg">${scoreTile}${tile('','Revive cost',scost==rcost?kmb(scost):`${kmb(scost)} <span class="stu">/</span> ${kmb(rcost)}`,'',rtip+' ('+(scost==rcost?num(scost):num(scost)+' / '+num(rcost))+' gold)')}${tile(ATK=='epics'?'':'std','Estimated damage',dRange?rg(dRange[0],dRange[1]):fmt(sc.dmg),dRange?'99 % range \u00b7 average '+fmt(sc.dmg):tgt?`level ${lvN} ${sc.dmg>=tgt?'reached':'short by '+((1-sc.dmg/tgt)*100).toFixed(1)+' %'}`:'',dRange?'99 % of the battles end between these two numbers (every strike rolls its own Double strike / Double damage chance)':tgt?`Level ${lvN}: the stacks must reach ${tgt.toLocaleString('en-US')} damage.`:'')}${tile('','Strikes',hRange?Math.round(hRange[0])+'\u2013'+Math.round(hRange[1]):Math.round(sc.hits),hRange?'99 % range \u00b7 average '+Math.round(sc.hits):'','Strikes against '+enTxt+(hRange?' (99 % range)':''))}</div>${hitsRow?`<div class="stl stch">Hits per revive mode</div><div class="stc">${REVCASES.map(([k,l])=>`<div class="stt${k==REVM?' stm':''}"><div class="stv">${HIT[k].toFixed(2)}</div><div class="sts">${l}</div></div>`).join('')}</div>`:''}`;      // 19.0.2: the summary as tiles (damage, strikes, stacks, revive cost); the army / monster / engineer count is gone
   $('res').innerHTML=secs;
