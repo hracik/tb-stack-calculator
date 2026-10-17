@@ -35,7 +35,12 @@ select{width:auto}.mu{color:var(--mu);font-size:13px}
 .fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));column-gap:24px}
 .bi[hidden]{display:none}#rare{--lw:132px}.rh{color:var(--ac);font-weight:600;margin:10px 0 6px}.rh:first-of-type{margin-top:4px}#bon .bi,#bonx .bi,#rare .bi,#sb .bi,#mb .bi{grid-template-columns:minmax(0,1fr) 76px}#bon .bi>span,#bonx .bi>span,#rare .bi>span,#sb .bi>span,#mb .bi>span{font-size:17px;white-space:normal;line-height:1.2}.bi>span{color:var(--tx);text-align:left;white-space:nowrap}.bi input,.bi select{width:100%;min-width:0;box-sizing:border-box;height:32px;padding:3px 6px}.bc.ep{align-self:start}
 .tt{table-layout:fixed;min-width:620px}.tt td:first-child{width:130px;text-align:left}.tt td,.tt th{text-align:center}
-.tt label{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.tt label{position:relative;display:inline-block;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tt label input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.tt label span{display:block;min-width:46px;padding:5px 0;border:1px solid var(--bd);border-radius:7px;background:var(--bg);color:var(--mu);font-size:14px;text-align:center;transition:background .15s,color .15s,border-color .15s,box-shadow .15s}
+.tt label:hover span{border-color:var(--ac);color:var(--tx)}
+.tt label input:checked+span{background:linear-gradient(180deg,#e9c46a,#b8862b);border-color:#f0d58a;color:#2a2012;font-weight:700;box-shadow:0 0 8px rgba(224,176,80,.45),inset 0 1px 0 rgba(255,255,255,.35)}
+.tt label input:focus-visible+span{outline:2px solid var(--ac);outline-offset:2px}
 .ol{max-width:none}
 .obrow,.pbrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-width:400px}.ob{margin:0;min-width:0;width:100%;padding:6px 4px;font:inherit;white-space:nowrap}.ob.on,.pb.on,.eb.on,.cm.on,.pbrow .tc:hover,.vb.on{background:var(--ac);color:#000}
 .sbx{margin-top:10px;max-height:min(65vh,600px);overflow:auto;padding-right:4px}.sbx>.oi:first-child,.brh:first-child{margin-top:0}      /* the dying order, the hitting order and the battle report open in the same box: same height, same scrollbar */
@@ -165,7 +170,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.51';
+const APP_VERSION='19.0.52';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -235,7 +240,7 @@ $('sb').innerHTML=CO.map(n=>card(n,n)).join('');
 let th='';      // no header row of tier numbers: every box already says its tier (G8, S9, M7)
 [['G',1],['S',1],['E',1],['M',3]].forEach(([c,a])=>{
   th+=`<tr><td>${NM[c]}</td>`;
-  for(let i=1;i<=9;i++)th+=i<a?'<td></td>':`<td><label><input type="checkbox" id="s${c}${i}" ${(i>=8&&c!='M')||(c=='M'&&i>=7)?'checked':''}>${c}${i}</label></td>`;
+  for(let i=1;i<=9;i++)th+=i<a?'<td></td>':`<td><label><input type="checkbox" id="s${c}${i}" ${(i>=8&&c!='M')||(c=='M'&&i>=7)?'checked':''}><span>${c}${i}</span></label></td>`;
   th+='</tr>';
 });
 $('tiers').innerHTML=th;
