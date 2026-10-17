@@ -166,7 +166,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.45';
+const APP_VERSION='19.0.46';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -221,9 +221,9 @@ Object.keys(BYG).forEach(g=>{if(g[0]=='M')BYG[g].sort((a,b)=>CO.indexOf(a.cat)-C
 const row=(l,id,val=0)=>`<div class="bi"><span>${l}</span><input id="${id}" type="text" inputmode="decimal" step="0.5" value="${val}"></div>`;
 const card=(n,k,h=0,sv=h)=>`<div class="bc"><b>${n}</b>${row('Health','bh_'+k,h)}${row('Strength','bs_'+k,sv)}</div>`;
 $('bon').innerHTML=[['Guardsmen','G',3466,6304],['Specialists','S',3466,6304],['Monsters','M',3461,6404],['Siege Engines','E',3466,6304]].map(([n,k,h,sv])=>card(n,k,h,sv)).join('');
-$('rare').innerHTML=[['Guardsmen','G'],['Specialists','S'],['Siege Engines','E']].map(([n,k])=>`<div class="bc"><b>${n}</b>${k=='E'?'':`<div class="bi pl"><span>Strength against players</span><input id="bs_${k}Pl" type="text" inputmode="decimal" step="0.5" value="0"></div>`}${row('Double damage','dd_'+k,0)}</div>`).join('');      // 19.0.14: the rare bonuses of the classes (Strength against players shows only in the Attack players view; Double damage is a % chance, counted on average)
+$('rare').innerHTML=[['Guardsmen','G'],['Specialists','S'],['Siege Engines','E']].map(([n,k])=>`<div class="bc"><b>${n}</b>${k=='E'?'':`<div class="bi pl"><span>Strength v. players</span><input id="bs_${k}Pl" type="text" inputmode="decimal" step="0.5" value="0"></div>`}${row('Double damage','dd_'+k,0)}</div>`).join('');      // 19.0.14: the rare bonuses of the classes (Strength against players shows only in the Attack players view; Double damage is a % chance, counted on average)
 $('bonx').innerHTML=`<div class="bc"><b>Entire army</b>`+`<div class="bi" id="bcEpic"><span>Strength against epic monsters</span><input id="bs_Epic" type="text" inputmode="decimal" step="0.5" value="3747"></div>`+
-  `<div id="bcPlayers">${row('Health against players','bh_Players',0)}${row('Strength against players','bs_Players',0)}</div>`+
+  `<div id="bcPlayers">${row('Health v. players','bh_Players',0)}${row('Strength v. players','bs_Players',0)}</div>`+
   row('Double damage','dd_A',0)+row('Double strike','ds_A',0)+'</div>';      // 19.0.12: the Army bonuses are plain rows, no blocks (the epic / players rows follow the Attack switch; Double strike and Double damage are the chance of the whole army in %, counted on average)
 const EPICS=[{n:'Arcanomancer',score:800e6,st:[[47771360,210000],[58666640,171000],[54000000,300000],[4133333360,2160]]}];      // 19.0.19 the epic monsters: name, the total score, the stacks [units, health of one unit]
 $('epic').innerHTML='<option value="">-</option>'+EPICS.map(e=>`<option value="${e.n}">${e.n}</option>`).join('');
