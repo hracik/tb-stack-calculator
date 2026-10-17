@@ -184,7 +184,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.74';
+const APP_VERSION='19.0.75';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -274,9 +274,9 @@ function sync(){
 document.addEventListener('click',e=>{
   if(tabClick(e))return;
   const ab=e.target.closest('.ab');if(ab){if(ab.dataset.a!=ATK){ATK=ab.dataset.a;refresh()}return}      // Attack epics / Attack players
-  const sb=e.target.closest('.sb');if(sb&&!sb.disabled){$('shw').value=sb.dataset.sh;calc();if(sb.dataset.sh=='train'&&!(v('foodP')>0)){FMP=true;drawFM()}return}
+  const sb=e.target.closest('.sb');if(sb&&!sb.disabled){if(SHOWCMP){SHOWCMP=false;try{localStorage.setItem('sc_cmp','0')}catch(x){}}$('shw').value=sb.dataset.sh;calc();if(sb.dataset.sh=='train'&&!(v('foodP')>0)){FMP=true;drawFM()}return}
   if(e.target.closest('.tc')){if(!e.target.closest('.tc').disabled)tierBubble();return}      // the Tier check button
-  const vb=e.target.closest('.vb');if(vb&&vb.id=='cmpbtn'){SHOWCMP=!SHOWCMP;try{localStorage.setItem('sc_cmp',SHOWCMP?'1':'0')}catch(x){}if(CMPX)cmpSet(CMPX);return}
+  const vb=e.target.closest('.vb');if(vb&&vb.id=='cmpbtn'){SHOWCMP=!SHOWCMP;try{localStorage.setItem('sc_cmp',SHOWCMP?'1':'0')}catch(x){}calc();return}
   if(vb){if(!vb.disabled&&vb.dataset.v!=VIEW){VIEW=vb.dataset.v;try{localStorage.setItem('sc_view',VIEW)}catch(x){}calc()}return}
   const cm=e.target.closest('.cm');if(cm){if(!cm.disabled){if(cm.dataset.m=='kill')runKill();else if(cm.dataset.m=='kill4')runKill4();else if(cm.dataset.m=='ren')runRen();else if(cm.dataset.m=='cp')runCP();else if(cm.dataset.m=='cpd')runCPD();else if(cm.dataset.m=='pvpmax')runPM()}return}
   const eb=e.target.closest('.eb');if(eb){runBest(+eb.dataset.e);return}
@@ -1818,6 +1818,7 @@ function cmpSet(X){
   X.pn={};[...X.Aall,...X.Mall,...X.mItems].forEach(s=>X.pn[s.name]=s.n||0);      // the units of the proposed army, by troop
   CMPX=X;CMPC={};const P=X.P,card=$('cmpc');
   {const b=$('cmpbtn');if(b){b.classList.toggle('on',SHOWCMP);b.setAttribute('aria-pressed',SHOWCMP)}}
+  $('res').hidden=SHOWCMP;      // Compare is one of the Action choices (Hitting / Preparation / Compare): it takes the place of the unit cards
   card.hidden=!SHOWCMP||!!$('res').closest('.card').hidden;if(card.hidden)return;
   const A=X.Aall.filter(s=>!s.off),M=X.Mall.filter(s=>!s.off),U=X.mItems.filter(s=>!s.off);
   X.items=[...(P.capA>0?A:[]),...(P.capM>0?M:[]),...(P.capU>0?U:[])];
@@ -2195,9 +2196,9 @@ function calcRun(){
   const rvs=hl.filter(s=>dies(s)&&revives(s,REVM)).reduce((g,s)=>{const t=TRN[s.name];if(t&&(s.n||0)>0)g[t.pool]+=Math.floor(s.n*REV/100)*(t.gold||0);return g},{A:0,M:0,U:0}),scost=(rvs.A+rvs.M+rvs.U)/tf;      // 13.4: the same, only for the stacks that the Revive select brings back (none: 0, all: the same as the full revive)
   const rtip=`Revive cost in gold: selected / full. Selected = the stacks that the Revive select brings back (${REVCASES.find(c=>c[0]==REVM)[1]}), full = a full revive of the whole hit${P.ren?' (Renegades: only the stacks the enemy kills in round 1, the first '+hl.filter(dies).length+' of the dying order; the others stay alive)':''}. ${REV} % of each stack comes back (rounded down per stack, a stack of 1 unit gets nothing back), the revival gold of each troop x the revived units${tl>=1?', divided by the Temple factor of level '+tl+' ('+tf.toFixed(2)+')':' (Temple level 0, no reduction)'}. Selected: Army (with engineers) ${num(rvs.A/tf)} \u00b7 Monsters ${num(rvs.M/tf)} \u00b7 Mercenaries ${num(rvs.U/tf)} gold. Full: Army (with engineers) ${num(rv.A/tf)} \u00b7 Monsters ${num(rv.M/tf)} \u00b7 Mercenaries ${num(rv.U/tf)} gold.`;
   const HIT={};REVCASES.forEach(([k])=>HIT[k]=hitsFor(food,v('foodP')*(100+FOODADD)/100,hl,k));      // hits the Food production pays for in every Training case
-  {const w=$('prepw'),low=SHOWTR&&food>0&&!(HIT[REVM]>=1);w.hidden=!low;if(low)w.textContent='Food production is too low: it pays for less than 1 hit ('+(HIT[REVM]||0).toFixed(2)+'). The numbers show the whole stacks.'}
+  {const w=$('prepw'),low=SHOWTR&&food>0&&!(HIT[REVM]>=1);w.hidden=!low||SHOWCMP;if(low)w.textContent='Food production is too low: it pays for less than 1 hit ('+(HIT[REVM]||0).toFixed(2)+'). The numbers show the whole stacks.'}
   MUL=HIT[REVM]>1?HIT[REVM]:1;      // the chosen Revive: the hits it pays for (1 = the food pays for one hit or less: the units to train are the stack itself)
-  document.querySelectorAll('.sb').forEach(b=>b.classList.toggle('on',(b.dataset.sh=='train')==($('shw').value=='train')));
+  document.querySelectorAll('.sb').forEach(b=>b.classList.toggle('on',!SHOWCMP&&(b.dataset.sh=='train')==($('shw').value=='train')));
   if(FMP&&!noFood)fmShut();      // 14.27: close the Food modal if the user entered food elsewhere while it was open
   {const rl=$('revl');if(rl)rl.title='After a hit, 90% of a revived stack (rounded down per stack) comes back, so only the rest has to be prepared again. The top line is the highest tier in use ('+['A:Army','M:Monsters','U:Mercenaries'].filter(x=>TOPT[x[0]]).map(x=>x.slice(2)+' '+TOPT[x[0]]).join(', ')+').'}
   {const live=[...A,...Mo].filter(x=>x.n>0),eng=live.filter(x=>x.cat=='Engineer').length,mon=live.filter(x=>x.p=='M'),army=live.filter(x=>x.p=='A'&&x.cat!='Engineer').length;
@@ -2209,7 +2210,7 @@ function calcRun(){
   if(tabs){const t=$('rtitle');if(t)t.textContent='Result — '+tabs[active].name}
   if(!['grouped','mobile','computer'].includes(VIEW))VIEW='grouped';
   const mob=VIEW!='grouped',ord=(l,pri)=>VIEW=='computer'?compOrder(mobOrder(l),pri):mobOrder(l);                      // Mobile and Computer: one list per section, one unit per card-line; Computer in two columns
-  document.querySelectorAll('.vb:not(.sb)').forEach(b=>b.classList.toggle('on',b.dataset.v==VIEW));
+  document.querySelectorAll('.vb:not(.sb):not(#cmpbtn)').forEach(b=>b.classList.toggle('on',b.dataset.v==VIEW));
   const gk=r=>r[0]=='E'?-100+ +r.slice(1):-(+r.slice(1))*2+(r[0]=='S'?1:0);
   const Aall=st.filter(s=>s.p=='A').sort((a,b)=>gk(a.r)-gk(b.r)),Mall=st.filter(s=>s.p=='M').sort((a,b)=>(+b.r.slice(1))-(+a.r.slice(1)));
   const mItems=['E','G','S','M'].flatMap(c=>mercSorted(c).map(m=>U.all.find(s=>s.name==m[2]))).filter(mercVis);
