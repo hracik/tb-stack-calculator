@@ -186,7 +186,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.90';
+const APP_VERSION='19.0.91';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2230,9 +2230,9 @@ function calcRun(){
   const EP=ATK=='epics'?EPICS.find(e=>e.n==$('epic').value):null;
   const sh=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return[(+v.toPrecision(3)).toString(),u[i]]};      // 118000000 -> ['118','M']
   let scoreTile='';
-  if(ATK=='epics'&&!EP)scoreTile=tile('std ste','','<span class="epb">Choose epic \u25be</span>','','Choose the epic monster to see the estimated score').replace('<div class="stt','<div data-act="eopen" class="stt');
+  if(ATK=='epics'&&!EP)scoreTile=tile('std ste','Epic score','<span class="epb">Choose epic \u25be</span>','','').replace('<div class="stt','<div data-act="eopen" class="stt');
   if(EP){const th=EP.st.reduce((q,x)=>q+x[0]*x[1],0),f=d=>Math.min(1,d/th)*EP.score,lo=f(dRange?dRange[0]:sc.dmg),hi=f(dRange?dRange[1]:sc.dmg),[a,ua]=sh(lo),[b,ub]=sh(hi);
-    scoreTile=tile('std',esc(EP.n)+' score \u25be',(dRange&&a!=b)||(!dRange&&false)?(ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub):a+' '+ua,(dRange?'99 % range \u00b7 average '+sh(f(sc.dmg)).join(' '):''),'Estimated score of '+EP.n+' ('+sh(EP.score).join(' ')+'): your damage '+fmt(sc.dmg)+' of the total health '+fmt(th)+' = '+(Math.min(1,sc.dmg/th)*100).toFixed(1)+' %'+(dRange?'; range: 99 % of the battles':'')+'. Click to change the epic').replace('<div class="stt','<div data-act="eopen" class="stt')}
+    scoreTile=tile('std',esc(EP.n)+' score \u25be',(dRange&&a!=b)||(!dRange&&false)?(ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub):a+' '+ua,(dRange?'99 % range \u00b7 average '+sh(f(sc.dmg)).join(' '):''),'').replace('<div class="stt','<div data-act="eopen" class="stt')}
   $('rsm').innerHTML=`<div class="stl stch">Summary</div><div class="stg">${scoreTile}${tile('','Revive cost',scost==rcost?kmb(scost):`${kmb(scost)} <span class="stu">/</span> ${kmb(rcost)}`,'',rtip+' ('+(scost==rcost?num(scost):num(scost)+' / '+num(rcost))+' gold)')}${tile(ATK=='epics'?'':'std','Estimated damage',dRange?rg(dRange[0],dRange[1]):fmt(sc.dmg),dRange?'99 % range \u00b7 average '+fmt(sc.dmg):tgt?`level ${lvN} ${sc.dmg>=tgt?'reached':'short by '+((1-sc.dmg/tgt)*100).toFixed(1)+' %'}`:'',dRange?'99 % of the battles end between these two numbers (every strike rolls its own Double strike / Double damage chance)':tgt?`Level ${lvN}: the stacks must reach ${tgt.toLocaleString('en-US')} damage.`:'')}${tile('','Strikes',hRange?Math.round(hRange[0])+'\u2013'+Math.round(hRange[1]):Math.round(sc.hits),hRange?'99 % range \u00b7 average '+Math.round(sc.hits):'','Strikes against '+enTxt+(hRange?' (99 % range)':''))}</div>${hitsRow?`<div class="stl stch">Hits per revive mode</div><div class="stc">${REVCASES.map(([k,l])=>`<div class="stt${k==REVM?' stm':''}"><div class="stv">${HIT[k].toFixed(2)}</div><div class="sts">${l}</div></div>`).join('')}</div>`:''}`;      // 19.0.2: the summary as tiles (damage, strikes, stacks, revive cost); the army / monster / engineer count is gone
   $('res').innerHTML=secs;
   cmpSet({P,Aall,Mall,mItems,ordp:[...st.so,...U.ord],O:O.slice(),sc,rcost,scost,EP});      // the Compare card under the Result
