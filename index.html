@@ -184,7 +184,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.79';
+const APP_VERSION='19.0.80';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1913,12 +1913,12 @@ async function cmpRead(){
   if(!files.length||!CMPX)return;
   const names=CMPX.items.map(s=>s.name);st.textContent='Reading '+files.length+' screenshot'+(files.length>1?'s':'')+' ...';bt.disabled=true;
   try{
-    const got={};let squares=0;
-    for(const f of files){const r=await scanShot(f,names);squares+=r.found;r.list.forEach(x=>{if(x.n>0&&(got[x.name]==null||x.n>got[x.name]))got[x.name]=x.n})}
-    const ok=Object.keys(got).length;Object.entries(got).forEach(([k,v])=>CMPV[k]=String(v));
+    const got={};let miss=0;      // miss = squares that match no troop of the list; a troop read twice (overlapping screenshots) counts once and is not mentioned
+    for(const f of files){const r=await scanShot(f,names);miss+=r.found-r.list.filter(x=>x.n>0).length;r.list.forEach(x=>{if(x.n>0&&(got[x.name]==null||x.n>got[x.name]))got[x.name]=x.n})}
+    const ok=Object.keys(got).length,squares=ok+miss;Object.entries(got).forEach(([k,v])=>CMPV[k]=String(v));
     $('cmpb').querySelectorAll('.cmi').forEach(i=>{i.value=CMPV[i.dataset.n]||'';cmpFit(i)});
     cmpUpdate();save();
-    st.textContent=squares?'Read '+ok+' troop'+(ok==1?'':'s')+' from '+squares+' squares. Check the numbers.'+(squares>ok?' '+(squares-ok)+' square'+(squares-ok==1?'':'s')+' not matched to a troop of the list (a tier that is not ticked?), or shown twice.':''):'No troop squares with a red number bar found in the screenshot'+(files.length>1?'s':'')+'.';
+    st.textContent=squares?'Read '+ok+' troop'+(ok==1?'':'s')+' from '+squares+' squares. Check the numbers.'+(miss>0?' '+miss+' square'+(miss==1?'':'s')+' not matched to a troop of the list (a tier that is not ticked?).':''):'No troop squares with a red number bar found in the screenshot'+(files.length>1?'s':'')+'.';
   }catch(e){st.textContent='Could not read the screenshots'+(e&&e.message?': '+e.message:'.')}
   finally{bt.disabled=false}
 }
