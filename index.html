@@ -186,7 +186,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.102';
+const APP_VERSION='19.0.103';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1711,7 +1711,7 @@ function score(P,list,order,eng){      // eng: kept for the callers (the healthi
   const pa=(P.ddA||0)/100,ps=(P.dsA||0)/100,E1=(c,p)=>1+c*p,E2=(c,p)=>1+(2*c+c*c)*p;let vr=0,dmg=0,H=0,hv=0;
   L.forEach((s,i)=>{const t0=TRN[s.name],pm=t0?dsp(t0,P):0,pc=(P['dd'+s.r[0]]||0)/100,cs=P.enemy<=4&&!P.raid?(P.pvp&&s.r[0]=='S'?2:1)/(s.f||1):1,
       pt=P.one?0:Math.min(1,pm+ps),      // 19.0.21: a monster / Beast unit has ONE Double strike chance: its own group chance and the army chance ADDED together (one roll); dm already holds the monster's own part (dhf)
-      rv=E2(1,pc)*E2(1,pa)*E2(cs,pt)/(Math.pow(E1(1,pc)*E1(1,pa)*E1(cs,pt),2))-1,M=dm[i]*E1(cs,pt)/E1(cs,t0?pt:0);
+      rv=(E2(1,pc)*E2(1,pa)/Math.pow(E1(1,pc)*E1(1,pa),2)*(1+cs*cs*pt)+2*pt*cs)/Math.pow(1+cs*pt,2)-1,M=dm[i]*E1(cs,pt)/E1(cs,t0?pt:0);
     dmg+=M*hit[i];vr+=M*M*rv*hit[i];H+=hit[i]*(1+pt);hv+=hit[i]*pt*(1-pt)});
   return{dmg,hits:H,stacks:L.length,sd:Math.sqrt(vr),hsd:Math.sqrt(hv)};
 }
