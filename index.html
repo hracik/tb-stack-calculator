@@ -120,7 +120,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}table.gt[data-n="6"]{width:150%;--n:6}table.gt[data-n="7"]{width:175%;--n:7}table.gt[data-n="8"]{width:200%;--n:8}table.gt[data-n="9"]{width:225%;--n:9}table.gt[data-n="10"]{width:250%;--n:10}table.gt[data-n="11"]{width:275%;--n:11}table.gt[data-n="12"]{width:300%;--n:12}table.gt[data-n="13"]{width:325%;--n:13}table.gt[data-n="14"]{width:350%;--n:14}table.gt[data-n="15"]{width:375%;--n:15}table.gt[data-n="16"]{width:400%;--n:16}table.gt[data-n="17"]{width:425%;--n:17}table.gt[data-n="18"]{width:450%;--n:18}table.gt[data-n="19"]{width:475%;--n:19}table.gt[data-n="20"]{width:500%;--n:20}table.gt[data-n="21"]{width:525%;--n:21}table.gt[data-n="22"]{width:550%;--n:22}table.gt[data-n="23"]{width:575%;--n:23}table.gt[data-n="24"]{width:600%;--n:24}
 .vwh{padding:8px 2px 4px;color:var(--ac);font-weight:600;font-size:14px}
 .cmh{margin:0 0 8px}#cmpb .cmi{width:100%;box-sizing:border-box;margin-top:2px;padding:4px 2px;font-size:16px;font-weight:700}#cmpb .vwr .cmi{width:140px;text-align:left;padding:4px 8px}
-#cmpb .cmi{min-width:0;max-width:100%}.cmup{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 10px}.cmup[hidden]{display:none}.cmup button{padding:8px 14px;border:1px solid var(--ac);border-radius:8px;background:transparent;color:var(--ac);font:inherit;cursor:pointer}.cmup button:disabled{opacity:.5;cursor:wait}#cmpr{margin-top:12px}.cmu{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 10px;font-size:14px;color:var(--mu)}.cmu b{color:var(--tx);font-weight:600}.cmu .cmx{color:#d9664a}.cmu .cmx b{color:#d9664a}
+#cmpb .cmi{min-width:0;max-width:100%}.cmup{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 10px}.cmup[hidden]{display:none}.cmup button{padding:8px 14px;border:1px solid var(--ac);border-radius:8px;background:transparent;color:var(--ac);font:inherit;cursor:pointer}.cmup button:disabled{opacity:.5;cursor:wait}#cmpr{margin-top:12px}.cmu{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 10px;font-size:14px;color:var(--mu)}.cmu b{color:var(--tx);font-weight:600}.cmu small{font-size:12px}.cmu .cmx{color:#d9664a}.cmu .cmx b{color:#d9664a}
 .cmt{width:100%;table-layout:fixed}.cmt th,.cmt td{padding:7px 6px;text-align:right;border-bottom:1px solid var(--bd);white-space:normal}.cmt th:first-child,.cmt td:first-child{text-align:left;width:34%;color:var(--mu)}.cmt th{font-size:13px;color:var(--mu)}.cmt td{font-size:15px;font-variant-numeric:tabular-nums}.cmt td.cmy{color:var(--ac);font-weight:700}.cmt .cmg{color:#7fbf6a;font-weight:700}.cmt .cmb{color:#d9664a;font-weight:700}
 </style></head><body><main>
 <div class="imp" id="imp" hidden></div>
@@ -176,13 +176,13 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <div class="ctl"><div class="mu">View:</div><div class="pbrow"><button type="button" class="vb" data-v="grouped" title="Cards in groups, 4 per line; a group with more cards scrolls sideways">Grouped</button><button type="button" class="vb" data-v="mobile" title="One unit per line: picture, name and number of units">Mobile</button><button type="button" class="vb" data-v="computer" title="Two units per line, in the same order as Mobile">Computer</button></div></div>
 <div class="ctl"><div class="mu">Action:</div><input type="hidden" id="shw" value="hit"><div class="pbrow"><button type="button" class="vb sb" data-sh="hit" title="The units for one hit: the numbers to hit with">Hitting</button><button type="button" class="vb sb" data-sh="train" title="The units to prepare for the hits your Food production pays for, with the chosen Revive setting. The range goes from the units needed for the whole hits to the units needed for all the hits, including the partial one.">Preparation</button><button type="button" class="tc" title="Check whether one more or one less tier of each troop type gives more damage">Tier check</button></div><div id="prepw" class="pw" hidden></div></div>
 <div id="res"></div></div>
-<div class="card" id="cmpc" hidden><h2>Compare with your army</h2><p class="mu cmh">Type the units of your own stacks, with the same Leadership, Dominance and Authority. The battle is run with your stacks (they stand in the game's order: the most health first) and compared with the proposed ones. Empty = none.</p><div class="cmup" id="cmup"><button type="button" id="cmpshot" title="Choose screenshots of your army (troop squares with a number on a red bar): the numbers are read and put into the boxes (you can still change them)">Read from screenshots</button><input type="file" id="cmpfile" accept="image/*" multiple hidden><span class="mu" id="cmpst"></span></div><div id="cmpb"></div><div id="cmpr"></div></div>
+<div class="card" id="cmpc" hidden><h2>Compare with your army</h2><p class="mu cmh">Type the units of your own stacks, with the same Leadership, Dominance and Authority. The battle is run with your stacks (they stand in the game's order: the most health first) and compared with the army proposed for the same Leadership, Dominance and Authority as your stacks use. Empty = none.</p><div class="cmup" id="cmup"><button type="button" id="cmpshot" title="Choose screenshots of your army (troop squares with a number on a red bar): the numbers are read and put into the boxes (you can still change them)">Read from screenshots</button><input type="file" id="cmpfile" accept="image/*" multiple hidden><span class="mu" id="cmpst"></span></div><div id="cmpb"></div><div id="cmpr"></div></div>
 
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div class="btnr"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.60';
+const APP_VERSION='19.0.61';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1811,7 +1811,7 @@ let KP={};
 let CMPV={},CMPK='',CMPX=null;      // CMPV = the typed units by troop name (kept in the tab), CMPK = what the cards were built for (they are drawn again only when it changes, so typing is never interrupted), CMPX = the last calculation
 const CMPPOOL={A:['Leadership','capA'],M:['Dominance','capM'],U:['Authority','capU']};
 function cmpSet(X){
-  CMPX=X;const P=X.P,card=$('cmpc');
+  CMPX=X;CMPC={};const P=X.P,card=$('cmpc');
   card.hidden=!!$('res').closest('.card').hidden;if(card.hidden)return;
   const A=X.Aall.filter(s=>!s.off),M=X.Mall.filter(s=>!s.off),U=X.mItems.filter(s=>!s.off);
   X.items=[...(P.capA>0?A:[]),...(P.capM>0?M:[]),...(P.capU>0?U:[])];
@@ -1916,23 +1916,34 @@ async function cmpRead(){
   finally{bt.disabled=false}
 }
 $('cmpshot').addEventListener('click',()=>$('cmpfile').click());$('cmpfile').addEventListener('change',cmpRead);
+let CMPT=0,CMPC={};      // CMPC = the proposed army calculated for a given Leadership / Dominance / Authority (cleared by every calculation)
+function cmpProp(P2,O){      // the proposed army for the capacities P2 holds: damage, strikes and revive cost (the same steps as calc)
+  const {st,A,Mo,U}=solve(P2,O),hl=[...A,...Mo,...U.list],ord=[...st.so,...U.ord],sc=score(P2,hl,ord),tl=templeLv(),tf=tl>=1?TEMPLE[tl-1]:1;
+  const {rv,dies}=fullRevive(P2,hl,ord),rcost=(rv.A+rv.M+rv.U)/tf;
+  const rvs=hl.filter(s=>dies(s)&&revives(s,REVM)).reduce((g,s)=>{const t=TRN[s.name];if(t&&(s.n||0)>0)g[t.pool]+=Math.floor(s.n*REV/100)*(t.gold||0);return g},{A:0,M:0,U:0});
+  return{sc,rcost,scost:(rvs.A+rvs.M+rvs.U)/tf}}
 function cmpUpdate(){
   const X=CMPX,out=$('cmpr');if(!X||$('cmpc').hidden)return;
   const P=X.P,own=X.items.map(s=>({...s,n:Math.floor(+CMPV[s.name]||0)})).filter(s=>s.n>0);
   if(!own.length){out.innerHTML='<p class="mu">Type the units of your stacks above to see the comparison.</p>';return}
   const ix=new Map(X.ordp.map((n,i)=>[n,i]));
   own.sort((a,b)=>b.n*b.hp-a.n*a.hp||b.n*b.str-a.n*a.str||(ix.get(a.name)??999)-(ix.get(b.name)??999));      // the game's order: the most total health first, then the most total strength
-  const order=own.map(s=>s.name),sc=score(P,own,order),tl=templeLv(),tf=tl>=1?TEMPLE[tl-1]:1;
-  const {rv,dies}=fullRevive(P,own,order),rcost=(rv.A+rv.M+rv.U)/tf;
-  const rvs=own.filter(s=>dies(s)&&revives(s,REVM)).reduce((g,s)=>{const t=TRN[s.name];if(t)g[t.pool]+=Math.floor(s.n*REV/100)*(t.gold||0);return g},{A:0,M:0,U:0}),scost=(rvs.A+rvs.M+rvs.U)/tf;
   const use={A:0,M:0,U:0};own.forEach(s=>use[s.p]+=s.n*s.cost);
-  const chips=Object.entries(CMPPOOL).filter(([k,[,c]])=>P[c]>0).map(([k,[nm,c]])=>{const o=use[k]>P[c];return`<span class="${o?'cmx':''}">${nm} <b>${use[k].toLocaleString()}</b> / ${P[c].toLocaleString()}${o?' \u00b7 over by '+(use[k]-P[c]).toLocaleString():''}</span>`}).join('');
+  const same=use.A==(P.capA||0)&&use.M==(P.capM||0)&&use.U==(P.capU||0),key=use.A+'|'+use.M+'|'+use.U;      // the proposal is calculated for what YOUR stacks use, not for the capacities typed above
+  const pr=same?{sc:X.sc,rcost:X.rcost,scost:X.scost}:CMPC[key];
+  if(!pr){
+    out.innerHTML='<p class="mu">Calculating the proposed army for the Leadership, Dominance and Authority your stacks use ...</p>';
+    clearTimeout(CMPT);CMPT=setTimeout(()=>{try{CMPC[key]=cmpProp({...P,capA:use.A,capM:use.M,capU:use.U},X.O)}catch(e){CMPC[key]={sc:{dmg:0,hits:0},rcost:0,scost:0}}cmpUpdate()},350);return}
+  const P2={...P,capA:use.A,capM:use.M,capU:use.U},order=own.map(s=>s.name),sc=score(P2,own,order),tl=templeLv(),tf=tl>=1?TEMPLE[tl-1]:1;
+  const {rv,dies}=fullRevive(P2,own,order),rcost=(rv.A+rv.M+rv.U)/tf;
+  const rvs=own.filter(s=>dies(s)&&revives(s,REVM)).reduce((g,s)=>{const t=TRN[s.name];if(t)g[t.pool]+=Math.floor(s.n*REV/100)*(t.gold||0);return g},{A:0,M:0,U:0}),scost=(rvs.A+rvs.M+rvs.U)/tf;
+  const chips=Object.entries(CMPPOOL).filter(([k,[,c]])=>use[k]>0||P[c]>0).map(([k,[nm,c]])=>`<span>${nm} <b>${use[k].toLocaleString()}</b>${use[k]!=(P[c]||0)?' <small>(typed above: '+(P[c]||0).toLocaleString()+')</small>':''}</span>`).join('');
   const scf=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3))+' '+u[i]},
     d=(a,b,low)=>{if(!(b>0))return'<td></td>';const p=(a/b-1)*100,g=low?p<=0:p>=0;return`<td class="${Math.abs(p)<0.05?'':g?'cmg':'cmb'}">${p>0?'+':''}${p.toFixed(1)} %</td>`};
   const th=X.EP?X.EP.st.reduce((q,x)=>q+x[0]*x[1],0):0,f=x=>Math.min(1,x/th)*X.EP.score;
-  const rows=[['Estimated damage',fmt(X.sc.dmg),fmt(sc.dmg),d(sc.dmg,X.sc.dmg)]];
-  if(X.EP)rows.push([esc(X.EP.n)+' score',scf(f(X.sc.dmg)),scf(f(sc.dmg)),d(sc.dmg,X.sc.dmg)]);
-  rows.push(['Revive cost',scost==rcost?fmt(X.scost):fmt(X.scost)+' / '+fmt(X.rcost),scost==rcost?fmt(scost):fmt(scost)+' / '+fmt(rcost),d(scost,X.scost,true)],['Strikes',Math.round(X.sc.hits),Math.round(sc.hits),d(sc.hits,X.sc.hits)]);
+  const rows=[['Estimated damage',fmt(pr.sc.dmg),fmt(sc.dmg),d(sc.dmg,pr.sc.dmg)]];
+  if(X.EP)rows.push([esc(X.EP.n)+' score',scf(f(pr.sc.dmg)),scf(f(sc.dmg)),d(sc.dmg,pr.sc.dmg)]);
+  rows.push(['Revive cost',scost==rcost?fmt(pr.scost):fmt(pr.scost)+' / '+fmt(pr.rcost),scost==rcost?fmt(scost):fmt(scost)+' / '+fmt(rcost),d(scost,pr.scost,true)],['Strikes',Math.round(pr.sc.hits),Math.round(sc.hits),d(sc.hits,pr.sc.hits)]);
   out.innerHTML=`<div class="cmu">${chips}</div><table class="cmt"><tr><th></th><th>Proposed</th><th>Yours</th><th>Difference</th></tr>${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="cmy">${r[2]}</td>${r[3]}</tr>`).join('')}</table>`;
 }
 document.addEventListener('input',e=>{const i=e.target.closest&&e.target.closest('.cmi');if(!i)return;
@@ -2208,7 +2219,7 @@ function calcRun(){
     scoreTile=tile('std',esc(EP.n)+' score \u25be',(dRange&&a!=b)||(!dRange&&false)?(ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub):a+' '+ua,(dRange?'99 % range \u00b7 average '+sh(f(sc.dmg)).join(' '):''),'Estimated score of '+EP.n+' ('+sh(EP.score).join(' ')+'): your damage '+fmt(sc.dmg)+' of the total health '+fmt(th)+' = '+(Math.min(1,sc.dmg/th)*100).toFixed(1)+' %'+(dRange?'; range: 99 % of the battles':'')+'. Click to change the epic').replace('<div class="stt','<div data-act="eopen" class="stt')}
   $('rsm').innerHTML=`<div class="stl stch">Summary</div><div class="stg">${scoreTile}${tile('','Revive cost',scost==rcost?kmb(scost):`${kmb(scost)} <span class="stu">/</span> ${kmb(rcost)}`,'',rtip+' ('+(scost==rcost?num(scost):num(scost)+' / '+num(rcost))+' gold)')}${tile(ATK=='epics'?'':'std','Estimated damage',dRange?rg(dRange[0],dRange[1]):fmt(sc.dmg),dRange?'99 % range \u00b7 average '+fmt(sc.dmg):tgt?`level ${lvN} ${sc.dmg>=tgt?'reached':'short by '+((1-sc.dmg/tgt)*100).toFixed(1)+' %'}`:'',dRange?'99 % of the battles end between these two numbers (every strike rolls its own Double strike / Double damage chance)':tgt?`Level ${lvN}: the stacks must reach ${tgt.toLocaleString('en-US')} damage.`:'')}${tile('','Strikes',hRange?Math.round(hRange[0])+'\u2013'+Math.round(hRange[1]):Math.round(sc.hits),hRange?'99 % range \u00b7 average '+Math.round(sc.hits):'','Strikes against '+enTxt+(hRange?' (99 % range)':''))}</div>${hitsRow?`<div class="stl stch">Hits per revive mode</div><div class="stc">${REVCASES.map(([k,l])=>`<div class="stt${k==REVM?' stm':''}"><div class="stv">${HIT[k].toFixed(2)}</div><div class="sts">${l}</div></div>`).join('')}</div>`:''}`;      // 19.0.2: the summary as tiles (damage, strikes, stacks, revive cost); the army / monster / engineer count is gone
   $('res').innerHTML=secs;
-  cmpSet({P,Aall,Mall,mItems,ordp:[...st.so,...U.ord],sc,rcost,scost,EP});      // the Compare card under the Result
+  cmpSet({P,Aall,Mall,mItems,ordp:[...st.so,...U.ord],O:O.slice(),sc,rcost,scost,EP});      // the Compare card under the Result
   {const tcb=document.querySelector('.tc');if(tcb)tcb.disabled=pvOff||!(P.capA>0||P.capM>0)}      // the Tier check button: nothing to check without a capacity
   save();
 }
