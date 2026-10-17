@@ -85,9 +85,8 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 .pb{padding:6px 4px;margin:0;width:100%;white-space:nowrap}.pbrow .vb{margin:0;min-width:0;width:100%;padding:6px 4px;white-space:nowrap}      /* the research buttons: a row of their own, three equal buttons */
 /* help sections (v292): a Help button in the header of a card shows / hides a panel under it - the same on every card */
 .card>h2{display:flex;align-items:center;gap:10px}.card>summary{display:flex;align-items:center;gap:8px}.card>summary h2{flex:1;min-width:0}
-.hq{flex:none;display:inline-flex;align-items:center;gap:6px;margin:0 0 0 auto;padding:4px 11px 4px 5px;border:1px solid var(--bd);border-radius:999px;background:transparent;color:var(--ac);font:600 11px/1 'Cinzel',Georgia,serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
-.hq .hqm{display:inline-block;width:16px;height:16px;border:1px solid var(--ac);border-radius:50%;font:italic 700 11px/14px Georgia,serif;letter-spacing:0;text-transform:none;text-align:center}
-.hq:hover,.tab.add:hover,.tl.urw:hover{border-color:var(--ac)}.hq[aria-expanded=true]{background:var(--ac);border-color:var(--ac);color:#000}.hq[aria-expanded=true] .hqm{border-color:#000}
+.hq{flex:none;display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;padding:0;margin:-4px 0 -4px auto;border:1px solid var(--ac);border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(233,196,106,.28),rgba(184,134,43,.08));color:var(--ac);cursor:pointer;transition:box-shadow .2s,background .2s,transform .15s,color .15s}.hq:hover{box-shadow:0 0 10px rgba(224,176,80,.55);background:radial-gradient(circle at 35% 30%,rgba(233,196,106,.45),rgba(184,134,43,.15));transform:scale(1.06)}.hq:focus-visible{outline:2px solid var(--ac);outline-offset:2px}.hq svg{display:block}
+.tab.add:hover,.tl.urw:hover{border-color:var(--ac)}.hq[aria-expanded=true]{background:linear-gradient(180deg,#e9c46a,#b8862b);border-color:#f0d58a;color:#2a2012;box-shadow:0 0 8px rgba(224,176,80,.45)}
 .hp{margin:0 0 12px;padding:10px 14px;border:1px solid var(--bd);border-left:3px solid var(--ac);border-radius:8px;background:rgba(217,164,65,.07);font-size:15px;line-height:1.5;color:var(--tx)}
 .hp p,.rl8{margin:0 0 8px}.hp p:last-child{margin-bottom:0}.hp .ht{position:relative;padding-left:20px}.hp .hm{position:absolute;left:1px;top:.4em;width:12px;height:12px;background:linear-gradient(135deg,#f3cb6e,#b5832a);clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}      /* every tip is a paragraph of its own and starts with a small gilded four-point star */.hp figure{margin:10px 0 0}.hp img{display:block;max-width:100%;height:auto;border:1px solid var(--bd);border-radius:6px}.hp figcaption{margin:5px 0 0;font-size:13px;color:var(--mu)}
 .eb,.cm{padding:6px 16px;margin:0 8px 8px 0;font:inherit}
@@ -183,7 +182,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.65';
+const APP_VERSION='19.0.66';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2354,7 +2353,7 @@ function helpHtml(h,pl){return(pl&&h.tp?h.tp:h.t).map(x=>'<p class="ht"><i class
 (function(){
   document.querySelectorAll('[data-help]').forEach(card=>{
     const k=card.dataset.help,h=HELP[k],head=[...card.children].find(x=>x.tagName=='H2'||x.tagName=='SUMMARY');if(!h||!head)return;
-    const id='hp-'+k,b=document.createElement('button');b.type='button';b.className='hq';b.setAttribute('aria-expanded','false');b.setAttribute('aria-controls',id);b.title='Show help';b.innerHTML='<span class="hqm">?</span>Help';head.appendChild(b);
+    const id='hp-'+k,b=document.createElement('button');b.type='button';b.className='hq';b.setAttribute('aria-expanded','false');b.setAttribute('aria-controls',id);b.title='Show help';b.setAttribute('aria-label','Help');b.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.4 9.4a2.7 2.7 0 0 1 5.2 1c0 1.8-2.6 2.3-2.6 4"/><circle cx="12" cy="17.4" r=".6" fill="currentColor"/></svg>';head.appendChild(b);
     const p=document.createElement('div');p.className='hp';p.id=id;p.hidden=true;
     p.innerHTML=helpHtml(h,k=='bonx'&&ATK=='players');
     head.after(p);
