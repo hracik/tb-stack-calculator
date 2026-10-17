@@ -184,7 +184,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.82';
+const APP_VERSION='19.0.83';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2339,11 +2339,10 @@ async function tierHint(gen,body0){
 }
 function openTierCheck(){HINTGEN++;$('tcm').hidden=false;$('tcb').innerHTML='<p>Checking the tiers...</p>';$('tcx').focus();tierHint(HINTGEN)}
 function closeTierCheck(){HINTGEN++;$('tcm').hidden=true}
-function tierBubble(){      // 19.1: the Tier check result is shown in a bubble under the tiers (click the button again or the x to close it)
-  const a=$('tca');if(!a)return;if(a.dataset.open=='1'){closeBubble();return}
-  a.dataset.open='1';a.innerHTML='<p class="mu">Checking the tiers...</p>';const g=++HINTGEN;
+function tierBubble(){      // 19.1: the Tier check result is shown in a bubble under the tiers
+  const a=$('tca');if(!a)return;  a.dataset.open='1';a.innerHTML='<p class="mu">Checking the tiers...</p>';const g=++HINTGEN;
   const b=document.createElement('div');b.className='tcb2';a.innerHTML='';a.appendChild(b);b.innerHTML='<p class="mu">Checking the tiers...</p>';
-  tierHint(g,b).then(()=>{if(g===HINTGEN&&a.dataset.open=='1'&&b.isConnected){const x=document.createElement('button');x.type='button';x.className='tcz';x.setAttribute('aria-label','Close');x.textContent='\u00d7';x.onclick=closeBubble;b.appendChild(x)}}).catch(()=>{})}
+  tierHint(g,b).catch(()=>{})}
 function closeBubble(){HINTGEN++;const a=$('tca');if(a){a.dataset.open='0';a.innerHTML=''}}
 $('tcx').addEventListener('click',closeTierCheck);$('tcm').addEventListener('click',e=>{if(e.target===$('tcm'))closeTierCheck()});
 document.addEventListener('keydown',e=>{if(e.key=='Escape'&&!$('tcm').hidden)closeTierCheck()});
