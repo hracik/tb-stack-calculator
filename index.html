@@ -186,7 +186,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.114';
+const APP_VERSION='19.0.115';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1004,6 +1004,8 @@ function weakSplit(P,gs,F){
   while(w<gs.length-1&&cnt+gs[w].u.length<=sl.length){cnt+=gs[w].u.length;w++}
   return w?{weak:gs.slice(0,w).flatMap(g=>g.u),sl,rest:gs.slice(w)}:null;
 }
+// 19.0.115: the damage that ranks the candidate orders counts the mercenaries too (they chain down from the last Leadership / Dominance stack, so an order that ends in a small stack shrinks them)
+function dmgAM(P,r,so){const am=[...r.A,...r.Mo];if(!(P.capU>0))return score(P,am,so,true).dmg;const U=allocMerc(P,am,so,XS);return score(P,[...am,...U.list],[...so,...U.ord],true).dmg}
 function fourSearch(P,live,mkOut,CC,quick){     // CC = the number of full monster tiers (byTiers ranks them); quick: only ONE order is solved (the lowest ratio first, the plain partial tier behind it) - it ranks the tier counts
   const ts=TR.filter(t=>live.has(t.name));
   const rest=ts;                                                                     // the engineers are ordinary troops: they stand first only because their strength / health is (almost) always the lowest
@@ -1013,7 +1015,7 @@ function fourSearch(P,live,mkOut,CC,quick){     // CC = the number of full monst
   const seen=new Map();      // the search meets the same order again again: it is solved once (a copy is returned: the caller adds its own bias k)
   const ev=(units,cc)=>{const names=units.map(t=>t.name),key=cc+'|'+names.join('|');
     if(!seen.has(key)){const r=allocate(P,mkOut(names,cc));
-      seen.set(key,{d:score(P,[...r.A,...r.Mo],names,true).dmg,names,cc})}
+      seen.set(key,{d:dmgAM(P,r,names),names,cc})}
     return{...seen.get(key)}};     // the damage decides, whatever Leadership the order leaves unspent
   const better=(a,b)=>!b||(a.k==null?a.d:a.k)>(b.k==null?b.d:b.k)*(1+5e-4);
   // DOMINANCE, tier by tier from the top: the c strongest monster tiers (c is given by byTiers, the one with the most damage) are used FULLY (on the army's health level, as far as the Dominance reaches), the next tier is the PARTIAL one
@@ -1237,7 +1239,7 @@ function byTiers(nT,tryTier,mk,quickTier){      // the number of full monster ti
   if(!best){best=tryTier(nT);best.c=nT}
   return{so:best.so,out:mk(best.so,best.c)};
 }
-const tierTry=(P,so,mk,c)=>{const r=allocate(P,mk(so,c));return{so,dmg:score(P,[...r.A,...r.Mo],so,true).dmg}};      // a fixed order: solve it, count the damage
+const tierTry=(P,so,mk,c)=>{const r=allocate(P,mk(so,c));return{so,dmg:dmgAM(P,r,so)}};      // a fixed order: solve it, count the damage
 const MD={
   epic:{kn1:true,ho:false,size:allocTight,      // 3-, 4-, 6- and 8-stack: troops of the same ratio stay together, the smaller squad bonus first; the group order with the most damage wins
     order:(P,{live,mkOut,nT})=>byTiers(nT,c=>{const f=fourSearch(P,live,mkOut,c);return{so:f.names,dmg:f.d}},mkOut,c=>{const f=fourSearch(P,live,mkOut,c,true);return{so:f.names,dmg:f.d}})},
