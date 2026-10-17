@@ -182,7 +182,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.58';
+const APP_VERSION='19.0.59';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1835,14 +1835,23 @@ const cmpFit=i=>{const n=i.value.length;i.style.fontSize=i.closest('.vwr')?'':n>
 // Read the unit numbers from screenshots: Claude (the artifact's sample capability) reads them; the button shows only where this view can send images to Claude (not on a copy of the page outside claude.ai)
 let CMPSM=null;
 (async()=>{try{if(!(window.claude&&claude.use))return;const sm=await claude.use('sample');if(!sm)return;const lim=await sm.limits();if(!lim||!lim.images)return;CMPSM={sm,lim};$('cmpfile').accept=lim.images.mediaTypes.join(',');$('cmup').hidden=false}catch(e){}})();
+async function cmpSheet(names){      // a picture of the page's own troop icons with their names: it lets Claude match the screenshots (icons with a tier badge and a number, no names) to the troops
+  const W=118,H=128,cols=6,rows=Math.ceil(names.length/cols),cv=document.createElement('canvas');cv.width=cols*W;cv.height=rows*H;
+  const g=cv.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,cv.width,cv.height);g.textAlign='center';g.fillStyle='#000';g.font='bold 12px sans-serif';
+  await Promise.all(names.map((n,i)=>new Promise(res=>{const x=(i%cols)*W,y=Math.floor(i/cols)*H,im=new Image();
+    im.onload=()=>{g.drawImage(im,x+11,y+4,96,96);res()};im.onerror=()=>res();im.src=IC[n]||''})));
+  names.forEach((n,i)=>{const x=(i%cols)*W,y=Math.floor(i/cols)*H;g.fillText(n.length>17?n.slice(0,16)+'.':n,x+W/2,y+116)});
+  return new Promise(r=>cv.toBlob(r,'image/png'));
+}
 async function cmpRead(){
   const fi=$('cmpfile'),st=$('cmpst'),bt=$('cmpshot');let files=[...fi.files];fi.value='';
   if(!files.length||!CMPSM||!CMPX)return;
   const {sm,lim}=CMPSM,mx=lim.images.maxCount,names=CMPX.items.map(s=>s.name);let note='';
-  if(files.length>mx){files=files.slice(0,mx);note=' Only the first '+mx+' screenshots were read.'}
+  if(files.length>mx-1){files=files.slice(0,mx-1);note=' Only the first '+(mx-1)+' screenshots were read.'}      // one image of the call is the reference sheet
   st.textContent='Reading '+files.length+' screenshot'+(files.length>1?'s':'')+' ...';bt.disabled=true;
   try{
-    const r=await sm.json('These are screenshots of an army in the game Total Battle: troop stacks, each with a picture, the troop name and the number of units. Read the number of units of every troop you can see and match it to one of these troop names: '+names.join(', ')+'. Use the troop name written on the screen; when there is no name, match by the picture and the tier badge only if you are sure. Return ONLY a JSON object: {"units":{"<troop name exactly as in the list>":<integer>},"unclear":["<anything you saw but could not match or read>"]}. Numbers may have thousands separators or K / M suffixes: return the full integer. A troop that is in more than one screenshot counts once. Do not guess.',{images:files,modelTier:'default',cache:false});
+    const sheet=await cmpSheet(names);
+    const r=await sm.json('The FIRST image is a reference sheet: the pictures of the troops with their names under them (the picture has the tier badge in its corner: I, II or a Roman number). The other images are screenshots from the game Total Battle: each troop is a square picture with a tier badge and a number of units on a bar at the bottom (the red X marks mean lost units). Read the number of units of every troop in the screenshots and match each square to a troop of the reference sheet by the picture AND the tier badge. These are the possible troops: '+names.join(', ')+'. Return ONLY a JSON object: {"units":{"<troop name exactly as in the list>":<integer>},"unclear":["<anything you saw but could not match or read>"]}. Numbers may have thousands separators or K / M suffixes: return the full integer. A troop that is in more than one screenshot counts once. Do not guess.',{images:[sheet,...files],modelTier:'default',cache:false});
     let ok=0;const bad=[];
     Object.entries((r&&r.units)||{}).forEach(([k,v])=>{const n=Math.floor(+String(v).replace(/[^\d.]/g,''));if(names.includes(k)&&n>0){CMPV[k]=String(n);ok++}else bad.push(k)});
     $('cmpb').querySelectorAll('.cmi').forEach(i=>{i.value=CMPV[i.dataset.n]||'';cmpFit(i)});
