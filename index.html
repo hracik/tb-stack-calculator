@@ -44,7 +44,7 @@ select{width:auto}.mu{color:var(--mu);font-size:13px}
 .tt label input:checked+span{background:linear-gradient(180deg,#e9c46a,#b8862b);border-color:#f0d58a;color:#2a2012;font-weight:700;box-shadow:0 0 8px rgba(224,176,80,.45),inset 0 1px 0 rgba(255,255,255,.35)}
 .tt label input:focus-visible+span{outline:2px solid var(--ac);outline-offset:2px}
 .ol{max-width:none}
-.obrow,.pbrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-width:400px}.ob{margin:0;min-width:0;width:100%;padding:6px 4px;font:inherit;white-space:nowrap}.ob.on,.pb.on,.eb.on,.cm.on,.pbrow .tc:hover,.vb.on{background:var(--ac);color:#000}
+.obrow,.pbrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-width:400px}.ob{margin:0;min-width:0;width:100%;padding:6px 4px;font:inherit;white-space:nowrap}.ob.on,.pb.on,.eb.on,.cm.on,.pbrow .tc:hover,.vb.on,.tc.on{background:var(--ac);color:#000}
 .sbx{margin-top:10px;text-align:left;max-height:min(65vh,600px);overflow:auto;padding-right:4px}.sbx>.oi:first-child,.brh:first-child{margin-top:0}      /* the dying order, the hitting order and the battle report open in the same box: same height, same scrollbar */
 .br{display:flex;flex-direction:column;gap:3px}.brh{margin:8px 0 1px;color:var(--ac);font:600 13px/1 'Cinzel',Georgia,serif;letter-spacing:.12em;text-transform:uppercase}
 .bl{display:flex;align-items:center;gap:10px;padding:3px 10px;border-radius:6px;font-size:13.5px;line-height:1.3}
@@ -183,7 +183,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='20.4.2';
+const APP_VERSION='20.4.3';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2424,11 +2424,12 @@ let TCC=null;      // 20.4.2: the last finished Tier check {sig, node}: with the
 const tcSig=()=>{const d=snap();return JSON.stringify([d.vals,d.chk,d.atk,d.mode,d.enemy])};
 function tierBubble(){      // 19.1: the Tier check result is shown in a bubble under the tiers
   const a=$('tca');if(!a)return;const sig=tcSig();
-  if(TCC&&TCC.sig===sig){if(a.dataset.open=='1'){closeBubble()}else{a.dataset.open='1';a.innerHTML='';a.appendChild(TCC.node)}return}      // nothing changed since the finished check: hide / show it
-  TCC=null;a.dataset.open='1';a.innerHTML='<p class="mu">Checking the tiers...</p>';const g=++HINTGEN;
+  if(TCC&&TCC.sig===sig){if(a.dataset.open=='1'){closeBubble()}else{a.dataset.open='1';tcOn(1);a.innerHTML='';a.appendChild(TCC.node)}return}      // nothing changed since the finished check: hide / show it
+  TCC=null;a.dataset.open='1';a.innerHTML='<p class="mu">Checking the tiers...</p>';tcOn(1);const g=++HINTGEN;
   const b=document.createElement('div');b.className='tcb2';a.innerHTML='';a.appendChild(b);b.innerHTML='<p class="mu">Checking the tiers...</p>';
   tierHint(g,b).then(()=>{if(g===HINTGEN&&!b.textContent.includes('Checking the tiers'))TCC={sig,node:b}}).catch(()=>{})}
-function closeBubble(){HINTGEN++;const a=$('tca');if(a){a.dataset.open='0';a.innerHTML=''}}
+const tcOn=on=>document.querySelectorAll('.tcw .tc').forEach(b=>{b.classList.toggle('on',!!on);b.setAttribute('aria-pressed',on?'true':'false')});      // 20.4.3: the Tier check button is lit while its bubble is open (checking or showing the result)
+function closeBubble(){HINTGEN++;const a=$('tca');if(a){a.dataset.open='0';a.innerHTML=''}tcOn(0)}
 $('tcx').addEventListener('click',closeTierCheck);$('tcm').addEventListener('click',e=>{if(e.target===$('tcm'))closeTierCheck()});
 document.addEventListener('keydown',e=>{if(e.key=='Escape'&&!$('tcm').hidden)closeTierCheck()});
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.ob');if(!b)return;OVK=OVK===b.dataset.o?null:b.dataset.o;drawBR()});      // a click on the open button closes its list, a click on another one switches
