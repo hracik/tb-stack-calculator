@@ -183,7 +183,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='20.0.0';
+const APP_VERSION='20.0.1';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -246,7 +246,7 @@ const EPIC_IC={doomsday:"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD
 const EPICS=[      // the epic monsters, alphabetical: n = name, score = the total score (null: not set yet), st = the stacks [units, health of one unit] (null: not set yet), en = the attack modes it can be hit in (the enemy stacks: 3-4 or 6-8), raid:true marks a Raid epic: the 2nd hit of the Double strike keeps the squad bonus (4-stack rules otherwise)
   {n:'Arachne',score:300e6,st:null,en:[6,8]},
   {n:'Arcanomancer',ic:'arcanomancer',score:800e6,st:[[47771360,210000,0],[58666640,171000,2],[54000000,300000,3],[4133333360,2160,1]],en:[3,4]},
-  {n:'Armageddon/Basilisk',ic:'basilisk',score:750e6,st:null,en:[3,4]},
+  {n:'Armageddon/Basilisk',ic:'basilisk',score:750e6,st:[[12150000,300000,0],[24100000,150000,2],[27500000,132000,3],[185375000,19500,1]],en:[3,4]},
   {n:'Briareus',ic:'briareus',score:null,st:null,en:[3,4]},
   {n:'Doomsday',ic:'doomsday',score:50e6,st:null,en:[3,4]},
   {n:'Fenrir',ic:'fenrir',score:750e6,st:null,en:[3,4]},
