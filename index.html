@@ -183,7 +183,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.150';
+const APP_VERSION='19.0.152';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2405,8 +2405,10 @@ async function tierHint(gen,body0){
   const alts=(()=>{const all=[...det.entries()].map(([k,r])=>({set:k.split(','),m:r.m})),o=[];let n=cur.length;
     for(let q=0;q<3;q++){const c=all.filter(e=>e.set.length<n).sort((a,b)=>b.m-a.m||a.set.length-b.set.length)[0];if(!c)break;o.push(c);n=c.set.length}
     return o})();
+  // 19.0.151: the 3 best sets for the damage per gold of the full revive (of the sets the check calculated); sets with the same ratio: the one with the fewest ticked tiers first
+  const rk=(()=>{const ex=new Set([kk(sel0),kk(cur)]);return[...det.entries()].filter(([k])=>!ex.has(k)).map(([k,r])=>{const set=k.split(','),g=goldOf(set);return{set,m:r.dmg,rt:r.dmg/g,q:Math.round(Math.log(r.dmg/g)/1e-3)}}).filter(x=>x.rt>base/g0*(1+HGAIN)).sort((a,b)=>b.q-a.q||a.set.length-b.set.length).slice(0,3)})();
   const hasBest=add.length||rem.length,tbl=rs=>`<table class="tct"><thead><tr><th>Tiers</th><th>Damage</th><th>Gold revive</th></tr></thead><tbody>${rs}</tbody></table>`;      // the same table (the same columns and font) for the best and for the alternatives
-  body.innerHTML=`<p>Current tiers: <b>${fmt(base)}</b>, full revive <b>${kg(g0)}</b> gold</p>`+(hasBest?`<p class="mu tcalt0">Best tiers</p>`+tbl(row(chn(cur),best,cur,'tcr')):`<p>No other choice of tiers gives more damage.</p>`)+(alts.length?`<p class="mu tcalt0">Alternative tiers</p>`+tbl(alts.map(r=>row(chn(r.set),r.m,r.set,'tcr')).join('')):'');
+  body.innerHTML=`<p>Current tiers: <b>${fmt(base)}</b>, full revive <b>${kg(g0)}</b> gold</p>`+(hasBest?`<p class="mu tcalt0">Best tiers</p>`+tbl(row(chn(cur),best,cur,'tcr')):`<p>No other choice of tiers gives more damage.</p>`)+(rk.length?`<p class="mu tcalt0">Best damage per gold</p>`+tbl(rk.map(r=>row(chn(r.set),r.m,r.set,'tcr')).join('')):'')+(alts.length?`<p class="mu tcalt0">Alternative tiers</p>`+tbl(alts.map(r=>row(chn(r.set),r.m,r.set,'tcr')).join('')):'');
 }
 function openTierCheck(){HINTGEN++;$('tcm').hidden=false;$('tcb').innerHTML='<p>Checking the tiers...</p>';$('tcx').focus();tierHint(HINTGEN)}
 function closeTierCheck(){HINTGEN++;$('tcm').hidden=true}
