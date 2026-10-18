@@ -183,7 +183,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.161';
+const APP_VERSION='19.0.162';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2409,7 +2409,7 @@ async function tierHint(gen,body0){
   const all=[...det.entries()].map(([k,r])=>{const set=k.split(','),g=goldOf(set);return{set,m:r.dmg,g,rt:r.dmg/g,q:Math.round(Math.log(r.dmg/g)/1e-3)}}),r0=base/g0,k0=kk(sel0),dom=c=>c.m<base&&c.g>=g0;      // dom: weaker AND not cheaper than the current tiers
   const same=c=>Math.abs(c.m/base-1)<1e-6&&Math.abs(c.g/g0-1)<1e-6,dAlts0=alts.map(a=>({...a,g:goldOf(a.set)})).filter(a=>!dom(a)&&!same(a));
   const eff=all.filter(c=>kk(c.set)==k0||!same(c)).sort((a,b)=>b.q-a.q||(kk(b.set)==k0)-(kk(a.set)==k0)||a.set.length-b.set.length),effBest=eff[0]&&eff[0].rt>r0*(1+HGAIN)?eff[0]:null,eAlts=eff.filter(c=>c!==effBest).filter((c,i,a)=>a.findIndex(d=>Math.abs(d.m/c.m-1)<1e-6&&Math.abs(d.g/c.g-1)<1e-6)==i).slice(0,3);
-  const hasBest=add.length||rem.length,bk=kk(cur),better=new Set(all.filter(c=>c.m>base*(1+1e-6)&&kk(c.set)!=bk).map(c=>Math.round(c.m/base*1e4))).size,dAlts=(better<=3&&!dAlts0.some(a=>kk(a.set)==k0)?[...dAlts0,{set:sel0,m:base,g:g0}]:dAlts0).sort((a,b)=>b.m-a.m).slice(0,3),tbl=(rs,rt)=>`<table class="tct"><thead><tr><th>Tiers</th><th>Damage</th><th>${rt?'Gold per damage':'Gold revive'}</th></tr></thead><tbody>${rs}</tbody></table>`;      // the same table (the same columns and font) for the best and for the alternatives
+  const hasBest=add.length||rem.length,bk=kk(cur),bg=hasBest?goldOf(cur):0,dAlts=all.filter(c=>!(hasBest&&(kk(c.set)==bk||(Math.abs(c.m/best-1)<1e-6&&Math.abs(c.g/bg-1)<1e-6)))&&(kk(c.set)==k0||!same(c))).map(c=>({set:c.set,m:c.m,g:c.g})).sort((a,b)=>b.m-a.m||(kk(b.set)==k0)-(kk(a.set)==k0)||a.set.length-b.set.length).filter((c,i,a)=>a.findIndex(d=>Math.abs(d.m/c.m-1)<1e-6&&Math.abs(d.g/c.g-1)<1e-6)==i).slice(0,3),tbl=(rs,rt)=>`<table class="tct"><thead><tr><th>Tiers</th><th>Damage</th><th>${rt?'Gold/dmg':'Gold revive'}</th></tr></thead><tbody>${rs}</tbody></table>`;      // the same table (the same columns and font) for the best and for the alternatives
   const rws=(a,rt)=>a.map(r=>row(chn(r.set),r.m,r.set,'tcr',rt)).join('');
   const dBest=hasBest?[{set:cur,m:best}]:[];
   const bestH=(t,rs,none,rt)=>(rs.length?'':`<p class="mu tcalt0">${t}</p>`)+(rs.length?rs.map(r=>`<p class="tcb"><small>${t}</small>${chn(r.set)}<br><span>Damage ${pcs((r.m/base-1)*100)} &middot; ${rt?'Gold per damage '+pcs(((goldOf(r.set)/r.m)/(g0/base)-1)*100):'Gold revive '+pcs((goldOf(r.set)/g0-1)*100)}</span></p>`).join(''):`<p>${none}</p>`);      // 19.0.156: the best sets as highlighted text, not a table
