@@ -186,7 +186,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='20.5.0';
+const APP_VERSION='20.5.1';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -487,8 +487,9 @@ function tabClick(e){
 // The text: a title line, then  key=value  pieces (one space between them). A box that holds the blank value (0) is left out, a number has no thousands commas, a space in a name is _ ; the key is short:
 // L Leadership, U Authority, D Dominance, F Food prod., R Revive, Tp Temple level (13.1; left out when it is 45), A Action; hG / sG = health / strength bonus of Guardsmen (S, M, E, and Gi El Dr Be Me Mo Ra Fl Ep Pl the same way), dGi = Double strike; T = the ticked tiers (E89S89G89M789 = E8 E9 S8 S9 G8 G9 M7 M8 M9);
 // n = name, x = switched-off troops (3 characters each, see xcode), at = Attack players, mo / en / le / lp = attack mode. Text of the first version (JSON, "Stack Calculator inputs") is still read.
-const XMODES=['max','ren','pvpmax','cpd','cp','kill','kill4'],XENEMY=['3','4','6','8'],XHEAD='Krappy Calculator',XFIX={capA:'L',capU:'U',capM:'D',foodP:'F',revm:'R',shw:'A',temple:'Tp',renLv:'Lv'},XSUF={Epic:'Ep',Players:'Pl',Giant:'Gi',Elemental:'El',Dragon:'Dr',Beast:'Be',Melee:'Me',Mounted:'Mo',Ranged:'Ra',Flying:'Fl'};
+const XMODES=['max','ren','pvpmax','cpd','cp','kill','kill4'],XENEMY=['3','4','6','8'],XHEAD='Krappy Calculator',XFIX={capA:'L',capU:'U',capM:'D',foodP:'F',revm:'R',shw:'A',temple:'Tp',renLv:'Lv',epic:'E'},XSUF={Epic:'Ep',Players:'Pl',Giant:'Gi',Elemental:'El',Dragon:'Dr',Beast:'Be',Melee:'Me',Mounted:'Mo',Ranged:'Ra',Flying:'Fl'};
 const xkey=id=>{const m=/^(bh|bs|dh)_(.+)$/.exec(id);return XFIX[id]||(m?{bh:'h',bs:'s',dh:'d'}[m[1]]+(XSUF[m[2]]||m[2]):id)};      // bh_G -> hG, bs_G -> sG, dh_Giant -> dGi, bs_Epic -> sEp
+const xep=n=>String(n).slice(0,3).toLowerCase(),xepn=c=>{const e=EPICS.find(q=>q.n===c)||EPICS.find(q=>xep(q.n)==String(c).slice(0,3).toLowerCase());return e?e.n:c};      // 20.5.1: the epic in the export is its first 3 letters (arm = Armageddon/Basilisk); the full name of an older export is still read
 const xhash=q=>{let h=2166136261;for(let i=0;i<q.length;i++){h^=q.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return h};
 const xcode=nm=>(xhash(nm)%46656).toString(36).padStart(3,'0');      // a troop (or mercenary) as 3 characters 0-9a-z: from its name, so it does not depend on the order of the tables; no two names of today share a code
 let XMAP=null;
@@ -496,7 +497,7 @@ const xmap=()=>{if(XMAP)return XMAP;const m={};[...TR.map(t=>t.name),...MERC.map
 let XPM=null,XTAB=null;      // the open panel: 'exp' (export), 'imp' (import) or null; XTAB = the tab an export was made in
 function exportText(){
   const d=snap(),t=['n='+tabs[active].name.replace(/ /g,'_')],num=id=>$(id).matches(NUMBOX),val=(id,x)=>num(id)?String(x).replace(/,/g,''):String(x);
-  for(const [id,x] of Object.entries(d.vals)){const w=val(id,x);if(w!==val(id,BLANK.vals[id]))t.push(xkey(id)+'='+w)}
+  for(const [id,x] of Object.entries(d.vals)){const w=id=='epic'?xep(x):val(id,x);if(w!==val(id,BLANK.vals[id]))t.push(xkey(id)+'='+w)}
   let T='';for(const c of 'ESGM'){let q='';for(let i=1;i<=9;i++)if(d.chk['s'+c+i])q+=i;if(q)T+=c+q}
   t.push('T='+T);
   for(const [id,c] of Object.entries(d.chk))if(!/^s[ESGM]\d$/.test(id)&&c!==BLANK.chk[id])t.push(id+'='+(c?1:0));      // any other tick box (none now)
@@ -521,7 +522,7 @@ async function xCopy(){
 }
 function parseKrappy(txt){      // the short text -> the same object the first (JSON) version read
   const m=txt.search(/Krappy Calculator/i);if(m<0)return null;
-  const ids={};Object.keys(BLANK.vals).forEach(id=>{ids[xkey(id)]=id});
+  const ids={};Object.keys(BLANK.vals).forEach(id=>{ids[xkey(id)]=id});ids.epic='epic';
   const r={vals:{},chk:{},got:0},tok=txt.slice(m).replace(/^Krappy Calculator\s*v?\S*/i,'').match(/\S+/g)||[];
   for(const tk of tok){
     const i=tk.indexOf('=');if(i<1)continue;const k=tk.slice(0,i),w=tk.slice(i+1);let ok=true;
@@ -554,6 +555,7 @@ function importText(txt){
   for(const [id,val] of Object.entries(r.vals)){      // only the boxes this page has; a box the text lacks keeps the blank value (0)
     const el=$(id);if(!el||!own(BLANK.vals,id)||MODE_IDS.includes(id)||!(typeof val=='string'||typeof val=='number'))continue;
     let x=String(val).slice(0,30);
+    if(id=='epic')x=xepn(x);
     if(el.matches(NUMBOX))x=fmtInt(x)||'0';
     else if(id=='temple')x=tempNorm(x);
     else if(el.tagName=='SELECT'&&![...el.options].some(o=>o.value===x))continue;
