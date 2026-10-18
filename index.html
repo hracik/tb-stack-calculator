@@ -183,7 +183,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='20.1.1';
+const APP_VERSION='20.1.2';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2458,6 +2458,7 @@ function helpHtml(h,pl){return(pl&&h.tp?h.tp:h.t).map(x=>'<p class="ht"><i class
     b.setAttribute('aria-expanded',String(open));b.title=open?'Hide help':'Show help';
     if(b.closest('[data-help=rare]')){try{localStorage.setItem('sc_rarehelp',open?'1':'0')}catch(x){}}      // 20.1.1: the Rare bonuses help remembers how the user left it
   });
+  document.querySelectorAll('details[data-help]').forEach(d=>{const sync=()=>{const b=d.querySelector('.hq'),p=b&&document.getElementById(b.getAttribute('aria-controls'));if(b&&p)b.setAttribute('aria-expanded',String(d.open&&!p.hidden))};d.addEventListener('toggle',()=>setTimeout(sync,0))});      // 20.1.2: a closed section does not show its help button lit
   {const rc=document.querySelector('details[data-help=rare]');      // 20.1.1: opening the Rare bonuses card shows its help, unless the user closed it last time
     if(rc)rc.addEventListener('toggle',()=>{if(!rc.open)return;let pr='1';try{pr=localStorage.getItem('sc_rarehelp')||'1'}catch(x){}const p=$('hp-rare'),b=rc.querySelector('.hq');if(pr=='1'&&p&&p.hidden){p.hidden=false;if(b){b.setAttribute('aria-expanded','true');b.title='Hide help'}}})}
 })();
