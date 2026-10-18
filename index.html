@@ -183,7 +183,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.157';
+const APP_VERSION='19.0.158';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2399,7 +2399,7 @@ async function tierHint(gen,body0){
   }
   // 19.0.132: the 2nd and 3rd best sets among all that the check calculated (it is a search, not every possible set)
   const sgn=x=>(x>=0?'+':'')+x.toFixed(1),kg=x=>x>=1e6?(x/1e6).toPrecision(3)+'M':x>=1e3?Math.round(x/1e3)+'K':String(Math.round(x)),g0=goldOf(sel0);
-  const pcs=x=>sgn(x)+' %',row=(l,m,set,k)=>`<tr class="${k}"><td>${l}</td><td>${pcs((m/base-1)*100)}</td><td>${pcs((goldOf(set)/g0-1)*100)}</td></tr>`;      // 19.0.148: a table: tiers, damage, gold revive (only the % against the current tiers)
+  const pcs=x=>sgn(x)+' %',row=(l,m,set,k,rt)=>`<tr class="${k}"><td>${l}</td><td>${pcs((m/base-1)*100)}</td><td>${pcs(((rt?(goldOf(set)/m)/(g0/base):goldOf(set)/g0)-1)*100)}</td></tr>`;      // 19.0.148: a table: tiers, damage, gold revive (only the % against the current tiers)
   const chn=set=>{const ad=set.filter(x=>!sel0.includes(x)),rm=sel0.filter(x=>!set.includes(x));return[ad.length?'tick <b>'+ls(ad)+'</b>':'',rm.length?'untick <b>'+ls(rm)+'</b>':''].filter(Boolean).join(' and ')||'your current ticks'};
   // 19.0.135: the best set, then the best sets that use FEWER tiers than the best (and again fewer than that one): the tiers that are not worth their cost can be left out
   const alts=(()=>{const all=[...det.entries()].map(([k,r])=>({set:k.split(','),m:r.m})),o=[];let n=cur.length;
@@ -2409,12 +2409,12 @@ async function tierHint(gen,body0){
   const all=[...det.entries()].map(([k,r])=>{const set=k.split(','),g=goldOf(set);return{set,m:r.dmg,g,rt:r.dmg/g,q:Math.round(Math.log(r.dmg/g)/1e-3)}}),r0=base/g0,k0=kk(sel0),dom=c=>c.m<base&&c.g>=g0;      // dom: weaker AND not cheaper than the current tiers
   const same=c=>Math.abs(c.m/base-1)<1e-6&&Math.abs(c.g/g0-1)<1e-6,dAlts0=alts.map(a=>({...a,g:goldOf(a.set)})).filter(a=>!dom(a)&&!same(a));
   const eff=all.filter(c=>kk(c.set)==k0||!same(c)).sort((a,b)=>b.q-a.q||(kk(b.set)==k0)-(kk(a.set)==k0)||a.set.length-b.set.length),effBest=eff[0]&&eff[0].rt>r0*(1+HGAIN)?eff[0]:null,eAlts=eff.filter(c=>c!==effBest).filter((c,i,a)=>a.findIndex(d=>Math.abs(d.m/c.m-1)<1e-6&&Math.abs(d.g/c.g-1)<1e-6)==i).slice(0,3);
-  const hasBest=add.length||rem.length,bk=kk(cur),better=new Set(all.filter(c=>c.m>base*(1+1e-6)&&kk(c.set)!=bk).map(c=>Math.round(c.m/base*1e4))).size,dAlts=(better<=3&&!dAlts0.some(a=>kk(a.set)==k0)?[...dAlts0,{set:sel0,m:base,g:g0}]:dAlts0).sort((a,b)=>b.m-a.m).slice(0,3),tbl=rs=>`<table class="tct"><thead><tr><th>Tiers</th><th>Damage</th><th>Gold revive</th></tr></thead><tbody>${rs}</tbody></table>`;      // the same table (the same columns and font) for the best and for the alternatives
-  const rws=a=>a.map(r=>row(chn(r.set),r.m,r.set,'tcr')).join('');
+  const hasBest=add.length||rem.length,bk=kk(cur),better=new Set(all.filter(c=>c.m>base*(1+1e-6)&&kk(c.set)!=bk).map(c=>Math.round(c.m/base*1e4))).size,dAlts=(better<=3&&!dAlts0.some(a=>kk(a.set)==k0)?[...dAlts0,{set:sel0,m:base,g:g0}]:dAlts0).sort((a,b)=>b.m-a.m).slice(0,3),tbl=(rs,rt)=>`<table class="tct"><thead><tr><th>Tiers</th><th>Damage</th><th>${rt?'Gold per damage':'Gold revive'}</th></tr></thead><tbody>${rs}</tbody></table>`;      // the same table (the same columns and font) for the best and for the alternatives
+  const rws=(a,rt)=>a.map(r=>row(chn(r.set),r.m,r.set,'tcr',rt)).join('');
   const dBest=hasBest?[{set:cur,m:best}]:[];
-  const bestH=(t,rs,none)=>`<p class="mu tcalt0">${t}</p>`+(rs.length?rs.map(r=>`<p class="tcb">${chn(r.set)}<br><span>Damage ${pcs((r.m/base-1)*100)} &middot; Gold revive ${pcs((goldOf(r.set)/g0-1)*100)}</span></p>`).join(''):`<p>${none}</p>`);      // 19.0.156: the best sets as highlighted text, not a table
-  const alt=(rs,none)=>rs.length?tbl(rws(rs)):`<p>${none}</p>`;
-  body.innerHTML=`<p>Current tiers: <b>${fmt(base)}</b>, full revive <b>${kg(g0)}</b> gold</p>${bestH('Best damage',dBest,'No other choice of tiers gives more damage.')}${bestH('Best efficiency (damage per gold)',effBest?[effBest]:[],'No other choice of tiers gives more damage per gold.')}<p class="mu tcalt0">Next best alternatives</p><div class="pbrow tctab"><button type="button" class="vb" data-t="d">Max. damage</button><button type="button" class="vb" data-t="e">Max. efficiency</button></div><div class="tcpd" hidden>${alt(dAlts,'No more alternatives.')}</div><div class="tcpe" hidden>${alt(eAlts,'No more alternatives.')}</div>`;
+  const bestH=(t,rs,none,rt)=>`<p class="mu tcalt0">${t}</p>`+(rs.length?rs.map(r=>`<p class="tcb">${chn(r.set)}<br><span>Damage ${pcs((r.m/base-1)*100)} &middot; ${rt?'Gold per damage '+pcs(((goldOf(r.set)/r.m)/(g0/base)-1)*100):'Gold revive '+pcs((goldOf(r.set)/g0-1)*100)}</span></p>`).join(''):`<p>${none}</p>`);      // 19.0.156: the best sets as highlighted text, not a table
+  const alt=(rs,none,rt)=>rs.length?tbl(rws(rs,rt),rt):`<p>${none}</p>`;
+  body.innerHTML=`<p>Current tiers: <b>${fmt(base)}</b>, full revive <b>${kg(g0)}</b> gold</p>${bestH('Best damage',dBest,'No other choice of tiers gives more damage.')}${bestH('Best efficiency (damage per gold)',effBest?[effBest]:[],'No other choice of tiers gives more damage per gold.',1)}<p class="mu tcalt0">Next best alternatives</p><div class="pbrow tctab"><button type="button" class="vb" data-t="d">Max. damage</button><button type="button" class="vb" data-t="e">Max. efficiency</button></div><div class="tcpd" hidden>${alt(dAlts,'No more alternatives.')}</div><div class="tcpe" hidden>${alt(eAlts,'No more alternatives.',1)}</div>`;
   body.querySelectorAll('.tctab .vb').forEach(b=>b.addEventListener('click',()=>{const on=!b.classList.contains('on');body.querySelectorAll('.tctab .vb').forEach(x=>x.classList.toggle('on',on&&x===b));body.querySelector('.tcpd').hidden=!(on&&b.dataset.t=='d');body.querySelector('.tcpe').hidden=!(on&&b.dataset.t=='e')}));
 }
 function openTierCheck(){HINTGEN++;$('tcm').hidden=false;$('tcb').innerHTML='<p>Checking the tiers...</p>';$('tcx').focus();tierHint(HINTGEN)}
