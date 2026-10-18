@@ -183,7 +183,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.141';
+const APP_VERSION='19.0.142';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2397,15 +2397,15 @@ async function tierHint(gen,body0){
   const pool=cand.filter((c,i)=>i<60||kk(c.set)==k0);pool.forEach(c=>{c.g=gold(c.set);c.r=c.g>0?c.dmg/c.g:0});
   const cur0=pool.find(c=>kk(c.set)==k0)||{set:sel0,dmg:det.get(k0).dmg,g:gold(sel0),r:0},bD=pool[0],bG=[...pool].sort((a,b)=>b.r-a.r)[0];
   const better=(c,key2)=>c&&kk(c.set)!=k0&&c[key2]>cur0[key2]*(1+HGAIN)&&(key2!='r'||P.ren||true);
-  const bests=[];if(better(bD,'dmg'))bests.push(['Best damage',bD]);if(better(bG,'r')&&(!bests.length||kk(bG.set)!=kk(bD.set)))bests.push(['Best damage per gold',bG]);
-  const dmgOk=bests.some(b=>b[0]=='Best damage');if(bests.length==1&&dmgOk)bests[0][0]='Best tiers';if(bests.length==1&&!dmgOk)bests[0][0]='Best damage per gold';
+  // 19.0.142: only the best damage is shown for now (the best damage per gold is left out)
+  const bests=[];if(better(bD,'dmg'))bests.push(['Best tiers',bD]);
   let nt=Math.min(...bests.map(b=>b[1].set.length),cur0.set.length+0.5);const alts=[],skip=new Set([k0,...bests.map(b=>kk(b[1].set))]);
   for(let q=0;q<3;q++){const c=pool.filter(c=>c.set.length<nt&&!skip.has(kk(c.set))&&!(c.dmg<cur0.dmg&&c.g>=cur0.g)).sort((a,b)=>(P.ren?b.r-a.r:b.dmg-a.dmg)||a.set.length-b.set.length)[0];if(!c)break;alts.push(c);skip.add(kk(c.set));nt=c.set.length}
   const chn=set=>{const ad=set.filter(x=>!sel0.includes(x)),rm=sel0.filter(x=>!set.includes(x));return[ad.length?'tick <b>'+ls(ad)+'</b>':'',rm.length?'untick <b>'+ls(rm)+'</b>':''].filter(Boolean).join(' and ')||'current tiers'};
   const pc=(v,b,low)=>{if(!(b>0))return'';const p=(v/b-1)*100,t=Math.abs(p)<0.05,good=low?p<0:p>0;return `<span class="${t?'':good?'cmg':'cmb'}">${p>0?'+':''}${p.toFixed(1)} %</span>`};
   const opt=(l,c)=>`<tr class="tcl1"><td colspan="2">${l}</td></tr><tr><td>${fmt(c.dmg)} ${pc(c.dmg,cur0.dmg,false)}</td><td>${kg(c.g)} ${pc(c.g,cur0.g,true)}</td></tr>`;
   body.innerHTML=`<table class="tct"><thead><tr><th>Damage</th><th>Full revive gold</th></tr></thead><tbody><tr class="tcl1 tcc"><td colspan="2">Current tiers</td></tr><tr class="tcc"><td>${fmt(cur0.dmg)}</td><td>${kg(cur0.g)}</td></tr>`
-    +(dmgOk?'':`<tr><td colspan="2" class="mu">Your tiers already give the most damage.</td></tr>`)+(bests.length?bests.map(([l,c])=>opt(l+': '+chn(c.set),c)).join(''):`<tr><td colspan="2" class="mu">No other choice of tiers gives more damage per gold.</td></tr>`)
+    +(bests.length?bests.map(([l,c])=>opt(l+': '+chn(c.set),c)).join(''):`<tr><td colspan="2" class="mu">No other choice of tiers gives more damage.</td></tr>`)
     +(alts.length?`<tr class="tcs"><td colspan="2">Alternative tiers</td></tr>`+alts.map(c=>opt(chn(c.set),c)).join(''):'')+`</tbody></table>`;
 }
 function openTierCheck(){HINTGEN++;$('tcm').hidden=false;$('tcb').innerHTML='<p>Checking the tiers...</p>';$('tcx').focus();tierHint(HINTGEN)}
