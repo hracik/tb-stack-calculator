@@ -81,7 +81,7 @@ button{background:#8a6a2c;color:#fff;border:0;border-radius:5px;padding:1px 6px;
 #res td .n,
 #cmpb td .n{font-size:17px;font-weight:700}
 
-summary{cursor:pointer;list-style:none;margin-bottom:6px}summary::-webkit-details-marker{display:none}
+summary{cursor:pointer;list-style:none;margin-bottom:6px}details[data-help=mb]>summary,details[data-help=mb]>summary *{-webkit-tap-highlight-color:transparent;transition:none}details[data-help=mb]>summary:focus,details[data-help=mb]>summary *:focus{outline:none}      /* 21.1.1: tapping a research button changes only the button, no flash on the title */summary::-webkit-details-marker{display:none}
 summary::before{content:'▸ ';color:var(--ac)}details[open] summary::before{content:'▾ '}
 summary h2{display:inline;border:0;padding:0;margin:0}
 .pb{padding:6px 4px;margin:0;width:100%;white-space:nowrap}.pbrow .vb{margin:0;min-width:0;width:100%;padding:6px 4px;white-space:nowrap}      /* the research buttons: a row of their own, three equal buttons */
@@ -186,7 +186,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.1.0';
+const APP_VERSION='21.1.1';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
