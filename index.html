@@ -183,7 +183,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='19.0.159';
+const APP_VERSION='19.0.160';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2400,7 +2400,7 @@ async function tierHint(gen,body0){
   // 19.0.132: the 2nd and 3rd best sets among all that the check calculated (it is a search, not every possible set)
   const sgn=x=>(x>=0?'+':'')+x.toFixed(1),kg=x=>x>=1e6?(x/1e6).toPrecision(3)+'M':x>=1e3?Math.round(x/1e3)+'K':String(Math.round(x)),g0=goldOf(sel0);
   const pcs=x=>sgn(x)+' %',row=(l,m,set,k,rt)=>`<tr class="${k}"><td>${l}</td><td>${pcs((m/base-1)*100)}</td><td>${pcs(((rt?(goldOf(set)/m)/(g0/base):goldOf(set)/g0)-1)*100)}</td></tr>`;      // 19.0.148: a table: tiers, damage, gold revive (only the % against the current tiers)
-  const chn=set=>{const ad=set.filter(x=>!sel0.includes(x)),rm=sel0.filter(x=>!set.includes(x));return[ad.length?'tick <b>'+ls(ad)+'</b>':'',rm.length?'untick <b>'+ls(rm)+'</b>':''].filter(Boolean).join(' and ')||'your current ticks'};
+  const chn=set=>{const ad=set.filter(x=>!sel0.includes(x)),rm=sel0.filter(x=>!set.includes(x));return[ad.length?'tick <b>'+ls(ad)+'</b>':'',rm.length?'untick <b>'+ls(rm)+'</b>':''].filter(Boolean).join(' and ')||'-'};
   // 19.0.135: the best set, then the best sets that use FEWER tiers than the best (and again fewer than that one): the tiers that are not worth their cost can be left out
   const alts=(()=>{const all=[...det.entries()].map(([k,r])=>({set:k.split(','),m:r.m})),o=[];let n=cur.length;
     for(let q=0;q<3;q++){const c=all.filter(e=>e.set.length<n).sort((a,b)=>b.m-a.m||a.set.length-b.set.length)[0];if(!c)break;o.push(c);n=c.set.length}
