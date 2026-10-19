@@ -186,7 +186,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.5.6';
+const APP_VERSION='21.5.7';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1669,22 +1669,31 @@ function allocRen(P,live){                 // Renegades (14.8, 14.14, 14.16): th
 }
 function allocate(P,live){const md=modeOf(P);HO=md.ho;return md.size(P,live)}      // the sizing of the mode (HO: health only, read by the shared helpers)
 // the whole calculation of the engine: the order, the Leadership / Dominance stacks, then the mercenaries (they come last: the numbers before are final)
-function solve1(P,order,zeroPt,PS){const st=buildStacks(PS||P,order,XS),{A,Mo}=allocate(P,st.filter(s=>!s.off));      // PS: the settings the ORDER is searched with (the search without the mercenaries keeps the Leadership and the monsters as flat as it is with 0 Authority)
+const cloneSt=st=>{const c=st.map(s=>({...s}));c.so=st.so.slice();return c};      // the allocation writes the counts into the stacks: every variant gets its own copy of the searched stacks
+function solve1(P,order,zeroPt,PS,stIn){const st=stIn?cloneSt(stIn):buildStacks(PS||P,order,XS),{A,Mo}=allocate(P,st.filter(s=>!s.off));      // PS: the settings the ORDER is searched with (the search without the mercenaries keeps the Leadership and the monsters as flat as it is with 0 Authority)
   if(zeroPt)Mo.forEach(s=>{if(s.pt)s.n=0});      // the partial tier (and the tiers below it) is taken out: the mercenaries are sized first, the stacks come back behind them (dominanceTail)
   const U=allocMerc(P,[...A,...Mo],st.so,XS);
   if(rgm(P))dominanceTail(P,st,A,Mo,U);
   return{st,A,Mo,U}}
 // 21.5.3: the number of full monster tiers is chosen by the damage, but the damage of "the lowest tier is the partial one" is only fair when its stacks may stand BEHIND the mercenaries (a small partial stack in front of them caps them).
 // So three solutions are compared and the one with the most damage is kept: (1) the usual one, (2) the lowest tier as the partial one, where it stands, (3) the lowest tier as the partial one, taken out and put behind the mercenaries.
+let TCCACHE=null;      // the Tier check solves the same selection again and again (the damage, then the revive gold): while it runs, a selection is solved once (a Map: key -> solution); nothing else uses it
+function solveTC(P,order){
+  if(!TCCACHE)return solve(P,order);
+  const key=JSON.stringify(P)+'|'+order.join(',')+'|'+[...XS].join(','),h=TCCACHE.get(key);if(h)return h;
+  const res=solve(P,order);TCCACHE.set(key,res);return res}
 function solve(P,order){
   const r=solve1(P,order);if(!rgm(P))return r;
   const dm=x=>score(P,[...x.A,...x.Mo,...x.U.list],[...x.st.so,...x.U.ord],true).dmg;
   const nT=monTiers(r.st.filter(s=>s.p=='M'&&!s.off).map(s=>TRN[s.name])).length,rd=dm(r);
   // The Leadership and the monsters keep the layout of the search WITHOUT the mercenaries (the same stacks as with 0 Authority); only the place of the partial stack and the mercenaries is tried (21.5.5).
   // The solution of the full search (with the mercenaries) is kept only when it is clearly better (1 %).
+  // 21.5.7: every searched layout is solved ONCE (the search is the slow part) and shared by the two variants; a layout that was searched already is not searched again.
   let best=null,bd=0;
-  const P0=P.capU>0?{...P,capU:0}:P;
-  try{[null,nT-1,nT-2].forEach(fc=>{if(fc!=null&&(nT<2||fc<1))return;FORCEC=fc;[false,true].forEach(z=>{const x=solve1(P,order,z,P0),d=dm(x);if(d>bd*(1+5e-4)){best=x;bd=d}})})}finally{FORCEC=null}
+  const P0=P.capU>0?{...P,capU:0}:P,seen=new Set();
+  try{[null,nT-1,nT-2].forEach(fc=>{if(fc!=null&&(nT<2||fc<1))return;FORCEC=fc;
+    const st0=buildStacks(P0,order,XS),sig=st0.so.join('|')+'#'+st0.filter(s=>s.pt).map(s=>s.name).join('|');if(seen.has(sig))return;seen.add(sig);
+    [false,true].forEach(z=>{const x=solve1(P,order,z,P0,st0),d=dm(x);if(d>bd*(1+5e-4)){best=x;bd=d}})})}finally{FORCEC=null}
   return best&&bd*1.01>=rd?best:r}
 // 21.5.2: the Dominance that is LEFT over. The monster chain stops when the stacks reach the level of the army (health and strength fall along the order), so a lower monster tier (the one below the partial tier) gets no units
 // while part of the Dominance stays unspent. These stacks (the lower tier) take the leftover Dominance. There is no single good place for them, so BOTH are tried and the one with the most damage is kept:
@@ -2398,14 +2407,15 @@ function fullRevive(P,hl,order){
   return{rv,dies};
 }
 function evalSel(sel){      // the tier selection sel: the same steps as calc, without drawing. m = what the check maximizes: the estimated damage; Renegades (14.13): the damage per gold of the full revive
-  const P=getP(),{st,A,Mo,U}=solve(P,[...sel].sort((a,b)=>key(a)-key(b)));
+  const P=getP(),{st,A,Mo,U}=solveTC(P,[...sel].sort((a,b)=>key(a)-key(b)));
   const hl=[...A,...Mo,...U.list],dmg=score(P,hl,[...st.so,...U.ord]).dmg;
   if(!P.ren)return{m:dmg,dmg};
   const {rv}=fullRevive(P,hl,[...st.so,...U.ord]),tl=templeLv(),gold=(rv.A+rv.M+rv.U)/(tl>=1?TEMPLE[tl-1]:1);
   return{m:gold>0?dmg/gold:0,dmg,gold};
 }
-function goldOf(sel){const P=getP(),{st,A,Mo,U}=solve(P,[...sel].sort((a,b)=>key(a)-key(b))),hl=[...A,...Mo,...U.list],{rv}=fullRevive(P,hl,[...st.so,...U.ord]),tl=templeLv();return(rv.A+rv.M+rv.U)/(tl>=1?TEMPLE[tl-1]:1)}      // 19.0.146: the full revive gold of a tier selection
-async function tierHint(gen,body0){
+function goldOf(sel){const P=getP(),{st,A,Mo,U}=solveTC(P,[...sel].sort((a,b)=>key(a)-key(b))),hl=[...A,...Mo,...U.list],{rv}=fullRevive(P,hl,[...st.so,...U.ord]),tl=templeLv();return(rv.A+rv.M+rv.U)/(tl>=1?TEMPLE[tl-1]:1)}      // 19.0.146: the full revive gold of a tier selection
+async function tierHint(gen,body0){TCCACHE=new Map();try{return await tierHintRun(gen,body0)}finally{TCCACHE=null}}
+async function tierHintRun(gen,body0){
   const body=body0||$('tcb');
   const P=getP(),sel0=[];
   ['E','S','G','M'].forEach(c=>{for(let i=1;i<=9;i++){const el=$('s'+c+i);if(el&&el.checked)sel0.push(c+i)}});
