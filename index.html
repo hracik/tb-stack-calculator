@@ -186,7 +186,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.5.0';
+const APP_VERSION='21.5.1';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1667,7 +1667,31 @@ function allocRen(P,live){                 // Renegades (14.8, 14.14, 14.16): th
 }
 function allocate(P,live){const md=modeOf(P);HO=md.ho;return md.size(P,live)}      // the sizing of the mode (HO: health only, read by the shared helpers)
 // the whole calculation of the engine: the order, the Leadership / Dominance stacks, then the mercenaries (they come last: the numbers before are final)
-function solve(P,order){const st=buildStacks(P,order,XS),{A,Mo}=allocate(P,st.filter(s=>!s.off)),U=allocMerc(P,[...A,...Mo],st.so,XS);return{st,A,Mo,U}}
+function solve(P,order){const st=buildStacks(P,order,XS),{A,Mo}=allocate(P,st.filter(s=>!s.off)),U=allocMerc(P,[...A,...Mo],st.so,XS);
+  if(rgm(P))dominanceTail(P,st,A,Mo,U);
+  return{st,A,Mo,U}}
+// 21.5.1: the Dominance that is LEFT over. The monster chain stops when the stacks reach the level of the army (health and strength fall along the order), so a lower monster tier (the one below the partial tier) gets no units
+// while part of the Dominance stays unspent. These stacks now stand BEHIND the mercenaries (the mercenaries must not be capped by a small stack, and the lower tier takes what is left): they continue the chain from the last mercenary
+// (health and total strength) with the leftover Dominance. Kept only when the damage goes up.
+function dominanceTail(P,st,A,Mo,U){
+  const left=P.capM-Mo.reduce((q,s)=>q+(s.n||0)*s.cost,0),tail=Mo.filter(s=>!(s.n>0)&&!s.off);
+  if(!(left>0)||!tail.length)return;
+  const ord=[...st.so,...U.ord],ix={};ord.forEach((n,i)=>ix[n]=i);
+  const L=[...A,...Mo,...U.list].filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);
+  if(!L.length)return;
+  let H=Infinity,T=Infinity;L.forEach(s=>{H=tot(s.n,s.hp);if(strRef(s))T=tot(s.n,s.str)});
+  const seq=tail.slice().sort((a,b)=>ix[a.name]-ix[b.name]),used=ns=>ns.reduce((q,n,i)=>q+n*seq[i].cost,0),at=X=>sizeChain(P,seq,H,T,L.length,X);
+  let ns=at(H-1);
+  if(used(ns)>left){let lo=0,top=H-1;for(let k=0;k<60;k++){const mid=(lo+top)/2;if(used(at(mid))<=left)lo=mid;else top=mid}ns=at(lo)}
+  if(!ns.some(n=>n>0))return;
+  const base=score(P,[...A,...Mo,...U.list],ord).dmg;
+  const names=new Set(seq.filter((s,i)=>ns[i]>0).map(s=>s.name));
+  seq.forEach((s,i)=>{s.n0=s.n;s.n=ns[i]});
+  const nord=[...st.so.filter(n=>!names.has(n)),...U.ord,...seq.filter(s=>s.n>0).map(s=>s.name)];
+  if(score(P,[...A,...Mo,...U.list],nord).dmg>base*(1+1e-9)){st.so=st.so.filter(n=>!names.has(n));U.ord.push(...seq.filter(s=>s.n>0).map(s=>s.name))}
+  else seq.forEach(s=>{s.n=s.n0});
+}
+
 // ---- total damage from the dying order alone (the same calculation in every mode) ----
 // The enemy has K stacks, so every round has K trades: my strongest living stack (total strength n x str - no squad bonus, no Double strike: the Double strike only adds damage, it does not decide who strikes first) strikes and the
 // enemy hits - it kills ONE of my stacks, always the first one still alive in the dying order. Round 1 starts with my strike (strike, kill, strike, kill ...);
