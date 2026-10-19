@@ -186,7 +186,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.4.1';
+const APP_VERSION='21.4.2';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1223,7 +1223,7 @@ function cpdOrder(P,names,c){
   const noB=a=>a.filter(t=>!bon(t)).sort((x,y)=>cpSH(x,P)-cpSH(y,P)||tie(x,y));                                    // no bonus: the smaller SH ratio first
   const withB=a=>a.filter(bon).sort((x,y)=>cpBonus(x,P)-cpBonus(y,P)||cpSH(x,P)-cpSH(y,P)||tie(x,y));             // with a bonus: the lowest bonus first, then the smaller SH ratio first
   const both=a=>[...noB(a),...withB(a)];
-  if(P.ov)return[...eng,...both([...army.filter(t=>t.cls=='G'),...mon]),...both(army.filter(t=>t.cls=='S'))].map(t=>t.name);      // One v. One: the Guardsmen and ALL the monsters first, the Specialists last by force (no partial monster tier behind them)
+  if(P.ov)return[...eng,...[...army,...mon].sort((x,y)=>cpBonus(x,P)-cpBonus(y,P)||cpSH(x,P)-cpSH(y,P)||tie(x,y))].map(t=>t.name);      // One v. One (21.4.2): no class exceptions - the lowest squad bonus dies first, the better bonuses die later (then the smaller SH ratio first); health AND strength fall along this order (MD.ovo)
   return[...eng,...both([...army.filter(t=>t.cls=='G'),...mon.filter(t=>sp.full.has(t.tier))]),...both(army.filter(t=>t.cls=='S')),...both(mon.filter(t=>!sp.full.has(t.tier)))].map(t=>t.name);
 }
 // ---- THE MODES: ONE engine runs all of them. This table is the only place that says how they differ; everything else (the rules above, the sizing helpers, the score) is shared.
@@ -1255,6 +1255,8 @@ const MD={
     order:(P,{live,mkOut,nT})=>byTiers(nT,c=>tierTry(P,killOrder(P,live,c),mkOut,c),mkOut)},
   cp:{kn1:false,ho:true,size:allocTight,        // CP kill / CP death / Max damage: the order is fixed, the troops of the same class and bonus are one group of equals
     order:(P,{live,mkOut,nT})=>{const mkCP=(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)+(s.pt?'|p':'')});return o};return byTiers(nT,c=>tierTry(P,P.cpd?cpdOrder(P,live,c):cpOrder(P,live),mkCP,c),mkCP)}},
+  ovo:{kn1:false,ho:false,size:allocTight,      // One v. One: the order of CP death by the squad bonus only; health AND total strength fall along it, no exceptions
+    order:(P,{live,mkOut,nT})=>{const mkCP=(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)+(s.pt?'|p':'')});return o};return byTiers(nT,c=>tierTry(P,cpdOrder(P,live,c),mkCP,c),mkCP)}},
   ren:{kn1:false,ho:false,size:allocRen,        // Renegades: fixed rule, nothing is refined; the lowest tier is the partial one when 3 or more tiers are chosen
     order:(P,{live,mkOut,nT})=>{
       const so=renOrder(P,live),out=mkOut(so,nT>=3?nT-1:nT);
@@ -1263,7 +1265,7 @@ const MD={
       out.forEach(s=>{s.buf=false;s.grp=so.head.has(s.name)?s.name:so.bufN.has(s.name)?(s.buf=true,'BUF'):'REST'});
       return{so,out};}}
 };
-const modeOf=P=>rgm(P)?MD.epic:P.cp?MD.cp:P.kill?MD.kill:MD.ren;
+const modeOf=P=>rgm(P)?MD.epic:P.ov?MD.ovo:P.cp?MD.cp:P.kill?MD.kill:MD.ren;
 function buildStacks(P,order,X){
   const mk=(t,i)=>{const[mh,ms]=mults(t,P);
     return{r:t.cls+t.tier,p:t.pool,c:t.pool=='M'?t.type:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i,dh:dhf(t,P)}};
@@ -2208,7 +2210,7 @@ const MODEINFO={
   'kill':['Sniper · Killshot v. 3','You hit an epic monster with the goal of killing it. The mounted units have already been killed or significantly weakened. The total damage to the enemy is a bit smaller than in the 3-stack or 4-stack modes, but the cost of reviving and training is significantly lower, which makes this mode very cost-effective.'],
   'kill4':['Sniper · Killshot v. 4','You hit an epic monster with the goal of killing it while it still has all 4 stacks. The total damage to the enemy is a bit smaller than in the 3-stack or 4-stack modes, but the cost of reviving and training is significantly lower, which makes this mode very cost-effective.'],
   'cp':['Pv1 · CP kill','You hit another player who has only one flying troop type in the city, and your army is strong enough to kill it quickly. The total damage to the enemy is smaller than in the CP death mode, but the cost of reviving and training is significantly lower, which makes this mode very cost-effective.'],
-  'ovo':['Pv1 · One v. One','You fight another player with a full city: 12 enemy stacks, 3 of each type. Stacks are created with the goal of maximizing damage, but the Specialists die last by force: the Guardsmen and all the monsters stand before them.'],
+  'ovo':['Pv1 · One v. One','You fight another player with a full city: 12 enemy stacks, 3 of each type. Stacks are created with the goal of maximizing damage. The dying order follows the squad bonus, no exceptions: the better the bonus, the later the troop dies, and both the health and the strength fall along the order.'],
   'pm':['PvMany · Max damage','You hit another player who has every kind of troop in the city, so it is a total battle. Win or lose, stacks are created with the goal of maximizing damage, using the Specialists\' double damage.'],
   'cpd':['Pv1 · CP death','You hit another player who has only one flying troop type in the city, but a very large one, and your army is not strong enough to kill it. Stacks are created with the goal of maximizing damage, using the Specialists\' double damage and the bonuses against flying enemies.']
 };
