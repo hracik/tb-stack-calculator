@@ -186,7 +186,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.5.8';
+const APP_VERSION='21.5.9';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1229,7 +1229,6 @@ function cpdOrder(P,names,c){
 //   ho     health only: the total strength does not have to fall along the order, a group of equals shares the places (CP kill, CP death, Max damage)
 //   order  who stands where: gives {so: the dying order, out: its stacks}
 //   size   how many units every stack gets
-let FORCEC=null;
 function byTiers(nT,tryTier,mk,quickTier){      // the number of full monster tiers: the one with the most damage is kept (a tie: more full tiers)
   const win=(r,b)=>!b||r.dmg>b.dmg*(1+1e-9);
   let cs=[];for(let c=nT;c>=1;c--)cs.push(c);
@@ -1238,7 +1237,6 @@ function byTiers(nT,tryTier,mk,quickTier){      // the number of full monster ti
     let top=null;q.forEach(x=>{if(!top||x.r.dmg>top.r.dmg*(1+1e-9))top=x});
     cs=[top.c];
   }
-  if(FORCEC!=null&&nT>1)cs=[Math.min(FORCEC,nT)];      // 21.5.3: solve() forces the number of full tiers when it tries the lowest tier as the partial one
   let best=null;
   for(const c of cs){
     const r=tryTier(c);r.c=c;
@@ -1675,26 +1673,16 @@ function solve1(P,order,zeroPt,PS,stIn){const st=stIn?cloneSt(stIn):buildStacks(
   const U=allocMerc(P,[...A,...Mo],st.so,XS);
   if(rgm(P))dominanceTail(P,st,A,Mo,U);
   return{st,A,Mo,U}}
-// 21.5.3: the number of full monster tiers is chosen by the damage, but the damage of "the lowest tier is the partial one" is only fair when its stacks may stand BEHIND the mercenaries (a small partial stack in front of them caps them).
-// So three solutions are compared and the one with the most damage is kept: (1) the usual one, (2) the lowest tier as the partial one, where it stands, (3) the lowest tier as the partial one, taken out and put behind the mercenaries.
 let TCCACHE=null;      // the Tier check solves the same selection again and again (the damage, then the revive gold): while it runs, a selection is solved once (a Map: key -> solution); nothing else uses it
 function solveTC(P,order){
   if(!TCCACHE)return solve(P,order);
   const key=JSON.stringify(P)+'|'+order.join(',')+'|'+[...XS].join(','),h=TCCACHE.get(key);if(h)return h;
   const res=solve(P,order);TCCACHE.set(key,res);return res}
+// 21.5.9: ONE order search, the one WITHOUT the mercenaries (Authority 0): the Leadership and the monsters keep the layout they have with 0 Authority. The partial monster stacks are left to the Dominance tail (dominanceTail),
+// which puts them behind the mercenaries when the Authority allows it, before them when it does not. No variants are compared.
 function solve(P,order){
-  const r=solve1(P,order);if(!rgm(P))return r;
-  const dm=x=>score(P,[...x.A,...x.Mo,...x.U.list],[...x.st.so,...x.U.ord],true).dmg;
-  const nT=monTiers(r.st.filter(s=>s.p=='M'&&!s.off).map(s=>TRN[s.name])).length,rd=dm(r);
-  // The Leadership and the monsters keep the layout of the search WITHOUT the mercenaries (the same stacks as with 0 Authority); only the place of the partial stack and the mercenaries is tried (21.5.5).
-  // The solution of the full search (with the mercenaries) is kept only when it is clearly better (1 %).
-  // 21.5.7: every searched layout is solved ONCE (the search is the slow part) and shared by the two variants; a layout that was searched already is not searched again.
-  let best=null,bd=0;
-  const P0=P.capU>0?{...P,capU:0}:P,seen=new Set();
-  try{[null,nT-1].forEach(fc=>{if(fc!=null&&(nT<2||fc<1))return;FORCEC=fc;
-    const st0=buildStacks(P0,order,XS),sig=st0.so.join('|')+'#'+st0.filter(s=>s.pt).map(s=>s.name).join('|');if(seen.has(sig))return;seen.add(sig);
-    [false,true].forEach(z=>{const x=solve1(P,order,z,P0,st0),d=dm(x);if(d>bd*(1+5e-4)){best=x;bd=d}})})}finally{FORCEC=null}
-  return best&&bd*1.01>=rd?best:r}
+  if(!rgm(P))return solve1(P,order);
+  return solve1(P,order,true,P.capU>0?{...P,capU:0}:P)}
 // 21.5.2: the Dominance that is LEFT over. The monster chain stops when the stacks reach the level of the army (health and strength fall along the order), so a lower monster tier (the one below the partial tier) gets no units
 // while part of the Dominance stays unspent. These stacks (the lower tier) take the leftover Dominance. There is no single good place for them, so BOTH are tried and the one with the most damage is kept:
 //   (1) BEFORE the mercenaries (the usual place: after the monsters): when the Authority is small and the stack is high, the mercenaries follow it; when the stack is low it caps the mercenaries behind it.
