@@ -186,7 +186,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.5.9';
+const APP_VERSION='21.5.10';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -1668,27 +1668,27 @@ function allocRen(P,live){                 // Renegades (14.8, 14.14, 14.16): th
 function allocate(P,live){const md=modeOf(P);HO=md.ho;return md.size(P,live)}      // the sizing of the mode (HO: health only, read by the shared helpers)
 // the whole calculation of the engine: the order, the Leadership / Dominance stacks, then the mercenaries (they come last: the numbers before are final)
 const cloneSt=st=>{const c=st.map(s=>({...s}));c.so=st.so.slice();return c};      // the allocation writes the counts into the stacks: every variant gets its own copy of the searched stacks
-function solve1(P,order,zeroPt,PS,stIn){const st=stIn?cloneSt(stIn):buildStacks(PS||P,order,XS),{A,Mo}=allocate(P,st.filter(s=>!s.off));      // PS: the settings the ORDER is searched with (the search without the mercenaries keeps the Leadership and the monsters as flat as it is with 0 Authority)
+function solve1(P,order,zeroPt,PS,stIn,light){const st=stIn?cloneSt(stIn):buildStacks(PS||P,order,XS),{A,Mo}=allocate(P,st.filter(s=>!s.off));      // PS: the settings the ORDER is searched with (the search without the mercenaries keeps the Leadership and the monsters as flat as it is with 0 Authority)
   if(zeroPt)Mo.forEach(s=>{if(s.pt)s.n=0});      // the partial tier (and the tiers below it) is taken out: the mercenaries are sized first, the stacks come back behind them (dominanceTail)
   const U=allocMerc(P,[...A,...Mo],st.so,XS);
-  if(rgm(P))dominanceTail(P,st,A,Mo,U);
+  if(rgm(P))dominanceTail(P,st,A,Mo,U,light);
   return{st,A,Mo,U}}
 let TCCACHE=null;      // the Tier check solves the same selection again and again (the damage, then the revive gold): while it runs, a selection is solved once (a Map: key -> solution); nothing else uses it
 function solveTC(P,order){
-  if(!TCCACHE)return solve(P,order);
+  if(!TCCACHE)return solve(P,order);      // (outside the Tier check: the final setup)
   const key=JSON.stringify(P)+'|'+order.join(',')+'|'+[...XS].join(','),h=TCCACHE.get(key);if(h)return h;
-  const res=solve(P,order);TCCACHE.set(key,res);return res}
+  const res=solve(P,order,true);TCCACHE.set(key,res);return res}
 // 21.5.9: ONE order search, the one WITHOUT the mercenaries (Authority 0): the Leadership and the monsters keep the layout they have with 0 Authority. The partial monster stacks are left to the Dominance tail (dominanceTail),
 // which puts them behind the mercenaries when the Authority allows it, before them when it does not. No variants are compared.
-function solve(P,order){
+function solve(P,order,light){
   if(!rgm(P))return solve1(P,order);
-  return solve1(P,order,true,P.capU>0?{...P,capU:0}:P)}
+  return solve1(P,order,true,P.capU>0?{...P,capU:0}:P,null,light)}
 // 21.5.2: the Dominance that is LEFT over. The monster chain stops when the stacks reach the level of the army (health and strength fall along the order), so a lower monster tier (the one below the partial tier) gets no units
 // while part of the Dominance stays unspent. These stacks (the lower tier) take the leftover Dominance. There is no single good place for them, so BOTH are tried and the one with the most damage is kept:
 //   (1) BEFORE the mercenaries (the usual place: after the monsters): when the Authority is small and the stack is high, the mercenaries follow it; when the stack is low it caps the mercenaries behind it.
 //   (2) BEHIND the mercenaries: the mercenaries are not capped, the stack continues the chain from the last mercenary (health and total strength).
 // (3) no extra stacks at all, when neither raises the damage.
-function dominanceTail(P,st,A,Mo,U){
+function dominanceTail(P,st,A,Mo,U,light){      // light (the Tier check): only the place after the main mercenaries is tried; the final setup tries every place among the mercenaries (k mercenaries in front of the stack, the rest behind it)
   const left=P.capM-Mo.reduce((q,s)=>q+(s.n||0)*s.cost,0),tail=Mo.filter(s=>!(s.n>0)&&!s.off);
   if(!(left>0)||!tail.length)return;
   const set=ns=>tail.forEach((s,i)=>{s.n=ns?ns[i]:0});
@@ -1714,13 +1714,14 @@ function dominanceTail(P,st,A,Mo,U){
   const ns2=sizeTail([...A,...Mo,...U.list],[...st.so,...U.ord]);
   if(ns2){set(ns2);const nm=new Set(tail.filter(s=>s.n>0).map(s=>s.name)),so2=st.so.filter(n=>!nm.has(n)),U2={list:U.list,ord:[...U.ord,...tail.filter(s=>s.n>0).map(s=>s.name)]},d=dmg(U2,so2);if(d>best.d*(1+5e-4))best={d,kind:2,ns:ns2,so2,U2};set(null)}
   // (3) INSIDE the mercenaries: behind the main chain, in front of the Epic monster hunters and the weak-strength stacks (Ariel). Those last ones are sized again behind the stack, with the Authority that is left.
-  if(U.mainN>0&&U.mainN<U.list.length){
-    const main=U.list.slice(0,U.mainN),rest=U.list.slice(U.mainN),ord0=[...st.so,...U.ord.slice(0,U.mainN)],ldm=[...A,...Mo,...main];
+  const ks=light?(U.mainN>0&&U.mainN<U.list.length?[U.mainN]:[]):[...Array(U.list.length).keys()];
+  ks.forEach(k=>{
+    const main=U.list.slice(0,k),rest=U.list.slice(k),ord0=[...st.so,...U.ord.slice(0,k)],ldm=[...A,...Mo,...main];
     const svM=rest.map(s=>s.n);rest.forEach(s=>{s.n=0});
     const ns3=sizeTail(ldm,ord0);
     if(ns3){
       set(ns3);
-      const tl=tail.filter(s=>s.n>0),ix={};[...st.so.filter(n=>!tl.some(s=>s.name==n)),...U.ord.slice(0,U.mainN),...tl.map(s=>s.name)].forEach((n,i)=>ix[n]=i);
+      const tl=tail.filter(s=>s.n>0),ix={};[...st.so.filter(n=>!tl.some(s=>s.name==n)),...U.ord.slice(0,k),...tl.map(s=>s.name)].forEach((n,i)=>ix[n]=i);
       let H=Infinity,T=Infinity;[...ldm.filter(s=>s.n>0),...tl].sort((a,b)=>ix[a.name]-ix[b.name]).forEach(s=>{H=tot(s.n,s.hp);if(strRef(s))T=tot(s.n,s.str)});
       const cu=P.capU-main.reduce((q,s)=>q+s.n*s.cost,0),used=ns=>ns.reduce((q,n,i)=>q+n*rest[i].cost,0),at=X=>sizeChain(P,rest,H,T,ldm.length+tl.length,X);
       let nr=at(H-1);
@@ -1730,7 +1731,7 @@ function dominanceTail(P,st,A,Mo,U){
       const d=score(P,[...A,...Mo,...lst],[...so3,...ord3],true).dmg;
       if(d>best.d*(1+5e-4))best={d,kind:3,ns:ns3,so3,lst,ord3,used:lst.reduce((q,s)=>q+s.n*s.cost,0),pairs:rest.map((s,i)=>[s,nr[i]])};
       set(null)}
-    rest.forEach((s,i)=>{s.n=svM[i]})}
+    rest.forEach((s,i)=>{s.n=svM[i]})});
   if(best.kind==3){set(best.ns);best.pairs.forEach(([s,n])=>{s.n=n});st.so=best.so3;U.list=best.lst;U.ord=best.ord3;U.used=best.used}
   else if(best.kind==1){set(best.ns);Object.assign(U,best.U1)}
   else if(best.kind==2){set(best.ns);st.so=best.so2;U.ord=best.U2.ord}
