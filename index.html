@@ -186,7 +186,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.4.1';
+const APP_VERSION='21.4.2';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2170,7 +2170,11 @@ function allocMerc(P,ld,so,X){
   // The bonus against epic enemies counts against EVERY enemy stack, a class bonus only against the stacks of that class: at the same size the epic one is the better one and dies later.
   const bk=t=>q6(sqb(t,P).tot+(P.epic&&t.ve>0?1e-3:0));
   const seq=act.slice().sort((a,b)=>bk(a)-bk(b)||nom(a)-nom(b)||ci(a)-ci(b)||b.tier-a.tier).map(t=>by[t.name]);
-  const best=evalSeq(seq);
+  // 21.4.2: the strength (total) has to fall along the chain, so a stack with a LOW strength per health (Ariel, an engineer) in the middle of the chain caps every stack behind it: they got half the health, the Authority stayed unspent.
+  // Three orders are tried and the one with the most damage is kept: (1) the squad bonus (above), (2) the strength per health, the highest first, (3) the squad bonus with the weak-strength stacks (below 80 % of the median) moved to the end.
+  const sh=s=>s.str/s.hp,med=seq.map(sh).sort((x,y)=>x-y)[seq.length>>1];
+  const cs=[seq,seq.slice().sort((x,y)=>sh(y)-sh(x)),[...seq.filter(s=>sh(s)>=0.8*med),...seq.filter(s=>sh(s)<0.8*med)]];
+  let best=null;cs.forEach(q=>{const r=evalSeq(q);if(!best||r.d>best.d*(1+1e-9))best=r});
   best.seq.forEach((s,i)=>{if(best.ns[i]>0){s.n=best.ns[i];res.list.push(s);res.ord.push(s.name);res.used+=s.n*s.cost}});
   return res;
 }
