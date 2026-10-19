@@ -186,6 +186,11 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <div id="renlv" hidden><div class="fg"><label class="bi" id="renll" title="The Renegades level: the damage the stacks must reach to win. The Tier check takes the lowest tiers out one by one until the damage is enough."><span>Level</span><select id="renLv"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option><option value="32">32</option><option value="33">33</option><option value="34">34</option><option value="35">35</option><option value="36">36</option><option value="37">37</option><option value="38">38</option><option value="39">39</option><option value="40">40</option><option value="41">41</option><option value="42">42</option><option value="43">43</option><option value="44">44</option><option value="45">45</option></select></label><div class="mu" id="renlt"></div></div></div>
 </div>
 
+<div class="card" id="theo" hidden><h2>Win chances<span class="tg">theoretical &middot; in progress</span></h2>
+<p class="mu" id="tintro">Stacks built for winning, not for damage. A battle simulator fights them against full enemy cities of the top tier (equal health in every stack, with 100% and 110% of your Leadership and Dominance) and the search keeps the stacks that leave the most health over, so they work against different enemies. It uses the tiers you ticked, 3 tiers at most (the game limit). When the stacks are found, the Result below shows them.</p>
+<div class="trow"><button type="button" id="tgo">Find stacks</button><button type="button" id="ttc" title="Tries the top tier alone and with one or two more of the ticked tiers, and ranks them by the net health left">Rank tier choices</button></div>
+<div id="tpr" hidden><div class="tpb"><i id="tpi"></i></div><span id="tps"></span></div>
+<div id="tres"></div><div id="ttab"></div></div>
 <div class="card" data-help="res"><h2><span id="rtitle">Result</span></h2>
 <div id="rsm"></div>
 <div id="osd" class="ctl"><div class="mu">Battle in detail</div><div class="obrow"><button type="button" class="ob" data-o="die" aria-expanded="false" title="Show the dying order, troop by troop">Dying order</button><button type="button" class="ob" data-o="hit" aria-expanded="false" title="Show the hitting order: the order in which the units hit the enemy in round 1">Hitting order</button><button type="button" class="ob" data-o="rep" aria-expanded="false" title="Show the battle report: our hits and the enemy hits, round by round, until no unit is left">Battle report</button></div>
@@ -195,16 +200,11 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <div id="res"></div>
 <div class="card cmin" id="cmpc" hidden><div class="pw cmbub"><p class="cmh">Compare your current stacks with the Krappy ones. Type the units of your own stacks, or upload screenshots from the in-game battle report showing all of them, and see the differences.</p><button type="button" id="cmpshot" class="cmup" title="Upload a screenshot/s of your army from the in-game battle report (select several photos at once): the unit numbers are read for you" aria-label="Read the unit numbers from screenshots"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M8.5 9.5h7a1 1 0 0 1 1 1v4.5a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-4.5a1 1 0 0 1 1-1z"/><circle cx="12" cy="12.6" r="1.6"/><path d="M10.2 9.5l.5-1h2.6l.5 1"/></svg><span>Upload screenshots</span></button></div><input type="file" id="cmpfile" accept="image/*" multiple hidden><div class="mu cmst" id="cmpst"></div><div class="cmpg" id="cmpg" hidden><i></i></div><div id="cmpb"></div><div id="cmpr"></div></div></div>
 
-<div class="card" id="theo" hidden><h2>Win chances<span class="tg">theoretical &middot; in progress</span></h2>
-<p class="mu">Stacks built for winning, not for damage: a battle simulator fights them against a full enemy city of the top tier (equal health in every stack) and the search keeps the stacks with the most health left over after the fights. The stacks use the tiers you ticked, 3 tiers at most (the game limit).</p>
-<div class="trow"><label>Enemy Leadership and Dominance <select id="tesz"><option value="1">100%</option><option value="1.05">105%</option><option value="1.1">110%</option><option value="1.2">120%</option></select></label><button type="button" id="tgo">Find stacks</button><button type="button" id="ttc" title="Tries the top tier alone and with one or two more of the ticked tiers, and ranks them by the net health left">Rank tier choices</button></div>
-<div id="tpr" hidden><div class="tpb"><i id="tpi"></i></div><span id="tps"></span></div>
-<div id="tres"></div><div id="ttab"></div></div>
 <div class="mod" id="tcm" hidden><div role="dialog" aria-modal="true" aria-labelledby="tct"><h2 id="tct">Tier check</h2><div id="tcb"></div><div class="btnr"><button type="button" id="tcx" class="tcx">Close</button></div></div></div>
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.2';
+const APP_VERSION='21.6.3';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2343,6 +2343,7 @@ function calcRun(){
   if(!RENEGADES&&$('mode').value=='ren'){$('mode').value='max';SO=[]}      // Renegades is off: a tab saved in it falls back to Max damage
   {const rb=document.querySelector('.cm[data-m=ren]');if(rb){rb.disabled=!RENEGADES;rb.title=RENEGADES?'':'Switched off for now'}}
   const P=getP(),{st,A,Mo,U}=solve(P,O);
+  const fx=P.ov?theoFix(P):null;if(fx)theoApply(fx,st,U);      // 21.6.2 One v. One: the stacks the simulator found go into the Result
   {const rl=$('renlv'),tg=P.ren?renTarget():0,nt=$('renlt');if(rl)rl.hidden=!P.ren;if(nt)nt.textContent=tg?'Damage to reach: '+tg.toLocaleString('en-US'):'No level: the Tier check looks for the most damage per gold of the full revive.'}      // 14.19: the Level box is shown in Renegades only
   SO=st.so;
   {const sx=[...st,...U.all];sx.so=[...st.so,...U.ord];drawSO(sx,P)}                  // after the allocation: the list shows the unit counts
@@ -2384,7 +2385,7 @@ function calcRun(){
     ...(P.capM>0?[[`Monsters — Dominance ${usedOf(Mo).toLocaleString()} / ${P.capM.toLocaleString()}`,Mall.length?(mob?mobList(prepComp(prepMon(mobOrder(flatOrder(Mall)))),prepMob()&&VIEW=='mobile'):table(Mall)):'<p class="mu">No monster tiers selected.</p>']]:[]),   // no Dominance: no Monsters section
     ...(P.capA>0?[[`Soldiers — Leadership ${usedOf(A).toLocaleString()} / ${P.capA.toLocaleString()}`,Aall.length?(mob?mobList(prepComp(prepTier(ord(flatOrder(Aall),COMPA))),prepMob()&&VIEW=='mobile'):table(Aall)):'<p class="mu">No army tiers selected.</p>']]:[])].sort((x,y)=>prepMob()||(SHOWTR&&VIEW=='computer')?secRank(x[0])-secRank(y[0]):0).map(([t,b],k)=>`<h2${k?' class="sh2"':''}>${t}</h2>${b}`).join('');
   const hitsRow=Math.max(...REVCASES.map(c=>HIT[c[0]]))>1;      // the hits of every revive mode, after the food consumption in the second row (only when one of them pays for more than 1 hit)
-  {const rc=$('rtitle').closest('.card');if(rc)rc.hidden=!(!pvOff&&(P.capA>0||P.capM>0||P.capU>0))}      // Leadership, Dominance and Authority all 0: nothing to show, the whole Result section is hidden
+  {const rc=$('rtitle').closest('.card');if(rc)rc.hidden=!(!pvOff&&(P.capA>0||P.capM>0||P.capU>0))||!!(P.ov&&(P.capA>0||P.capM>0)&&!fx)}      // One v. One: until the stacks are found the Win chances card takes the place of the Result      // Leadership, Dominance and Authority all 0: nothing to show, the whole Result section is hidden
   const tgt=P.ren?renTarget():0,lvN=Math.floor(+$('renLv').value);      // 14.19: Renegades with a Level: is the target reached?
   const kmb=x=>{let v=Math.abs(x),i=0;const up=t=>{if(t<=0)return 0;const p=Math.pow(10,Math.floor(Math.log10(t))-2);return Math.round(+(t/p).toFixed(6))*p};while(v>=1e3&&i<3){v/=1e3;i++}let c=i?up(v):Math.round(v);if(c>=1e3&&i<3){c=up(c/1e3);i++}return (x<0?'-':'')+(i?(+c.toPrecision(3)).toString()+'KMB'[i-1]:String(c))};      // 19.0.30: normal rounding to 3 digits: 1,900,949 -> 1.9M, 626,252 -> 626K, 42,300 -> 42.3K, 8,650 -> 8.65K, 999,999 -> 1M
   const enTxt=P.one?'one flying enemy stack':P.ov?'12 enemy stacks (3 of each type)':P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks';
@@ -2404,7 +2405,7 @@ function calcRun(){
   cmpSet({P,Aall,Mall,mItems,ordp:[...st.so,...U.ord],O:O.slice(),sc,rcost,scost,EP});      // the Compare card under the Result
   {const tcb=document.querySelector('.tc');if(tcb)tcb.disabled=pvOff||!(P.capA>0||P.capM>0)}      // the Tier check button: nothing to check without a capacity
   {const a=$('tca');if(a&&a.dataset.open=='1')closeBubble()}      // any change makes an open check out of date
-  theoSync(P);      // 21.6.2 the Win chances card of One v. One
+  theoSync(P,fx);      // the Win chances card of One v. One
   save();
 }
 // ---- Theoretical PvP stacks (One v. One, in progress): a Monte Carlo battle simulator + a stack optimizer that maximizes the NET REMAINING HEALTH ----
@@ -2463,9 +2464,9 @@ function layout(P,names,w){const armyI=[],monI=[];names.forEach((nm,i)=>{if(w[i]
   monI.forEach(i=>{const t=TRN[names[i]],n=Math.floor(P.capM*w[i]/wm/t.cost);if(n>0)out.push(mkStack(names[i],n,P))});
   return out}
 // the score of a layout against the enemy builds, both orders of striking: the average net margin (the two fights are added up: +18 % and -6 % is +12 %), a quarter of the weight on the weaker of the two fights
-function score(L,Es,N,seed){let tot=0,c=0,m=[0,0];
-  Es.forEach((E,j)=>['A','B'].forEach((f,k)=>{const r=mc(L,E,N,seed+k*101+j*7,f);tot+=r.margin;c++;m[k]+=r.margin/Es.length}));
-  return{mean:tot/c,worst:Math.min(m[0],m[1])}}
+function score(L,Es,N,seed){let tot=0,c=0,worst=9;
+  Es.forEach((E,j)=>['A','B'].forEach((f,k)=>{const r=mc(L,E,N,seed+k*101+j*7,f);tot+=r.margin;c++;if(r.margin<worst)worst=r.margin}));
+  return{mean:tot/c,worst}}
 const PEN=0.004;      // a small price per stack: a stack must earn it
 const tick=()=>new Promise(r=>setTimeout(r,0));
 // the hill climb over the weights (async: the page is given back every 30 ms; stop() cancels). Returns {w, f}
@@ -2491,55 +2492,60 @@ async function search(P,names,Es,budget,seed,stop,prog,warm){
   const i1=Math.round(450*budget),i2=Math.round(600*budget),tot=starts.length*i1+2*i2;let done=0;
   const pg=(a,b)=>prog&&prog((done+a*b)/tot);
   const cand=[];
-  for(let k=0;k<starts.length;k++){const r=await optimize(P,names,Es,starts[k],i1,40,seed+k,stop,x=>pg(x,i1));if(!r)return null;done+=i1;cand.push(r)}
+  for(let k=0;k<starts.length;k++){const r=await optimize(P,names,Es,starts[k],i1,24,seed+k,stop,x=>pg(x,i1));if(!r)return null;done+=i1;cand.push(r)}
   cand.sort((a,b)=>b.f-a.f);const fin=[];
-  for(let k=0;k<2&&k<cand.length;k++){const r=await optimize(P,names,Es,cand[k].w,i2,100,seed+50+k,stop,x=>pg(x,i2));if(!r)return null;done+=i2;fin.push(r)}
-  let best=null,bs=-9;fin.concat(cand.slice(0,1)).forEach(r=>{const L=layout(P,names,r.w),o=score(L,Es,300,777),v=o.mean*0.75+o.worst*0.25-PEN*L.length;if(v>bs){bs=v;best={w:r.w,f:v}}});
+  for(let k=0;k<2&&k<cand.length;k++){const r=await optimize(P,names,Es,cand[k].w,i2,60,seed+50+k,stop,x=>pg(x,i2));if(!r)return null;done+=i2;fin.push(r)}
+  let best=null,bs=-9;fin.concat(cand.slice(0,1)).forEach(r=>{const L=layout(P,names,r.w),o=score(L,Es,200,777),v=o.mean*0.75+o.worst*0.25-PEN*L.length;if(v>bs){bs=v;best={w:r.w,f:v}}});
   return best}
 return{search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone}})();
-// ---- the screen of the theoretical stacks (One v. One): Find stacks, Rank tier choices, a fight with re-roll ----
+// ---- the screen of the theoretical stacks (One v. One): Find stacks, Rank tier choices, a fight with re-roll. Until stacks are found the Result is replaced by the card; once found the Result is live with them ----
 let THEOGEN=0,THEORUN=0,THEOCUR=null,THEOTC=null,THEOW={sig:'',m:new Map()};const THEOC=new Map(),THEOT=new Map();      // THEOGEN: a newer run / a change cancels the one that runs; THEOC / THEOT: finished searches and tier checks by input
 const tfm=x=>Math.round(x).toLocaleString('en-US'),tpc=x=>Math.round(x*100)+'%',tsg=x=>(x>=0?'+':'−')+Math.abs(Math.round(x*100))+'%';
+const TSIZES=[1,1.05,1.1,1.2];      // the enemy Leadership and Dominance the stacks are shown against (the search uses 100 % and 110 %: an all-rounder)
 function theoSel(){const s=[];['S','G','M'].forEach(c=>{for(let i=1;i<=9;i++){const el=$('s'+c+i);if(el&&el.checked)s.push(c+i)}});return s}
 const theoTiers=sel=>[...new Set(sel.map(x=>+x.slice(1)))].sort((a,b)=>b-a);      // the ticked tier numbers, the highest first
 const theoNames=(sel,tiers)=>TR.filter(t=>'GSM'.includes(t.cls)&&sel.includes(t.cls+t.tier)&&tiers.includes(t.tier)&&!XS.has(t.name)).map(t=>t.name);
-const theoScale=()=>+$('tesz').value||1;
+const theoEs=P=>[[1,1],[1,0],[1.1,1],[1.1,0]].map(([sc,eq])=>THEO.mkEnemy(P,eq,sc));      // the search: equal health / equal cost monsters, at 100 % and 110 %
+function theoStats(P,names,w,N){const L=THEO.layout(P,names,w),rows=[];
+  TSIZES.forEach(sz=>{const o={sz,A:{win:0,ra:0,rb:0,margin:0},B:{win:0,ra:0,rb:0,margin:0}};
+    [1,0].forEach((eq,j)=>{const E=THEO.mkEnemy(P,eq,sz);['A','B'].forEach(f=>{const r=THEO.mc(L,E,N,4242+j*13,f),t=o[f];['win','ra','rb','margin'].forEach(k=>t[k]+=r[k]/2)})});
+    o.net=o.A.margin+o.B.margin;rows.push(o)});
+  const tot=L.reduce((q,s)=>q+s.n*s.hp,0),av=f=>rows.reduce((q,o)=>q+f(o),0)/rows.length;
+  return{names,w,stacks:L.map(s=>({name:s.name,n:s.n,sh:s.n*s.hp/tot})),rows,net:av(o=>o.net),winA:av(o=>o.A.win),winB:av(o=>o.B.win)}}
 // the weights of the best earlier result whose tiers are all inside `tiers` (a search with fewer tiers is a start for a search with more: more tiers can never be worse, the search only has to find it)
-function theoWarm(P,scale,tiers){const sig=JSON.stringify([P,scale]);if(THEOW.sig!==sig){THEOW={sig,m:new Map()};return null}
+function theoWarm(P,tiers){const sig=JSON.stringify(P);if(THEOW.sig!==sig){THEOW={sig,m:new Map()};return null}
   let best=null;THEOW.m.forEach(e=>{if(e.set.every(t=>tiers.includes(t))&&(!best||e.net>best.net))best=e});return best?best.map:null}
-function theoKeep(P,scale,names,res){const set=[...new Set(names.map(n=>TRN[n].tier))].sort((a,b)=>b-a),sig=JSON.stringify([P,scale]);if(THEOW.sig!==sig)THEOW={sig,m:new Map()};
+function theoKeep(P,names,res){const set=[...new Set(names.map(n=>TRN[n].tier))].sort((a,b)=>b-a),sig=JSON.stringify(P);if(THEOW.sig!==sig)THEOW={sig,m:new Map()};
   const k=set.join(),o=THEOW.m.get(k);if(!o||res.net>o.net)THEOW.m.set(k,{set,net:res.net,map:Object.fromEntries(res.names.map((n,i)=>[n,res.w[i]]))})}
-function theoStats(P,names,w,Es,N){const L=THEO.layout(P,names,w),o={A:{win:0,loss:0,ra:0,rb:0,margin:0},B:{win:0,loss:0,ra:0,rb:0,margin:0}};
-  Es.forEach((E,j)=>['A','B'].forEach(f=>{const r=THEO.mc(L,E,N,4242+j*13,f),t=o[f];['win','loss','ra','rb','margin'].forEach(k=>t[k]+=r[k]/Es.length)}));
-  const tot=L.reduce((q,s)=>q+s.n*s.hp,0);
-  return{names,w,stacks:L.map(s=>({name:s.name,n:s.n,sh:s.n*s.hp/tot})),st:o,net:o.A.margin+o.B.margin}}
-const theoEs=(P,scale)=>[THEO.mkEnemy(P,1,scale),THEO.mkEnemy(P,0,scale)];      // the enemy: equal health in every stack (two ways to split the monsters)
-function theoBusy(on,txt){const b=$('tgo'),c=$('ttc');b.textContent=on=='go'?'Stop':'Find stacks';c.textContent=on=='tc'?'Stop':'Rank tier choices';b.disabled=on=='tc';c.disabled=on=='go';$('tpr').hidden=!on;if(on){$('tpi').style.width='0%';$('tps').textContent=txt||''}}
+const theoKey=(P,names)=>JSON.stringify([P,names]);
+function theoFix(P){const sel=theoSel(),names=theoNames(sel,theoTiers(sel).slice(0,3));return THEOC.get(theoKey(P,names))||null}      // the found stacks for exactly these inputs
+function theoApply(fx,st,U){const m={};fx.res.stacks.forEach(s=>m[s.name]=s.n);      // the found units go into the Result: the same stacks, the same cards, the same buttons
+  st.forEach(s=>{s.n=m[s.name]||0});U.all.forEach(s=>{s.n=0});U.list=[];U.ord=[];U.used=0}
+function theoBusy(on,txt){const b=$('tgo'),c=$('ttc');b.textContent=on=='go'?'Stop':($('tres').innerHTML?'Find stacks again':'Find stacks');c.textContent=on=='tc'?'Stop':'Rank tier choices';b.disabled=on=='tc';c.disabled=on=='go';$('tpr').hidden=!on;if(on){$('tpi').style.width='0%';$('tps').textContent=txt||''}}
 function theoProg(x,txt){$('tpi').style.width=Math.min(100,Math.round(x*100))+'%';if(txt)$('tps').textContent=txt}
-const theoTierTxt=names=>{const t=[...new Set(names.map(n=>TRN[n].tier))].sort((a,b)=>b-a);return t.map(x=>'T'+x).join(' + ')};
+const theoTierTxt=names=>[...new Set(names.map(n=>TRN[n].tier))].sort((a,b)=>b-a).map(x=>'T'+x).join(' + ');
 async function theoRun(){
   if(THEORUN){THEOGEN++;return}      // the button is Stop while it runs
   const P=getP(),sel=theoSel(),tiers=theoTiers(sel).slice(0,3),names=theoNames(sel,tiers);
   if(!names.length){$('tout').innerHTML='<p class="mu">Tick some tiers first.</p>';return}
-  const g=++THEOGEN,scale=theoScale();THEORUN=g;theoBusy('go','Searching for stacks...');const warm=theoWarm(P,scale,tiers);
-  try{const Es=theoEs(P,scale),r=await THEO.search(P,names,Es,1,5,()=>g!==THEOGEN,x=>theoProg(x),warm);
+  const g=++THEOGEN;THEORUN=g;theoBusy('go','Searching for stacks...');
+  try{const r=await THEO.search(P,names,theoEs(P),1,5,()=>g!==THEOGEN,x=>theoProg(x),theoWarm(P,tiers));
     if(!r||g!==THEOGEN)return;
-    const res=theoStats(P,names,r.w,Es,1000);theoKeep(P,scale,names,res);THEOC.set(JSON.stringify([P,names,scale]),{P,scale,res});THEOCUR={P,scale,res};
-    theoShow();
+    const res=theoStats(P,names,r.w,500);theoKeep(P,names,res);THEOC.set(theoKey(P,names),{P,res});
+    THEORUN=0;theoBusy(0);calc();      // the Result comes back with the found stacks
   }finally{if(THEORUN===g){THEORUN=0;theoBusy(0)}}}
-function theoShow(){const c=THEOCUR,out=$('tres');if(!c){out.innerHTML='';return}
-  const r=c.res,S=r.st,sel=theoSel(),tiers=theoTiers(sel);
-  const tile=(t,s)=>`<div class="ttile"><div class="ttl">${t}</div><div class="ttv">${tpc(s.win)}</div><div class="tts">wins &middot; we keep ${tpc(s.ra)} of our health, the enemy keeps ${tpc(s.rb)} &middot; net <b>${tsg(s.margin)}</b></div></div>`;
+function theoShow(){const c=THEOCUR,out=$('tres');$('tintro').hidden=!!c;
+  if(!c){out.innerHTML='';theoBusy(0);return}
+  const r=c.res,sel=theoSel(),tiers=theoTiers(sel);
   const nt=tiers.length>3?`<p class="mu">${tiers.length} tiers are ticked, the game allows 3: the top 3 (${tiers.slice(0,3).map(x=>'T'+x).join(', ')}) are used. Rank tier choices compares the combinations.</p>`:'';
-  out.innerHTML=`${nt}<div class="tti">${tile('We strike first',S.A)}${tile('The enemy strikes first',S.B)}</div>
-<p class="tnet">Both fights together: net <b>${tsg(r.net)}</b> <span class="mu">(${tsg(S.A.margin)} and ${tsg(S.B.margin)}; the health we keep minus the health the enemy keeps, in % of each army's own health)</span></p>
-<div class="tsc"><table><tr><th>Stack</th><th>Units</th><th>Health</th></tr>${r.stacks.slice().sort((a,b)=>b.sh-a.sh).map(s=>`<tr><td>${esc(s.name)}</td><td class="tn">${tfm(s.n)}</td><td class="tn">${(s.sh*100).toFixed(1)}%</td></tr>`).join('')}</table></div>
-<p class="mu">${r.stacks.length} stacks, tiers ${theoTierTxt(r.names)}. Enemy: a full city of the top tier (8 army stacks, 4 monster stacks) with ${tpc(c.scale)} of your Leadership and Dominance, equal health in every stack. Win chances are from 1,000 simulated fights per case; double damage and double strike are rolled.</p>
-<div class="tfr"><label>Round 1 <select id="tfirst"><option value="A">we strike first</option><option value="B">the enemy strikes first</option></select></label><button type="button" data-ta="fight">Show a fight</button><button type="button" data-ta="fight">Re-roll</button></div><div class="sbx" id="tfight"></div>`}
-function theoFight(){const c=THEOCUR;if(!c)return;const P=c.P,E=THEO.mkEnemy(P,1,c.scale),L=THEO.layout(P,c.res.names,c.res.w),first=$('tfirst').value,log=[],snap=[];
+  out.innerHTML=`${nt}<div class="tsc"><table><tr><th>Enemy</th><th>We strike first</th><th>The enemy strikes first</th><th>Net</th></tr>${r.rows.map(o=>`<tr><td>${tpc(o.sz)} Leadership and Dominance</td><td class="tn">${tpc(o.A.win)} wins, keep ${tpc(o.A.ra)}</td><td class="tn">${tpc(o.B.win)} wins, keep ${tpc(o.B.ra)}</td><td class="tn"><b>${tsg(o.net)}</b></td></tr>`).join('')}</table></div>
+<p class="tnet">Against all of them together: wins ${tpc(r.winA)} going first, ${tpc(r.winB)} going second, net <b>${tsg(r.net)}</b></p>
+<p class="mu">${r.stacks.length} stacks, tiers ${theoTierTxt(r.names)}; the stacks are in the Result below. Net = the health we keep minus the health the enemy keeps, going first and going second added together (in % of each army's own health; a win with 18% left and a loss that leaves the enemy 6% is +12%). The enemy: a full city of the top tier (8 army stacks, 4 monster stacks), equal health in every stack, the monsters split by health or by cost. Every case is 500 simulated fights; double damage and double strike are rolled. The mercenaries are not used.</p>
+<div class="tfr"><label>Round 1 <select id="tfirst"><option value="A">we strike first</option><option value="B">the enemy strikes first</option></select></label><button type="button" data-ta="fight">Show a fight</button><button type="button" data-ta="fight">Re-roll</button></div><div class="sbx" id="tfight"></div>`;theoBusy(0)}
+function theoFight(){const c=THEOCUR;if(!c)return;const P=c.P,E=THEO.mkEnemy(P,1,1),L=THEO.layout(P,c.res.names,c.res.w),first=$('tfirst').value,log=[],snap=[];
   const r=THEO.battle(L,E,THEO.rngMk(Math.floor(Math.random()*2e9)+1),{first,log,snap});
   const st={A:{},B:{}};L.forEach(s=>st.A[s.name]=s.n);E.forEach(s=>st.B[s.name]=s.n);
-  let h=`<p class="tnet">${r.win>0?'<b class="tw">We win</b>':r.win<0?'<b class="tl">We lose</b>':'<b>Draw</b>'} after ${r.rd} rounds. We keep ${tpc(r.remA)} of our health, the enemy keeps ${tpc(r.remB)} &middot; net <b>${tsg(r.remA-r.remB)}</b></p>`,rd=0;
+  let h=`<p class="tnet">Against the 100% enemy: ${r.win>0?'<b class="tw">We win</b>':r.win<0?'<b class="tl">We lose</b>':'<b>Draw</b>'} after ${r.rd} rounds. We keep ${tpc(r.remA)} of our health, the enemy keeps ${tpc(r.remB)} &middot; net <b>${tsg(r.remA-r.remB)}</b></p>`,rd=0;
   log.forEach(([rr,side,a,t,dmg,k,left,before,m1,m2])=>{
     if(rr!==rd){rd=rr;h+=`<div class="brh">Round ${rd}</div>`}
     const op=side=='A'?'B':'A',au=st[side][a],dead=left==0;st[op][t]=left;
@@ -2549,30 +2555,26 @@ async function theoTierCheck(){
   if(THEORUN){THEOGEN++;return}
   const P=getP(),sel=theoSel(),all=theoTiers(sel).slice(0,6);
   if(!all.length){$('ttab').innerHTML='<p class="mu">Tick some tiers first.</p>';return}
-  const top=all[0],rest=all.slice(1),sets=[[top]];rest.forEach(a=>sets.push([top,a]));rest.forEach(a=>rest.forEach(b=>{if(b<a)sets.push([top,a,b])}));      // by size: the smaller sets are done first and start the bigger ones      // the top tier alone, with one more, with two more: 3 tiers at most
-  const g=++THEOGEN,scale=theoScale(),Es=theoEs(P,scale),rows=[];theoWarm(P,scale,[]);
+  const top=all[0],rest=all.slice(1),sets=[[top]];rest.forEach(a=>sets.push([top,a]));rest.forEach(a=>rest.forEach(b=>{if(b<a)sets.push([top,a,b])}));      // by size: the smaller sets are done first and start the bigger ones; 3 tiers at most
+  const g=++THEOGEN,Es=theoEs(P),rows=[];theoWarm(P,[]);
   THEORUN=g;theoBusy('tc','');
   try{for(let i=0;i<sets.length;i++){
       const names=theoNames(sel,sets[i]);if(!names.length)continue;
       const lab=sets[i].map(x=>'T'+x).join(' + ');theoProg(i/sets.length,`Choice ${i+1} of ${sets.length}: ${lab}`);
-      const r=await THEO.search(P,names,Es,0.3,7+i,()=>g!==THEOGEN,x=>theoProg((i+x)/sets.length),theoWarm(P,scale,sets[i]));
+      const r=await THEO.search(P,names,Es,0.3,7+i,()=>g!==THEOGEN,x=>theoProg((i+x)/sets.length),theoWarm(P,sets[i]));
       if(!r||g!==THEOGEN)return;
-      const rs=theoStats(P,names,r.w,Es,400);theoKeep(P,scale,names,rs);rows.push({set:sets[i],res:rs})}
-    THEOT.set(JSON.stringify([P,sel,scale]),rows);THEOTC=rows;theoTab(rows);
+      const rs=theoStats(P,names,r.w,200);theoKeep(P,names,rs);rows.push({set:sets[i],res:rs})}
+    THEOT.set(JSON.stringify([P,sel]),rows);THEOTC=rows;theoTab(rows);
   }finally{if(THEORUN===g){THEORUN=0;theoBusy(0)}}}
 function theoTab(rows){const el=$('ttab');if(!rows||!rows.length){el.innerHTML='';return}
   const rk=rows.slice().sort((a,b)=>b.res.net-a.res.net);
-  el.innerHTML=`<h3 class="tth">Tier choices, best first</h3><div class="tsc"><table><tr><th>Tiers</th><th>Stacks</th><th>Win 1st</th><th>Win 2nd</th><th>Net</th></tr>${rk.map((x,i)=>`<tr${i==0?' class="tbest"':''}><td>${x.set.map(t=>'T'+t).join(' + ')}</td><td class="tn">${x.res.stacks.length}</td><td class="tn">${tpc(x.res.st.A.win)}</td><td class="tn">${tpc(x.res.st.B.win)}</td><td class="tn"><b>${tsg(x.res.net)}</b></td></tr>`).join('')}</table></div><p class="mu">Ranked by the net health left in the two fights together (we strike first + the enemy strikes first): the health we keep minus the health the enemy keeps. A win with 18% left and a loss that leaves the enemy 6% gives +12%. Quick search, so the numbers can move a few points; Find stacks gives the precise ones for the tiers you ticked. Only the top tier plus up to two more are tried (the game allows 3).</p>`}
-function theoSync(P){const c=$('theo');if(!c)return;const on=P.ov&&(P.capA>0||P.capM>0);c.hidden=!on;if(!on){THEOGEN++;return}
-  const sel=theoSel(),tiers=theoTiers(sel).slice(0,3),names=theoNames(sel,tiers),scale=theoScale();
-  const key=JSON.stringify([P,names,scale]),hit=THEOC.get(key);
-  if(c.dataset.last!==key){      // the inputs changed: a running search is out of date
-    if(THEORUN)THEOGEN++;c.dataset.last=key;
-    THEOCUR=hit||null;theoShow();
-    THEOTC=THEOT.get(JSON.stringify([P,sel,scale]))||null;theoTab(THEOTC)}}
-$('theo').addEventListener('click',e=>{const b=e.target.closest('[data-ta]'),a=b&&b.dataset.ta;if(a=='fight')theoFight();});
+  el.innerHTML=`<h3 class="tth">Tier choices, best first</h3><div class="tsc"><table><tr><th>Tiers</th><th>Stacks</th><th>Win 1st</th><th>Win 2nd</th><th>Net</th></tr>${rk.map((x,i)=>`<tr${i==0?' class="tbest"':''}><td>${x.set.map(t=>'T'+t).join(' + ')}</td><td class="tn">${x.res.stacks.length}</td><td class="tn">${tpc(x.res.winA)}</td><td class="tn">${tpc(x.res.winB)}</td><td class="tn"><b>${tsg(x.res.net)}</b></td></tr>`).join('')}</table></div><p class="mu">Ranked by the net health left in the two fights together, averaged over enemies with 100%, 105%, 110% and 120% of your Leadership and Dominance. Quick search, so the numbers can move a few points; Find stacks gives the precise ones for the tiers you ticked. Only the top tier plus up to two more are tried (the game allows 3).</p>`}
+function theoSync(P,fx){const c=$('theo');if(!c)return;const on=P.ov&&(P.capA>0||P.capM>0);c.hidden=!on;if(!on){THEOGEN++;return}
+  const sel=theoSel(),key=theoKey(P,theoNames(sel,theoTiers(sel).slice(0,3)));
+  if(c.dataset.last!==key){if(THEORUN)THEOGEN++;c.dataset.last=key;THEOTC=THEOT.get(JSON.stringify([P,sel]))||null;theoTab(THEOTC)}      // the inputs changed: a running search is out of date
+  if(THEOCUR!==fx){THEOCUR=fx;theoShow()}}
+$('theo').addEventListener('click',e=>{const b=e.target.closest('[data-ta]');if(b&&b.dataset.ta=='fight')theoFight()});
 $('tgo').addEventListener('click',()=>{theoRun()});$('ttc').addEventListener('click',()=>{theoTierCheck()});
-$('tesz').addEventListener('change',()=>{theoSync(getP())});
 function refresh(){sync();calc()}
 // ---- the tier check (the Tier check button, shown in a window): would one more or one less tier give more damage? ----
 // The same calculation is run again with one tier added or removed, per troop type, one calculation per timer tick. Only tiers BELOW the highest ticked tier are tried (the top tiers are the best ones, a higher tier is never suggested), going down one tier at a time: as soon as a lower tier gives no gain, the tiers below it are not tried. Tiers are also removed from the lowest ticked one upwards, while that gives more damage. 12.6, engineers only: with no engineer ticked the engineer tiers of the Guardsmen's level are tried (E9, then E9 + E8 ...). 12.7: every type (Guardsmen, Specialists, Engineers, Monsters) is also tried with all its tiers off, the top one too. 12.8: a type that was unticked completely is not touched again in the same check.
