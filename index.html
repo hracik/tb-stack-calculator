@@ -205,7 +205,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.41';
+const APP_VERSION='21.6.42';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -2665,7 +2665,7 @@ function theoReport(B){const c=B.fx,{P,E,L,log,r}=theoFightData(c),num=tnum;
     const ourU=we?au:before,enU=we?before:au;
     const tk=Math.min(dmg,before*hp[op][t]),at=sm[side][a],sq=at?(at.vs[DEFCAT.indexOf(TRN[t].cat)]||0)/at.ms:0,q=at?(sq+at.spec-1)/(at.spec+sq):0;      // tk = the damage really taken (no more than the stack had); q = the share of a strike that comes from the squad bonus: the bonus against that stack and the Specialists' double damage, both counted after the base strength (the order of strikes uses the base strength only)
     h+=brRow({we,ourIc:img(on),ourDead:!we&&left==0,ourName:esc(on),ourSub:`${num(ourU)}`,enIc:img(en),enDead:we&&left==0,enName:esc(en),enSub:`${num(enU)}`,
-      l2:`<b>${we?'+':'\u2212'}${num(tk)}</b> damage \u00b7 ${num(k)} units killed${tg}`,l3:`${dmg-tk>0.5?`max possible ${num(dmg)} \u00b7 `:''}normal ${num(tk*(1-q))} \u00b7 squad bonus ${num(tk*q)}`})});
+      l2:`<b>${we?'+':'\u2212'}${num(tk)}</b> damage${tk*q>=0.5?` \u00b7 squad bonus +${num(tk*q)}`:''} \u00b7 ${num(k)} killed${tg}`,l3:`${dmg-tk>0.5?`max possible ${num(dmg)} \u00b7 `:''}normal ${num(tk*(1-q))}`})});
   return h+'</div>'}
 async function theoTierCheck(){
   if(THEORUN){THEOGEN++;return}
