@@ -21,7 +21,7 @@ You type in what you have (Leadership, Dominance, Authority and your bonuses). I
 
 - Every tab keeps its own inputs, and you can have several, for example one per setup.
 - Export turns a tab into a short text you can keep in a note or chat, and Import brings it back as a new tab.
-- Battle in detail shows the dying order, the hitting order and a full battle report.
+- Battle in detail shows the target order, the strike order and a full battle report.
 - Help buttons on each card explain where to find the numbers in the game.
 
 ## Feedback

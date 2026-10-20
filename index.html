@@ -194,7 +194,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <div id="tpr" hidden><div class="tpb"><i id="tpi"></i></div><span id="tps"></span></div>
 <div id="tres"></div><div id="ttab"></div></div>
 <div id="rsm"></div>
-<div id="osd" class="ctl"><div class="mu">Battle in detail</div><div class="obrow"><button type="button" class="ob" data-o="die" aria-expanded="false" title="Show the dying order, troop by troop">Dying order</button><button type="button" class="ob" data-o="hit" aria-expanded="false" title="Show the hitting order: the order in which the units hit the enemy in round 1">Hitting order</button><button type="button" class="ob" data-o="rep" aria-expanded="false" title="Show the battle report: our hits and the enemy hits, round by round, until no unit is left">Battle report</button></div>
+<div id="osd" class="ctl"><div class="mu">Battle in detail</div><div class="obrow"><button type="button" class="ob" data-o="die" aria-expanded="false" title="Show the target order: the order in which the enemy hits our stacks">Target order</button><button type="button" class="ob" data-o="hit" aria-expanded="false" title="Show the strike order: the order in which our stacks strike the enemy in round 1">Strike order</button><button type="button" class="ob" data-o="rep" aria-expanded="false" title="Show the battle report: our hits and the enemy hits, round by round, until no unit is left">Battle report</button></div>
 <div class="ol sbx" id="os" hidden></div><div class="sbx" id="ho" hidden></div><div class="sbx" id="br" hidden></div></div>
 <div class="ctl"><div class="mu">View</div><div class="pbrow"><button type="button" class="vb" data-v="grouped" title="Cards in groups, 4 per line; a group with more cards scrolls sideways">Grouped</button><button type="button" class="vb" data-v="mobile" title="One unit per line: picture, name and number of units">Mobile</button><button type="button" class="vb" data-v="computer" title="Two units per line, in the same order as Mobile">Computer</button></div></div>
 <div class="ctl"><div class="mu">Action</div><input type="hidden" id="shw" value="hit"><div class="pbrow"><button type="button" class="vb sb" data-sh="hit" title="The units for one hit: the numbers to hit with">Hitting</button><button type="button" class="vb sb" data-sh="train" title="The units to prepare for the hits your Food production pays for, with the chosen Revive setting. The range goes from the units needed for the whole hits to the units needed for all the hits, including the partial one.">Preparation</button><button type="button" class="vb" id="cmpbtn" aria-pressed="false" title="Compare your own army with the proposed stacks: type the units or read them from screenshots">Compare</button></div><div id="prepw" class="pw" hidden></div></div>
@@ -205,7 +205,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.38';
+const APP_VERSION='21.6.39';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -2466,7 +2466,7 @@ function calcRun(){
   {const tcb=document.querySelector('.tc');if(tcb)tcb.disabled=pvOff||!(P.capA>0||P.capM>0)}      // the Tier check button: nothing to check without a capacity
   {const a=$('tca');if(a&&a.dataset.open=='1')closeBubble()}      // any change makes an open check out of date
   theoSync(P,fx);      // the Win chances card of One v. One
-  {const bd=document.querySelector('.ob[data-o=die]');if(bd){bd.textContent=P.pvp?'Being hit':'Dying order';bd.title=P.pvp?'Show the order in which the enemy hits the stacks (against players a hit stack does not have to die)':'Show the dying order, troop by troop'}}      // against players the order is the order of being hit, against epics it is the dying order
+  {const bd=document.querySelector('.ob[data-o=die]');if(bd){bd.textContent='Target order';bd.title=P.pvp?'Show the order in which the enemy hits the stacks (against players a hit stack does not have to die)':'Show the target order: the order in which the enemy hits and kills our stacks'}}      // against players the order is the order of being hit, against epics it is the dying order
   save();
 }
 // ---- Theoretical PvP stacks (One v. One, in progress): a Monte Carlo battle simulator + a stack optimizer that maximizes the NET REMAINING HEALTH ----
@@ -2638,7 +2638,7 @@ function theoFightData(c){const P=c.P,E=THEO.mkEnemy(P,1,1),L=THEO.layout(P,c.re
 const tnum=v=>Math.round(v).toLocaleString('en-US'),tic=n=>IC[n]?`<img class="ic2" src="${IC[n]}" alt="">`:'';
 // the hitting order: our stacks in the order they strike in round 1 (the most total strength first: units x strength with your bonuses)
 function theoHits(c){const d=theoFightData(c),L=d.L.slice().sort((a,b)=>b.n*b.str-a.n*a.str);
-  return L.map((s,i)=>`<div class="oi"><span class="no${i>98?' wd':''}">${i+1}</span>${tic(s.name)}<span class="nm">${esc(s.name)} <small class="mu">${theoInfo(s,d.P)}</small></span></div>`).join('')+'<p class="mu bf">The order our stacks strike in round 1: the stack with the most total strength first.</p>'}
+  return L.map((s,i)=>`<div class="oi"><span class="no${i>98?' wd':''}">${i+1}</span>${tic(s.name)}<span class="nm">${esc(s.name)} <small class="mu">${theoInfo(s,d.P)}</small></span></div>`).join('')+'<p class="mu bf">The strike order in round 1: the stack with the most total strength strikes first.</p>'}
 // the order of being hit: the order the enemy hits our stacks for the first time in the fight of the Battle report; the stacks that are never hit come last. (Against epics a hit stack dies, so there it is the dying order; against players the enemy chooses where to strike.)
 // the same facts as the stacks of the epic modes: class and tier, the bonus against the enemy, strength per health, the totals of health, strength and damage
 const theoInfo=(s,P)=>factsHtml(s.name,P,s.n,s.hp);
