@@ -205,7 +205,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.29';
+const APP_VERSION='21.6.30';
 // DEV / PROD: the dev build (branch dev) shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); the live build (main) shows the result only. A push to the live site sets DEV to false, the next dev commit sets it back to true.
 const DEV=true;
 document.documentElement.classList.toggle('dev',DEV);
@@ -364,13 +364,14 @@ function vsText0(t,P){
   if(!(m>0))return ve>0?'+'+pct(ve)+' vs. epic':'no bonus';
   return'+'+pct(m+ve)+' vs. '+idx.filter(i=>Math.abs(t.vs[i]-m)<1e-9).map(i=>CL[i]).join('/')+(ve>0?'/epic':'');      // the bonus against epic enemies counts against every enemy stack, so it adds to the class bonus
 }
+// the facts of one stack, the same in the dying order, the hitting order, the being hit list and (in dev mode) the SH ratio: class and tier, the bonus against the enemy, then health, strength and damage of the whole stack. SH = strength without squad bonus and Double strike (only your strength multiplier) per health; Damage = strength with the squad bonus and Double strike
+function factsHtml(n,P,cnt,hpu){const t=TRN[n],hp=hpu>0?hpu:t.hp*mults(t,P)[0],one=t.str*mults(t,P)[1],full=one*vsFactor(t,P)*dhf(t,P);
+  return`${t.cls}${t.tier} \u00b7 ${vsText(t,P)}<br>${[['SH',(hp>0?one/hp:0).toFixed(4)],['Health',num(tot(cnt,hp))],['Strength',num(tot(cnt,one))],['Damage',num(tot(cnt,full))]].filter(([l])=>DEV||l!=='SH').map(([l,v])=>`<span class="nb">${l}: ${v}</span>`).join(' \u00b7 ')}`}
 function drawSO(st,P){
   const grp={};st.forEach(x=>grp[x.name]=x.grp);
   const sb={};st.forEach(x=>sb[x.name]=x);
   // squad bonus = the troop's own bonus against this enemy + the Double strike. "No squad bonus" = base strength x your strength multiplier only.
-  const info=n=>{const t=TRN[n],m=vsRatio(t,P),dh=P.one?0:t.cls=='M'?(P['dh'+t.type]||0):t.beast?P.dhBeast:0,cnt=sb[n]?sb[n].n||0:0,hpu=sb[n]?sb[n].hp:t.hp*mults(t,P)[0],
-    one=t.str*mults(t,P)[1],full=one*vsFactor(t,P)*dhf(t,P);
-    return`${t.cls}${t.tier} · ${vsText(t,P)}<br>${[['SH',(hpu>0?one/hpu:0).toFixed(4)],['Health',num(tot(cnt,hpu))],['Strength',num(tot(cnt,one))],['Damage',num(tot(cnt,full))]].filter(([l])=>DEV||l!=='SH').map(([l,x])=>`<span class="nb">${l}: ${x}</span>`).join(' · ')}`};   // SH = strength without squad bonus and Double strike (only your strength multiplier) per health; Damage = strength with the squad bonus and Double strike
+  const info=n=>factsHtml(n,P,sb[n]?sb[n].n||0:0,sb[n]?sb[n].hp:0);
   BUFN={};if(P.ren)st.forEach(x=>{if(x.buf&&x.n>0)BUFN[x.name]=1});      // 14.21: the stacks of the buffer zone (Renegades)
   const one=(n,lbl)=>`<div class="oi${BUFN[n]?' bz':''}" data-n="${esc(n)}"><span class="no${String(lbl).includes('–')?' wd':''}">${lbl}</span>${IC[n]?`<img class="ic2" src="${IC[n]}" alt="">`:''}<span class="nm">${esc(n)} <small class="mu">${info(n)}</small></span></div>`;
   let html='',pos=0,block=[];
@@ -1845,6 +1846,15 @@ function epicKill(P,L,EP){
   return{hits:h,rows,tot,curve,alive:hv.some(x=>x>0)};
 }
 // ---- Battle report (v298): the same battle as the damage estimate (strikes(): K trades per round), told event by event until no unit is left ----
+// ---- the rows of every battle report (epics, CP, Max damage, Renegades, One v. One): our stack at the start, an arrow that shows who strikes, the other side at the end with its icon, the damage on the second line ----
+const BRXP='M4.1 5.9C6.9 6.9 9.5 8.6 11.7 11.5C14 14.4 17.2 17.4 20.3 18.9M4.7 4.8C7.6 7.3 10.2 9.4 12.4 12.1C14.6 14.8 17.3 17.9 19.4 20.2M19.5 4.3C16.9 6.7 13.9 9.6 11.2 12.9C8.8 15.8 6.6 18.4 4.3 19.9M20.2 5.2C17.3 8.1 14.4 11.4 12 14.2C10 16.5 7.6 19.2 5.2 20.7',BRX='<svg class="bx" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="'+BRXP+'" stroke="rgba(0,0,0,.5)" stroke-width="3.6"/><path d="'+BRXP+'" stroke="#e5402a" stroke-width="1.7"/></g></svg>';      // a hand-drawn red X: four uneven pen strokes
+const brImg=n=>IC[n]?`<img class="ic2" src="${IC[n]}" alt="">`:'<span class="ic2"></span>';
+const BRMON='<svg class="ic2" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="6" fill="#3a2418"/><path d="M9 8c2 8 6 11 10 12M39 8c-2 8-6 11-10 12" fill="none" stroke="#e8c27a" stroke-width="3" stroke-linecap="round"/><ellipse cx="24" cy="29" rx="13" ry="12" fill="#b5532a" stroke="#e8c27a" stroke-width="1.5"/><path d="M15 26l6 2M33 26l-6 2" stroke="#1b0f08" stroke-width="2.4" stroke-linecap="round"/><circle cx="19" cy="29" r="2" fill="#ffd23a"/><circle cx="29" cy="29" r="2" fill="#ffd23a"/><path d="M17 36l2.5 4 2.5-4 2 4 2-4 2.5 4 2.5-4" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+  BRCITY='<svg class="ic2" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="6" fill="#2b2f3a"/><path d="M9 39V19h6v-4h4v4h3v-7h4v7h3v-4h4v4h6v20z" fill="#9aa3b5" stroke="#e8c27a" stroke-width="1.4" stroke-linejoin="round"/><path d="M21 39v-9a3 3 0 0 1 6 0v9z" fill="#2b2f3a"/></svg>';
+// who is hit in the report of the modes where the enemy is not shown stack by stack: an epic monster, the flying troop of the CP modes, the full city of Max damage, the Renegades
+function brEnemy(P){if(P.one)return{name:'Corax II',ic:brImg('Corax II')};if(P.pm)return{name:'Full city',ic:BRCITY};if(P.ren)return{name:'Renegades',ic:BRMON};const e=epCur();return e?{name:esc(e.n),ic:epImg(e,'ic2')||BRMON}:{name:'Epic monster',ic:BRMON}}      // the epic that is set: its name and its icon (when it has one yet)
+// o: we (our stack strikes), ourIc/ourName/ourSub/ourDead, enIc/enName/enSub/enDead, l2 (the damage line), l3 (the dev line)
+function brRow(o){return`<div class="bl bq ${o.we?'bo':'ba'}"><div class="bl1"><span class="bic${o.ourDead?' dd':''}">${o.ourIc}${o.ourDead?BRX:''}</span><span class="bm">${o.ourName}<small>${o.ourSub}</small></span><span class="bar" aria-hidden="true">${o.we?'\u2192':'\u2190'}</span><span class="bm bre">${o.enName}${o.enSub?`<small>${o.enSub}</small>`:''}</span><span class="bic${o.enDead?' dd':''}">${o.enIc}${o.enDead?BRX:''}</span></div><div class="bl2">${o.l2}</div>${o.l3?`<div class="bl3 devo">${o.l3}</div>`:''}</div>`}
 let BRD=null;
 function battleHtml(P,list,order,sc){
   const K=P.enemy,ix={};order.forEach((n,i)=>ix[n]=i);
@@ -1853,17 +1863,17 @@ function battleHtml(P,list,order,sc){
   const log=[];strikes(L,K,log,P.ren?1:Infinity);
   const num=x=>Math.round(x).toLocaleString();
   const XP='M4.1 5.9C6.9 6.9 9.5 8.6 11.7 11.5C14 14.4 17.2 17.4 20.3 18.9M4.7 4.8C7.6 7.3 10.2 9.4 12.4 12.1C14.6 14.8 17.3 17.9 19.4 20.2M19.5 4.3C16.9 6.7 13.9 9.6 11.2 12.9C8.8 15.8 6.6 18.4 4.3 19.9M20.2 5.2C17.3 8.1 14.4 11.4 12 14.2C10 16.5 7.6 19.2 5.2 20.7',XS='<svg class="bx" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="'+XP+'" stroke="rgba(0,0,0,.5)" stroke-width="3.6"/><path d="'+XP+'" stroke="#e5402a" stroke-width="1.7"/></g></svg>'; // a hand-drawn red X: four uneven pen strokes
+  const EN=brEnemy(P);
   let rd=-1,h='<div class="br">';
   log.forEach(([r,t,i])=>{
     if(r!==rd){rd=r;h+=`<div class="brh">Round ${r+1}</div>`}
-    const s=L[i],img=IC[s.name]?`<img class="ic2" src="${IC[s.name]}" alt="">`:'<span class="ic2"></span>',nm=`<span class="bm"><b>#${i+1}</b> ${esc(s.name)}<small>${s.n.toLocaleString()} units</small></span>`;
+    const s=L[i],nmh=`<b>#${i+1}</b> ${esc(s.name)}`;
     if(t=='o'){                                              // one strike: the damage of the whole stack WITHOUT the Double strike, and the part of it that comes from the squad bonus (always counted; no mounted enemy in the 3-stack and Killshot modes, see vsRatio)
-      const base=(P.pvp&&s.r&&s.r[0]=='S')?2:1,d=tot(s.n,s.str*(s.f||1)),bn=tot(s.n,s.str*Math.max(0,(s.f||1)-base));
-      const t0=TRN[s.name],dh=t0?(P.one?0:t0.cls=='M'?(P['dh'+t0.type]||0):t0.beast?P.dhBeast:0):0,      // the same line of facts as in the dying order list: the tier first (S8, M8 ...) and the Double strike, the bonus against the enemy at the end, before the damage
-        nmh=`<span class="bm"><b>#${i+1}</b> ${esc(s.name)}<small>${s.n.toLocaleString()} units${t0?' \u00b7 '+t0.cls+t0.tier:''}</small></span>`;
-      h+=`<div class="bl bo"><span class="bic">${img}</span>${nmh}<span class="bb"${bn>0?' title="The bonus listed on the troop itself against the enemy, and the damage it adds: units x the troop\'s own strength x that bonus. Your own bonuses are not part of it."':''}>${t0?vsText(t0,P):''}${bn>0?`<small>+${num(bn)}</small>`:''}</span><span class="bv"><b>+${num(d)}</b></span></div>`}
+      const base=(P.pvp&&s.r&&s.r[0]=='S')?2:1,d=tot(s.n,s.str*(s.f||1)),bn=tot(s.n,s.str*Math.max(0,(s.f||1)-base)),t0=TRN[s.name];
+      h+=brRow({we:true,ourIc:brImg(s.name),ourName:nmh,ourSub:`${s.n.toLocaleString()} units${t0?' \u00b7 '+t0.cls+t0.tier:''}`,enName:EN.name,enIc:EN.ic,
+        l2:`<b>+${num(d)}</b> damage${t0?' \u00b7 '+vsText(t0,P):''}${bn>0?` \u00b7 <span title="The bonus listed on the troop itself against the enemy, and the damage it adds: units x the troop\'s own strength x that bonus. Your own bonuses are not part of it.">squad bonus +${num(bn)}</span>`:''}`})}
     else{const d=tot(s.n,s.hp);      // the stack is killed: the damage the enemy had to deal
-      h+=`<div class="bl be"><span class="bic">${img}${XS}</span>${nm}<span class="bv"><b>\u2212${num(d)}</b></span></div>`}
+      h+=brRow({we:false,ourIc:brImg(s.name),ourDead:true,ourName:nmh,ourSub:`${s.n.toLocaleString()} units`,enName:EN.name,enIc:EN.ic,l2:`<b>\u2212${num(d)}</b> damage`})}
   });
   h+='</div>';
   if(P.cp||P.ren)h+='<p class="mu bf">In this mode the game picks the order inside a group of equals, so this report shows one possible order.'+(P.ren?' The battle ends after round 1: the enemy is defeated by then.':'')+'</p>';
@@ -1877,7 +1887,7 @@ function hitHtml(P,list,order){
   const log=[];strikes(L,K,log,P.ren?1:Infinity);
   let h='',k=0;
   log.forEach(([r,t,i])=>{if(r!==0||t!=='o')return;const s=L[i];k++;
-    h+=`<div class="oi"><span class="no${k>99?' wd':''}">${k}</span>${IC[s.name]?`<img class="ic2" src="${IC[s.name]}" alt="">`:''}<span class="nm">${esc(s.name)} <small class="mu">${s.n.toLocaleString()} units \u00b7 #${i+1} in the dying order</small></span></div>`});
+    h+=`<div class="oi"><span class="no${k>99?' wd':''}">${k}</span>${IC[s.name]?`<img class="ic2" src="${IC[s.name]}" alt="">`:''}<span class="nm">${esc(s.name)} <small class="mu">${factsHtml(s.name,P,s.n,s.hp)}<br>${s.n.toLocaleString()} units \u00b7 #${i+1} in the dying order</small></span></div>`});
   if(P.cp||P.ren)h+='<p class="mu bf">In this mode the game picks the order inside a group of equals, so this list shows one possible order.</p>';
   return h;
 }
@@ -2585,11 +2595,10 @@ function theoFightData(c){const P=c.P,E=THEO.mkEnemy(P,1,1),L=THEO.layout(P,c.re
 const tnum=v=>Math.round(v).toLocaleString('en-US'),tic=n=>IC[n]?`<img class="ic2" src="${IC[n]}" alt="">`:'';
 // the hitting order: our stacks in the order they strike in round 1 (the most total strength first: units x strength with your bonuses)
 function theoHits(c){const d=theoFightData(c),L=d.L.slice().sort((a,b)=>b.n*b.str-a.n*a.str);
-  return L.map((s,i)=>`<div class="oi"><span class="no${i>98?' wd':''}">${i+1}</span>${tic(s.name)}<span class="nm">${esc(s.name)} <small class="mu">${tnum(s.n)} units \u00b7 strength ${tnum(s.n*s.str/1e9)}B</small></span></div>`).join('')+'<p class="mu bf">The order our stacks strike in round 1: the stack with the most total strength first.</p>'}
+  return L.map((s,i)=>`<div class="oi"><span class="no${i>98?' wd':''}">${i+1}</span>${tic(s.name)}<span class="nm">${esc(s.name)} <small class="mu">${theoInfo(s,d.P)}<br>${tnum(s.n)} units \u00b7 #${i+1} to strike in round 1</small></span></div>`).join('')+'<p class="mu bf">The order our stacks strike in round 1: the stack with the most total strength first.</p>'}
 // the order of being hit: the order the enemy hits our stacks for the first time in the fight of the Battle report; the stacks that are never hit come last. (Against epics a hit stack dies, so there it is the dying order; against players the enemy chooses where to strike.)
 // the same facts as the stacks of the epic modes: class and tier, the bonus against the enemy, strength per health, the totals of health, strength and damage
-function theoInfo(s,P){const t=TRN[s.name],dh=P.one?0:t.cls=='M'?(P['dh'+t.type]||0):t.beast?P.dhBeast:0,full=s.str*vsFactor(t,P)*dhf(t,P);
-  return`${t.cls}${t.tier} \u00b7 ${vsText(t,P)}<br>${[['SH',(s.hp>0?s.str/s.hp:0).toFixed(4)],['Health',num(s.n*s.hp)],['Strength',num(s.n*s.str)],['Damage',num(s.n*full)]].filter(([l])=>DEV||l!=='SH').map(([l,v])=>`<span class="nb">${l}: ${v}</span>`).join(' \u00b7 ')}`}
+const theoInfo=(s,P)=>factsHtml(s.name,P,s.n,s.hp);
 function theoDying(c){const d=theoFightData(c),by={},first=[],cnt={},dead={},left={};d.L.forEach(s=>{by[s.name]=s;left[s.name]=s.n});
   d.log.forEach(([rr,side,a,t,dmg,k,lf])=>{if(side!='B')return;if(!(t in cnt)){cnt[t]=0;first.push([t,rr])}cnt[t]++;left[t]=lf;if(lf==0&&!dead[t])dead[t]=rr});
   const row=(i,n,t)=>`<div class="oi"><span class="no${i>98?' wd':''}">${i}</span>${tic(n)}<span class="nm">${esc(n)} <small class="mu">${theoInfo(by[n],d.P)}<br>${tnum(by[n].n)} units \u00b7 ${t}</small></span></div>`,rest=d.L.filter(s=>!(s.name in cnt));
@@ -2612,7 +2621,8 @@ function theoReport(B){const c=B.fx,{P,E,L,log,r}=theoFightData(c),num=tnum;
     // one line per strike, always the same way round: our stack at the start of the line, the enemy stack at the end; the arrow shows who strikes. The stack that was hit has the red cross when it is destroyed, else the units it lost
     const ourU=we?au:before,enU=we?before:au;
     const tk=Math.min(dmg,before*hp[op][t]),at=sm[side][a],sq=at?(at.vs[DEFCAT.indexOf(TRN[t].cat)]||0)/at.ms:0,q=at?(sq+at.spec-1)/(at.spec+sq):0;      // tk = the damage really taken (no more than the stack had); q = the share of a strike that comes from the squad bonus: the bonus against that stack and the Specialists' double damage, both counted after the base strength (the order of strikes uses the base strength only)
-    h+=`<div class="bl bq ${we?'bo':'ba'}"><div class="bl1"><span class="bic${!we&&left==0?' dd':''}">${img(on)}${!we&&left==0?X:''}</span><span class="bm">${esc(on)}<small>${num(ourU)} units</small></span><span class="bar" aria-hidden="true">${we?'\u2192':'\u2190'}</span><span class="bm bre">${esc(en)}<small>${num(enU)} units</small></span><span class="bic${we&&left==0?' dd':''}">${img(en)}${we&&left==0?X:''}</span></div><div class="bl2"><b>${we?'+':'\u2212'}${num(tk)}</b> damage \u00b7 ${num(k)} units killed${tg}</div><div class="bl3 devo">${dmg-tk>0.5?`max possible ${num(dmg)} \u00b7 `:''}normal ${num(tk*(1-q))} \u00b7 squad bonus ${num(tk*q)}</div></div>`});
+    h+=brRow({we,ourIc:img(on),ourDead:!we&&left==0,ourName:esc(on),ourSub:`${num(ourU)} units`,enIc:img(en),enDead:we&&left==0,enName:esc(en),enSub:`${num(enU)} units`,
+      l2:`<b>${we?'+':'\u2212'}${num(tk)}</b> damage \u00b7 ${num(k)} units killed${tg}`,l3:`${dmg-tk>0.5?`max possible ${num(dmg)} \u00b7 `:''}normal ${num(tk*(1-q))} \u00b7 squad bonus ${num(tk*q)}`})});
   return h+'</div>'}
 async function theoTierCheck(){
   if(THEORUN){THEOGEN++;return}
