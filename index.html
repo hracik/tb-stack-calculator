@@ -204,7 +204,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.16';
+const APP_VERSION='21.6.17';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2477,15 +2477,26 @@ const tick=()=>new Promise(r=>setTimeout(r,0));
 // the hill climb over the weights (async: the page is given back every 30 ms; stop() cancels). Returns {w, f}
 async function optimize(P,names,Es,w0,iters,N,seed,stop,prog){const rng=rngMk(seed||5);let w=w0.slice(),LY=performance.now();
   const f=ww=>{const L=layout(P,names,ww),o=score(L,Es,N,11);return o.mean*0.75+o.worst*0.25-PEN*L.length};
+  const TI=names.map((n,i)=>names.map((m,j)=>j).filter(j=>TRN[names[j]].tier==TRN[n].tier&&(TRN[names[j]].cls=='M')==(TRN[n].cls=='M')));
   let cur=f(w),best=w.slice(),bf=cur;
   for(let it=0;it<iters;it++){
     if(performance.now()-LY>30){if(prog)prog(it/iters);await tick();LY=performance.now();if(stop&&stop())return null}
     const sg=0.5*(1-it/iters)+0.04,w2=w.slice(),m=1+Math.floor(rng()*3);
     for(let q=0;q<m;q++){const i=Math.floor(rng()*w2.length),u=rng();
-      if(u<0.10)w2[i]=0;else if(w2[i]<1e-9)w2[i]=0.01+rng()*0.2;else w2[i]*=Math.exp(sg*(rng()+rng()+rng()-1.5)*2)}
+      if(u<0.22&&w2[i]>1e-9){      // a transfer: the weight (all or half) of a stack goes to another stack of the same tier and kind (the army or the monsters): Guardsmen <-> Specialists and so on
+        const k=TI[i],j=k[Math.floor(rng()*k.length)],fr=rng()<0.5?1:0.5;if(j!==i){w2[j]+=w2[i]*fr;w2[i]*=1-fr}}
+      else if(u<0.32)w2[i]=0;else if(w2[i]<1e-9)w2[i]=0.01+rng()*0.2;else w2[i]*=Math.exp(sg*(rng()+rng()+rng()-1.5)*2)}
     if(w2.every(x=>x<1e-9))continue;
     const v=f(w2);if(v>=cur){w=w2;cur=v;if(v>bf){bf=v;best=w2.slice()}}}
   return{w:best,f:bf}}
+// the last pass: the Guardsmen and the Specialists of the same tier and category are twins that differ in damage; the weight of one is tried on the other (all of it) and kept when the score on the fresh dice is better
+async function twins(P,names,Es,w0,stop){let w=w0.slice();const v=ww=>{const L=layout(P,names,ww),o=score(L,Es,160,777);return o.mean*0.75+o.worst*0.25-PEN*L.length};let cur=v(w);
+  const tw=names.map((n,i)=>{const t=TRN[n];return names.findIndex(m=>{const u=TRN[m];return u.tier==t.tier&&u.cat==t.cat&&u.cls!=t.cls&&'GS'.includes(u.cls)&&'GS'.includes(t.cls)})});
+  for(let pass=0;pass<2;pass++){let ch=false;
+    for(let i=0;i<names.length;i++){const j=tw[i];if(j<0||w[i]<1e-9)continue;await tick();if(stop&&stop())return w;
+      const w2=w.slice();w2[j]+=w2[i];w2[i]=0;const s=v(w2);if(s>cur+0.002){w=w2;cur=s;ch=true}}
+    if(!ch)break}
+  return w}
 // a full search for one choice of tiers: several starting layouts, a short climb from each, the best two are polished with fresh dice and the winner is picked on a third set of dice (the climb alone gets stuck / follows the noise)
 // budget 1 = about 20 s on a phone-class CPU / 7 s on a desktop; warm = the weights of an earlier result (by troop name) to start from as well
 async function search(P,names,Es,budget,seed,stop,prog,warm){
@@ -2501,6 +2512,7 @@ async function search(P,names,Es,budget,seed,stop,prog,warm){
   cand.sort((a,b)=>b.f-a.f);const fin=[];
   for(let k=0;k<2&&k<cand.length;k++){const r=await optimize(P,names,Es,cand[k].w,i2,60,seed+50+k,stop,x=>pg(x,i2));if(!r)return null;done+=i2;fin.push(r)}
   let best=null,bs=-9;fin.concat(cand.slice(0,1)).forEach(r=>{const L=layout(P,names,r.w),o=score(L,Es,200,777),v=o.mean*0.75+o.worst*0.25-PEN*L.length;if(v>bs){bs=v;best={w:r.w,f:v}}});
+  if(best){best.w=await twins(P,names,Es,best.w,stop)}
   return best}
 // The strategy: the average of 13 full searches (different bonuses and sizes, T9 + T8) as shares of the Leadership (army) and of the Dominance (monsters), by class, category and tier rank (1 = the top tier). It is the start of the quick search.
 const TPLW={G:{Melee:[.1116,.008],Mounted:[.085,.0118],Ranged:[.1007,.0166],Flying:[.1025,.0168]},S:{Melee:[.1249,.037],Mounted:[.0948,.0298],Ranged:[.106,.0285],Flying:[.1029,.0234]},M:{Melee:[.2074,.0207],Flying:[.2196,.0371],Mounted:[.2395,.0244],Ranged:[.2142,.0371]}};
@@ -2512,6 +2524,7 @@ async function quick(P,names,Es,iters,seed,stop,prog,warm){
   const starts=[template(names)];if(warm){const w=names.map(n=>warm[n]||0);if(w.some(v=>v>0))starts.push(w)}
   const cand=[];for(let k=0;k<starts.length;k++){const r=await optimize(P,names,Es,starts[k],Math.round(iters/starts.length),32,seed+k,stop,x=>prog&&prog((k+x)/starts.length));if(!r)return null;cand.push(r)}
   let best=null,bs=-9;cand.concat([{w:starts[0]}]).forEach(r=>{const L=layout(P,names,r.w),o=score(L,Es,200,777),v=o.mean*0.75+o.worst*0.25-PEN*L.length;if(v>bs){bs=v;best={w:r.w,f:v}}});
+  if(best){best.w=await twins(P,names,Es,best.w,stop)}
   return best}
 return{quick,template,search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone}})();
 // ---- the screen of the theoretical stacks (One v. One): Find stacks, Rank tier choices, a fight with re-roll. Until stacks are found the Result is replaced by the card; once found the Result is live with them ----
@@ -2571,21 +2584,24 @@ function theoDying(c){const d=theoFightData(c),by={},first=[],cnt={},dead={},lef
   d.log.forEach(([rr,side,a,t,dmg,k,lf])=>{if(side!='B')return;if(!(t in cnt)){cnt[t]=0;first.push([t,rr])}cnt[t]++;left[t]=lf;if(lf==0&&!dead[t])dead[t]=rr});
   const row=(i,n,t)=>`<div class="oi"><span class="no${i>98?' wd':''}">${i}</span>${tic(n)}<span class="nm">${esc(n)} <small class="mu">${tnum(by[n].n)} units \u00b7 ${t}</small></span></div>`,rest=d.L.filter(s=>!(s.name in cnt));
   return first.map(([t,rr],i)=>row(i+1,t,`first hit in round ${rr}, hit ${cnt[t]} ${cnt[t]==1?'time':'times'}`+(dead[t]?`, destroyed in round ${dead[t]}`:''))).join('')+rest.map((s,i)=>row(first.length+i+1,s.name,'not hit')).join('')+`<p class="mu bf">The order the enemy hits our stacks for the first time in the fight of the Battle report (${THEOEXP?'no random effect':'dice rolled'}). Against players a hit stack does not have to die: the enemy chooses where to strike. Stacks that are not hit come last.</p>`}
+// the health the winner keeps: the fight with us striking first and the fight with the enemy striking first (same settings), the winner's health left in each, added and divided by two
+function theoAvgLeft(c,r){const P=c.P,E=THEO.mkEnemy(P,1,1),L=THEO.layout(P,c.res.names,c.res.w);let t=0;
+  ['A','B'].forEach(f=>{const q=THEO.battle(L,E,THEO.rngMk(THEOSEED),{first:f,expect:THEOEXP});t+=q.win>0?q.remA:q.win<0?q.remB:0});return t/2}
 function theoReport(B){const c=B.fx,{P,E,L,log,r}=theoFightData(c),num=tnum;
   const hp={A:{},B:{}},st={A:{},B:{}};L.forEach(s=>{hp.A[s.name]=s.hp;st.A[s.name]=s.n});E.forEach(s=>{hp.B[s.name]=s.hp;st.B[s.name]=s.n});
   const XP='M4.1 5.9C6.9 6.9 9.5 8.6 11.7 11.5C14 14.4 17.2 17.4 20.3 18.9M4.7 4.8C7.6 7.3 10.2 9.4 12.4 12.1C14.6 14.8 17.3 17.9 19.4 20.2M19.5 4.3C16.9 6.7 13.9 9.6 11.2 12.9C8.8 15.8 6.6 18.4 4.3 19.9M20.2 5.2C17.3 8.1 14.4 11.4 12 14.2C10 16.5 7.6 19.2 5.2 20.7',X='<svg class="bx" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="'+XP+'" stroke="rgba(0,0,0,.5)" stroke-width="3.6"/><path d="'+XP+'" stroke="#e5402a" stroke-width="1.7"/></g></svg>';
   const dmB=v=>v>=1e9?Math.round(v/1e9).toLocaleString('en-US')+'B':Math.round(v/1e6).toLocaleString('en-US')+'M';      // the damage in billions: the line stays short
   const img=n=>IC[n]?`<img class="ic2" src="${IC[n]}" alt="">`:'<span class="ic2"></span>';
   let rd=0,h=`<div class="tfr"><button type="button" data-ta="expect" class="${THEOEXP?'on':''}" title="Every strike deals its average damage: no luck">No random effect</button><button type="button" data-ta="dice" class="${THEOEXP?'':'on'}" title="Double damage and double strike are rolled; roll again for another fight">${THEOEXP?'Roll the dice':'Roll again'}</button><label>Round 1 <select id="tfirst"><option value="A"${THEOFIRST=='A'?' selected':''}>we strike first</option><option value="B"${THEOFIRST=='B'?' selected':''}>the enemy strikes first</option></select></label></div>
-<p class="bf">${r.win>0?'<b class="tw">We win</b>':r.win<0?'<b class="tl">We lose</b>':'<b>Draw</b>'} after ${r.rd} rounds. We keep ${tpc(r.remA)} of our health, the enemy keeps ${tpc(r.remB)} &middot; net <b>${tsg(r.remA-r.remB)}</b>${THEOEXP?'':`<br><span class="mu">Dice: ${log.filter(e=>e[8]>1).length} strikes rolled double damage, ${log.filter(e=>e[9]>0).length} double ${log.filter(e=>e[9]>0).length==1?'strike':'strikes'} (the monsters and beasts, ours and the enemy's, have a ${Math.round(100*(E.find(s=>s.pt>0)||{pt:0}).pt)}% chance on every strike; a double strike is a second line of the same stack)</span>`}</p><div class="br">`;
+<p class="bf">${r.win>0?'<b class="tw">We win</b> \u00b7 '+tpc(theoAvgLeft(c,r)):r.win<0?'<b class="tl">We lose</b> \u00b7 '+tpc(theoAvgLeft(c,r)):'<b>Draw</b>'}</p><div class="br">`;
   log.forEach(([rr,side,a,t,dmg,k,left,before,m1,m2])=>{
     if(rr!==rd){rd=rr;h+=`<div class="brh">Round ${rd}</div>`}
-    const op=side=='A'?'B':'A',au=st[side][a],we=side=='A',on=we?a:t,en=we?t:a,t1=TRN[on],tg=(m1>1?`<i title="This strike rolled double damage">&times;${m1} dmg</i>`:'')+(m2>0?`<i title="Double strike: the strike hit twice">double strike</i>`:'');
+    const op=side=='A'?'B':'A',au=st[side][a],we=side=='A',on=we?a:t,en=we?t:a,t1=TRN[on],tg=(m1>1?`<i title="This strike rolled double damage">double damage</i>`:'')+(m2>0?`<i title="Double strike: the strike hit twice">double strike</i>`:'');
     st[op][t]=left;
     // one line per strike, always the same way round: our stack at the start of the line, the enemy stack at the end; the arrow shows who strikes. The stack that was hit has the red cross when it is destroyed, else the units it lost
     const ourU=we?au:before,enU=we?before:au;
     h+=`<div class="bl bq ${we?'bo':'ba'}"><div class="bl1"><span class="bic${!we&&left==0?' dd':''}">${img(on)}${!we&&left==0?X:''}</span><span class="bm">${esc(on)}<small>${num(ourU)} units</small></span><span class="bar" aria-hidden="true">${we?'\u2192':'\u2190'}</span><span class="bm bre">${esc(en)}<small>${num(enU)} units</small></span><span class="bic${we&&left==0?' dd':''}">${img(en)}${we&&left==0?X:''}</span></div><div class="bl2"><b>${we?'+':'\u2212'}${num(dmg)}</b> damage \u00b7 ${num(k)} units killed${tg}</div></div>`});
-  return h+`</div><p class="mu bf">A fight of the found stacks against the 100% enemy (the full top-tier city with equal health in every stack). The strongest stack strikes first in every round, each strike goes where it does the most damage, and the side that runs out of stacks first opens the next round. A \u201c\u00d72 dmg\u201d mark means that strike rolled double damage. With the dice rolled, a stack can roll double damage and double strike; Roll again fights it again.</p>`}
+  return h+'</div>'}
 async function theoTierCheck(){
   if(THEORUN){THEOGEN++;return}
   const P=getP(),sel=theoSel(),all=theoTiers(sel).slice(0,6);
