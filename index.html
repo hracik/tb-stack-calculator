@@ -139,7 +139,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 .tti{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px;margin-top:8px}.ttile{border:1px solid var(--bd);border-radius:8px;padding:8px 12px;background:var(--bg)}.ttl{color:var(--ac);font-weight:600;font-size:13px}.ttv{font-size:28px;line-height:1.2}.tts{font-size:12.5px;color:var(--mu)}.tts b{color:var(--tx)}
 .tnet{margin:10px 0;font-size:14px}.tnet b.tw{color:#7fc97f}.tnet b.tl{color:#e5705a}
 .tsc{overflow-x:auto;margin:8px 0}.tsc table{width:auto;min-width:min(100%,320px)}.tn{text-align:right!important;font-variant-numeric:tabular-nums}.tbest td{color:var(--ac)}.tth{margin:16px 0 4px;font-size:14px;color:var(--ac)}
-.tfr{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:6px 0 4px}.tfr button{padding:3px 10px;font-size:13px}.bsm{margin:2px 0 6px;font-size:12.5px;opacity:.9}.bsm b{font-weight:600}
+.tfr{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:6px 0 4px}.tfr button{padding:3px 10px;font-size:13px}.bsm{margin:2px 0 6px;font-size:12.5px;opacity:.9}.bsm b{font-weight:600}.rfx{border:1px solid rgba(232,194,122,.35);border-radius:8px;padding:6px 8px 4px;margin:8px 0}.rfh{margin:0 0 5px;color:var(--ac);font:600 12px/1 'Cinzel',Georgia,serif;letter-spacing:.12em;text-transform:uppercase}.rfx .tfr{margin:0 0 4px;flex-wrap:nowrap}.rfx .tfr button{flex:1;text-align:center}.rfx .bsm{margin:2px 0 2px}.rfx label{display:flex;align-items:center;gap:8px;font-size:13px;margin:2px 0 4px}
 .tfr button.on{background:var(--ac);color:#000}.bl i{font-style:normal;font-size:11px;border:1px solid currentColor;border-radius:8px;padding:0 5px;margin-left:4px;white-space:nowrap}.ba{background:rgba(163,64,44,.2);color:var(--tx);border:1px solid #7a3a2a}.bic.dd .ic2{opacity:.4;filter:grayscale(.5)}.bd{flex:none;display:flex;flex-direction:column;align-items:center;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}.bre{text-align:right}.bq{flex-direction:column;align-items:stretch;gap:3px}.bl1{display:flex;align-items:center;gap:8px}.bar{flex:none;font-size:22px;font-weight:700;line-height:1;padding:0 4px}.bl2{text-align:center;font-size:13.5px;font-variant-numeric:tabular-nums}.bl2 b{font-size:14px}.bd b{font-size:14px}.bd small{font-size:11.5px;opacity:.8}.bt{flex:none;display:flex;align-items:center;gap:6px;min-width:84px;justify-content:flex-end}.bk{display:flex;flex-direction:column;align-items:flex-end;font-size:13px;font-variant-numeric:tabular-nums;line-height:1.15}.bk small{font-size:11px;opacity:.7}@media(max-width:480px){.bt{min-width:70px}.bd b{font-size:13px}}.bf b.tw{color:#7fc97f}.bf b.tl{color:#e5705a}
 .devo{display:none}.dev .devo{display:block}html.dev #appver::after{content:' debug'}.bl3{font-size:11px;opacity:.75;text-align:center;margin-top:2px}.bl3 b{font-weight:600}
 </style></head><body><main>
@@ -205,7 +205,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.47';
+const APP_VERSION='21.6.48';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1895,6 +1895,11 @@ const BRMON='<svg class="ic2" viewBox="0 0 48 48" aria-hidden="true"><image href
 // who is hit in the report of the modes where the enemy is not shown stack by stack: an epic monster, the flying troop of the CP modes, the full city of Max damage, the Renegades
 function brEnemy(P){if(P.one)return{name:'Corax II',ic:brImg('Corax II')};if(P.pm)return{name:'Full city',ic:BRCITY};if(P.ren)return{name:'Renegades',ic:BRMON};const e=epCur();return e?{name:esc(e.n),ic:epImg(e,'ic2')||BRMON}:{name:'Epic monster',ic:BRMON}}      // the epic that is set: its name and its icon (when it has one yet)
 // o: we (our stack strikes), ourIc/ourName/ourSub/ourDead, enIc/enName/enSub/enDead, l2 (the damage line), l3 (the dev line)
+// the Random effects block of every battle report: the two buttons across the full width, the average number of double damage strikes and double strikes, and (after a roll) the rolled number against that average
+const brA=x=>x<10?(+x.toFixed(1)).toString():Math.round(x).toString();
+function brFxBox(ex,items,extra,pre){
+  const ln=items.map(([v,av,lb,sf])=>{let t;if(ex)t=`average ${brA(av)} ${lb}`;else{const d=v-av,l=v==1?lb.replace(/s$/,''):lb;t=`<b>${brA(v)}</b> ${l} (${Math.abs(d)<0.05?'= '+brA(av)+' average':(d>0?'+':'\u2212')+brA(Math.abs(d))+' vs. '+brA(av)+' average'})`}return`<div>${t}${sf||''}</div>`}).join('');
+  return`<div class="rfx"><div class="rfh">Random effects</div><div class="tfr"><button type="button" data-ta="expect" class="${ex?'on':''}" title="Every strike deals its average damage: no luck">No random effect</button><button type="button" data-ta="dice" class="${ex?'':'on'}" title="Double damage and double strike are rolled; roll again for another fight">${ex?'Roll the dice':'Roll again'}</button></div>${pre||''}<div class="bsm">${ln}${extra||''}</div></div>`}
 let BRU=0;
 function brRow(o){if(o.enIc&&o.enIc.indexOf('id="mo1"')>=0){const u=++BRU;o={...o,enIc:o.enIc.replace(/(id="mo[1-9]|url\(#mo[1-9])/g,'$1'+u)}}      // every drawn monster gets its own gradient ids (the same ids twice in a page can fail to paint)
   return`<div class="bl bq ${o.we?'bo':'ba'}"><div class="bl1"><span class="bic${o.ourDead?' dd':''}">${o.ourIc}${o.ourDead?BRX:''}</span><span class="bm">${o.ourName}<small>${o.ourSub}</small></span><span class="bar" aria-hidden="true">${o.we?'\u2192':'\u2190'}</span><span class="bm bre">${o.enName}${o.enSub?`<small>${o.enSub}</small>`:''}</span><span class="bic${o.enDead?' dd':''}">${o.enIc}${o.enDead?BRX:''}</span></div><div class="bl2">${o.l2}</div>${o.l3?`<div class="bl3 devo">${o.l3}</div>`:''}</div>`}
@@ -1907,7 +1912,7 @@ function battleHtml(P,list,order,sc){
   const num=x=>Math.round(x).toLocaleString();
   const XP='M4.1 5.9C6.9 6.9 9.5 8.6 11.7 11.5C14 14.4 17.2 17.4 20.3 18.9M4.7 4.8C7.6 7.3 10.2 9.4 12.4 12.1C14.6 14.8 17.3 17.9 19.4 20.2M19.5 4.3C16.9 6.7 13.9 9.6 11.2 12.9C8.8 15.8 6.6 18.4 4.3 19.9M20.2 5.2C17.3 8.1 14.4 11.4 12 14.2C10 16.5 7.6 19.2 5.2 20.7',XS='<svg class="bx" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="'+XP+'" stroke="rgba(0,0,0,.5)" stroke-width="3.6"/><path d="'+XP+'" stroke="#e5402a" stroke-width="1.7"/></g></svg>'; // a hand-drawn red X: four uneven pen strokes
   const EN=brEnemy(P),ex=THEOEXP,rng=THEO.rngMk(THEOSEED);      // the dice: the same seed gives the same fight until Roll again
-  let rd=-1,td=0,nd=0,ns=0,ed=0,es=0,h=`<div class="tfr"><button type="button" data-ta="expect" class="${ex?'on':''}" title="Every strike deals its average damage: no luck">No random effect</button><button type="button" data-ta="dice" class="${ex?'':'on'}" title="Double damage and double strike are rolled; roll again for another fight">${ex?'Roll the dice':'Roll again'}</button></div><div class="br">`,tb=h;h='<div class="br">';
+  let rd=-1,td=0,nd=0,ns=0,ed=0,es=0,h='<div class="br">';
   log.forEach(([r,t,i])=>{
     if(r!==rd){rd=r;h+=`<div class="brh">Round ${r+1}</div>`}
     const s=L[i],nmh=esc(s.name);
@@ -1915,8 +1920,8 @@ function battleHtml(P,list,order,sc){
       const t0=TRN[s.name],base=(P.pvp&&s.r&&s.r[0]=='S')?2:1,d0=tot(s.n,s.str*(s.f||1)),bn0=tot(s.n,s.str*Math.max(0,(s.f||1)-base));
       let d=d0,bn=bn0,tg='',x2=null;
       const pc=(P['dd'+(t0?t0.cls:'')]||0)/100,pa=(P.ddA||0)/100,pt=P.one?0:Math.min(1,(t0?dsp(t0,P):0)+(P.dsA||0)/100),cs=P.enemy<=4&&!P.raid?base/(s.f||1):1;
-      if(ex){ed+=1-(1-pc)*(1-pa);es+=pt}      // no random effect: the average number of double damage strikes and double strikes
-      else{      // dice: the class and army Double damage (each +100 %); the Double strike is a 2nd strike of the same stack, its own row (on 3 and 4 enemy stacks without the squad bonus, as in the estimate)
+      ed+=(1-(1-pc)*(1-pa))*(1+pt);es+=pt;      // the average number of double damage strikes and double strikes
+      if(!ex){      // dice: the class and army Double damage (each +100 %); the Double strike is a 2nd strike of the same stack, its own row (on 3 and 4 enemy stacks without the squad bonus, as in the estimate)
         const F=()=>(1+(rng()<pc?1:0))*(1+(rng()<pa?1:0)),m1=F(),sd=rng()<pt,m2=sd?F():0;
         nd+=(m1>1?1:0)+(m2>1?1:0);ns+=sd?1:0;d=d0*m1;bn=bn0*m1;if(m1>1)tg='<i title="This strike rolled double damage">double damage</i>';
         if(sd)x2={d:d0*cs*m2,bn:cs>=1?bn0*m2:0,tg:'<i title="Double strike: the stack strikes a second time">double strike</i>'+(m2>1?'<i title="This strike rolled double damage">double damage</i>':'')}}
@@ -1929,8 +1934,8 @@ function battleHtml(P,list,order,sc){
   h+='</div>';
   if(P.cp||P.ren)h+='<p class="mu bf">In this mode the game picks the order inside a group of equals, so this report shows one possible order.'+(P.ren?' The battle ends after round 1: the enemy is defeated by then.':'')+'</p>';
   const e=epCur(),th=e&&e.st&&e.score&&ATK=='epics'&&!P.cp&&!P.ren&&!P.one?e.st.reduce((q,x)=>q+x[0]*x[1],0):0,u=['','K','M','B','T'],fm=x=>{let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3)).toString()+u[i]};      // 118000000 -> 118M
-  const a1=x=>x<10?(+x.toFixed(1)).toString():Math.round(x).toString(),sm=ex?`<p class="bsm">average ${a1(ed)} double damage \u00b7 ${a1(es)} double strikes</p>`:`<p class="bsm"><b>${nd}</b> double damage \u00b7 <b>${ns}</b> double ${ns==1?'strike':'strikes'} \u00b7 total <b>${fm(td)}</b>${th?` \u00b7 ${esc(e.n)} <b>${fm(Math.min(1,td/th)*e.score)}</b> points`:''}</p>`;
-  return tb+sm+h;
+  const sm=brFxBox(ex,[[nd,ed,'double damage'],[ns,es,'double strikes']],ex?'':`<div>total <b>${fm(td)}</b>${th?` \u00b7 ${esc(e.n)} <b>${fm(Math.min(1,td/th)*e.score)}</b> points`:''}</div>`);
+  return sm+h;
 }
 // The hitting order: who hits the enemy in round 1, in that order (the same battle as the report: strikes() with a log)
 function hitHtml(P,list,order){
@@ -2665,8 +2670,10 @@ function theoReport(B){const c=B.fx,{P,E,L,log,r}=theoFightData(c),num=tnum;
   const dmB=v=>v>=1e9?Math.round(v/1e9).toLocaleString('en-US')+'B':Math.round(v/1e6).toLocaleString('en-US')+'M';      // the damage in billions: the line stays short
   const img=n=>IC[n]?`<img class="ic2" src="${IC[n]}" alt="">`:'<span class="ic2"></span>';
   const sm={A:{},B:{}};L.forEach(s=>sm.A[s.name]=s);E.forEach(s=>sm.B[s.name]=s);
-  let rd=0,h=`<div class="tfr"><button type="button" data-ta="expect" class="${THEOEXP?'on':''}" title="Every strike deals its average damage: no luck">No random effect</button><button type="button" data-ta="dice" class="${THEOEXP?'':'on'}" title="Double damage and double strike are rolled; roll again for another fight">${THEOEXP?'Roll the dice':'Roll again'}</button><label>Round 1 <select id="tfirst"><option value="A"${THEOFIRST=='A'?' selected':''}>we strike first</option><option value="B"${THEOFIRST=='B'?' selected':''}>the enemy strikes first</option></select></label></div>
-<p class="bf">${r.win>0?'<b class="tw">We win</b> \u00b7 '+tpc(theoAvgLeft(c,r))+' health remaining':r.win<0?'<b class="tl">We lose</b> \u00b7 '+tpc(theoAvgLeft(c,r))+' health remaining':'<b>Draw</b>'}</p>${(()=>{const c={A:[0,0],B:[0,0]},a1=x=>x<10?(+x.toFixed(1)).toString():Math.round(x).toString();log.forEach(x=>{if(THEOEXP){const q=sm[x[1]][x[2]];if(q){c[x[1]][0]+=1-(1-q.pc)*(1-q.pa);c[x[1]][1]+=q.pt}}else{if(x[8]>1)c[x[1]][0]++;if(x[9]>0)c[x[1]][1]++}});const d=c.A[0]+c.B[0],t=c.A[1]+c.B[1];return`<p class="bsm">${THEOEXP?'average ':''}${a1(d)} double damage (ours ${a1(c.A[0])}) \u00b7 ${a1(t)} double strikes (ours ${a1(c.A[1])})</p>`})()}<div class="br">`;
+  const fxv={A:[0,0],B:[0,0]},fxa={A:[0,0],B:[0,0]};      // rolled and average double damage / double strikes per side, counted over the strikes of this fight
+  log.forEach(x=>{const q=sm[x[1]][x[2]];if(q&&!(x[9]>0)){fxa[x[1]][0]+=(1-(1-q.pc)*(1-q.pa))*(1+q.pt);fxa[x[1]][1]+=q.pt}if(!THEOEXP){if(x[8]>1)fxv[x[1]][0]++;if(x[9]>0)fxv[x[1]][1]++}});
+  const fxo=(k,n)=>` (ours ${brA(THEOEXP?fxa.A[k]:fxv.A[k])})`,sel=`<label>Round 1 <select id="tfirst"><option value="A"${THEOFIRST=='A'?' selected':''}>we strike first</option><option value="B"${THEOFIRST=='B'?' selected':''}>the enemy strikes first</option></select></label>`;
+  let rd=0,h=brFxBox(THEOEXP,[[fxv.A[0]+fxv.B[0],fxa.A[0]+fxa.B[0],'double damage',fxo(0)],[fxv.A[1]+fxv.B[1],fxa.A[1]+fxa.B[1],'double strikes',fxo(1)]],'',sel)+`<p class="bf">${r.win>0?'<b class="tw">We win</b> \u00b7 '+tpc(theoAvgLeft(c,r))+' health remaining':r.win<0?'<b class="tl">We lose</b> \u00b7 '+tpc(theoAvgLeft(c,r))+' health remaining':'<b>Draw</b>'}</p><div class="br">`;
   log.forEach(([rr,side,a,t,dmg,k,left,before,m1,m2])=>{
     if(rr!==rd){rd=rr;h+=`<div class="brh">Round ${rd}</div>`}
     const op=side=='A'?'B':'A',au=st[side][a],we=side=='A',on=we?a:t,en=we?t:a,t1=TRN[on],tg=(m1>1?`<i title="This strike rolled double damage">double damage</i>`:'')+(m2>0?`<i title="Double strike: the strike hit twice">double strike</i>`:'');
