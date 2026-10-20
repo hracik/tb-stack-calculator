@@ -205,7 +205,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.30';
+const APP_VERSION='21.6.31';
 // DEV / PROD: the dev build (branch dev) shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); the live build (main) shows the result only. A push to the live site sets DEV to false, the next dev commit sets it back to true.
 const DEV=true;
 document.documentElement.classList.toggle('dev',DEV);
@@ -478,6 +478,7 @@ function tabClick(e){
     else if(k=='exp'||k=='imp'){XPM=XPM==k?null:k;XTAB=tabs[active];drawXP();drawTabs()}
     else if(k=='xcopy')xCopy();
     else if(k=='xread')xRead();
+    else if(k=='xshot'){const f=$('xfile');if(f)f.click()}
     else if(k=='xclose'){XPM=null;drawXP();drawTabs()}
     else if(k=='mnt'){MM=!MM;drawMenu()}      // the menu button of a phone: the menu opens as a dropdown under the logo line
     else if(k=='acct'){MM=false;AP=!AP;drawAP();drawTabs();if(AP&&!aSes())gLoad().catch(()=>{})}      // the Google library is fetched while the panel opens, so the Google window can open at once on the click
@@ -536,7 +537,7 @@ function exportText(){
 function drawXP(){
   const p=$('xp');p.hidden=!XPM;if(!XPM){p.innerHTML='';return}
   const ex=XPM=='exp';
-  p.innerHTML=`<div class="mu">${ex?'All inputs of this tab as a short text. Copy it and keep it anywhere (a note, a chat); Import reads it back.':'Paste the exported text here. It opens as a new tab; your other tabs are not changed.'}</div><textarea id="xt" spellcheck="false" ${ex?'readonly':'placeholder="Paste the exported text here"'}></textarea><div class="xr">${ex?'<button class="tl" data-act="xcopy">Copy</button>':'<button class="tl" data-act="xread">Read the inputs</button>'}<button class="tl" data-act="xclose">Close</button><span class="mu" id="xmsg"></span></div>`;
+  p.innerHTML=`<div class="mu">${ex?'All inputs of this tab as a short text. Copy it and keep it anywhere (a note, a chat); Import reads it back.':'Paste the exported text here. It opens as a new tab; your other tabs are not changed.'}</div><textarea id="xt" spellcheck="false" ${ex?'readonly':'placeholder="Paste the exported text here"'}></textarea><div class="xr">${ex?'<button class="tl" data-act="xcopy">Copy</button>':'<button class="tl" data-act="xread">Read the inputs</button>'+(SY.role=='admin'?'<button class="tl" data-act="xshot" title="Admin: a screenshot with the exported text on it (a chat, a note) is read and opened as a new tab">Import via screenshot</button><input type="file" id="xfile" accept="image/*" hidden>':'')}<button class="tl" data-act="xclose">Close</button><span class="mu" id="xmsg"></span></div>`;
   const t=$('xt');if(ex)t.value=exportText();t.focus();if(ex){t.select();t.scrollTop=0}
 }
 async function xCopy(){
@@ -602,6 +603,44 @@ function xRead(){
   if(r.ok)t.value='';
   $('xmsg').textContent=r.msg;
 }
+
+// ---- Import via screenshot (admin): a picture with the exported text on it is read in the browser (OCR: tesseract.js, loaded from a CDN only when this button is used), the text is cleaned up (the OCR mixes up the case of letters and adds stray marks) and opened like a pasted export ----
+const OCRV={js:'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js',lang:'https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_fast'};
+let OCRW=null,OCRP=null;
+function ocrLoad(){if(window.Tesseract)return Promise.resolve();
+  return OCRP||(OCRP=new Promise((ok,no)=>{const s=document.createElement('script');s.src=OCRV.js;s.onload=()=>ok();s.onerror=()=>{OCRP=null;no(new Error('the reader could not be loaded (no connection to the CDN?)'))};document.head.appendChild(s)}))}
+async function ocrRead(file,prog){await ocrLoad();
+  if(!OCRW)OCRW=await Tesseract.createWorker('eng',1,{langPath:OCRV.lang,logger:m=>{if(prog&&m&&typeof m.progress=='number')prog(m.status,m.progress)}});
+  await OCRW.setParameters({tessedit_pageseg_mode:'4'});      // one column of text of different sizes
+  const r=await OCRW.recognize(file);return r.data.text}
+// the OCR text -> the export text: the part from "Krappy Calculator" on, every key=value token with the key in its exact case (the OCR mixes sM / SM), digits that look like letters put right in the number boxes. Returns {text, n, bad: the tokens that are not sure, drop: the ones left out}
+function ocrClean(raw){
+  const keys={},num={};      // canonical keys; num = the keys of number boxes
+  Object.keys(BLANK.vals).forEach(id=>{const k=xkey(id);keys[k]=1;if($(id)&&$(id).matches(NUMBOX))num[k]=1});
+  ['n','T','x','at','mo','en','le','lp',...Object.keys(BLANK.chk).filter(k=>!/^s[ESGM]\d$/.test(k))].forEach(k=>keys[k]=1);
+  const low={};Object.keys(keys).forEach(k=>(low[k.toLowerCase()]=low[k.toLowerCase()]||[]).push(k));
+  const canon=k=>keys[k]?k:(low[k.toLowerCase()]&&low[k.toLowerCase()].length==1?low[k.toLowerCase()][0]:null);
+  let t=String(raw||'');const m=t.search(/k\w{0,2}appy\s*c\w{0,3}[il1]cul\w{2,4}/i),m2=m<0?t.search(/alculator/i):m;
+  let ver='';if(m2>=0){const h=t.slice(m2).split('\n')[0].match(/v\s*(\d+[.,]\d+)/i);ver=h?h[1].replace(',','.'):'';t=t.slice(m2).split('\n').slice(1).join(' ')}
+  const out=[],bad=[],drop=[];
+  for(const tk of t.match(/\S+/g)||[]){
+    const i=tk.indexOf('=');if(i<1)continue;
+    const k0=tk.slice(0,i).replace(/^[^A-Za-z]+/,''),k=canon(k0);let w=tk.slice(i+1).replace(/[|\[\]{}()<>,;:]+$/,'');
+    if(!k){drop.push(tk);continue}
+    if(num[k]){const f=w.replace(/[Oo]/g,'0').replace(/[lI|!]/g,'1').replace(/[Ss]/g,'5').replace(/B/g,'8').replace(/[^0-9.]/g,'');if(/^\d+(\.\d+)?$/.test(f)){if(f!==w)bad.push(k+'='+f+' (read as '+w+')');w=f}else bad.push(tk)}
+    else if(k=='T'){const f=w.toUpperCase().replace(/[^ESGM1-9]/g,'');if(!/^([ESGM][1-9]+)+$/.test(f))bad.push(tk);w=f||w}
+    out.push(k+'='+w)}
+  return{text:'Krappy Calculator v'+(ver||APP_VERSION.split('.').slice(0,2).join('.'))+'\n'+out.join(' ')+'\n',n:out.length,bad,drop}}
+async function xShot(file){
+  const msg=t=>{const e=$('xmsg');if(e)e.textContent=t},box=$('xt');
+  if(SY.role!='admin')return;
+  try{msg('Reading the picture ... (the first time the reader is loaded: a few MB)');
+    const raw=await ocrRead(file,(s,p)=>msg('Reading the picture ... '+(s||'')+' '+Math.round(p*100)+'%')),c=ocrClean(raw);
+    if(!c.n){msg('No exported text found in the picture. Is the whole text visible (the line Krappy Calculator and the lines under it)?');return}
+    if(box)box.value=c.text;
+    const r=importText(c.text);if(r.ok&&box)box.value='';
+    msg((r.ok?r.msg+' ':'')+(r.ok?'':r.msg+' ')+'Check it against the picture.'+(c.bad.length?' Not sure: '+c.bad.join(', ')+'.':'')+(c.drop.length?' Left out: '+c.drop.join(', ')+'.':''))
+  }catch(e){msg('Could not read the picture'+(e&&e.message?': '+e.message:'.'))}}
 
 // ---- account (10.1): e-mail + password sign-in; the tabs are kept on the account and open on every device ----
 // The page talks straight to Firebase's web API, no library: Identity Toolkit for the sign-in, Firestore for ONE document per user (users/<uid>, field "data" = all tabs as JSON; the Firestore rules let a user read and write only his own document).
@@ -2829,7 +2868,7 @@ document.addEventListener('input',e=>{const t=e.target;if(t.classList&&t.classLi
 document.addEventListener('focusin',e=>{const t=e.target;if(!(t.matches&&t.matches(NUMBOX)))return;t._typed=false;if(t.value!==''&&parseFloat(String(t.value).replace(/,/g,''))===0){t.placeholder='0';t.value=''}});
 document.addEventListener('input',e=>{if(e.target.matches&&e.target.matches(NUMBOX))e.target._typed=true});
 document.addEventListener('focusout',e=>{const t=e.target;if(!(t.matches&&t.matches(NUMBOX)))return;if(t.value.trim()===''){t.value='0';if(t._typed){clearTimeout(CALCT);calc()}}t._typed=false});
-document.addEventListener('change',e=>{if(e.target.classList&&e.target.classList.contains('tabin'))return;if(e.target.id=='xt')return;if(e.target.type=='checkbox')refresh();else calc()});      // leaving a box (or a tick, a list) calculates at once
+document.addEventListener('change',e=>{if(e.target.classList&&e.target.classList.contains('tabin'))return;if(e.target.id=='xfile'){const f=e.target.files&&e.target.files[0];e.target.value='';if(f)xShot(f);return}if(e.target.id=='xt')return;if(e.target.type=='checkbox')refresh();else calc()});      // leaving a box (or a tick, a list) calculates at once
 document.addEventListener('keydown',e=>{if(e.key=='Enter'&&e.target.matches&&e.target.matches(NUMBOX)){e.preventDefault();calc()}});      // Enter in a number box = calculate now, without waiting
 document.addEventListener('dblclick',e=>{const t=e.target.closest&&e.target.closest('.tab[data-t]');if(t)rename(+t.dataset.t)});
 // start: dying order for a full enemy stack, with the default tiers
