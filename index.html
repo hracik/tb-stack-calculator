@@ -206,7 +206,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.52';
+const APP_VERSION='21.6.53';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1952,12 +1952,14 @@ function hitHtml(P,list,order){
 }
 // Under the mode buttons ONE of three lists is open at a time: the dying order, the hitting order or the battle report (OVK; none at the start). The report and the hitting order are drawn only while they are open.
 let OVK=null;
+function fxWidth(){const b=document.querySelector('#rfx .rfx'),t=document.querySelector('#rsm .stt');if(!b)return;b.style.maxWidth=t?(2*t.offsetWidth+8)+'px':''}      // the Random effects block is as wide as two summary tiles (on a phone that is the whole width)
+window.addEventListener('resize',fxWidth);
 function drawBR(){
   [['die','os'],['hit','ho'],['rep','br']].forEach(([k,id])=>{const el=$(id);if(el)el.hidden=OVK!==k});
   document.querySelectorAll('.ob').forEach(b=>{const on=b.dataset.o===OVK;b.classList.toggle('on',on);b.setAttribute('aria-expanded',String(on))});
   if(!BRD){$('rfx').innerHTML='';return}
   BRFXH='';const rep=BRD.fx?theoReport(BRD):battleHtml(BRD.P,BRD.list,BRD.order,BRD.sc);      // always built: it also gives the Random effects block of the summary (One v. One with found stacks: a fight against the known enemy)
-  $('rfx').innerHTML=BRFXH;
+  $('rfx').innerHTML=BRFXH;requestAnimationFrame(fxWidth);
   if(OVK==='rep')$('br').innerHTML=rep;
   else if(OVK==='hit')$('ho').innerHTML=BRD.fx?theoHits(BRD.fx):hitHtml(BRD.P,BRD.list,BRD.order);
   else if(OVK==='die'&&BRD.fx)$('os').innerHTML=theoDying(BRD.fx);      // One v. One: the order of the found stacks, not the order the solver would give
