@@ -205,7 +205,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.40';
+const APP_VERSION='21.6.41';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1913,10 +1913,10 @@ function battleHtml(P,list,order,sc){
     const s=L[i],nmh=esc(s.name);
     if(t=='o'){                                              // one strike: the damage of the whole stack WITHOUT the Double strike, and the part of it that comes from the squad bonus (always counted; no mounted enemy in the 3-stack and Killshot modes, see vsRatio)
       const base=(P.pvp&&s.r&&s.r[0]=='S')?2:1,d=tot(s.n,s.str*(s.f||1)),bn=tot(s.n,s.str*Math.max(0,(s.f||1)-base)),t0=TRN[s.name];
-      h+=brRow({we:true,ourIc:brImg(s.name),ourName:nmh,ourSub:`${s.n.toLocaleString()} units`,enName:EN.name,enIc:EN.ic,
+      h+=brRow({we:true,ourIc:brImg(s.name),ourName:nmh,ourSub:`${s.n.toLocaleString()}`,enName:EN.name,enIc:EN.ic,
         l2:`<b>+${num(d)}</b> damage${bn>0?` \u00b7 <span title="The bonus listed on the troop itself against the enemy, and the damage it adds: units x the troop\'s own strength x that bonus. Your own bonuses are not part of it.">squad bonus +${num(bn)}</span>`:''}`})}
     else{const d=tot(s.n,s.hp);      // the stack is killed: the damage the enemy had to deal
-      h+=brRow({we:false,ourIc:brImg(s.name),ourDead:true,ourName:nmh,ourSub:`${s.n.toLocaleString()} units`,enName:EN.name,enIc:EN.ic,l2:`<b>\u2212${num(d)}</b> damage`})}
+      h+=brRow({we:false,ourIc:brImg(s.name),ourDead:true,ourName:nmh,ourSub:`${s.n.toLocaleString()}`,enName:EN.name,enIc:EN.ic,l2:`<b>\u2212${num(d)}</b> damage`})}
   });
   h+='</div>';
   if(P.cp||P.ren)h+='<p class="mu bf">In this mode the game picks the order inside a group of equals, so this report shows one possible order.'+(P.ren?' The battle ends after round 1: the enemy is defeated by then.':'')+'</p>';
@@ -2664,7 +2664,7 @@ function theoReport(B){const c=B.fx,{P,E,L,log,r}=theoFightData(c),num=tnum;
     // one line per strike, always the same way round: our stack at the start of the line, the enemy stack at the end; the arrow shows who strikes. The stack that was hit has the red cross when it is destroyed, else the units it lost
     const ourU=we?au:before,enU=we?before:au;
     const tk=Math.min(dmg,before*hp[op][t]),at=sm[side][a],sq=at?(at.vs[DEFCAT.indexOf(TRN[t].cat)]||0)/at.ms:0,q=at?(sq+at.spec-1)/(at.spec+sq):0;      // tk = the damage really taken (no more than the stack had); q = the share of a strike that comes from the squad bonus: the bonus against that stack and the Specialists' double damage, both counted after the base strength (the order of strikes uses the base strength only)
-    h+=brRow({we,ourIc:img(on),ourDead:!we&&left==0,ourName:esc(on),ourSub:`${num(ourU)} units`,enIc:img(en),enDead:we&&left==0,enName:esc(en),enSub:`${num(enU)} units`,
+    h+=brRow({we,ourIc:img(on),ourDead:!we&&left==0,ourName:esc(on),ourSub:`${num(ourU)}`,enIc:img(en),enDead:we&&left==0,enName:esc(en),enSub:`${num(enU)}`,
       l2:`<b>${we?'+':'\u2212'}${num(tk)}</b> damage \u00b7 ${num(k)} units killed${tg}`,l3:`${dmg-tk>0.5?`max possible ${num(dmg)} \u00b7 `:''}normal ${num(tk*(1-q))} \u00b7 squad bonus ${num(tk*q)}`})});
   return h+'</div>'}
 async function theoTierCheck(){
