@@ -204,7 +204,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.18';
+const APP_VERSION='21.6.19';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2580,9 +2580,12 @@ const tnum=v=>Math.round(v).toLocaleString('en-US'),tic=n=>IC[n]?`<img class="ic
 function theoHits(c){const d=theoFightData(c),L=d.L.slice().sort((a,b)=>b.n*b.str-a.n*a.str);
   return L.map((s,i)=>`<div class="oi"><span class="no${i>98?' wd':''}">${i+1}</span>${tic(s.name)}<span class="nm">${esc(s.name)} <small class="mu">${tnum(s.n)} units \u00b7 strength ${tnum(s.n*s.str/1e9)}B</small></span></div>`).join('')+'<p class="mu bf">The order our stacks strike in round 1: the stack with the most total strength first.</p>'}
 // the order of being hit: the order the enemy hits our stacks for the first time in the fight of the Battle report; the stacks that are never hit come last. (Against epics a hit stack dies, so there it is the dying order; against players the enemy chooses where to strike.)
+// the same facts as the stacks of the epic modes: class and tier, the bonus against the enemy, strength per health, the totals of health, strength and damage
+function theoInfo(s,P){const t=TRN[s.name],dh=P.one?0:t.cls=='M'?(P['dh'+t.type]||0):t.beast?P.dhBeast:0,full=s.str*vsFactor(t,P)*dhf(t,P);
+  return`${t.cls}${t.tier} \u00b7 ${vsText(t,P)}<br>${[['SH',(s.hp>0?s.str/s.hp:0).toFixed(4)],['Health',num(s.n*s.hp)],['Strength',num(s.n*s.str)],['Damage',num(s.n*full)]].map(([l,v])=>`<span class="nb">${l}: ${v}</span>`).join(' \u00b7 ')}`}
 function theoDying(c){const d=theoFightData(c),by={},first=[],cnt={},dead={},left={};d.L.forEach(s=>{by[s.name]=s;left[s.name]=s.n});
   d.log.forEach(([rr,side,a,t,dmg,k,lf])=>{if(side!='B')return;if(!(t in cnt)){cnt[t]=0;first.push([t,rr])}cnt[t]++;left[t]=lf;if(lf==0&&!dead[t])dead[t]=rr});
-  const row=(i,n,t)=>`<div class="oi"><span class="no${i>98?' wd':''}">${i}</span>${tic(n)}<span class="nm">${esc(n)} <small class="mu">${tnum(by[n].n)} units \u00b7 ${t}</small></span></div>`,rest=d.L.filter(s=>!(s.name in cnt));
+  const row=(i,n,t)=>`<div class="oi"><span class="no${i>98?' wd':''}">${i}</span>${tic(n)}<span class="nm">${esc(n)} <small class="mu">${theoInfo(by[n],d.P)}<br>${tnum(by[n].n)} units \u00b7 ${t}</small></span></div>`,rest=d.L.filter(s=>!(s.name in cnt));
   return first.map(([t,rr],i)=>row(i+1,t,`first hit in round ${rr}, hit ${cnt[t]} ${cnt[t]==1?'time':'times'}`+(dead[t]?`, destroyed in round ${dead[t]}`:''))).join('')+rest.map((s,i)=>row(first.length+i+1,s.name,'not hit')).join('')+`<p class="mu bf">The order the enemy hits our stacks for the first time in the fight of the Battle report (${THEOEXP?'no random effect':'dice rolled'}). Against players a hit stack does not have to die: the enemy chooses where to strike. Stacks that are not hit come last.</p>`}
 // the health the winner keeps: the fight with us striking first and the fight with the enemy striking first (same settings), the winner's health left in each, added and divided by two
 function theoAvgLeft(c,r){const P=c.P,E=THEO.mkEnemy(P,1,1),L=THEO.layout(P,c.res.names,c.res.w);let t=0;
@@ -2600,7 +2603,7 @@ function theoReport(B){const c=B.fx,{P,E,L,log,r}=theoFightData(c),num=tnum;
     st[op][t]=left;
     // one line per strike, always the same way round: our stack at the start of the line, the enemy stack at the end; the arrow shows who strikes. The stack that was hit has the red cross when it is destroyed, else the units it lost
     const ourU=we?au:before,enU=we?before:au;
-    h+=`<div class="bl bq ${we?'bo':'ba'}"><div class="bl1"><span class="bic${!we&&left==0?' dd':''}">${img(on)}${!we&&left==0?X:''}</span><span class="bm">${esc(on)}<small>${num(ourU)} units</small></span><span class="bar" aria-hidden="true">${we?'\u2192':'\u2190'}</span><span class="bm bre">${esc(en)}<small>${num(enU)} units</small></span><span class="bic${we&&left==0?' dd':''}">${img(en)}${we&&left==0?X:''}</span></div><div class="bl2"><b>${we?'+':'\u2212'}${num(dmg)}</b> damage \u00b7 ${num(k)} units killed${tg}</div></div>`});
+    h+=`<div class="bl bq ${we?'bo':'ba'}"><div class="bl1"><span class="bic${!we&&left==0?' dd':''}">${img(on)}${!we&&left==0?X:''}</span><span class="bm">${esc(on)}<small>${num(ourU)} units</small></span><span class="bar" aria-hidden="true">${we?'\u2192':'\u2190'}</span><span class="bm bre">${esc(en)}<small>${num(enU)} units</small></span><span class="bic${we&&left==0?' dd':''}">${img(en)}${we&&left==0?X:''}</span></div><div class="bl2"><b>${we?'+':'\u2212'}${num(Math.min(dmg,before*hp[op][t]))}</b> damage \u00b7 ${num(k)} units killed${tg}</div></div>`});
   return h+'</div>'}
 async function theoTierCheck(){
   if(THEORUN){THEOGEN++;return}
