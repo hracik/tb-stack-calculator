@@ -203,7 +203,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.9';
+const APP_VERSION='21.6.10';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2516,7 +2516,7 @@ function theoStats(P,names,w,N){const L=THEO.layout(P,names,w),rows=[];
 // the weights of the best earlier result whose tiers are all inside `tiers` (a search with fewer tiers is a start for a search with more: more tiers can never be worse, the search only has to find it)
 function theoWarm(P,tiers){const sig=JSON.stringify(P);if(THEOW.sig!==sig){THEOW={sig,m:new Map()};return null}
   let best=null;THEOW.m.forEach(e=>{if(e.set.every(t=>tiers.includes(t))&&(!best||e.net>best.net))best=e});return best?best.map:null}
-function theoKeep(P,names,res){const set=[...new Set(names.map(n=>TRN[n].tier))].sort((a,b)=>b-a),sig=JSON.stringify(P);if(THEOW.sig!==sig)THEOW={sig,m:new Map()};
+function theoKeep(P,names,res,keep){if(!keep)return;const set=[...new Set(names.map(n=>TRN[n].tier))].sort((a,b)=>b-a),sig=JSON.stringify(P);if(THEOW.sig!==sig)THEOW={sig,m:new Map()};
   const k=set.join(),o=THEOW.m.get(k);if(!o||res.net>o.net)THEOW.m.set(k,{set,net:res.net,map:Object.fromEntries(res.names.map((n,i)=>[n,res.w[i]]))})}
 const theoKey=(P,names)=>JSON.stringify([P,names]);
 function theoFix(P){const sel=theoSel(),names=theoNames(sel,theoTiers(sel).slice(0,3));return THEOC.get(theoKey(P,names))||null}      // the found stacks for exactly these inputs
@@ -2530,9 +2530,9 @@ async function theoRun(){
   const P=getP(),sel=theoSel(),tiers=theoTiers(sel).slice(0,3),names=theoNames(sel,tiers);
   if(!names.length){$('tout').innerHTML='<p class="mu">Tick some tiers first.</p>';return}
   const g=++THEOGEN;THEORUN=g;theoBusy('go','Searching for stacks...');
-  try{const r=await THEO.search(P,names,theoEs(P),1,5,()=>g!==THEOGEN,x=>theoProg(x),theoWarm(P,tiers));
+  try{const r=await THEO.search(P,names,theoEs(P),1,5,()=>g!==THEOGEN,x=>theoProg(x),null);      // always from scratch: the same inputs give the same stacks, whatever was done before
     if(!r||g!==THEOGEN)return;
-    const res=theoStats(P,names,r.w,500);theoKeep(P,names,res);THEOC.set(theoKey(P,names),{P,res});
+    const res=theoStats(P,names,r.w,500);THEOC.set(theoKey(P,names),{P,res});
     THEORUN=0;theoBusy(0);calc();      // the Result comes back with the found stacks
   }finally{if(THEORUN===g){THEORUN=0;theoBusy(0)}}}
 function theoShow(){const c=THEOCUR,out=$('tres');$('tintro').hidden=!!c;
@@ -2577,14 +2577,14 @@ async function theoTierCheck(){
   const P=getP(),sel=theoSel(),all=theoTiers(sel).slice(0,6);
   if(!all.length){$('ttab').innerHTML='<p class="mu">Tick some tiers first.</p>';return}
   const top=all[0],rest=all.slice(1),sets=[[top]];rest.forEach(a=>sets.push([top,a]));rest.forEach(a=>rest.forEach(b=>{if(b<a)sets.push([top,a,b])}));      // by size: the smaller sets are done first and start the bigger ones; 3 tiers at most
-  const g=++THEOGEN,Es=theoEs(P),rows=[];theoWarm(P,[]);
+  const g=++THEOGEN,Es=theoEs(P),rows=[];THEOW={sig:JSON.stringify(P),m:new Map()};      // the Tier check starts empty too: the smaller choices of THIS run start the bigger ones
   THEORUN=g;theoBusy('tc','');
   try{for(let i=0;i<sets.length;i++){
       const names=theoNames(sel,sets[i]);if(!names.length)continue;
       const lab=sets[i].map(x=>'T'+x).join(' + ');theoProg(i/sets.length,`Choice ${i+1} of ${sets.length}: ${lab}`);
       const r=await THEO.search(P,names,Es,0.3,7+i,()=>g!==THEOGEN,x=>theoProg((i+x)/sets.length),theoWarm(P,sets[i]));
       if(!r||g!==THEOGEN)return;
-      const rs=theoStats(P,names,r.w,200);theoKeep(P,names,rs);rows.push({set:sets[i],res:rs})}
+      const rs=theoStats(P,names,r.w,200);theoKeep(P,names,rs,1);rows.push({set:sets[i],res:rs})}
     THEOT.set(JSON.stringify([P,sel]),rows);THEOTC=rows;theoTab(rows);
   }finally{if(THEORUN===g){THEORUN=0;theoBusy(0)}}}
 function theoTab(rows){const el=$('ttab');if(!rows||!rows.length){el.innerHTML='';return}
