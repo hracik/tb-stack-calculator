@@ -205,7 +205,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.45';
+const APP_VERSION='21.6.46';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1907,7 +1907,7 @@ function battleHtml(P,list,order,sc){
   const num=x=>Math.round(x).toLocaleString();
   const XP='M4.1 5.9C6.9 6.9 9.5 8.6 11.7 11.5C14 14.4 17.2 17.4 20.3 18.9M4.7 4.8C7.6 7.3 10.2 9.4 12.4 12.1C14.6 14.8 17.3 17.9 19.4 20.2M19.5 4.3C16.9 6.7 13.9 9.6 11.2 12.9C8.8 15.8 6.6 18.4 4.3 19.9M20.2 5.2C17.3 8.1 14.4 11.4 12 14.2C10 16.5 7.6 19.2 5.2 20.7',XS='<svg class="bx" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="'+XP+'" stroke="rgba(0,0,0,.5)" stroke-width="3.6"/><path d="'+XP+'" stroke="#e5402a" stroke-width="1.7"/></g></svg>'; // a hand-drawn red X: four uneven pen strokes
   const EN=brEnemy(P),ex=THEOEXP,rng=THEO.rngMk(THEOSEED);      // the dice: the same seed gives the same fight until Roll again
-  let rd=-1,td=0,h=`<div class="tfr"><button type="button" data-ta="expect" class="${ex?'on':''}" title="Every strike deals its average damage: no luck">No random effect</button><button type="button" data-ta="dice" class="${ex?'':'on'}" title="Double damage and double strike are rolled; roll again for another fight">${ex?'Roll the dice':'Roll again'}</button></div><div class="br">`,tb=h;h='<div class="br">';
+  let rd=-1,td=0,nd=0,ns=0,h=`<div class="tfr"><button type="button" data-ta="expect" class="${ex?'on':''}" title="Every strike deals its average damage: no luck">No random effect</button><button type="button" data-ta="dice" class="${ex?'':'on'}" title="Double damage and double strike are rolled; roll again for another fight">${ex?'Roll the dice':'Roll again'}</button></div><div class="br">`,tb=h;h='<div class="br">';
   log.forEach(([r,t,i])=>{
     if(r!==rd){rd=r;h+=`<div class="brh">Round ${r+1}</div>`}
     const s=L[i],nmh=esc(s.name);
@@ -1917,7 +1917,7 @@ function battleHtml(P,list,order,sc){
       if(!ex){      // dice: the class and army Double damage (each +100 %); the Double strike is a 2nd strike of the same stack, its own row (on 3 and 4 enemy stacks without the squad bonus, as in the estimate)
         const pc=(P['dd'+(t0?t0.cls:'')]||0)/100,pa=(P.ddA||0)/100,pt=P.one?0:Math.min(1,(t0?dsp(t0,P):0)+(P.dsA||0)/100),cs=P.enemy<=4&&!P.raid?base/(s.f||1):1,
           F=()=>(1+(rng()<pc?1:0))*(1+(rng()<pa?1:0)),m1=F(),sd=rng()<pt,m2=sd?F():0;
-        d=d0*m1;bn=bn0*m1;if(m1>1)tg='<i title="This strike rolled double damage">double damage</i>';
+        nd+=(m1>1?1:0)+(m2>1?1:0);ns+=sd?1:0;d=d0*m1;bn=bn0*m1;if(m1>1)tg='<i title="This strike rolled double damage">double damage</i>';
         if(sd)x2={d:d0*cs*m2,bn:cs>=1?bn0*m2:0,tg:'<i title="Double strike: the stack strikes a second time">double strike</i>'+(m2>1?'<i title="This strike rolled double damage">double damage</i>':'')}}
       const sbx=(dd,bb,t)=>`<b>+${num(dd)}</b> damage${bb>0?` \u00b7 <span title="The bonus listed on the troop itself against the enemy, and the damage it adds: units x the troop\'s own strength x that bonus. Your own bonuses are not part of it.">squad bonus +${num(bb)}</span>`:''}${t}`;
       td+=d;h+=brRow({we:true,ourIc:brImg(s.name),ourName:nmh,ourSub:`${s.n.toLocaleString()}`,enName:EN.name,enIc:EN.ic,l2:sbx(d,bn,tg)});
@@ -1928,7 +1928,7 @@ function battleHtml(P,list,order,sc){
   h+='</div>';
   if(P.cp||P.ren)h+='<p class="mu bf">In this mode the game picks the order inside a group of equals, so this report shows one possible order.'+(P.ren?' The battle ends after round 1: the enemy is defeated by then.':'')+'</p>';
   const e=epCur(),th=e&&e.st&&e.score&&ATK=='epics'&&!P.cp&&!P.ren&&!P.one?e.st.reduce((q,x)=>q+x[0]*x[1],0):0,u=['','K','M','B','T'],fm=x=>{let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3)).toString()+u[i]};      // 118000000 -> 118M
-  const sm=`<p class="bf"><b>Total damage</b> ${fm(td)}${th?` \u00b7 <b>${esc(e.n)} points</b> ${fm(Math.min(1,td/th)*e.score)}`:''}</p>`;
+  const sm=`<p class="bf"><b>Total damage</b> ${fm(td)}${ex?'':` \u00b7 ${nd} double damage \u00b7 ${ns} double ${ns==1?'strike':'strikes'}`}${th?` \u00b7 <b>${esc(e.n)} points</b> ${fm(Math.min(1,td/th)*e.score)}`:''}</p>`;
   return tb+sm+h;
 }
 // The hitting order: who hits the enemy in round 1, in that order (the same battle as the report: strikes() with a log)
@@ -2665,7 +2665,7 @@ function theoReport(B){const c=B.fx,{P,E,L,log,r}=theoFightData(c),num=tnum;
   const img=n=>IC[n]?`<img class="ic2" src="${IC[n]}" alt="">`:'<span class="ic2"></span>';
   const sm={A:{},B:{}};L.forEach(s=>sm.A[s.name]=s);E.forEach(s=>sm.B[s.name]=s);
   let rd=0,h=`<div class="tfr"><button type="button" data-ta="expect" class="${THEOEXP?'on':''}" title="Every strike deals its average damage: no luck">No random effect</button><button type="button" data-ta="dice" class="${THEOEXP?'':'on'}" title="Double damage and double strike are rolled; roll again for another fight">${THEOEXP?'Roll the dice':'Roll again'}</button><label>Round 1 <select id="tfirst"><option value="A"${THEOFIRST=='A'?' selected':''}>we strike first</option><option value="B"${THEOFIRST=='B'?' selected':''}>the enemy strikes first</option></select></label></div>
-<p class="bf">${r.win>0?'<b class="tw">We win</b> \u00b7 '+tpc(theoAvgLeft(c,r))+' health remaining':r.win<0?'<b class="tl">We lose</b> \u00b7 '+tpc(theoAvgLeft(c,r))+' health remaining':'<b>Draw</b>'}</p><div class="br">`;
+<p class="bf">${r.win>0?'<b class="tw">We win</b> \u00b7 '+tpc(theoAvgLeft(c,r))+' health remaining':r.win<0?'<b class="tl">We lose</b> \u00b7 '+tpc(theoAvgLeft(c,r))+' health remaining':'<b>Draw</b>'}${THEOEXP?'':(()=>{const c={A:[0,0],B:[0,0]};log.forEach(x=>{if(x[8]>1)c[x[1]][0]++;if(x[9]>0)c[x[1]][1]++});return` \u00b7 rolled: ${c.A[0]+c.B[0]} double damage (ours ${c.A[0]}) \u00b7 ${c.A[1]+c.B[1]} double ${c.A[1]+c.B[1]==1?'strike':'strikes'} (ours ${c.A[1]})`})()}</p><div class="br">`;
   log.forEach(([rr,side,a,t,dmg,k,left,before,m1,m2])=>{
     if(rr!==rd){rd=rr;h+=`<div class="brh">Round ${rd}</div>`}
     const op=side=='A'?'B':'A',au=st[side][a],we=side=='A',on=we?a:t,en=we?t:a,t1=TRN[on],tg=(m1>1?`<i title="This strike rolled double damage">double damage</i>`:'')+(m2>0?`<i title="Double strike: the strike hit twice">double strike</i>`:'');
