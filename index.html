@@ -205,7 +205,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.33';
+const APP_VERSION='21.6.34';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -273,7 +273,7 @@ const EPICS=[      // the epic monsters, alphabetical: n = name, score = the tot
   {n:'Arcanomancer',ic:'arcanomancer',score:800e6,st:[[47771360,210000,0],[58666640,171000,2],[54000000,300000,3],[4133333360,2160,1]],en:[3,4]},
   {n:'Armageddon/Basilisk',ic:'armbas',score:750e6,st:[[12150000,300000,0],[24100000,150000,2],[27500000,132000,3],[185375000,19500,1]],en:[3,4]},
   {n:'Briareus',ic:'briareus',score:null,st:null,en:[3,4]},
-  {n:'Doomsday',ic:'doomsday',score:50e6,st:null,en:[3,4]},
+  {n:'Doomsday',ic:'doomsday',score:50e6,st:[[2985710,210000,0],[3666665,171000,2],[3375000,300000,3],[289583335,2160,1]],en:[3,4]},
   {n:'Fenrir',ic:'fenrir',score:750e6,st:null,en:[3,4]},
   {n:'Hellforge',score:150e6,st:null,en:[3,4]},
   {n:'J\u00f6rmungandr/Chimera',ic:'jormchimera',score:750e6,st:null,en:[3,4],raid:true}];      // 19.0.19 the epic monsters
