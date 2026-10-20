@@ -203,7 +203,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.13';
+const APP_VERSION='21.6.14';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2574,7 +2574,7 @@ function theoReport(B){const c=B.fx,{P,E,L,log,r}=theoFightData(c),num=tnum;
   const dmB=v=>v>=1e9?Math.round(v/1e9).toLocaleString('en-US')+'B':Math.round(v/1e6).toLocaleString('en-US')+'M';      // the damage in billions: the line stays short
   const img=n=>IC[n]?`<img class="ic2" src="${IC[n]}" alt="">`:'<span class="ic2"></span>';
   let rd=0,h=`<div class="tfr"><button type="button" data-ta="expect" class="${THEOEXP?'on':''}" title="Every strike deals its average damage: no luck">No random effect</button><button type="button" data-ta="dice" class="${THEOEXP?'':'on'}" title="Double damage and double strike are rolled; roll again for another fight">${THEOEXP?'Roll the dice':'Roll again'}</button><label>Round 1 <select id="tfirst"><option value="A"${THEOFIRST=='A'?' selected':''}>we strike first</option><option value="B"${THEOFIRST=='B'?' selected':''}>the enemy strikes first</option></select></label></div>
-<p class="bf">${r.win>0?'<b class="tw">We win</b>':r.win<0?'<b class="tl">We lose</b>':'<b>Draw</b>'} after ${r.rd} rounds. We keep ${tpc(r.remA)} of our health, the enemy keeps ${tpc(r.remB)} &middot; net <b>${tsg(r.remA-r.remB)}</b></p><div class="br">`;
+<p class="bf">${r.win>0?'<b class="tw">We win</b>':r.win<0?'<b class="tl">We lose</b>':'<b>Draw</b>'} after ${r.rd} rounds. We keep ${tpc(r.remA)} of our health, the enemy keeps ${tpc(r.remB)} &middot; net <b>${tsg(r.remA-r.remB)}</b>${THEOEXP?'':`<br><span class="mu">Dice: ${log.filter(e=>e[8]>1).length} strikes rolled double damage, ${log.filter(e=>e[9]>0).length} double ${log.filter(e=>e[9]>0).length==1?'strike':'strikes'} (the monsters and beasts have a ${Math.round(100*(E.find(s=>s.pt>0)||{pt:0}).pt)}% chance on every strike, about one fight in three has one)</span>`}</p><div class="br">`;
   log.forEach(([rr,side,a,t,dmg,k,left,before,m1,m2])=>{
     if(rr!==rd){rd=rr;h+=`<div class="brh">Round ${rd}</div>`}
     const op=side=='A'?'B':'A',au=st[side][a],we=side=='A',on=we?a:t,en=we?t:a,t1=TRN[on],tg=(m1>1?`<i title="This strike rolled double damage">&times;${m1} dmg</i>`:'')+(m2>0?`<i title="Double strike: the strike hit twice">double strike</i>`:'');
