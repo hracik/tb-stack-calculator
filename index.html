@@ -130,7 +130,8 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 .kbt{margin:10px 0 0}.kbt summary{font-size:13px}.kbt .cmt td,.kbt .cmt th{text-align:center;font-size:12.5px;white-space:nowrap}.kbt .cmt th:first-child,.kbt .cmt td:first-child{width:9%}.rsn{margin:8px 0 12px;font-size:12.5px;line-height:1.35}.cmt{width:100%;table-layout:fixed}.cmt .cmr{display:block;font-size:11px;color:var(--mu);font-weight:400;margin-top:1px}.cmt th,.cmt td{padding:7px 6px;text-align:right;border-bottom:1px solid var(--bd);white-space:normal}.cmt th:first-child,.cmt td:first-child{text-align:left;width:34%;color:var(--mu)}.cmt th{font-size:13px;color:var(--mu)}.cmt td{font-size:15px;font-variant-numeric:tabular-nums}.cmt td.cmy{color:var(--ac);font-weight:700}.cmt .cmg{color:#7fbf6a;font-weight:700}.cmt .cmb{color:#d9664a;font-weight:700}
 
 /* 21.6.2: theoretical stacks (One v. One) */
-#theo h2 .tg{font-size:11.5px;font-weight:600;color:#000;background:var(--ac);border-radius:10px;padding:1px 8px;margin-left:8px;letter-spacing:.3px;vertical-align:middle;white-space:nowrap}
+.thd{display:none!important}#theo{margin:0 0 12px}
+#theo .tg{font-size:11.5px;font-weight:600;color:#000;background:var(--ac);border-radius:10px;padding:1px 8px;margin-left:8px;letter-spacing:.3px;vertical-align:middle;white-space:nowrap}
 .trow{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin:10px 0}.trow label,.tfr label{display:flex;align-items:center;gap:8px;font-size:14px}
 .trow button,.tfr button{margin:0;padding:6px 14px;border:1px solid var(--ac);background:transparent;color:var(--ac);border-radius:6px}.trow button:disabled{opacity:.4;cursor:not-allowed}
 @media (hover:hover){.trow button:not(:disabled):hover,.tfr button:hover{background:var(--ac);color:#000}}
@@ -185,12 +186,12 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <div id="renlv" hidden><div class="fg"><label class="bi" id="renll" title="The Renegades level: the damage the stacks must reach to win. The Tier check takes the lowest tiers out one by one until the damage is enough."><span>Level</span><select id="renLv"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option><option value="32">32</option><option value="33">33</option><option value="34">34</option><option value="35">35</option><option value="36">36</option><option value="37">37</option><option value="38">38</option><option value="39">39</option><option value="40">40</option><option value="41">41</option><option value="42">42</option><option value="43">43</option><option value="44">44</option><option value="45">45</option></select></label><div class="mu" id="renlt"></div></div></div>
 </div>
 
-<div class="card" id="theo" hidden><h2>Win chances<span class="tg">theoretical &middot; in progress</span></h2>
+<div class="card" data-help="res"><h2><span id="rtitle">Calculation</span></h2>
+<div id="theo" hidden>
 <p class="mu" id="tintro">Stacks built for winning, not for damage. A strategy learned from many battle simulations (the top tier in about equal stacks, the monsters biggest, the second tier as small extra stacks, fewer mounted) is polished for your bonuses by fighting the stacks against full enemy cities of the top tier (equal health in every stack, 100% and 110% of your Leadership and Dominance), so they work against different enemies. It uses the tiers you ticked, 3 tiers at most (the game limit). When the stacks are found, the Result below shows them.</p>
-<div class="trow"><button type="button" id="tgo" title="The strategy (shares by troop type learned from many full searches), polished for your bonuses: about 15 seconds">Find stacks</button><button type="button" id="tdp" title="The full search from scratch: a minute or more, a little better">Search deeper</button><button type="button" id="ttc" title="Tries the top tier alone and with one or two more of the ticked tiers, and ranks them by the net health left">Rank tier choices</button></div>
+<div class="trow"><button type="button" id="tgo" title="The strategy (shares by troop type learned from many full searches), polished for your bonuses: about 15 seconds">Find stacks</button><button type="button" id="tdp" title="The full search from scratch: a minute or more, a little better">Search deeper</button><button type="button" id="ttc" title="Tries the top tier alone and with one or two more of the ticked tiers, and ranks them by the net health left">Rank tier choices</button><span class="tg">theoretical &middot; in progress</span></div>
 <div id="tpr" hidden><div class="tpb"><i id="tpi"></i></div><span id="tps"></span></div>
 <div id="tres"></div><div id="ttab"></div></div>
-<div class="card" data-help="res"><h2><span id="rtitle">Result</span></h2>
 <div id="rsm"></div>
 <div id="osd" class="ctl"><div class="mu">Battle in detail</div><div class="obrow"><button type="button" class="ob" data-o="die" aria-expanded="false" title="Show the dying order, troop by troop">Dying order</button><button type="button" class="ob" data-o="hit" aria-expanded="false" title="Show the hitting order: the order in which the units hit the enemy in round 1">Hitting order</button><button type="button" class="ob" data-o="rep" aria-expanded="false" title="Show the battle report: our hits and the enemy hits, round by round, until no unit is left">Battle report</button></div>
 <div class="ol sbx" id="os" hidden></div><div class="sbx" id="ho" hidden></div><div class="sbx" id="br" hidden></div></div>
@@ -203,7 +204,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.15';
+const APP_VERSION='21.6.16';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -453,7 +454,7 @@ function rename(i){
   const inp=document.createElement('input');inp.type='text';inp.className='tabin';inp.value=tabs[i].name;inp.maxLength=24;
   b.replaceWith(inp);inp.focus({preventScroll:true});inp.select();tabVis(inp);
   let done=false;
-  const fin=ok=>{if(done)return;done=true;if(ok){const n=inp.value.trim();if(n)tabs[i].name=n}drawTabs();if(ready){const t=$('rtitle');if(t)t.textContent='Result — '+tabs[active].name}save()};
+  const fin=ok=>{if(done)return;done=true;if(ok){const n=inp.value.trim();if(n)tabs[i].name=n}drawTabs();if(ready){const t=$('rtitle');if(t)t.textContent='Calculation — '+tabs[active].name}save()};
   inp.addEventListener('keydown',e=>{if(e.key=='Enter')fin(true);else if(e.key=='Escape')fin(false)});
   inp.addEventListener('blur',()=>fin(true));
 }
@@ -1962,7 +1963,7 @@ function cmpSet(X){
   CMPX=X;CMPC={};const P=X.P,card=$('cmpc');
   {const b=$('cmpbtn');if(b){b.classList.toggle('on',SHOWCMP);b.setAttribute('aria-pressed',SHOWCMP)}}
   $('res').hidden=SHOWCMP;      // Compare is one of the Action choices (Hitting / Preparation / Compare): it takes the place of the unit cards
-  card.hidden=!SHOWCMP||!!$('res').closest('.card').hidden;if(card.hidden)return;
+  card.hidden=!SHOWCMP||!!$('res').closest('.card').hidden||THEOWAIT;if(card.hidden)return;
   const A=X.Aall.filter(s=>!s.off),M=X.Mall.filter(s=>!s.off),U=X.mItems.filter(s=>!s.off);
   X.items=[...(P.capA>0?A:[]),...(P.capM>0?M:[]),...(P.capU>0?U:[])];
   const key=[VIEW,P.capA>0,P.capM>0,P.capU>0,...X.items.map(s=>s.name)].join('|');
@@ -2374,7 +2375,7 @@ function calcRun(){
    EBINFO=rgm(P)?(mon.length-full?`${army} army + ${pl(full,'full monster')} + ${pl(mon.length-full,'partial monster')} + ${pl(eng,'engineer')}`:`${army} army + ${pl(mon.length,'monster')} + ${pl(eng,'engineer')}`):`${army} army + ${pl(full,'full monster')} + ${pl(mon.length-full,'partial monster')} + ${pl(eng,'engineer')}`;if(U.list.length)EBINFO+=` + ${pl(U.list.length,'mercenary','mercenaries')}`}
   KP={};
   [...A,...Mo,...U.list].filter(x=>x.n>0).forEach(x=>{if(SOPOS[x.name]!=null)KP[x.name]=SOPOS[x.name]});   // the same numbers as the dying-order list
-  if(tabs){const t=$('rtitle');if(t)t.textContent='Result — '+tabs[active].name}
+  if(tabs){const t=$('rtitle');if(t)t.textContent='Calculation — '+tabs[active].name}
   if(!['grouped','mobile','computer'].includes(VIEW))VIEW='grouped';
   const mob=VIEW!='grouped',ord=(l,pri)=>VIEW=='computer'?compOrder(mobOrder(l),pri):mobOrder(l);                      // Mobile and Computer: one list per section, one unit per card-line; Computer in two columns
   document.querySelectorAll('.vb:not(.sb):not(#cmpbtn)').forEach(b=>b.classList.toggle('on',b.dataset.v==VIEW));
@@ -2385,7 +2386,9 @@ function calcRun(){
     ...(P.capM>0?[[`Monsters — Dominance ${usedOf(Mo).toLocaleString()} / ${P.capM.toLocaleString()}`,Mall.length?(mob?mobList(prepComp(prepMon(mobOrder(flatOrder(Mall)))),prepMob()&&VIEW=='mobile'):table(Mall)):'<p class="mu">No monster tiers selected.</p>']]:[]),   // no Dominance: no Monsters section
     ...(P.capA>0?[[`Soldiers — Leadership ${usedOf(A).toLocaleString()} / ${P.capA.toLocaleString()}`,Aall.length?(mob?mobList(prepComp(prepTier(ord(flatOrder(Aall),COMPA))),prepMob()&&VIEW=='mobile'):table(Aall)):'<p class="mu">No army tiers selected.</p>']]:[])].sort((x,y)=>prepMob()||(SHOWTR&&VIEW=='computer')?secRank(x[0])-secRank(y[0]):0).map(([t,b],k)=>`<h2${k?' class="sh2"':''}>${t}</h2>${b}`).join('');
   const hitsRow=Math.max(...REVCASES.map(c=>HIT[c[0]]))>1;      // the hits of every revive mode, after the food consumption in the second row (only when one of them pays for more than 1 hit)
-  {const rc=$('rtitle').closest('.card');if(rc)rc.hidden=!(!pvOff&&(P.capA>0||P.capM>0||P.capU>0))||!!(P.ov&&(P.capA>0||P.capM>0)&&!fx)}      // One v. One: until the stacks are found the Win chances card takes the place of the Result      // Leadership, Dominance and Authority all 0: nothing to show, the whole Result section is hidden
+  {const rc=$('rtitle').closest('.card');if(rc)rc.hidden=!(!pvOff&&(P.capA>0||P.capM>0||P.capU>0))}
+  THEOWAIT=!!(P.ov&&(P.capA>0||P.capM>0)&&!fx);      // One v. One: until the stacks are found the block shows the text and the buttons instead of the Result content
+  {const rc=$('rtitle').closest('.card');if(rc)rc.querySelectorAll(':scope > #rsm,:scope > .ctl,:scope > #res').forEach(e=>e.classList.toggle('thd',THEOWAIT))}      // Leadership, Dominance and Authority all 0: nothing to show, the whole Result section is hidden
   const tgt=P.ren?renTarget():0,lvN=Math.floor(+$('renLv').value);      // 14.19: Renegades with a Level: is the target reached?
   const kmb=x=>{let v=Math.abs(x),i=0;const up=t=>{if(t<=0)return 0;const p=Math.pow(10,Math.floor(Math.log10(t))-2);return Math.round(+(t/p).toFixed(6))*p};while(v>=1e3&&i<3){v/=1e3;i++}let c=i?up(v):Math.round(v);if(c>=1e3&&i<3){c=up(c/1e3);i++}return (x<0?'-':'')+(i?(+c.toPrecision(3)).toString()+'KMB'[i-1]:String(c))};      // 19.0.30: normal rounding to 3 digits: 1,900,949 -> 1.9M, 626,252 -> 626K, 42,300 -> 42.3K, 8,650 -> 8.65K, 999,999 -> 1M
   const enTxt=P.one?'one flying enemy stack':P.ov?'12 enemy stacks (3 of each type)':P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks';
@@ -2512,7 +2515,7 @@ async function quick(P,names,Es,iters,seed,stop,prog,warm){
   return best}
 return{quick,template,search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone}})();
 // ---- the screen of the theoretical stacks (One v. One): Find stacks, Rank tier choices, a fight with re-roll. Until stacks are found the Result is replaced by the card; once found the Result is live with them ----
-let THEOGEN=0,THEORUN=0,THEOCUR=null,THEOTC=null,THEOW={sig:'',m:new Map()};const THEOC=new Map(),THEOT=new Map();      // THEOGEN: a newer run / a change cancels the one that runs; THEOC / THEOT: finished searches and tier checks by input
+let THEOWAIT=false,THEOGEN=0,THEORUN=0,THEOCUR=null,THEOTC=null,THEOW={sig:'',m:new Map()};const THEOC=new Map(),THEOT=new Map();      // THEOGEN: a newer run / a change cancels the one that runs; THEOC / THEOT: finished searches and tier checks by input
 const tfm=x=>Math.round(x).toLocaleString('en-US'),tpc=x=>Math.round(x*100)+'%',tsg=x=>(x>=0?'+':'−')+Math.abs(Math.round(x*100))+'%';
 const TSIZES=[1,1.05,1.1,1.2];      // the enemy Leadership and Dominance the stacks are shown against (the search uses 100 % and 110 %: an all-rounder)
 function theoSel(){const s=[];['S','G','M'].forEach(c=>{for(let i=1;i<=9;i++){const el=$('s'+c+i);if(el&&el.checked)s.push(c+i)}});return s}
