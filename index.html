@@ -139,7 +139,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 .tti{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px;margin-top:8px}.ttile{border:1px solid var(--bd);border-radius:8px;padding:8px 12px;background:var(--bg)}.ttl{color:var(--ac);font-weight:600;font-size:13px}.ttv{font-size:28px;line-height:1.2}.tts{font-size:12.5px;color:var(--mu)}.tts b{color:var(--tx)}
 .tnet{margin:10px 0;font-size:14px}.tnet b.tw{color:#7fc97f}.tnet b.tl{color:#e5705a}
 .tsc{overflow-x:auto;margin:8px 0}.tsc table{width:auto;min-width:min(100%,320px)}.tn{text-align:right!important;font-variant-numeric:tabular-nums}.tbest td{color:var(--ac)}.tth{margin:16px 0 4px;font-size:14px;color:var(--ac)}
-.tfr{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:6px 0 4px}.tfr button{padding:3px 10px;font-size:13px}.bsm{margin:2px 0 6px;font-size:12.5px;opacity:.9}.bsm b{font-weight:600}.rfx{box-sizing:border-box;width:100%;background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;margin:0 0 12px}.rfh{margin:0 0 5px;color:var(--ac);font:600 12px/1 'Cinzel',Georgia,serif;letter-spacing:.12em;text-transform:uppercase}.rfx .tfr{margin:0 0 4px;flex-wrap:nowrap}.rfx .tfr button{flex:1;text-align:center}.rfx .bsm{margin:2px 0 2px}.rfx label{display:flex;align-items:center;gap:8px;font-size:13px;margin:2px 0 4px}
+.tfr{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:6px 0 4px}.tfr button{padding:3px 10px;font-size:13px}.bsm{margin:2px 0 6px;font-size:12.5px;opacity:.9}.bsm b{font-weight:600}.rfx{text-align:left}.rfx .stl{margin-bottom:6px}.rfx .tfr{margin:0 0 6px;flex-direction:column;align-items:stretch;gap:4px}.rfx .tfr button{width:100%;text-align:center;padding:3px 6px;font-size:12.5px}.rfx .bsm{margin:2px 0;font-size:12.5px;line-height:1.35}.rfx label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:12.5px;margin:0 0 6px}.rfx select{max-width:100%}
 .tfr button.on{background:var(--ac);color:#000}.bl i{font-style:normal;font-size:11px;border:1px solid currentColor;border-radius:8px;padding:0 5px;margin-left:4px;white-space:nowrap}.ba{background:rgba(163,64,44,.2);color:var(--tx);border:1px solid #7a3a2a}.bic.dd .ic2{opacity:.4;filter:grayscale(.5)}.bd{flex:none;display:flex;flex-direction:column;align-items:center;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}.bre{text-align:right}.bq{flex-direction:column;align-items:stretch;gap:3px}.bl1{display:flex;align-items:center;gap:8px}.bar{flex:none;font-size:22px;font-weight:700;line-height:1;padding:0 4px}.bl2{text-align:center;font-size:13.5px;font-variant-numeric:tabular-nums}.bl2 b{font-size:14px}.bd b{font-size:14px}.bd small{font-size:11.5px;opacity:.8}.bt{flex:none;display:flex;align-items:center;gap:6px;min-width:84px;justify-content:flex-end}.bk{display:flex;flex-direction:column;align-items:flex-end;font-size:13px;font-variant-numeric:tabular-nums;line-height:1.15}.bk small{font-size:11px;opacity:.7}@media(max-width:480px){.bt{min-width:70px}.bd b{font-size:13px}}.bf b.tw{color:#7fc97f}.bf b.tl{color:#e5705a}
 .devo{display:none}.dev .devo{display:block}html.dev #appver::after{content:' debug'}.bl3{font-size:11px;opacity:.75;text-align:center;margin-top:2px}.bl3 b{font-weight:600}
 </style></head><body><main>
@@ -194,7 +194,6 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <div id="tpr" hidden><div class="tpb"><i id="tpi"></i></div><span id="tps"></span></div>
 <div id="tres"></div><div id="ttab"></div></div>
 <div id="rsm"></div>
-<div id="rfx"></div>
 <div id="osd" class="ctl"><div class="mu">Battle in detail</div><div class="obrow"><button type="button" class="ob" data-o="die" aria-expanded="false" title="Show the target order: the order in which the enemy hits our stacks">Target order</button><button type="button" class="ob" data-o="hit" aria-expanded="false" title="Show the strike order: the order in which our stacks strike the enemy in round 1">Strike order</button><button type="button" class="ob" data-o="rep" aria-expanded="false" title="Show the battle report: our hits and the enemy hits, round by round, until no unit is left">Battle report</button></div>
 <div class="ol sbx" id="os" hidden></div><div class="sbx" id="ho" hidden></div><div class="sbx" id="br" hidden></div></div>
 <div class="ctl"><div class="mu">View</div><div class="pbrow"><button type="button" class="vb" data-v="grouped" title="Cards in groups, 4 per line; a group with more cards scrolls sideways">Grouped</button><button type="button" class="vb" data-v="mobile" title="One unit per line: picture, name and number of units">Mobile</button><button type="button" class="vb" data-v="computer" title="Two units per line, in the same order as Mobile">Computer</button></div></div>
@@ -206,7 +205,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.53';
+const APP_VERSION='21.6.54';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1900,7 +1899,7 @@ function brEnemy(P){if(P.one)return{name:'Corax II',ic:brImg('Corax II')};if(P.p
 const brA=x=>Math.round(x).toString();      // whole numbers only
 function brFxBox(ex,items,extra,pre){
   const ln=items.map(([v,av,lb,sf])=>{let t;if(ex)t=`average ${brA(av)} ${brA(av)=='1'?lb.replace(/s$/,''):lb}`;else{const d=Math.round(v)-Math.round(av),l=v==1?lb.replace(/s$/,''):lb;t=`<b>${brA(v)}</b> ${l} (${d==0?'= '+brA(av)+' average':(d>0?'+':'\u2212')+Math.abs(d)+' vs. '+brA(av)+' average'})`}return`<div>${t}${sf||''}</div>`}).join('');
-  return`<div class="rfx"><div class="stl stch">Random effects</div><div class="tfr"><button type="button" data-ta="expect" class="${ex?'on':''}" title="Every strike deals its average damage: no luck">No random effect</button><button type="button" data-ta="dice" class="${ex?'':'on'}" title="Double damage and double strike are rolled; roll again for another fight">${ex?'Roll the dice':'Roll again'}</button></div>${pre||''}<div class="bsm">${ln}${extra||''}</div></div>`}
+  return`<div class="stt rfx"><div class="stl">Random effects</div><div class="tfr"><button type="button" data-ta="expect" class="${ex?'on':''}" title="Every strike deals its average damage: no luck">No random effect</button><button type="button" data-ta="dice" class="${ex?'':'on'}" title="Double damage and double strike are rolled; roll again for another fight">${ex?'Roll the dice':'Roll again'}</button></div>${pre||''}<div class="bsm">${ln}${extra||''}</div></div>`}
 let BRU=0;
 function brRow(o){if(o.enIc&&o.enIc.indexOf('id="mo1"')>=0){const u=++BRU;o={...o,enIc:o.enIc.replace(/(id="mo[1-9]|url\(#mo[1-9])/g,'$1'+u)}}      // every drawn monster gets its own gradient ids (the same ids twice in a page can fail to paint)
   return`<div class="bl bq ${o.we?'bo':'ba'}"><div class="bl1"><span class="bic${o.ourDead?' dd':''}">${o.ourIc}${o.ourDead?BRX:''}</span><span class="bm">${o.ourName}<small>${o.ourSub}</small></span><span class="bar" aria-hidden="true">${o.we?'\u2192':'\u2190'}</span><span class="bm bre">${o.enName}${o.enSub?`<small>${o.enSub}</small>`:''}</span><span class="bic${o.enDead?' dd':''}">${o.enIc}${o.enDead?BRX:''}</span></div><div class="bl2">${o.l2}</div>${o.l3?`<div class="bl3 devo">${o.l3}</div>`:''}</div>`}
@@ -1952,14 +1951,13 @@ function hitHtml(P,list,order){
 }
 // Under the mode buttons ONE of three lists is open at a time: the dying order, the hitting order or the battle report (OVK; none at the start). The report and the hitting order are drawn only while they are open.
 let OVK=null;
-function fxWidth(){const b=document.querySelector('#rfx .rfx'),t=document.querySelector('#rsm .stt');if(!b)return;b.style.maxWidth=t?(2*t.offsetWidth+8)+'px':''}      // the Random effects block is as wide as two summary tiles (on a phone that is the whole width)
-window.addEventListener('resize',fxWidth);
+function fxPlace(){document.querySelectorAll('#rsm .rfx').forEach(e=>e.remove());if(!BRFXH)return;const r=$('rsm');let g=r.querySelector('.stg');if(!g){g=document.createElement('div');g.className='stg';r.appendChild(g)}g.insertAdjacentHTML('beforeend',BRFXH)}      // the Random effects tile is one of the summary tiles (the summary is drawn again by every calculation, so it is put back after it)
 function drawBR(){
   [['die','os'],['hit','ho'],['rep','br']].forEach(([k,id])=>{const el=$(id);if(el)el.hidden=OVK!==k});
   document.querySelectorAll('.ob').forEach(b=>{const on=b.dataset.o===OVK;b.classList.toggle('on',on);b.setAttribute('aria-expanded',String(on))});
-  if(!BRD){$('rfx').innerHTML='';return}
+  if(!BRD){BRFXH='';fxPlace();return}
   BRFXH='';const rep=BRD.fx?theoReport(BRD):battleHtml(BRD.P,BRD.list,BRD.order,BRD.sc);      // always built: it also gives the Random effects block of the summary (One v. One with found stacks: a fight against the known enemy)
-  $('rfx').innerHTML=BRFXH;requestAnimationFrame(fxWidth);
+  fxPlace();requestAnimationFrame(fxPlace);      // again after the summary is drawn
   if(OVK==='rep')$('br').innerHTML=rep;
   else if(OVK==='hit')$('ho').innerHTML=BRD.fx?theoHits(BRD.fx):hitHtml(BRD.P,BRD.list,BRD.order);
   else if(OVK==='die'&&BRD.fx)$('os').innerHTML=theoDying(BRD.fx);      // One v. One: the order of the found stacks, not the order the solver would give
@@ -2465,7 +2463,7 @@ function calcRun(){
   const hitsRow=Math.max(...REVCASES.map(c=>HIT[c[0]]))>1;      // the hits of every revive mode, after the food consumption in the second row (only when one of them pays for more than 1 hit)
   {const rc=$('rtitle').closest('.card');if(rc)rc.hidden=!(!pvOff&&(P.capA>0||P.capM>0||P.capU>0))}
   THEOWAIT=!!(P.ov&&(P.capA>0||P.capM>0)&&!fx);      // One v. One: until the stacks are found the block shows the text and the buttons instead of the Result content
-  {const rc=$('rtitle').closest('.card');if(rc)rc.querySelectorAll(':scope > #rsm,:scope > #rfx,:scope > .ctl,:scope > #res').forEach(e=>e.classList.toggle('thd',THEOWAIT))}      // Leadership, Dominance and Authority all 0: nothing to show, the whole Result section is hidden
+  {const rc=$('rtitle').closest('.card');if(rc)rc.querySelectorAll(':scope > #rsm,:scope > .ctl,:scope > #res').forEach(e=>e.classList.toggle('thd',THEOWAIT))}      // Leadership, Dominance and Authority all 0: nothing to show, the whole Result section is hidden
   const tgt=P.ren?renTarget():0,lvN=Math.floor(+$('renLv').value);      // 14.19: Renegades with a Level: is the target reached?
   const kmb=x=>{let v=Math.abs(x),i=0;const up=t=>{if(t<=0)return 0;const p=Math.pow(10,Math.floor(Math.log10(t))-2);return Math.round(+(t/p).toFixed(6))*p};while(v>=1e3&&i<3){v/=1e3;i++}let c=i?up(v):Math.round(v);if(c>=1e3&&i<3){c=up(c/1e3);i++}return (x<0?'-':'')+(i?(+c.toPrecision(3)).toString()+'KMB'[i-1]:String(c))};      // 19.0.30: normal rounding to 3 digits: 1,900,949 -> 1.9M, 626,252 -> 626K, 42,300 -> 42.3K, 8,650 -> 8.65K, 999,999 -> 1M
   const enTxt=P.one?'one flying enemy stack':P.ov?'12 enemy stacks (3 of each type)':P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks';
@@ -2712,8 +2710,8 @@ function theoSync(P,fx){const c=$('theo');if(!c)return;const on=P.ov&&(P.capA>0|
   const sel=theoSel(),key=theoKey(P,theoNames(sel,theoTiers(sel).slice(0,3)));
   if(c.dataset.last!==key){if(THEORUN)THEOGEN++;c.dataset.last=key;THEOTC=THEOT.get(JSON.stringify([P,sel]))||null;theoTab(THEOTC)}      // the inputs changed: a running search is out of date
   if(THEOCUR!==fx){THEOCUR=fx;theoShow()}}
-[$('br'),$('rfx')].forEach(el=>el.addEventListener('click',e=>{const b=e.target.closest('[data-ta]'),a=b&&b.dataset.ta;if(a=='expect'){THEOEXP=true;drawBR()}else if(a=='dice'){THEOEXP=false;THEOSEED=Math.floor(Math.random()*2e9)+1;drawBR()}}));
-[$('br'),$('rfx')].forEach(el=>el.addEventListener('change',e=>{if(e.target.id=='tfirst'){THEOFIRST=e.target.value;drawBR()}}));
+[$('br'),$('rsm')].forEach(el=>el.addEventListener('click',e=>{const b=e.target.closest('[data-ta]'),a=b&&b.dataset.ta;if(a=='expect'){THEOEXP=true;drawBR()}else if(a=='dice'){THEOEXP=false;THEOSEED=Math.floor(Math.random()*2e9)+1;drawBR()}}));
+[$('br'),$('rsm')].forEach(el=>el.addEventListener('change',e=>{if(e.target.id=='tfirst'){THEOFIRST=e.target.value;drawBR()}}));
 $('tgo').addEventListener('click',()=>{theoRun(false)});$('tdp').addEventListener('click',()=>{theoRun(true)});$('ttc').addEventListener('click',()=>{theoTierCheck()});
 function refresh(){sync();calc()}
 // ---- the tier check (the Tier check button, shown in a window): would one more or one less tier give more damage? ----
