@@ -205,7 +205,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.56';
+const APP_VERSION='21.6.57';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1898,8 +1898,8 @@ function brEnemy(P){if(P.one)return{name:'Corax II',ic:brImg('Corax II')};if(P.p
 // the Random effects block of every battle report: the two buttons across the full width, the average number of double damage strikes and double strikes, and (after a roll) the rolled number against that average
 const brA=x=>Math.round(x).toString();      // whole numbers only
 function brFxBox(ex,items,extra,pre){
-  const ln=items.map(([v,av,lb,sf])=>{let t;if(ex)t=`average ${brA(av)} ${brA(av)=='1'?lb.replace(/s$/,''):lb}`;else{const d=Math.round(v)-Math.round(av),l=v==1?lb.replace(/s$/,''):lb;t=`<b>${brA(v)}</b> ${l} (${d==0?'= '+brA(av)+' average':(d>0?'+':'\u2212')+Math.abs(d)+' vs. '+brA(av)+' average'})`}return`<div>${t}${sf||''}</div>`}).join('');
-  return`<div class="stt rfx"><div class="stl">Random effects</div><div class="tfr"><button type="button" data-ta="expect" class="${ex?'on':''}" title="Every strike deals its average damage: no luck">No random effect</button><button type="button" data-ta="dice" class="${ex?'':'on'}" title="Double damage and double strike are rolled; roll again for another fight">${ex?'Roll the dice':'Roll again'}</button></div>${pre||''}<div class="bsm">${ln}${extra||''}</div></div>`}
+  const ln=items.map(([v,av,lb,sf])=>{let t;if(ex)t=`avg. ${brA(av)} ${brA(av)=='1'?lb.replace(/s$/,''):lb}`;else{const d=Math.round(v)-Math.round(av),l=v==1?lb.replace(/s$/,''):lb;t=`<b>${brA(v)}</b> ${l} (${d==0?'= '+brA(av)+' avg.':(d>0?'+':'\u2212')+Math.abs(d)+' vs. '+brA(av)+' avg.'})`}return`<div>${t}${sf||''}</div>`}).join('');
+  return`<div class="stt rfx"><div class="stl">Random effects</div><div class="tfr"><button type="button" data-ta="expect" class="${ex?'on':''}" title="Every strike deals its avg. damage: no luck">No random effect</button><button type="button" data-ta="dice" class="${ex?'':'on'}" title="Double damage and double strike are rolled; roll again for another fight">${ex?'Roll the dice':'Roll again'}</button></div>${pre||''}<div class="bsm">${ln}${extra||''}</div></div>`}
 let BRU=0;
 function brRow(o){if(o.enIc&&o.enIc.indexOf('id="mo1"')>=0){const u=++BRU;o={...o,enIc:o.enIc.replace(/(id="mo[1-9]|url\(#mo[1-9])/g,'$1'+u)}}      // every drawn monster gets its own gradient ids (the same ids twice in a page can fail to paint)
   return`<div class="bl bq ${o.we?'bo':'ba'}"><div class="bl1"><span class="bic${o.ourDead?' dd':''}">${o.ourIc}${o.ourDead?BRX:''}</span><span class="bm">${o.ourName}<small>${o.ourSub}</small></span><span class="bar" aria-hidden="true">${o.we?'\u2192':'\u2190'}</span><span class="bm bre">${o.enName}${o.enSub?`<small>${o.enSub}</small>`:''}</span><span class="bic${o.enDead?' dd':''}">${o.enIc}${o.enDead?BRX:''}</span></div><div class="bl2">${o.l2}</div>${o.l3?`<div class="bl3 devo">${o.l3}</div>`:''}</div>`}
@@ -1934,7 +1934,7 @@ function battleHtml(P,list,order,sc){
   h+='</div>';
   if(P.cp||P.ren)h+='<p class="mu bf">In this mode the game picks the order inside a group of equals, so this report shows one possible order.'+(P.ren?' The battle ends after round 1: the enemy is defeated by then.':'')+'</p>';
   const e=epCur(),th=e&&e.st&&e.score&&ATK=='epics'&&!P.cp&&!P.ren&&!P.one?e.st.reduce((q,x)=>q+x[0]*x[1],0):0,u=['','K','M','B','T'],fm=x=>{let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3)).toString()+u[i]};      // 118000000 -> 118M
-  const sm=brFxBox(ex,[[nd,ed,'double damage'],[ns,es,'double strikes']],ex?'':(()=>{const cp=(v,a)=>Math.abs(v-a)<=0.005*a?'= average':(v>a?'+':'\u2212')+fm(Math.abs(v-a))+' vs. average',p1=th?Math.min(1,td/th)*e.score:0,p2=th?Math.min(1,ad/th)*e.score:0;return th?`<div><b>${fm(p1)}</b> points (${cp(p1,p2)})</div>`:`<div>total <b>${fm(td)}</b> (${cp(td,ad)})</div>`})());
+  const sm=brFxBox(ex,[[nd,ed,'double damage'],[ns,es,'double strikes']],ex?'':(()=>{const cp=(v,a)=>Math.abs(v-a)<=0.005*a?'= avg.':(v>a?'+':'\u2212')+fm(Math.abs(v-a))+' vs. avg.',p1=th?Math.min(1,td/th)*e.score:0,p2=th?Math.min(1,ad/th)*e.score:0;return th?`<div><b>${fm(p1)}</b> points (${cp(p1,p2)})</div>`:`<div>total <b>${fm(td)}</b> (${cp(td,ad)})</div>`})());
   BRFXH=sm;return h;      // the Random effects block is shown in the summary, above the Battle in detail buttons
 }
 // The hitting order: who hits the enemy in round 1, in that order (the same battle as the report: strikes() with a log)
