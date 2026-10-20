@@ -203,7 +203,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.11';
+const APP_VERSION='21.6.12';
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
@@ -2406,6 +2406,7 @@ function calcRun(){
   {const tcb=document.querySelector('.tc');if(tcb)tcb.disabled=pvOff||!(P.capA>0||P.capM>0)}      // the Tier check button: nothing to check without a capacity
   {const a=$('tca');if(a&&a.dataset.open=='1')closeBubble()}      // any change makes an open check out of date
   theoSync(P,fx);      // the Win chances card of One v. One
+  {const bd=document.querySelector('.ob[data-o=die]');if(bd){bd.textContent=P.pvp?'Being hit':'Dying order';bd.title=P.pvp?'Show the order in which the enemy hits the stacks (against players a hit stack does not have to die)':'Show the dying order, troop by troop'}}      // against players the order is the order of being hit, against epics it is the dying order
   save();
 }
 // ---- Theoretical PvP stacks (One v. One, in progress): a Monte Carlo battle simulator + a stack optimizer that maximizes the NET REMAINING HEALTH ----
@@ -2562,12 +2563,11 @@ const tnum=v=>Math.round(v).toLocaleString('en-US'),tic=n=>IC[n]?`<img class="ic
 // the hitting order: our stacks in the order they strike in round 1 (the most total strength first: units x strength with your bonuses)
 function theoHits(c){const d=theoFightData(c),L=d.L.slice().sort((a,b)=>b.n*b.str-a.n*a.str);
   return L.map((s,i)=>`<div class="oi"><span class="no${i>98?' wd':''}">${i+1}</span>${tic(s.name)}<span class="nm">${esc(s.name)} <small class="mu">${tnum(s.n)} units \u00b7 strength ${tnum(s.n*s.str/1e9)}B</small></span></div>`).join('')+'<p class="mu bf">The order our stacks strike in round 1: the stack with the most total strength first.</p>'}
-// the dying order: the order our stacks are destroyed in the fight of the Battle report; the stacks that survive come last (the most damaged first)
-function theoDying(c){const d=theoFightData(c),left={},dead=[];d.L.forEach(s=>left[s.name]=s.n);
-  d.log.forEach(([rr,side,a,t,dmg,k,lf])=>{if(side=='B'){left[t]=lf;if(lf==0)dead.push([t,rr])}});
-  const by={};d.L.forEach(s=>by[s.name]=s);const surv=d.L.filter(s=>left[s.name]>0).sort((a,b)=>left[a.name]/a.n-left[b.name]/b.n);
-  const row=(i,n,t)=>`<div class="oi"><span class="no${i>98?' wd':''}">${i}</span>${tic(n)}<span class="nm">${esc(n)} <small class="mu">${tnum(by[n].n)} units \u00b7 ${t}</small></span></div>`;
-  return dead.map(([t,rr],i)=>row(i+1,t,'destroyed in round '+rr)).join('')+surv.map((s,i)=>row(dead.length+i+1,s.name,'survives with '+Math.round(100*left[s.name]/s.n)+'% of its units')).join('')+`<p class="mu bf">The order our stacks fall in the fight of the Battle report (${THEOEXP?'no random effect':'dice rolled'}). Stacks that survive come last.</p>`}
+// the order of being hit: the order the enemy hits our stacks for the first time in the fight of the Battle report; the stacks that are never hit come last. (Against epics a hit stack dies, so there it is the dying order; against players the enemy chooses where to strike.)
+function theoDying(c){const d=theoFightData(c),by={},first=[],cnt={},dead={},left={};d.L.forEach(s=>{by[s.name]=s;left[s.name]=s.n});
+  d.log.forEach(([rr,side,a,t,dmg,k,lf])=>{if(side!='B')return;if(!(t in cnt)){cnt[t]=0;first.push([t,rr])}cnt[t]++;left[t]=lf;if(lf==0&&!dead[t])dead[t]=rr});
+  const row=(i,n,t)=>`<div class="oi"><span class="no${i>98?' wd':''}">${i}</span>${tic(n)}<span class="nm">${esc(n)} <small class="mu">${tnum(by[n].n)} units \u00b7 ${t}</small></span></div>`,rest=d.L.filter(s=>!(s.name in cnt));
+  return first.map(([t,rr],i)=>row(i+1,t,`first hit in round ${rr}, hit ${cnt[t]} ${cnt[t]==1?'time':'times'}`+(dead[t]?`, destroyed in round ${dead[t]}`:''))).join('')+rest.map((s,i)=>row(first.length+i+1,s.name,'not hit')).join('')+`<p class="mu bf">The order the enemy hits our stacks for the first time in the fight of the Battle report (${THEOEXP?'no random effect':'dice rolled'}). Against players a hit stack does not have to die: the enemy chooses where to strike. Stacks that are not hit come last.</p>`}
 function theoReport(B){const c=B.fx,{P,E,L,log,r}=theoFightData(c),num=tnum;
   const hp={A:{},B:{}},st={A:{},B:{}};L.forEach(s=>{hp.A[s.name]=s.hp;st.A[s.name]=s.n});E.forEach(s=>{hp.B[s.name]=s.hp;st.B[s.name]=s.n});
   const XP='M4.1 5.9C6.9 6.9 9.5 8.6 11.7 11.5C14 14.4 17.2 17.4 20.3 18.9M4.7 4.8C7.6 7.3 10.2 9.4 12.4 12.1C14.6 14.8 17.3 17.9 19.4 20.2M19.5 4.3C16.9 6.7 13.9 9.6 11.2 12.9C8.8 15.8 6.6 18.4 4.3 19.9M20.2 5.2C17.3 8.1 14.4 11.4 12 14.2C10 16.5 7.6 19.2 5.2 20.7',X='<svg class="bx" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="'+XP+'" stroke="rgba(0,0,0,.5)" stroke-width="3.6"/><path d="'+XP+'" stroke="#e5402a" stroke-width="1.7"/></g></svg>';
