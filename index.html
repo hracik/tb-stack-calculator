@@ -205,7 +205,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.58';
+const APP_VERSION='21.6.59';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1771,8 +1771,16 @@ function dominanceTail(P,st,A,Mo,U,light){      // light (the Tier check): only 
       const g=seq.slice(a,e),cost=r=>r.reduce((q,n,i)=>q+n*g[i].cost,0),at=X=>sizeChain(P,g,Hc,Tc,idx,X);
       let r=at(Hc-1);
       if(cost(r)>rem){let lo=0,top=Hc-1;for(let k=0;k<60;k++){const mid=(lo+top)/2;if(cost(at(mid))<=rem)lo=mid;else top=mid}r=at(lo)}
+      rem-=cost(r);
+      // fill the Dominance that is left with whole units of THIS tier (the first partial one): a unit at a time, in the order of the stacks, as long as the stack stays below the one in front of it
+      for(let more=true;more;){more=false;let H=Hc,T=Tc,ix2=idx;
+        for(let j=0;j<g.length;j++){const q=g[j],rs=kn1Stack(P,ix2,q);
+          if(r[j]>0){
+            if(q.cost<=rem&&tot(r[j]+1,q.hp)<=H-1&&(HO||!strRuled(q)||!isFinite(T)||tot(r[j]+1,q.str)<=T-1)){r[j]++;rem-=q.cost;more=true}
+            if(!P.ren){H=tot(r[j],q.hp);if(strRef(q,rs))T=tot(r[j],q.str)}ix2++}}}
       r.forEach((n,i)=>{if(n>0){Hc=tot(n,g[i].hp);if(strRef(g[i]))Tc=tot(n,g[i].str);idx++}});
-      rem-=cost(r);ns.push(...r);a=e}
+      ns.push(...r);break}      // ONLY the first partial tier gets units (the tier below it, a 2nd partial tier, gets none: no stack of a few units)
+    while(ns.length<seq.length)ns.push(0);
     return ns.some(n=>n>0)?ns:null};
   set(null);
   const dmg=(Us,so)=>score(P,[...A,...Mo,...Us.list],[...so,...Us.ord],true).dmg;
