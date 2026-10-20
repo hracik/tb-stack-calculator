@@ -205,7 +205,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.42';
+const APP_VERSION='21.6.43';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1906,15 +1906,21 @@ function battleHtml(P,list,order,sc){
   const log=[];strikes(L,K,log,P.ren?1:Infinity);
   const num=x=>Math.round(x).toLocaleString();
   const XP='M4.1 5.9C6.9 6.9 9.5 8.6 11.7 11.5C14 14.4 17.2 17.4 20.3 18.9M4.7 4.8C7.6 7.3 10.2 9.4 12.4 12.1C14.6 14.8 17.3 17.9 19.4 20.2M19.5 4.3C16.9 6.7 13.9 9.6 11.2 12.9C8.8 15.8 6.6 18.4 4.3 19.9M20.2 5.2C17.3 8.1 14.4 11.4 12 14.2C10 16.5 7.6 19.2 5.2 20.7',XS='<svg class="bx" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="'+XP+'" stroke="rgba(0,0,0,.5)" stroke-width="3.6"/><path d="'+XP+'" stroke="#e5402a" stroke-width="1.7"/></g></svg>'; // a hand-drawn red X: four uneven pen strokes
-  const EN=brEnemy(P);
-  let rd=-1,h='<div class="br">';
+  const EN=brEnemy(P),ex=THEOEXP,rng=THEO.rngMk(THEOSEED);      // the dice: the same seed gives the same fight until Roll again
+  let rd=-1,h=`<div class="tfr"><button type="button" data-ta="expect" class="${ex?'on':''}" title="Every strike deals its average damage: no luck">No random effect</button><button type="button" data-ta="dice" class="${ex?'':'on'}" title="Double damage and double strike are rolled; roll again for another fight">${ex?'Roll the dice':'Roll again'}</button></div><div class="br">`;
   log.forEach(([r,t,i])=>{
     if(r!==rd){rd=r;h+=`<div class="brh">Round ${r+1}</div>`}
     const s=L[i],nmh=esc(s.name);
     if(t=='o'){                                              // one strike: the damage of the whole stack WITHOUT the Double strike, and the part of it that comes from the squad bonus (always counted; no mounted enemy in the 3-stack and Killshot modes, see vsRatio)
-      const base=(P.pvp&&s.r&&s.r[0]=='S')?2:1,d=tot(s.n,s.str*(s.f||1)),bn=tot(s.n,s.str*Math.max(0,(s.f||1)-base)),t0=TRN[s.name];
+      const t0=TRN[s.name],base=(P.pvp&&s.r&&s.r[0]=='S')?2:1,d0=tot(s.n,s.str*(s.f||1)),bn0=tot(s.n,s.str*Math.max(0,(s.f||1)-base));
+      let d=d0,bn=bn0,tg='';
+      if(!ex){      // dice: the class and army Double damage (each +100 %), then the Double strike: a 2nd strike (on 3 and 4 enemy stacks without the squad bonus, as in the estimate)
+        const pc=(P['dd'+(t0?t0.cls:'')]||0)/100,pa=(P.ddA||0)/100,pt=P.one?0:Math.min(1,(t0?dsp(t0,P):0)+(P.dsA||0)/100),cs=P.enemy<=4&&!P.raid?base/(s.f||1):1,
+          F=()=>(1+(rng()<pc?1:0))*(1+(rng()<pa?1:0)),m1=F(),sd=rng()<pt,m2=sd?F():0;
+        d=d0*m1+(sd?d0*cs*m2:0);bn=bn0*m1+(sd&&cs>=1?bn0*m2:0);
+        tg=(m1>1||m2>1?'<i title="This strike rolled double damage">double damage</i>':'')+(sd?'<i title="Double strike: the strike hit twice">double strike</i>':'')}
       h+=brRow({we:true,ourIc:brImg(s.name),ourName:nmh,ourSub:`${s.n.toLocaleString()}`,enName:EN.name,enIc:EN.ic,
-        l2:`<b>+${num(d)}</b> damage${bn>0?` \u00b7 <span title="The bonus listed on the troop itself against the enemy, and the damage it adds: units x the troop\'s own strength x that bonus. Your own bonuses are not part of it.">squad bonus +${num(bn)}</span>`:''}`})}
+        l2:`<b>+${num(d)}</b> damage${bn>0?` \u00b7 <span title="The bonus listed on the troop itself against the enemy, and the damage it adds: units x the troop\'s own strength x that bonus. Your own bonuses are not part of it.">squad bonus +${num(bn)}</span>`:''}${tg}`})}
     else{const d=tot(s.n,s.hp);      // the stack is killed: the damage the enemy had to deal
       h+=brRow({we:false,ourIc:brImg(s.name),ourDead:true,ourName:nmh,ourSub:`${s.n.toLocaleString()}`,enName:EN.name,enIc:EN.ic,l2:`<b>\u2212${num(d)}</b> damage`})}
   });
