@@ -205,7 +205,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.54';
+const APP_VERSION='21.6.55';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1951,7 +1951,8 @@ function hitHtml(P,list,order){
 }
 // Under the mode buttons ONE of three lists is open at a time: the dying order, the hitting order or the battle report (OVK; none at the start). The report and the hitting order are drawn only while they are open.
 let OVK=null;
-function fxPlace(){document.querySelectorAll('#rsm .rfx').forEach(e=>e.remove());if(!BRFXH)return;const r=$('rsm');let g=r.querySelector('.stg');if(!g){g=document.createElement('div');g.className='stg';r.appendChild(g)}g.insertAdjacentHTML('beforeend',BRFXH)}      // the Random effects tile is one of the summary tiles (the summary is drawn again by every calculation, so it is put back after it)
+const fxOn=P=>!!P&&Object.keys(P).some(k=>/^(dd|ds)[A-Za-z]+$/.test(k)?P[k]>0:/^dh[A-Za-z]+$/.test(k)&&P[k]>0&&P[k]!=5);      // the Random effects tile is shown only when a double damage / double strike chance is filled in (the monsters' Double strike counts only when it is not the standard 5 %)
+function fxPlace(){document.querySelectorAll('#rsm .rfx').forEach(e=>e.remove());if(!BRFXH||!BRD||!fxOn(BRD.P))return;const r=$('rsm');let g=r.querySelector('.stg');if(!g){g=document.createElement('div');g.className='stg';r.appendChild(g)}g.insertAdjacentHTML('beforeend',BRFXH)}      // the Random effects tile is one of the summary tiles (the summary is drawn again by every calculation, so it is put back after it)
 function drawBR(){
   [['die','os'],['hit','ho'],['rep','br']].forEach(([k,id])=>{const el=$(id);if(el)el.hidden=OVK!==k});
   document.querySelectorAll('.ob').forEach(b=>{const on=b.dataset.o===OVK;b.classList.toggle('on',on);b.setAttribute('aria-expanded',String(on))});
