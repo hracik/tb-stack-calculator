@@ -205,7 +205,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.27';
+const APP_VERSION='21.6.28';
 // DEV / PROD: the dev build (branch dev) shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); the live build (main) shows the result only. A push to the live site sets DEV to false, the next dev commit sets it back to true.
 const DEV=true;
 document.documentElement.classList.toggle('dev',DEV);
@@ -2443,7 +2443,7 @@ function pickTarget(a,D){let b=null,bs=-1,bh=-1;
   return b}
 // one battle. A = our stacks, B = the enemy. The strongest (units x strength, no squad bonus, no Specialists doubling) of the stacks that have not struck in this round strikes next; the sides alternate; round 1 is opened by `first`, every later round by the side that ran out of stacks first. o.log / o.snap record the report
 function battle(A0,B0,rng,o){o=o||{};const A=clone(A0),B=clone(B0),first=o.first||'A';
-  const alive=L=>L.some(s=>s.n>0);let rd=0,nextStart=first=='A'?'B':'A';
+  const alive=L=>L.some(s=>s.n>0);let rd=0,nextStart=first=='A'?'B':'A',early=0;      // early = our stacks destroyed in round 1 before they struck
   for(;rd<400&&alive(A)&&alive(B);rd++){
     const done=new Set();let turn=rd==0?first:nextStart,exh=null;
     while(alive(A)&&alive(B)){
@@ -2454,18 +2454,18 @@ function battle(A0,B0,rng,o){o=o||{};const A=clone(A0),B=clone(B0),first=o.first
       for(const s of cand){const v=s.n*s.str;if(v>best){best=v;a=s}}
       done.add(a);let d=pickTarget(a,tgt);if(!d)break;
       for(let q=0;q<2&&d;q++){      // q = 1: the double strike, a second strike of the same stack (its own target, its own dice); no random effect: one strike with the average damage
-        const dm=hitDmg(a,d,rng,o.expect),k=Math.min(d.n,Math.floor(dm/d.hp));if(o.log)o.log.push([rd+1,side,a.name,d.name,dm,k,d.n-k,d.n,LK[0],q]);d.n-=k;
+        const dm=hitDmg(a,d,rng,o.expect),k=Math.min(d.n,Math.floor(dm/d.hp));if(o.log)o.log.push([rd+1,side,a.name,d.name,dm,k,d.n-k,d.n,LK[0],q]);d.n-=k;if(rd==0&&side=='B'&&d.n==0&&!done.has(d))early++;
         if(q==0){if(o.expect||!(a.pt&&rng()<a.pt))break;d=pickTarget(a,tgt)}}
       turn=side=='A'?'B':'A'}
     nextStart=exh||(nextStart=='A'?'B':'A');
     if(o.snap)o.snap.push({rd:rd+1,A:A.map(s=>s.n),B:B.map(s=>s.n)});
   }
   const hA=A.reduce((q,s)=>q+s.n*s.hp,0),hB=B.reduce((q,s)=>q+s.n*s.hp,0),h0A=A0.reduce((q,s)=>q+s.n*s.hp,0),h0B=B0.reduce((q,s)=>q+s.n*s.hp,0);
-  return{win:alive(A)&&!alive(B)?1:(!alive(A)&&alive(B)?-1:0),rd,remA:hA/h0A,remB:hB/h0B}}
+  return{win:alive(A)&&!alive(B)?1:(!alive(A)&&alive(B)?-1:0),rd,early,remA:hA/h0A,remB:hB/h0B}}
 // N battles: the win and loss chance, the average health left on both sides and the net margin (ours left - the enemy's left, each as a share of its own start)
-function mc(A,B,N,seed,first){const rng=rngMk(seed||1);let w=0,l=0,ra=0,rb=0,rd=0;
-  for(let i=0;i<N;i++){const r=battle(A,B,rng,{first});if(r.win>0)w++;else if(r.win<0)l++;ra+=r.remA;rb+=r.remB;rd+=r.rd}
-  return{win:w/N,loss:l/N,ra:ra/N,rb:rb/N,margin:(ra-rb)/N,rd:rd/N}}
+function mc(A,B,N,seed,first){const rng=rngMk(seed||1);let w=0,l=0,ra=0,rb=0,rd=0,ea=0;
+  for(let i=0;i<N;i++){const r=battle(A,B,rng,{first});if(r.win>0)w++;else if(r.win<0)l++;ra+=r.remA;rb+=r.remB;rd+=r.rd;ea+=r.early}
+  return{win:w/N,loss:l/N,ra:ra/N,rb:rb/N,margin:(ra-rb)/N,rd:rd/N,early:ea/N}}
 // weights -> stacks: the army weights share the Leadership, the monster weights share the Dominance (by cost)
 function layout(P,names,w){const armyI=[],monI=[];names.forEach((nm,i)=>{if(w[i]>1e-9)(TRN[nm].cls=='M'?monI:armyI).push(i)});
   const out=[],wa=armyI.reduce((q,i)=>q+w[i],0),wm=monI.reduce((q,i)=>q+w[i],0);
@@ -2473,9 +2473,10 @@ function layout(P,names,w){const armyI=[],monI=[];names.forEach((nm,i)=>{if(w[i]
   monI.forEach(i=>{const t=TRN[names[i]],n=Math.floor(P.capM*w[i]/wm/t.cost);if(n>0)out.push(mkStack(names[i],n,P))});
   return out}
 // the score of a layout against the enemy builds, both orders of striking: the average net margin (the two fights are added up: +18 % and -6 % is +12 %), a quarter of the weight on the weaker of the two fights
-function score(L,Es,N,seed){let tot=0,c=0,worst=9;
-  Es.forEach((E,j)=>['A','B'].forEach((f,k)=>{const r=mc(L,E,N,seed+k*101+j*7,f);tot+=r.margin;c++;if(r.margin<worst)worst=r.margin}));
-  return{mean:tot/c,worst}}
+const EARLY=0.1;      // the price of one of our stacks that is destroyed in round 1 before it has struck (its strike is lost): in the score of the search, not in the shown results
+function score(L,Es,N,seed){let tot=0,c=0,worst=9,ea=0;
+  Es.forEach((E,j)=>['A','B'].forEach((f,k)=>{const r=mc(L,E,N,seed+k*101+j*7,f);tot+=r.margin;ea+=r.early;c++;if(r.margin<worst)worst=r.margin}));
+  return{mean:tot/c-EARLY*ea/c,worst,early:ea/c}}
 const PEN=0.004;      // a small price per stack: a stack must earn it
 const tick=()=>new Promise(r=>setTimeout(r,0));
 // the hill climb over the weights (async: the page is given back every 30 ms; stop() cancels). Returns {w, f}
