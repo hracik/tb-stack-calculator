@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.7.14';
+const APP_VERSION='21.7.15';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -2203,8 +2203,8 @@ function allocMerc(P,ld,so,X){
   const seq=act.slice().sort((a,b)=>bk(a)-bk(b)||nom(a)-nom(b)||ci(a)-ci(b)||b.tier-a.tier).map(t=>by[t.name]);
   // 21.4.4: ORDER BY GROUPS OF SH RATIO (strength per health). Health AND total strength fall along the chain, so the stacks have to go by the SH ratio (the highest first) or a stack with a low one caps every stack behind it
   // (Ariel in the middle of the chain cut the others to half the health). The stacks with a similar SH ratio (within 2 %) are ONE group, and inside the group the squad bonus rules (the smaller one dies first, the order above).
-  // Two exceptions: the Epic monster hunters (the highest SH ratio, but the biggest bonus) stand just before the weak-strength stacks, and the weak-strength stacks (below 80 % of the median SH ratio: Ariel) stand last.
-  const sh=s=>s.str/s.hp,med=seq.map(sh).sort((x,y)=>x-y)[seq.length>>1],weak=s=>sh(s)<0.8*med,hunt=s=>s.cat=='Epic Monster Hunter'&&!weak(s);
+  // Two exceptions: the Epic monster hunters (the highest SH ratio, but the biggest bonus) stand just before the weak-strength stacks, and the weak-strength stacks (below 80 % of the median SH ratio: Ariel; Grace always counts as one) stand last.
+  const sh=s=>s.str/s.hp,med=seq.map(sh).sort((x,y)=>x-y)[seq.length>>1],weak=s=>sh(s)<0.8*med||s.name=='Grace',hunt=s=>s.cat=='Epic Monster Hunter'&&!weak(s);
   const main=seq.filter(s=>!weak(s)&&!hunt(s)).sort((x,y)=>sh(y)-sh(x)),grp=[];
   main.forEach(s=>{const g=grp[grp.length-1];if(g&&sh(s)>=0.98*g.top)g.l.push(s);else grp.push({top:sh(s),l:[s]})});
   const mainSeq=grp.flatMap(g=>g.l.sort((x,y)=>seq.indexOf(x)-seq.indexOf(y))),chain=[...mainSeq,...seq.filter(hunt),...seq.filter(weak)];
