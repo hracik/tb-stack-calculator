@@ -237,7 +237,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.120';
+const APP_VERSION='21.6.121';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -2013,7 +2013,7 @@ function battleHtml(P,list,order,sc){
       h+=brRow({we:false,ourIc:brImg(s.name),ourDead:true,ourName:nmh,ourSub:`${s.n.toLocaleString()}`,enName:eepic?'':EN.name,enIc:EN.ic,l2:`<b>\u2212${num(d)}</b> damage`})}
   });
   h+='</div>';
-  if(P.cp||P.ren)h+='<p class="mu bf">In this mode the game picks the order inside a group of equals, so this report shows one possible order.'+(P.ren?' The battle ends after round 1: the enemy is defeated by then.':'')+'</p>';
+  if(P.ren)h+='<p class="mu bf">The battle ends after round 1: the enemy is defeated by then.</p>';
   const e=epCur(),th=e&&e.st&&e.score&&ATK=='epics'&&!P.cp&&!P.ren&&!P.one?e.st.filter(x=>!(P.enemy==3&&x[2]==2)).reduce((q,x)=>q+x[0]*x[1],0):0,u=['','K','M','B','T'],fm=x=>{let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3)).toString()+u[i]};      // 118000000 -> 118M
   const sm=brFxBox(ex,[[nd,ed,'double damage'],[ns,es,'double strikes']],ex?'':(()=>{const cp=(v,a)=>Math.abs(v-a)<=0.005*a?'= avg.':(v>a?'+':'\u2212')+fm(Math.abs(v-a))+' vs. avg.',p1=th?Math.min(1,td/th)*e.score:0,p2=th?Math.min(1,ad/th)*e.score:0;return th?`<div><b>${fm(p1)}</b> points (${cp(p1,p2)})</div>`:`<div>total <b>${fm(td)}</b> (${cp(td,ad)})</div>`})());
   BRFXH=sm;return h;      // the Random effects block is shown in the summary, above the Battle in detail buttons
