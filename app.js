@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.7.21';
+const APP_VERSION='21.7.22';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -2205,7 +2205,10 @@ function allocMerc(P,ld,so,X){
     if(b.fw){      // then a finer search around it, one stack at a time (a coarse step can leave Authority unspent)
       for(const st of [1.35,1.12])for(let rounds=0;rounds<4;rounds++){let up=false;
         for(let j=0;j<w;j++)for(const m of [st,1/st]){const f2=b.fw.slice();f2[j]=Math.min(1,f2[j]*m);if(f2[j]===b.fw[j])continue;const r=evalOne(seq,fr,f2);if(r.d>b.d*(1+1e-6)){b=r;up=true}}
-        if(!up)break}}
+        if(!up)break}
+      for(let j=w-1;j>=0;j--){      // last: each share as far up as the spare Authority reaches (a step of the search can jump over it)
+        let lo=b.fw[j],hi=1;if(lo>=1)continue;
+        for(let k=0;k<14;k++){const mid=(lo+hi)/2,f2=b.fw.slice();f2[j]=mid;const r=evalOne(seq,fr,f2);if(r.d>=b.d*(1-1e-9)){b=r;lo=mid}else hi=mid}}}
     return b};
   // ORDER: simply by the squad bonus, the smaller one dies first (the strongest bonuses die last and strike the most). The same bonus: nominal bonus, category, higher tier first.
   const q6=x=>Math.round(x*1e6),ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(...t.vs);
