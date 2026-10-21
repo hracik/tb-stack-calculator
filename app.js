@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.3';
+const APP_VERSION='21.8.4';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1789,14 +1789,15 @@ function epicSim(P,L,EP,dice,rng,trace){
       else{kill(j);const x=nx();if(x>=0)strike(x,rd)}}
     for(let x=nx();x>=0&&alive();x=nx())strike(x,rd)}
   return{ev,td,nd,ns,ed,es}}
-// 21.8.1: THE KILLSHOT MODES against an epic with known stacks. The army does not hit a healthy epic: it finishes one that earlier hits have worn down. On its way down the mounted stack loses health about twice as fast as any other stack
-// (MOUNTEDX; in absolute damage, so the other stacks have lost half of what the mounted one has when it dies), so it always dies first and the epic is a 3-stack from then on. The killshot starts at the biggest state on that way
-// that has the right number of living stacks (v. 3: three, v. 4: four) and that the army still kills in one hit (killState).
+// 21.8.1: THE KILLSHOT MODES against an epic with known stacks. The army does not hit a healthy epic: it finishes one that earlier hits have worn down. On its way down the mounted stack loses its health twice as fast as any other stack
+// (MOUNTEDX, as a share of its own health: when the mounted stack is dead, every other stack has lost half of its health), so the mounted stack always dies first and the epic is a 3-stack from then on (with equal stacks:
+// 1000 each, the mounted one dies when the others are at 500, so at 1500 of 4000 = 37.5 %; Doomsday: 39 %). The killshot starts at the biggest state on that way that has the right number of living stacks
+// (4 stacks: the 4-stack rules, 3 stacks: the 3-stack rules) and that the army still kills in one hit (killState).
 const MOUNTEDX=2;
 function epicPath(P,L,EP){
-  const H=EP.st.map(x=>x[0]*x[1]),r=EP.st.map(x=>x[2]==2?MOUNTEDX:1),td=H.map((h,i)=>h/r[i]),tmax=Math.max(...td),ts=new Set(td);
-  for(let k=0;k<=600;k++)ts.add(tmax*k/600);
-  return[...ts].sort((a,b)=>a-b).map(t=>{const hp=H.map((h,i)=>Math.max(0,h-r[i]*t));return{left:hp.reduce((a,b)=>a+b,0),hp}})}
+  const H=EP.st.map(x=>x[0]*x[1]),r=EP.st.map(x=>x[2]==2?MOUNTEDX:1),pts=[];
+  for(let k=0;k<=800;k++)pts.push(k/800);pts.push(1/MOUNTEDX);
+  return pts.sort((a,b)=>a-b).map(t=>{const hp=H.map((h,i)=>Math.max(0,h*(1-r[i]*t)));return{left:hp.reduce((a,b)=>a+b,0),hp}})}
 function killState(P,L,EP){
   const cps=epicPath(P,L,EP),K=P.kill4?4:3,al=c=>c.hp.filter(x=>x>1e-6).length,cand=cps.filter(c=>al(c)==K);
   if(!cand.length)return null;
