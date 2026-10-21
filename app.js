@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.14';
+const APP_VERSION='21.8.15';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1808,7 +1808,7 @@ function epicPath(P,L,EP){
     cps.push({left:hp.reduce((a,b)=>a+b,0),hp:hp.slice()})}
   return cps}
 let KSC={k:'',cps:null};
-function killState(P,L,EP,dice){      // dice: the luck of the rolled fight (the same dice stream for every state that is tried); without it the average fight
+function killState(P,L,EP,dice,fast){      // dice: the luck of the rolled fight (the same dice stream for every state that is tried); without it the average fight
   const key=EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA]);
   if(KSC.k!=key)KSC={k:key,cps:epicPath(P,L,EP)};
   // every state on the way down with at most K living stacks (4: all of them, 3: the 3-stack states): the army kills the biggest one it can, however weak it is (the last state, nothing left, is always killed)
@@ -1816,9 +1816,14 @@ function killState(P,L,EP,dice){      // dice: the luck of the rolled fight (the
   if(!cand.length)return null;
   const mk=c=>({...EP,st:EP.st.map((x,i)=>[c.hp[i]/x[1],x[1],x[2],x[3]]).filter((x,i)=>c.hp[i]>1e-6)}),ok=c=>epicSim(P,L,mk(c),!!dice,dice?THEO.rngMk(dice):null).td>=c.left*(1-1e-6);
   let lo=0,hi=cand.length-1;if(!ok(cand[hi]))return null;while(lo<hi){const m=(lo+hi)>>1;if(ok(cand[m]))hi=m;else lo=m+1}
-  const c=cand[lo],tot=cps[0].left;return{left:c.left,hp:c.hp,K,alive:al(c),tot,f:c.left/tot,EPS:mk(c)}}
+  let c=cand[lo];
+  if(lo>0){      // the grid of the way down is coarse (a quarter of a percent of the epic): between the last state that is not killed and the first that is, the biggest killed one is searched
+    let A=cand[lo-1],B=c;
+    for(let k=0;k<(fast?9:15);k++){const hp=A.hp.map((x,i)=>(x+B.hp[i])/2),m={hp,left:hp.reduce((q,x)=>q+x,0)};if(ok(m))B=m;else A=m}
+    c=B}
+  const tot=cps[0].left;return{left:c.left,hp:c.hp,K,alive:al(c),tot,f:c.left/tot,EPS:mk(c)}}
 // the range of the killshot: the same army, many rolled fights; each one finds the biggest state it kills (the 99 % range of those, and the average fight)
-function ksRange(P,L,EP){const f=[];for(let i=1;i<=24;i++){const k=killState(P,L,EP,i*7919);f.push(k?k.f:0)}
+function ksRange(P,L,EP){const f=[];for(let i=1;i<=14;i++){const k=killState(P,L,EP,i*7919,true);f.push(k?k.f:0)}
   const m=f.reduce((a,b)=>a+b,0)/f.length,sd=Math.sqrt(f.reduce((q,x)=>q+(x-m)*(x-m),0)/f.length);return{lo:Math.max(0,m-2.576*sd),hi:Math.min(1,m+2.576*sd)}}      // 99 %: the average of the fights and 2.576 standard deviations
 // the score tile of a Killshot: the average fight with its range, or the rolled fight (Roll the dice)
 function ksTile(P,list,order){
