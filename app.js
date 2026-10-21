@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.35';
+const APP_VERSION='21.8.36';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1776,7 +1776,7 @@ function epicSim(P,L,EP,dice,rng,trace){
   let td=0,nd=0,ns=0,ed=0,es=0;
   const hit=(i,amt,ty,rd,tg,bonus,silent,stk)=>{let e=stk&&stk.hp>0?stk:ty==null?null:e2.find(x=>x.ty==ty&&x.hp>0);if(!e)e=e2.filter(x=>x.hp>0).sort((a,b)=>b.hp-a.hp)[0];if(!e)return;
     const before=Math.ceil(e.hp/e.hpu-1e-9),a=Math.min(amt,e.hp);e.hp-=a;td+=a;if(trace)trace.push([e.ty,a]);if(silent)return;
-    const after=Math.ceil(e.hp/e.hpu-1e-9);ev.push({r:rd,t:'o',i,ty:e.ty,dmg:a,before,killed:before-after,dead:e.hp<=0,tg,sq:amt>0?bonus*a/amt:0})};
+    const after=Math.ceil(e.hp/e.hpu-1e-9);ev.push({r:rd,t:'o',i,ty:e.ty,dmg:a,before,killed:before-after,dead:e.hp<=0,tg,sq:amt>0?bonus*a/amt:0,un:Math.round(L[i].n*fr[i])})};
   const full=P.enemy>4&&!P.raid;      // 6 and 8 enemy stacks: the 2nd strike of a Double strike is the whole strike again (the same bonus, the same target); 3 and 4: the base strength only, to the healthiest stack
   const strike=(i,rd)=>{const q=info[i],s=L[i];let bt=null,bb=0,tk=null;
     const b0=s.n*fr[i]*s.str*(i==heal?HALFHEALTHY:1);
@@ -1792,8 +1792,8 @@ function epicSim(P,L,EP,dice,rng,trace){
     const kill=j=>{const a=e2.filter(e=>e.hp>0&&!used.has(e)).sort((p,q)=>q.sp*q.hp/q.hpu-p.sp*p.hp/p.hpu)[0]||ord[0]||e2[0];used.add(a);
       // an enemy stack deals (its living units x its strength): the front stack of ours dies only when that is at least its health; a small stack only wounds it
       const Dm=a.sp>0?a.hp/a.hpu*a.sp:Infinity,Hf=L[head].n*L[head].hp*fr[head];
-      if(Dm<Hf*(1-1e-9)){fr[head]-=Dm/(L[head].n*L[head].hp);ev.push({r:rd,t:'w',i:head,ty:a.ty,u:Math.ceil(a.hp/a.hpu-1e-9),dmg:Dm});return}
-      ev.push({r:rd,t:'e',i:head,ty:a.ty,u:Math.ceil(a.hp/a.hpu-1e-9)});dead.add(head++)};
+      if(Dm<Hf*(1-1e-9)){fr[head]-=Dm/(L[head].n*L[head].hp);ev.push({r:rd,t:'w',i:head,ty:a.ty,u:Math.ceil(a.hp/a.hpu-1e-9),dmg:Dm,un:Math.round(L[head].n*fr[head]),hl:Hf});return}
+      ev.push({r:rd,t:'e',i:head,ty:a.ty,u:Math.ceil(a.hp/a.hpu-1e-9),un:Math.round(L[head].n*fr[head]),hl:Hf});dead.add(head++)};
     for(let j=0;j<K&&head<N&&alive();j++){
       if(rd===0){const x=nx();if(x>=0)strike(x,rd);if(!alive())break;kill(j)}
       else{kill(j);const x=nx();if(x>=0)strike(x,rd)}}
@@ -1875,14 +1875,12 @@ function battleHtml(P,list,order,sc){
     const ks=P.kill?killState(P,L,EPK,ex?0:THEOSEED):null,EPS=ks?ks.EPS:(P.enemy==3||P.enemy==6)?{...EPK,st:EPK.st.filter(x=>x[2]!=2)}:EPK;      // the 3-stack mode has no mounted enemy stack; the Killshot starts at the biggest state the army kills (killState)
     KSROLLF=ks?ks.f:null;      // the score of the rolled fight (the Random effects points)
     const sim=epicSim(P,L,EPS,!ex,rng),avg=ex?sim:epicSim(P,L,EPS,false,null);td=sim.td;ad=avg.td;nd=sim.nd;ns=sim.ns;ed=sim.ed;es=sim.es;
-    h+=`<div class="brh">${P.kill?'Epic starting stacks (the state of the killshot)':'Epic starting stacks'}</div>`;      // the stacks the epic has when the hit starts: units, health left of the full epic
-    EPS.st.forEach(x=>{const f0=EPK.st[x[4]!=null?x[4]:EPK.st.indexOf(x)],full=f0?f0[0]:x[0],pc=Math.round(100*x[0]/full);h+=brRow({we:false,ourIc:unIc(x[2]),ourName:DEFCAT[x[2]]||'',ourSub:num(x[0]),l2:`${pc} % of its units \u00b7 <b>${fm0(x[0]*x[1])}</b> health`})});
     sim.ev.forEach(x=>{
       if(x.r!==rd){rd=x.r;h+=`<div class="brh">Round ${x.r+1}</div>`}
       const s=L[x.i];
-      if(x.t=='o')h+=brRow({we:true,ourIc:brImg(s.name),ourName:esc(s.name),ourSub:num(s.n),enName:DEFCAT[x.ty]||'',enCnt:num(x.before),enIc:unIc(x.ty),enDead:x.dead,tg:x.tg,l2:`<b>+${num(x.dmg)}</b> damage \u00b7 ${num(x.killed)} killed`,sq:x.sq>=0.5?`squad bonus +${num(x.sq)}`:''});
-      else if(x.t=='w')h+=brRow({we:false,ourIc:brImg(s.name),ourName:esc(s.name),ourSub:num(s.n),enName:DEFCAT[x.ty]||'',enCnt:num(x.u),enIc:unIc(x.ty),l2:`<b>\u2212${num(x.dmg)}</b> damage \u00b7 wounded, still fighting`})
-      else h+=brRow({we:false,ourIc:brImg(s.name),ourDead:true,ourName:esc(s.name),ourSub:num(s.n),enName:DEFCAT[x.ty]||'',enCnt:num(x.u),enIc:unIc(x.ty),l2:`<b>\u2212${num(tot(s.n,s.hp))}</b> damage`})})}
+      if(x.t=='o')h+=brRow({we:true,ourIc:brImg(s.name),ourName:esc(s.name),ourSub:num(x.un??s.n),enName:DEFCAT[x.ty]||'',enCnt:num(x.before),enIc:unIc(x.ty),enDead:x.dead,tg:x.tg,l2:`<b>+${num(x.dmg)}</b> damage \u00b7 ${num(x.killed)} killed`,sq:x.sq>=0.5?`squad bonus +${num(x.sq)}`:''});
+      else if(x.t=='w')h+=brRow({we:false,ourIc:brImg(s.name),ourName:esc(s.name),ourSub:num(x.un??s.n),enName:DEFCAT[x.ty]||'',enCnt:num(x.u),enIc:unIc(x.ty),l2:`<b>\u2212${num(x.dmg)}</b> damage \u00b7 wounded, still fighting`})
+      else h+=brRow({we:false,ourIc:brImg(s.name),ourDead:true,ourName:esc(s.name),ourSub:num(x.un??s.n),enName:DEFCAT[x.ty]||'',enCnt:num(x.u),enIc:unIc(x.ty),l2:`<b>\u2212${num(x.hl??tot(s.n,s.hp))}</b> damage`})})}
   const eepic=ATK=='epics'&&!P.cp&&!P.ren&&!P.one&&!P.pm;      // epic modes: the epic is shown by its icon only
   (known?[]:log).forEach(([r,t,i])=>{
     if(r!==rd){rd=r;h+=`<div class="brh">Round ${r+1}</div>`}
