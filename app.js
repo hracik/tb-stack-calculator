@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.7.17';
+const APP_VERSION='21.7.18';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1591,11 +1591,11 @@ function dominanceTail(P,st,A,Mo,U,light){      // light (the Tier check): only 
     while(ns.length<seq.length)ns.push(0);
     return ns.some(n=>n>0)?ns:null};
   set(null);
-  // How the place of the partial stack is chosen: first the most Dominance spent (the partial stack as big as it can be), then the most Authority spent (the mercenaries as big as they can be), then the most damage. So neither side limits the other more than it has to;
+  // How the place of the partial stack is chosen: first the most Dominance spent (the partial stack as big as it can be), then the most damage (the Authority that is not spent is no goal). So neither side limits the other more than it has to;
   // a mercenary that is bigger than the partial stack stands in front of it, a smaller one behind it (the places among the mercenaries are all tried).
   const dmg=(Us,so)=>score(P,[...A,...Mo,...Us.list],[...so,...Us.ord],true).dmg;
   const b0={d:dmg(U,st.so),kind:0,dm:0,au:U.used||0};let best=b0;
-  const dom=ns=>ns.reduce((q,n,i)=>q+n*tail[i].cost,0),cand=(c,au)=>{c.dm=dom(c.ns);c.au=au;const e=1e-9,b=best;if(c.dm>b.dm*(1+e)||(c.dm>=b.dm*(1-e)&&(c.au>b.au*(1+e)||(c.au>=b.au*(1-e)&&c.d>b.d*(1+5e-4)))))best=c};
+  const dom=ns=>ns.reduce((q,n,i)=>q+n*tail[i].cost,0),cand=(c,au)=>{c.dm=dom(c.ns);c.au=au;const e=1e-9,b=best;if(c.dm>b.dm*(1+e)||(c.dm>=b.dm*(1-e)&&c.d>b.d*(1+5e-4)))best=c};
   const ns1=sizeTail([...A,...Mo],st.so);
   if(ns1){set(ns1);const U1=allocMerc(P,[...A,...Mo],st.so,XS),d=dmg(U1,st.so);cand({d,kind:1,ns:ns1,U1},U1.used||U1.list.reduce((q,s)=>q+s.n*s.cost,0));set(null)}
   const ns2=sizeTail([...A,...Mo,...U.list],[...st.so,...U.ord]);
@@ -2203,11 +2203,11 @@ function allocMerc(P,ld,so,X){
   const seq=act.slice().sort((a,b)=>bk(a)-bk(b)||nom(a)-nom(b)||ci(a)-ci(b)||b.tier-a.tier).map(t=>by[t.name]);
   // 21.4.4: ORDER BY GROUPS OF SH RATIO (strength per health). Health AND total strength fall along the chain, so the stacks have to go by the SH ratio (the highest first) or a stack with a low one caps every stack behind it
   // (Ariel in the middle of the chain cut the others to half the health). The stacks with a similar SH ratio (within 2 %) are ONE group, and inside the group the squad bonus rules (the smaller one dies first, the order above).
-  // Two exceptions: the Epic monster hunters (the highest SH ratio, but the biggest bonus) stand just before the weak-strength stacks, and the weak-strength stacks (below 80 % of the median SH ratio: Ariel; Grace always counts as one) stand last.
+  // Two exceptions: the Epic monster hunters (the highest SH ratio, but the biggest bonus) stand just before the weak-strength stacks, and the weak-strength stacks (below 80 % of the median SH ratio: Ariel) stand last; Grace always counts as one and stands at the very end, like a partial stack: it takes the Authority that is left and limits nobody.
   const sh=s=>s.str/s.hp,med=seq.map(sh).sort((x,y)=>x-y)[seq.length>>1],weak=s=>sh(s)<0.8*med||s.name=='Grace',hunt=s=>s.cat=='Epic Monster Hunter'&&!weak(s);
   const main=seq.filter(s=>!weak(s)&&!hunt(s)).sort((x,y)=>sh(y)-sh(x)),grp=[];
   main.forEach(s=>{const g=grp[grp.length-1];if(g&&sh(s)>=0.98*g.top)g.l.push(s);else grp.push({top:sh(s),l:[s]})});
-  const mainSeq=grp.flatMap(g=>g.l.sort((x,y)=>seq.indexOf(x)-seq.indexOf(y))),chain=[...mainSeq,...seq.filter(hunt),...seq.filter(weak)];
+  const mainSeq=grp.flatMap(g=>g.l.sort((x,y)=>seq.indexOf(x)-seq.indexOf(y))),chain=[...mainSeq,...seq.filter(hunt),...seq.filter(s=>weak(s)&&s.name!='Grace'),...seq.filter(s=>s.name=='Grace')];
   const best=evalSeq(chain);
   res.weak=seq.filter(weak).map(s=>s.name);      // the weak-strength stacks (Ariel, Grace): they stand last, so a stack in front of them may make them smaller
   res.mainN=best.ns.slice(0,mainSeq.length).filter(n=>n>0).length;      // 21.5.4: how many of the first stacks of the list are the main chain (the hunters and the weak-strength stacks follow): dominanceTail may put a monster stack between them
