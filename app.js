@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.18';
+const APP_VERSION='21.8.19';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -73,6 +73,7 @@ const EPICS=[      // the epic monsters, alphabetical: n = name, score = the tot
   {n:'Fenrir',ic:'fenrir',score:750e6,st:null,en:[3,4]},
   {n:'Hellforge',score:150e6,st:null,en:[3,4]},
   {n:'J\u00f6rmungandr/Chimera',ic:'jormchimera',score:750e6,st:null,en:[3,4],raid:true}];      // 19.0.19 the epic monsters
+let K4OK=false;      // 21.8.19: the army kills the chosen epic from a state that still has all 4 stacks: a 3-stack hit is of no use then (the 3-stack mode is switched off)
 let KAUTO4=false;      // 21.8.3: the ONE Killshot mode picks its rules by itself: the 4-stack rules when the army kills the epic from its 4-stack state, else the 3-stack rules (calcRun)
 const enemyNow=()=>{const m=$('mode').value;return m=='kill'?(KAUTO4?4:3):m=='kill4'?4:m=='ren'?8:m=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4},      // the number of enemy stacks of the chosen attack mode
   epOk=e=>e.en.includes(enemyNow()),epCur=()=>{const e=EPICS.find(x=>x.n==$('epic').value);return e&&epOk(e)?e:null};      // an epic counts only in the modes it can be hit in
@@ -2361,7 +2362,8 @@ function calcRun(){
     let e=epCur();const ks4=BRD&&e&&e.st&&e.score&&BRD.P.kill4&&killState(BRD.P,ordL(BRD.list,BRD.order),e),ok=ks4&&ks4.alive==4;
     if(!ok){KAUTO4=false;calcRun0()}      // else the 3-stack rules
     return}
-  calcRun0()}
+  calcRun0();
+  if(K4OK&&ATK=='epics'&&$('mode').value=='max'&&$('enemy').value=='3'){$('enemy').value='4';SO=[];calcRun0()}}      // the 3-stack mode is off while the army kills from 4 stacks: the 4-stack mode instead
 function calcRun0(){
   epAuto();
   const pvOK=m=>m=='cp'||m=='cpd'?PV1:m=='pvpmax'?PVM:m=='ovo'?OVO:m=='ren'?RENEGADES:false,okP=PVMODES.filter(pvOK);      // okP = the PvP modes that are switched on
@@ -2397,7 +2399,11 @@ function calcRun0(){
   document.querySelectorAll('.cm').forEach(b=>b.classList.toggle('on',(P.kill&&b.dataset.m=='kill')||(P.ren&&b.dataset.m=='ren')||(P.one&&!P.cpd&&b.dataset.m=='cp')||(P.one&&P.cpd&&b.dataset.m=='cpd')||(P.pm&&!P.ov&&b.dataset.m=='pvpmax')||(P.ov&&b.dataset.m=='ovo')));
   {const m=MODEINFO[P.kill?'kill':P.ov?'ovo':P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)],el=$('mdi');if(el){el.hidden=!m&&!pvOff;if(pvOff)el.innerHTML='<b>Attack players</b> - The PvP modes are switched off for now.';else if(m){const ik=({'4':'reg','8':'reg','3':'sn','6':'sn',kill:'sn',kill4:'sn',cp:'pv1',cpd:'pv1'})[P.kill?(P.kill4?'kill4':'kill'):P.ov?'ovo':P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)]||'pvm',ic=document.querySelector('#mics [data-i="'+ik+'"] svg');el.innerHTML=(ic?ic.outerHTML:'')+'<span><b>'+m[0].replace(/^(Regular|Sniper|Pv1|PvMany) \u00b7 /,'')+'</b>'+(P.ov?' <span class="tg">work in progress</span>':'')+' - '+m[1]+'</span>'}}}      // the explanation under the mode buttons (the tier tips under Tiers to use are fixed text, both are always shown)
   const sc=score(P,[...A,...Mo,...U.list],[...st.so,...U.ord]);
-  BRD={P,list:[...A,...Mo,...U.list],order:[...st.so,...U.ord],sc,fx};drawBR();      // the battle report (drawn only while it is open)
+  BRD={P,list:[...A,...Mo,...U.list],order:[...st.so,...U.ord],sc,fx};
+  K4OK=false;{const e=ATK=='epics'&&!P.ren&&!P.cp&&!P.one&&!P.pm?EPICS.find(x=>x.n==$('epic').value):null;
+    if(e&&e.st&&e.score&&e.en.includes(3)&&e.en.includes(4)){const k=killState({...P,kill:true,kill4:true},ordL(BRD.list,BRD.order),e);K4OK=!!(k&&k.alive==4)}}
+  document.querySelectorAll('.eb[data-e="3"]').forEach(b=>{b.disabled=K4OK;b.title=K4OK?'Your army kills this epic while it still has all 4 stacks, so a hit on a 3-stack epic is not needed':''});
+  drawBR();      // the battle report (drawn only while it is open)
   const food=[...A,...Mo,...U.list].reduce((q,s)=>q+(s.n||0)*foodOf(s.name),0);      // total food consumption of all the units, 25 % less than the plain values (mercenaries use none)
   const noFood=!(v('foodP')>0);      // no Food production: there are no hits to train for, so the Preparation button is off (the choice itself stays saved and comes back when the production is filled in)
   REVM=REVCASES.some(c=>c[0]==$('revm').value)?$('revm').value:'top';SHOWTR=$('shw').value=='train'&&!noFood;
