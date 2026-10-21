@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.7.18';
+const APP_VERSION='21.7.19';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1593,6 +1593,7 @@ function dominanceTail(P,st,A,Mo,U,light){      // light (the Tier check): only 
   set(null);
   // How the place of the partial stack is chosen: first the most Dominance spent (the partial stack as big as it can be), then the most damage (the Authority that is not spent is no goal). So neither side limits the other more than it has to;
   // a mercenary that is bigger than the partial stack stands in front of it, a smaller one behind it (the places among the mercenaries are all tried).
+  const wkn=new Set(U.weak||[]);      // the weak-strength stacks (Ariel, Grace) do not limit each other
   const dmg=(Us,so)=>score(P,[...A,...Mo,...Us.list],[...so,...Us.ord],true).dmg;
   const b0={d:dmg(U,st.so),kind:0,dm:0,au:U.used||0};let best=b0;
   const dom=ns=>ns.reduce((q,n,i)=>q+n*tail[i].cost,0),cand=(c,au)=>{c.dm=dom(c.ns);c.au=au;const e=1e-9,b=best;if(c.dm>b.dm*(1+e)||(c.dm>=b.dm*(1-e)&&c.d>b.d*(1+5e-4)))best=c};
@@ -1610,7 +1611,7 @@ function dominanceTail(P,st,A,Mo,U,light){      // light (the Tier check): only 
       set(ns3);
       const tl=tail.filter(s=>s.n>0),ix={};[...st.so.filter(n=>!tl.some(s=>s.name==n)),...U.ord.slice(0,k),...tl.map(s=>s.name)].forEach((n,i)=>ix[n]=i);
       let H=Infinity,T=Infinity;[...ldm.filter(s=>s.n>0),...tl].sort((a,b)=>ix[a.name]-ix[b.name]).forEach(s=>{H=tot(s.n,s.hp);if(strRef(s))T=tot(s.n,s.str)});
-      const cu=P.capU-main.reduce((q,s)=>q+s.n*s.cost,0),used=ns=>ns.reduce((q,n,i)=>q+n*rest[i].cost,0),at=X=>sizeChain(P,rest,H,T,ldm.length+tl.length,X);
+      const cu=P.capU-main.reduce((q,s)=>q+s.n*s.cost,0),used=ns=>ns.reduce((q,n,i)=>q+n*rest[i].cost,0),fr=rest.findIndex(s=>wkn.has(s.name)),at=X=>sizeChain(P,rest,H,T,ldm.length+tl.length,X,fr);
       let nr=at(H-1);
       if(used(nr)>cu){let lo=0,top=H-1;for(let k=0;k<60;k++){const mid=(lo+top)/2;if(used(at(mid))<=cu)lo=mid;else top=mid}nr=at(lo)}
       rest.forEach((s,i)=>{s.n=nr[i]});
@@ -2151,15 +2152,15 @@ const MT=MERC.map(m=>({cls:m[0],tier:m[1],name:m[2],cat:m[3],hp:m[4],str:m[5],co
 MT.forEach(t=>TRN[t.name]=t);
 const mkM=(t,P,X)=>{const[mh,ms]=mults(t,P);return{r:t.cls+t.tier,p:'U',c:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i:0,dh:dhf(t,P),n:0}};
 // the counts of a row of stacks: H and T = health and total strength of the stack before (Infinity = none), idx = its place, X = the health level no stack goes above
-function sizeChain(P,seq,H,T,idx,X){
+function sizeChain(P,seq,H,T,idx,X,fr,fw){      // fr: the place from which the stacks do not limit each other (the weak-strength stacks at the end: each follows the stack in front of them, not the one before it)
   const ns=[];
-  seq.forEach(s=>{
+  seq.forEach((s,si)=>{
     const rs=kn1Stack(P,idx,s);                                              // the places Kn+1: the strength may be far lower, never higher; the next stack follows the strength before it, as everywhere
-    let n=fitN(Math.floor(X),s.hp);
+    let n=fitN(Math.floor(fr>=0&&si>=fr&&fw?X*(fw[si-fr]>0?fw[si-fr]:1):X),s.hp);      // fw: the weak-strength stacks at the end stay below this share of the common health level (the Authority they take is traded against the ones in front of them)
     if(isFinite(H))n=Math.min(n,fitN(H-1,s.hp));
     if(!HO&&strRuled(s)&&isFinite(T))n=Math.min(n,fitN(T-1,s.str));
     if(!(n>=1)){ns.push(0);return}                                           // no unit fits: the stack does not exist (the next places move up)
-    ns.push(n);if(!P.ren){H=tot(n,s.hp);if(strRef(s,rs))T=tot(n,s.str)}idx++;      // 14.14 Renegades: the mercenaries are one block, equal inside - no step from one to the next
+    ns.push(n);if(!P.ren&&!(fr>=0&&si>=fr)){H=tot(n,s.hp);if(strRef(s,rs))T=tot(n,s.str)}idx++;      // 14.14 Renegades: the mercenaries are one block, equal inside - no step from one to the next
   });
   return ns;
 }
@@ -2183,19 +2184,24 @@ function allocMerc(P,ld,so,X){
   const used=(seq,ns)=>ns.reduce((q,n,i)=>q+n*seq[i].cost,0);
   // EVERY mercenary stack that is on gets units. Without a limit each stack steps down from the one before it (the first from the last Leadership / Dominance stack), as far as the Authority reaches;
   // when the Authority is short, all the stacks stand about level: the common health level is the highest one the Authority pays for (level along the order, rounding apart).
-  const sizeOf=seq=>{
-    const hi=L.length?H-1:1e15,at=X=>sizeChain(P,seq,L.length?H:Infinity,L.length?T:Infinity,L.length,X);
+  const sizeOf=(seq,fr,fw)=>{
+    const hi=L.length?H-1:1e15,at=X=>sizeChain(P,seq,L.length?H:Infinity,L.length?T:Infinity,L.length,X,fr,fw);
     let ns=at(hi);
     if(used(seq,ns)<=P.capU)return ns;                                        // the Authority is enough: the chain is the limit, what is left over stays unused
     let lo=0,top=hi;
     for(let k=0;k<60;k++){const mid=(lo+top)/2;if(used(seq,at(mid))<=P.capU)lo=mid;else top=mid}
     return at(lo);
   };
-  const evalSeq=seq=>{
-    const ns=sizeOf(seq),lst=[],names=[];
+  const evalOne=(seq,fr,fw)=>{
+    const ns=sizeOf(seq,fr,fw),lst=[],names=[];
     seq.forEach((s,i)=>{if(ns[i]>0){lst.push({...s,n:ns[i]});names.push(s.name)}});
-    return{d:score(P,[...ld,...lst],[...so,...names],true).dmg,seq,ns};
+    return{d:score(P,[...ld,...lst],[...so,...names],true).dmg,seq,ns,fr};
   };
+  const evalSeq=(seq,fr)=>{      // with a weak-strength group at the end (fr): chained as before, or each one on its own share of the common level (the Authority they take is traded against the ones in front of them); the damage decides
+    if(!(fr>=0&&fr<seq.length))return evalOne(seq,fr);
+    const w=seq.length-fr,sh=[1,0.5,0.2];let b=evalOne(seq,-1);
+    const combos=[];(function g(a){if(a.length==w){combos.push(a);return}sh.forEach(f=>g([...a,f]))})([]);
+    for(const fw of combos){const r=evalOne(seq,fr,fw);if(r.d>b.d*(1+5e-4))b=r}return b};
   // ORDER: simply by the squad bonus, the smaller one dies first (the strongest bonuses die last and strike the most). The same bonus: nominal bonus, category, higher tier first.
   const q6=x=>Math.round(x*1e6),ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(...t.vs);
   // The bonus against epic enemies counts against EVERY enemy stack, a class bonus only against the stacks of that class: at the same size the epic one is the better one and dies later.
@@ -2207,8 +2213,9 @@ function allocMerc(P,ld,so,X){
   const sh=s=>s.str/s.hp,med=seq.map(sh).sort((x,y)=>x-y)[seq.length>>1],weak=s=>sh(s)<0.8*med||s.name=='Grace',hunt=s=>s.cat=='Epic Monster Hunter'&&!weak(s);
   const main=seq.filter(s=>!weak(s)&&!hunt(s)).sort((x,y)=>sh(y)-sh(x)),grp=[];
   main.forEach(s=>{const g=grp[grp.length-1];if(g&&sh(s)>=0.98*g.top)g.l.push(s);else grp.push({top:sh(s),l:[s]})});
-  const mainSeq=grp.flatMap(g=>g.l.sort((x,y)=>seq.indexOf(x)-seq.indexOf(y))),chain=[...mainSeq,...seq.filter(hunt),...seq.filter(s=>weak(s)&&s.name!='Grace'),...seq.filter(s=>s.name=='Grace')];
-  const best=evalSeq(chain);
+  const mainSeq=grp.flatMap(g=>g.l.sort((x,y)=>seq.indexOf(x)-seq.indexOf(y))),head=[...mainSeq,...seq.filter(hunt)],wkA=seq.filter(s=>weak(s)&&s.name!='Grace'),wkG=seq.filter(s=>s.name=='Grace'),chain=[...head,...wkA,...wkG];
+  // Ariel and Grace (the weak-strength stacks) do not limit each other: each is sized from the stack in front of them, and the order of the two is the one with more damage
+  let best=evalSeq(chain,head.length);{const alt=wkA.length&&wkG.length?evalSeq([...head,...wkG,...wkA],head.length):null;if(alt&&alt.d>best.d*(1+5e-4))best=alt}
   res.weak=seq.filter(weak).map(s=>s.name);      // the weak-strength stacks (Ariel, Grace): they stand last, so a stack in front of them may make them smaller
   res.mainN=best.ns.slice(0,mainSeq.length).filter(n=>n>0).length;      // 21.5.4: how many of the first stacks of the list are the main chain (the hunters and the weak-strength stacks follow): dominanceTail may put a monster stack between them
   best.seq.forEach((s,i)=>{if(best.ns[i]>0){s.n=best.ns[i];res.list.push(s);res.ord.push(s.name);res.used+=s.n*s.cost}});
