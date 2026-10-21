@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.7.15';
+const APP_VERSION='21.7.16';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1591,7 +1591,7 @@ function dominanceTail(P,st,A,Mo,U,light){      // light (the Tier check): only 
     while(ns.length<seq.length)ns.push(0);
     return ns.some(n=>n>0)?ns:null};
   set(null);
-  const orig=new Map(U.list.map(s=>[s.name,s.n])),noCap=L=>[...orig].every(([n,k])=>{const t=L.find(x=>x.name==n);return t&&t.n>=k});      // the partial stack must not make the mercenaries smaller: a place for it counts only when every mercenary stack keeps the size it has without it
+  const orig=new Map(U.list.map(s=>[s.name,s.n])),wk=new Set(U.weak||[]),noCap=L=>[...orig].every(([n,k])=>wk.has(n)||(()=>{const t=L.find(x=>x.name==n);return t&&t.n>=k})());      // the partial stack must not make the mercenaries smaller: a place for it counts only when every mercenary stack keeps the size it has without it (the weak-strength stacks at the end, Ariel and Grace, may get smaller: they are the last ones in any case)
   const dmg=(Us,so)=>score(P,[...A,...Mo,...Us.list],[...so,...Us.ord],true).dmg;
   const b0={d:dmg(U,st.so),kind:0};let best=b0,bestOK=b0;      // best: the most damage; bestOK: the most damage among the places where no mercenary stack gets smaller than it is without the partial stack (the mercenaries are not limited by it); used when there is one
   const cand=(c,ok)=>{if(c.d>best.d*(1+5e-4))best=c;if(ok&&c.d>bestOK.d*(1+5e-4))bestOK=c};
@@ -2209,6 +2209,7 @@ function allocMerc(P,ld,so,X){
   main.forEach(s=>{const g=grp[grp.length-1];if(g&&sh(s)>=0.98*g.top)g.l.push(s);else grp.push({top:sh(s),l:[s]})});
   const mainSeq=grp.flatMap(g=>g.l.sort((x,y)=>seq.indexOf(x)-seq.indexOf(y))),chain=[...mainSeq,...seq.filter(hunt),...seq.filter(weak)];
   const best=evalSeq(chain);
+  res.weak=seq.filter(weak).map(s=>s.name);      // the weak-strength stacks (Ariel, Grace): they stand last, so a stack in front of them may make them smaller
   res.mainN=best.ns.slice(0,mainSeq.length).filter(n=>n>0).length;      // 21.5.4: how many of the first stacks of the list are the main chain (the hunters and the weak-strength stacks follow): dominanceTail may put a monster stack between them
   best.seq.forEach((s,i)=>{if(best.ns[i]>0){s.n=best.ns[i];res.list.push(s);res.ord.push(s.name);res.used+=s.n*s.cost}});
   return res;
