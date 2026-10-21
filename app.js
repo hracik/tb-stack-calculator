@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.41';
+const APP_VERSION='21.8.42';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1773,13 +1773,14 @@ function epicSim(P,L,EP,dice,rng,trace){
   const fr=L.map(()=>1);      // the health left of each of our stacks (1 = untouched): a small enemy stack only wounds
   const info=L.map(s=>{const t=TRN[s.name],vs=t.vs.slice();if(P.epic&&t.ve>0)for(let i=0;i<4;i++)vs[i]=(vs[i]||0)+t.ve;return{vs,ms:mults(t,P)[2],p:dst(t,P),d:ddf(t,P),pc:(P['dd'+t.cls]||0)/100,pa:(P.ddA||0)/100}});
   const by=L.map((_,i)=>i).sort((a,b)=>L[b].n*L[b].str-L[a].n*L[a].str||a-b);
-  let td=0,nd=0,ns=0,ed=0,es=0;
-  const hit=(i,amt,ty,rd,tg,bonus,silent,stk)=>{let e=stk&&stk.hp>0?stk:ty==null?null:e2.find(x=>x.ty==ty&&x.hp>0);if(!e)e=e2.filter(x=>x.hp>0).sort((a,b)=>b.hp-a.hp)[0];if(!e)return;
+  let td=0,nd=0,ns=0,ed=0,es=0,pot=0;      // pot: the damage all the strikes were worth before the health of the stacks cut it off (the luck of the fight, whether the epic dies or not)
+  const DS=P.dmgScale||1;
+  const hit=(i,amt,ty,rd,tg,bonus,silent,stk)=>{pot+=amt;let e=stk&&stk.hp>0?stk:ty==null?null:e2.find(x=>x.ty==ty&&x.hp>0);if(!e)e=e2.filter(x=>x.hp>0).sort((a,b)=>b.hp-a.hp)[0];if(!e)return;
     const before=Math.ceil(e.hp/e.hpu-1e-9),a=Math.min(amt,e.hp);e.hp-=a;td+=a;if(trace)trace.push([e.ty,a]);if(silent)return;
     const after=Math.ceil(e.hp/e.hpu-1e-9);ev.push({r:rd,t:'o',i,ty:e.ty,dmg:a,before,killed:before-after,dead:e.hp<=0,tg,sq:amt>0?bonus*a/amt:0,un:Math.round(L[i].n*fr[i])})};
   const full=P.enemy>4&&!P.raid;      // 6 and 8 enemy stacks: the 2nd strike of a Double strike is the whole strike again (the same bonus, the same target); 3 and 4: the base strength only, to the healthiest stack
   const strike=(i,rd)=>{const q=info[i],s=L[i];let bt=null,bb=0,tk=null;
-    const b0=s.n*fr[i]*s.str*(i==heal?HALFHEALTHY:1);
+    const b0=DS*s.n*fr[i]*s.str*(i==heal?HALFHEALTHY:1);
     // no damage spill: a strike deals at most what the stack it hits has left. The troop hits the stack where the strike (with its bonus) does the most damage: usually the stack it has the biggest bonus against, but when that one has little health left the healthiest stack takes the strike instead
     let bv=-1;e2.forEach(e=>{if(e.hp<=0)return;const bn=q.vs[e.ty]||0,v=Math.min(b0*q.d*(1+bn/q.ms),e.hp);if(v>bv+1e-9||(Math.abs(v-bv)<=1e-9&&(bn>bb||(bn==bb&&tk&&e.hp>tk.hp)))){bv=v;tk=e;bt=e.ty;bb=bn}});
     const k=1+bb/q.ms;ed+=(1-(1-q.pc)*(1-q.pa))*(1+q.p);es+=q.p;
@@ -1798,7 +1799,7 @@ function epicSim(P,L,EP,dice,rng,trace){
       if(rd===0){const x=nx();if(x>=0)strike(x,rd);if(!alive())break;kill(j)}
       else{kill(j);const x=nx();if(x>=0)strike(x,rd)}}
     for(let x=nx();x>=0&&alive();x=nx())strike(x,rd)}
-  return{ev,td,nd,ns,ed,es}}
+  return{ev,td,nd,ns,ed,es,pot}}
 // 21.8.1: THE KILLSHOT MODES against an epic with known stacks. The army does not hit a healthy epic: it finishes one that earlier hits have worn down. How the epic was worn down has nothing to do with our army (its size, its
 // Leadership, its bonuses): it is the same for every mode, the way a small balanced army with good stacking wears it down. Such an army never runs out of units, so only WHICH troop types we field matters, not how many: every troop
 // strikes the living stack it has the biggest bonus against (the Double strike part goes to the healthiest living stack), and the strikes are taken in equal shares (the sizes of our stacks are not used). The mounted stack, which
@@ -1819,7 +1820,14 @@ function epicPath(P,L,EP){
     cps.push({left:hp.reduce((a,b)=>a+b,0),hp:hp.slice()})}
   return cps}
 let KSC={k:'',cps:null};
-function killState(P,L,EP,dice,fast){      // dice: the luck of the rolled fight (the same dice stream for every state that is tried); without it the average fight
+let KSAV={k:'',v:null};
+function killState(P,L,EP,dice,fast){
+  if(dice){      // a rolled fight: the luck of the dice on the fight at the average killshot state (what the strikes were worth, with and without the dice) scales the damage of the army; the biggest state that army kills is the rolled killshot. More luck always means more points
+    const key='A'+EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA,P.enemy>4,P.kill4,P.dmgScale]);
+    if(KSAV.k!=key)KSAV={k:key,v:killState(P,L,EP)};
+    const av=KSAV.v;if(!av)return null;
+    const sa=epicSim(P,L,av.EPS,false,null),sd=epicSim(P,L,av.EPS,true,THEO.rngMk(dice)),lam=sa.pot>0?sd.pot/sa.pot:1;
+    const r=killState({...P,dmgScale:(P.dmgScale||1)*lam},L,EP,0,fast);return r?{...r,lam,avg:av}:null}      // dice: the luck of the rolled fight (the same dice stream for every state that is tried); without it the average fight
   const key=EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA,P.enemy>4]);
   if(KSC.k!=key)KSC={k:key,cps:epicPath(P,L,EP)};
   // every state on the way down with at most K living stacks (4: all of them, 3: the 3-stack states): the army kills the biggest one it can, however weak it is (the last state, nothing left, is always killed)
@@ -1872,7 +1880,7 @@ function battleHtml(P,list,order,sc){
   if(known){
     const unIc=ty=>EPIC_UN[EPK.ic]&&EPIC_UN[EPK.ic][ty]?`<img class="ic2" src="${EPIC_UN[EPK.ic][ty]}" alt="">`:EN.ic;
     KSAVGF=P.kill?(killState(P,L,EPK)||{f:0}).f:null;      // the score of the average fight: what a rolled Killshot is compared with
-    const ks=P.kill?killState(P,L,EPK,ex?0:THEOSEED):null,EPS=ks?ks.EPS:(P.enemy==3||P.enemy==6)?{...EPK,st:EPK.st.filter(x=>x[2]!=2)}:EPK;      // the 3-stack mode has no mounted enemy stack; the Killshot starts at the biggest state the army kills (killState)
+    const ks=P.kill?killState(P,L,EPK,ex?0:THEOSEED):null,EPS=ks?(ks.avg?ks.avg.EPS:ks.EPS):(P.enemy==3||P.enemy==6)?{...EPK,st:EPK.st.filter(x=>x[2]!=2)}:EPK;      // the 3-stack mode has no mounted enemy stack; the Killshot starts at the biggest state the army kills (killState)
     KSROLLF=ks?ks.f:null;      // the score of the rolled fight (the Random effects points)
     const sim=epicSim(P,L,EPS,!ex,rng),avg=ex?sim:epicSim(P,L,EPS,false,null);td=sim.td;ad=avg.td;nd=sim.nd;ns=sim.ns;ed=sim.ed;es=sim.es;
     sim.ev.forEach(x=>{
