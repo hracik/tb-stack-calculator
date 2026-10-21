@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.30';
+const APP_VERSION='21.8.31';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1773,16 +1773,19 @@ function epicSim(P,L,EP,dice,rng,trace){
   const info=L.map(s=>{const t=TRN[s.name],vs=t.vs.slice();if(P.epic&&t.ve>0)for(let i=0;i<4;i++)vs[i]=(vs[i]||0)+t.ve;return{vs,ms:mults(t,P)[2],p:dst(t,P),d:ddf(t,P),pc:(P['dd'+t.cls]||0)/100,pa:(P.ddA||0)/100}});
   const by=L.map((_,i)=>i).sort((a,b)=>L[b].n*L[b].str-L[a].n*L[a].str||a-b);
   let td=0,nd=0,ns=0,ed=0,es=0;
-  const hit=(i,amt,ty,rd,tg,bonus,silent)=>{let e=ty==null?null:e2.find(x=>x.ty==ty&&x.hp>0);if(!e)e=e2.filter(x=>x.hp>0).sort((a,b)=>b.hp-a.hp)[0];if(!e)return;
+  const hit=(i,amt,ty,rd,tg,bonus,silent,stk)=>{let e=stk&&stk.hp>0?stk:ty==null?null:e2.find(x=>x.ty==ty&&x.hp>0);if(!e)e=e2.filter(x=>x.hp>0).sort((a,b)=>b.hp-a.hp)[0];if(!e)return;
     const before=Math.ceil(e.hp/e.hpu-1e-9),a=Math.min(amt,e.hp);e.hp-=a;td+=a;if(trace)trace.push([e.ty,a]);if(silent)return;
     const after=Math.ceil(e.hp/e.hpu-1e-9);ev.push({r:rd,t:'o',i,ty:e.ty,dmg:a,before,killed:before-after,dead:e.hp<=0,tg,sq:amt>0?bonus*a/amt:0})};
   const full=P.enemy>4&&!P.raid;      // 6 and 8 enemy stacks: the 2nd strike of a Double strike is the whole strike again (the same bonus, the same target); 3 and 4: the base strength only, to the healthiest stack
-  const strike=(i,rd)=>{const q=info[i],s=L[i];let bt=null,bb=0;e2.forEach(e=>{if(e.hp>0&&q.vs[e.ty]>bb){bb=q.vs[e.ty];bt=e.ty}});
-    const b0=s.n*s.str*(i==heal?HALFHEALTHY:1),k=1+bb/q.ms;ed+=(1-(1-q.pc)*(1-q.pa))*(1+q.p);es+=q.p;
-    if(!dice){const base=b0*q.d;hit(i,base*k,bt,rd,'',base*(k-1));if(q.p)hit(i,full?base*q.p*k:base*q.p,full?bt:null,rd,'',0,true);return}
+  const strike=(i,rd)=>{const q=info[i],s=L[i];let bt=null,bb=0,tk=null;
+    const b0=s.n*s.str*(i==heal?HALFHEALTHY:1);
+    // no damage spill: a strike deals at most what the stack it hits has left. The troop hits the stack where the strike (with its bonus) does the most damage: usually the stack it has the biggest bonus against, but when that one has little health left the healthiest stack takes the strike instead
+    let bv=-1;e2.forEach(e=>{if(e.hp<=0)return;const bn=q.vs[e.ty]||0,v=Math.min(b0*q.d*(1+bn/q.ms),e.hp);if(v>bv+1e-9||(Math.abs(v-bv)<=1e-9&&bn>bb)){bv=v;tk=e;bt=e.ty;bb=bn}});
+    const k=1+bb/q.ms;ed+=(1-(1-q.pc)*(1-q.pa))*(1+q.p);es+=q.p;
+    if(!dice){const base=b0*q.d;hit(i,base*k,bt,rd,'',base*(k-1),false,tk);if(q.p)hit(i,full?base*q.p*k:base*q.p,full?bt:null,rd,'',0,true,full?tk:null);return}
     const F=()=>(1+(rng()<q.pc?1:0))*(1+(rng()<q.pa?1:0)),m1=F();if(m1>1)nd++;
-    hit(i,b0*m1*k,bt,rd,m1>1?'<i title="This strike rolled double damage">double damage</i>':'',b0*m1*(k-1));
-    if(rng()<q.p){const m2=F();ns++;if(m2>1)nd++;hit(i,b0*m2*(full?k:1),full?bt:null,rd,'<i title="Double strike: the stack strikes a second time">double strike</i>'+(m2>1?'<i title="This strike rolled double damage">double damage</i>':''),0)}};
+    hit(i,b0*m1*k,bt,rd,m1>1?'<i title="This strike rolled double damage">double damage</i>':'',b0*m1*(k-1),false,tk);
+    if(rng()<q.p){const m2=F();ns++;if(m2>1)nd++;hit(i,b0*m2*(full?k:1),full?bt:null,rd,'<i title="Double strike: the stack strikes a second time">double strike</i>'+(m2>1?'<i title="This strike rolled double damage">double damage</i>':''),0,false,full?tk:null)}};
   let head=0;
   for(let rd=0;head<N&&alive();rd++){const K=alive();const ord=e2.filter(e=>e.hp>0).sort((p,q)=>q.sp*q.hp/q.hpu-p.sp*p.hp/p.hpu),used=new Set();let pos=0;const nx=()=>{while(pos<N&&by[pos]<head)pos++;return pos<N?by[pos++]:-1};
     const kill=j=>{const a=e2.filter(e=>e.hp>0&&!used.has(e)).sort((p,q)=>q.sp*q.hp/q.hpu-p.sp*p.hp/p.hpu)[0]||ord[0]||e2[0];used.add(a);ev.push({r:rd,t:'e',i:head,ty:a.ty,u:Math.ceil(a.hp/a.hpu-1e-9)});dead.add(head++)};
