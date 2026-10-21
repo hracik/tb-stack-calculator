@@ -212,7 +212,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.94';
+const APP_VERSION='21.6.95';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -2980,11 +2980,29 @@ const esc=s=>s.replace(/[.*+?^${}()|[\]\\\/]/g,'\\$&');
 const RX=new RegExp('(?<![A-Za-z])(?:'+NAMES.map(esc).join('|')+')(?![A-Za-z])|\\d+(?:[.,]\\d+)*(?:[.,](?=\\s|$))?','g');
 const IDX=new Map();KEYS.forEach((k,i)=>IDX.set(k,i));
 let LANG='en',MISS=new Set();
+const FACT={
+ru:{nb:'без бонуса',dd:'двойной урон',t:(p,c)=>'+'+p+'% против '+c,c:{melee:'ближних',ranged:'дальних',mounted:'конных',flying:'летающих',epic:'эпиков'}},
+de:{nb:'kein Bonus',dd:'Doppelschaden',t:(p,c)=>'+'+p+'% gegen '+c,c:{melee:'Nahkämpfer',ranged:'Fernkämpfer',mounted:'Berittene',flying:'Fliegende',epic:'Epics'}},
+es:{nb:'sin bonificación',dd:'daño doble',t:(p,c)=>'+'+p+'% contra '+c,c:{melee:'cuerpo a cuerpo',ranged:'a distancia',mounted:'montadas',flying:'voladoras',epic:'épicos'}},
+fr:{nb:'pas de bonus',dd:'dégâts doubles',t:(p,c)=>'+'+p+'% contre '+c,c:{melee:'mêlée',ranged:'distance',mounted:'montés',flying:'volants',epic:'épiques'}},
+tr:{nb:'bonus yok',dd:'çifte hasar',t:(p,c)=>c+' karşı +%'+p,c:{melee:'yakın dövüşe',ranged:'menziliye',mounted:'atlılara',flying:'uçanlara',epic:'epiğe'}},
+pl:{nb:'brak bonusu',dd:'podwójne obrażenia',t:(p,c)=>'+'+p+'% przeciw '+c,c:{melee:'piechocie',ranged:'dystansowym',mounted:'konnym',flying:'latającym',epic:'epikom'}}};
+FACT.tr.c.ranged='menzilliye';
+function facts(core){
+  const F=FACT[LANG];if(!F)return null;let n=0;
+  const parts=core.split(' \u00b7 ').map(x=>{
+    if(x==='no bonus'){n++;return F.nb}
+    if(x==='double damage'){n++;return F.dd}
+    const m=x.match(/^\+([\d.,]+)% vs\. ([a-z\/]+)$/);
+    if(m){const cs=m[2].split('/');if(cs.every(c=>F.c[c])){n++;return F.t(m[1],cs.map(c=>F.c[c]).join('/'))}}
+    return x});
+  return n?parts.join(' \u00b7 '):null;
+}
 function tr(src){
   const m=src.match(/^(\s*)([\s\S]*?)(\s*)$/),core=m[2];if(!core||!/[A-Za-z0-9]/.test(core))return null;
   const nums=[],nms=[];
   const key=core.replace(/\s+/g,' ').replace(RX,x=>{if(/^\d/.test(x)){nums.push(x);return '#'}nms.push(x);return '@'});
-  const i=IDX.get(key);if(i==null){if(/[A-Za-z]{3}/.test(key.replace(/@/g,'')))MISS.add(key);return null}
+  const i=IDX.get(key);if(i==null){const f=facts(core);if(f!==null)return m[1]+f+m[3];if(/[A-Za-z]{3}/.test(key.replace(/@/g,'')))MISS.add(key);return null}
   const t=TR[LANG][i];if(t===key)return null;
   const o=t.replace(/[#@]/g,(c,p)=>{if(c=='@')return nms.length?nms.shift():c;if(!nums.length)return c;let n=nums.shift();const e=/[.,]$/.test(n);if(e){n=n.slice(0,-1);if(p==t.length-1)n+=src.trim().slice(-1)}return n});
   return m[1]+o+m[3];
