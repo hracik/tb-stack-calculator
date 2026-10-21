@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.6';
+const APP_VERSION='21.8.7';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1819,11 +1819,20 @@ function ksTile(P,list,order){
   const L=ordL(list,order),sh=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return[(+v.toPrecision(3)).toString(),u[i]]},
     ex=THEOEXP,av=killState(P,L,EP),rl=ex?av:killState(P,L,EP,THEOSEED),eoMany=EPICS.filter(epOk).length>1,eoCar=eoMany?'\u00a0\u25be':'';
   const fm=f=>sh(f*EP.score).join(' ');let v,sub;
-  if(!rl)v='\u2013',sub='the army can not kill it';
-  else if(ex){const r=ksRange(P,L,EP);v=Math.abs(r.hi-r.lo)<1e-9?fm(rl.f):(()=>{const[a,ua]=sh(r.lo*EP.score),[b,ub]=sh(r.hi*EP.score);return ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub})();
-    sub='95 % range \u00b7 average '+fm(av.f)+' \u00b7 from '+Math.round(av.f*100)+' % health left \u00b7 '+av.K+' stacks'}
-  else{v=fm(rl.f);sub='rolled fight \u00b7 average '+(av?fm(av.f):'\u2013')+' \u00b7 from '+Math.round(rl.f*100)+' % health left \u00b7 '+rl.K+' stacks'}
+  if(!av)v='\u2013',sub='the army can not kill it';
+  else{const r=ksRange(P,L,EP);v=Math.abs(r.hi-r.lo)<1e-9?fm(av.f):(()=>{const[a,ua]=sh(r.lo*EP.score),[b,ub]=sh(r.hi*EP.score);return ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub})();
+    sub='95 % range \u00b7 average '+fm(av.f)+' \u00b7 from '+Math.round(av.f*100)+' % health left \u00b7 '+av.K+' stacks';
+    if(!ex){const d=(rl?rl.f:0)*EP.score-av.f*EP.score,same=fm(rl?rl.f:0)==fm(av.f);      // the rolled fight, like the Random effects: its own score against the average
+      sub+='<br><b>'+(rl?fm(rl.f):'0')+'</b> rolled ('+(same?'= '+fm(av.f)+' avg.':(d>0?'+':'\u2212')+sh(Math.abs(d)).join(' ')+' vs. '+fm(av.f)+' avg.')+')'}}
   return'<div data-kt="1"'+(eoMany?' data-act="eopen"':'')+' class="stt std"><div class="stl"><span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b> score'+eoCar+'</span></span></div><div class="stv">'+v+'</div><div class="sts">'+sub+'</div></div>'}
+// the same army as a killshot: in the 3- and 4-stack modes the score tile also tells what a killshot hit with these stacks scores (average, 95 % range, the state it kills from)
+function ksLine(P,list,order,EP){
+  if(P.kill||P.ren||P.cp||P.one||P.pm||P.pvp||!(P.enemy==3||P.enemy==4)||!EP||!EP.st||!EP.score)return'';
+  const L=ordL(list,order),Pk={...P,kill:true,kill4:P.enemy==4},av=killState(Pk,L,EP);
+  const sh=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return[(+v.toPrecision(3)).toString(),u[i]]};
+  if(!av)return'<br>Killshot hit: the army can not kill it';
+  const r=ksRange(Pk,L,EP),f=x=>sh(x*EP.score).join(' ');
+  return'<br>Killshot hit: <b>'+f(av.f)+'</b>'+(r.hi-r.lo>1e-9?' ('+f(r.lo)+' \u2013 '+f(r.hi)+')':'')+' \u00b7 from '+Math.round(av.f*100)+' % health left \u00b7 '+av.K+' stacks'}
 const ordL=(list,order)=>{const ix={};order.forEach((n,i)=>ix[n]=i);return list.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name])};
 function battleHtml(P,list,order,sc){
   const K=P.enemy,ix={};order.forEach((n,i)=>ix[n]=i);
@@ -2428,7 +2437,7 @@ function calcRun0(){
   if(ATK=='epics'&&!P.kill&&!EP)scoreTile=tile('std ste','Epic score','<span class="epb">Choose epic \u25be</span>','','').replace('<div class="stt',eoAct);
   if(EP&&!(EP.st&&EP.score))scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b> score'+eoCar+'</span></span>','\u2013',EP.score?'stacks not set yet':'score not set yet','').replace('<div class="stt',eoAct);
   else if(EP){const th=EP.st.reduce((q,x)=>q+x[0]*x[1],0),f=d=>Math.min(1,d/th)*EP.score,lo=f(dRange?dRange[0]:sc.dmg),hi=f(dRange?dRange[1]:sc.dmg),[a,ua]=sh(lo),[b,ub]=sh(hi);
-    scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b> score'+eoCar+'</span></span>',(dRange&&a!=b)||(!dRange&&false)?(ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub):a+' '+ua,(dRange?'95 % range \u00b7 average '+sh(f(sc.dmg)).join(' '):''),'').replace('<div class="stt',eoAct)}
+    scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b> score'+eoCar+'</span></span>',(dRange&&a!=b)||(!dRange&&false)?(ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub):a+' '+ua,(dRange?'95 % range \u00b7 average '+sh(f(sc.dmg)).join(' '):'')+ksLine(P,BRD.list,BRD.order,EP),'').replace('<div class="stt',eoAct)}
   $('rsm').innerHTML=`<div class="stl stch">Summary</div>${(ATK=='epics'&&!P.ren&&!P.kill&&!P.cp&&!P.one&&!P.pvp)?`<p class="mu rsn">Shown numbers are for a hit on a healthy ${P.enemy}-stack epic, meaning none of its stacks has died during the hit. Do not compare with your low-stack hits/killshots.</p>`:''}<div class="stg">${scoreTile}${tile('','Revive cost',scost==rcost?kmb(scost):`${kmb(scost)} <span class="stu">/</span> ${kmb(rcost)}`,'',rtip+' ('+(scost==rcost?num(scost):num(scost)+' / '+num(rcost))+' gold)')}${tile(ATK=='epics'?'':'std','Estimated damage',dRange?rg(dRange[0],dRange[1]):fmt(sc.dmg),dRange?'95 % range \u00b7 average '+fmt(sc.dmg):tgt?`level ${lvN} ${sc.dmg>=tgt?'reached':'short by '+((1-sc.dmg/tgt)*100).toFixed(1)+' %'}`:'',dRange?'95 % of the battles end between these two numbers (every strike rolls its own Double strike / Double damage chance)':tgt?`Level ${lvN}: the stacks must reach ${tgt.toLocaleString('en-US')} damage.`:'')}${tile('','Strikes',hRange?Math.round(hRange[0])+'\u2013'+Math.round(hRange[1]):Math.round(sc.hits),hRange?'95 % range \u00b7 average '+Math.round(sc.hits):'','Strikes against '+enTxt+(hRange?' (95 % range)':''))}</div>${hitsRow?`<div class="stl stch">Hits per revive mode</div><div class="stc">${REVCASES.map(([k,l])=>`<div class="stt${k==REVM?' stm':''}"><div class="stv">${HIT[k].toFixed(2)}</div><div class="sts">${l}</div></div>`).join('')}</div>`:''}`;      // 19.0.2: the summary as tiles (damage, strikes, stacks, revive cost); the army / monster / engineer count is gone
   $('res').innerHTML=secs;
   cmpSet({P,Aall,Mall,mItems,ordp:[...st.so,...U.ord],O:O.slice(),sc,rcost,scost,EP});      // the Compare card under the Result
