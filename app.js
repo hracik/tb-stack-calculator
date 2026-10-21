@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.28';
+const APP_VERSION='21.8.29';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1798,7 +1798,7 @@ function epicSim(P,L,EP,dice,rng,trace){
 // and that the army still kills in one hit (killState).
 function epicPath(P,L,EP){
   const N=L.length,H=EP.st.map(x=>x[0]*x[1]),tot=H.reduce((a,b)=>a+b,0),hp=H.slice(),tyIx={};EP.st.forEach((x,i)=>tyIx[x[2]]=i);
-  const info=L.map(s=>{const t=TRN[s.name],vs=t.vs.slice();if(P.epic&&t.ve>0)for(let i=0;i<4;i++)vs[i]=(vs[i]||0)+t.ve;return{vs,ms:mults(t,P)[2],p:P.one?0:0.10,d:ddf(t,P)}});      // the wear-down army has a fixed 10 % double strike chance, whatever our own bonuses are
+  const info=L.map(s=>{const t=TRN[s.name],vs=t.vs.slice();if(P.epic&&t.ve>0)for(let i=0;i<4;i++)vs[i]=(vs[i]||0)+t.ve;return{vs,ms:mults(t,P)[2],p:P.one?0:0.10,d:1}});      // the wear-down army has a fixed 10 % double strike chance, whatever our own bonuses are; no double damage either (ours is not used for the way down)
   const cps=[{left:tot,hp:hp.slice()}],full=P.enemy>4&&!P.raid;
   for(let it=0;it<4000&&hp.some(x=>x>1e-6);it++){
     const dv=hp.map(()=>0);let hi=-1;hp.forEach((x,i)=>{if(x>1e-6&&(hi<0||x>hp[hi]))hi=i});
