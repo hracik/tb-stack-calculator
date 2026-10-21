@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.5';
+const APP_VERSION='21.8.6';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1800,13 +1800,30 @@ function epicPath(P,L,EP){
     epicSim(P,L,e,false,null,tr);if(!tr.length)break;
     tr.forEach(([ty,a])=>{const k=tyIx[ty],was=hp[k]>1e-6;hp[k]=Math.max(0,hp[k]-a);const c=cps[cps.length-1],l=sum();if(was&&hp[k]<=1e-6||c.left-l>=0.003*cps[0].left)cps.push({left:l,hp:hp.slice()})})}
   return cps}
-function killState(P,L,EP){
-  const cps=epicPath(P,L,EP),K=P.kill4?4:3,al=c=>c.hp.filter(x=>x>1e-6).length,cand=cps.filter(c=>al(c)==K);
+let KSC={k:'',cps:null};
+function killState(P,L,EP,dice){      // dice: the luck of the rolled fight (the same dice stream for every state that is tried); without it the average fight
+  const key=EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+(P.kill4?4:3)+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA]);
+  if(KSC.k!=key)KSC={k:key,cps:epicPath(P,L,EP)};
+  const cps=KSC.cps,K=P.kill4?4:3,al=c=>c.hp.filter(x=>x>1e-6).length,cand=cps.filter(c=>al(c)==K);
   if(!cand.length)return null;
-  const mk=c=>({...EP,st:EP.st.map((x,i)=>[c.hp[i]/x[1],x[1],x[2],x[3]]).filter((x,i)=>c.hp[i]>1e-6)}),ok=c=>epicSim(P,L,mk(c),false,null).td>=c.left*(1-1e-6);
+  const mk=c=>({...EP,st:EP.st.map((x,i)=>[c.hp[i]/x[1],x[1],x[2],x[3]]).filter((x,i)=>c.hp[i]>1e-6)}),ok=c=>epicSim(P,L,mk(c),!!dice,dice?THEO.rngMk(dice):null).td>=c.left*(1-1e-6);
   if(!ok(cand[cand.length-1]))return null;
   let lo=0,hi=cand.length-1;while(lo<hi){const m=(lo+hi)>>1;if(ok(cand[m]))hi=m;else lo=m+1}
   const c=cand[lo],tot=cps[0].left;return{left:c.left,hp:c.hp,K,tot,f:c.left/tot,EPS:mk(c)}}
+// the range of the killshot: the same army, many rolled fights; each one finds the biggest state it kills (the 95 % range of those, and the average fight)
+function ksRange(P,L,EP){const f=[];for(let i=1;i<=24;i++){const k=killState(P,L,EP,i*7919);f.push(k?k.f:0)}
+  f.sort((a,b)=>a-b);const q=p=>f[Math.min(f.length-1,Math.max(0,Math.round(p*(f.length-1))))];return{lo:q(0.025),hi:q(0.975)}}
+// the score tile of a Killshot: the average fight with its range, or the rolled fight (Roll the dice)
+function ksTile(P,list,order){
+  const EP=epCur();if(!EP||!EP.st||!EP.score)return'';
+  const L=ordL(list,order),sh=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return[(+v.toPrecision(3)).toString(),u[i]]},
+    ex=THEOEXP,av=killState(P,L,EP),rl=ex?av:killState(P,L,EP,THEOSEED),eoMany=EPICS.filter(epOk).length>1,eoCar=eoMany?'\u00a0\u25be':'';
+  const fm=f=>sh(f*EP.score).join(' ');let v,sub;
+  if(!rl)v='\u2013',sub='the army can not kill it';
+  else if(ex){const r=ksRange(P,L,EP);v=Math.abs(r.hi-r.lo)<1e-9?fm(rl.f):(()=>{const[a,ua]=sh(r.lo*EP.score),[b,ub]=sh(r.hi*EP.score);return ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub})();
+    sub='95 % range \u00b7 average '+fm(av.f)+' \u00b7 from '+Math.round(av.f*100)+' % health left \u00b7 '+av.K+' stacks'}
+  else{v=fm(rl.f);sub='rolled fight \u00b7 average '+(av?fm(av.f):'\u2013')+' \u00b7 from '+Math.round(rl.f*100)+' % health left \u00b7 '+rl.K+' stacks'}
+  return'<div data-kt="1"'+(eoMany?' data-act="eopen"':'')+' class="stt std"><div class="stl"><span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b> score'+eoCar+'</span></span></div><div class="stv">'+v+'</div><div class="sts">'+sub+'</div></div>'}
 const ordL=(list,order)=>{const ix={};order.forEach((n,i)=>ix[n]=i);return list.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name])};
 function battleHtml(P,list,order,sc){
   const K=P.enemy,ix={};order.forEach((n,i)=>ix[n]=i);
@@ -1820,7 +1837,7 @@ function battleHtml(P,list,order,sc){
   const EPK=epCur(),known=ATK=='epics'&&!P.cp&&!P.ren&&!P.one&&!P.pm&&(P.enemy==4||P.enemy==3)&&EPK&&EPK.st&&EPK.st.length==4&&EPK.score;      // an epic with known stacks: the report follows its stacks (type, units, units killed)
   if(known){
     const unIc=ty=>EPIC_UN[EPK.ic]&&EPIC_UN[EPK.ic][ty]?`<img class="ic2" src="${EPIC_UN[EPK.ic][ty]}" alt="">`:EN.ic;
-    const ks=P.kill?killState(P,L,EPK):null,EPS=ks?ks.EPS:P.enemy==3?{...EPK,st:EPK.st.filter(x=>x[2]!=2)}:EPK;      // the 3-stack mode has no mounted enemy stack; the Killshot starts at the biggest state the army kills (killState)
+    const ks=P.kill?killState(P,L,EPK,ex?0:THEOSEED):null,EPS=ks?ks.EPS:P.enemy==3?{...EPK,st:EPK.st.filter(x=>x[2]!=2)}:EPK;      // the 3-stack mode has no mounted enemy stack; the Killshot starts at the biggest state the army kills (killState)
     const sim=epicSim(P,L,EPS,!ex,rng),avg=ex?sim:epicSim(P,L,EPS,false,null);td=sim.td;ad=avg.td;nd=sim.nd;ns=sim.ns;ed=sim.ed;es=sim.es;
     sim.ev.forEach(x=>{
       if(x.r!==rd){rd=x.r;h+=`<div class="brh">Round ${x.r+1}</div>`}
@@ -1872,6 +1889,7 @@ function drawBR(){
   document.querySelectorAll('.ob').forEach(b=>{const on=b.dataset.o===OVK;b.classList.toggle('on',on);b.setAttribute('aria-expanded',String(on))});
   if(!BRD){BRFXH='';fxPlace();return}
   BRFXH='';const rep=BRD.fx?theoReport(BRD):battleHtml(BRD.P,BRD.list,BRD.order,BRD.sc);      // always built: it also gives the Random effects block of the summary (One v. One with found stacks: a fight against the known enemy)
+  {const kt=document.querySelector('#rsm [data-kt]');if(kt&&BRD.P.kill){const h=ksTile(BRD.P,BRD.list,BRD.order);if(h)kt.outerHTML=h}}      // the Killshot score follows the roll
   fxPlace();requestAnimationFrame(fxPlace);      // again after the summary is drawn
   if(OVK==='rep')$('br').innerHTML=(BRFXH&&fxOn(BRD.P)?BRFXH:'')+rep;      // the Random effects bubble (buttons, double damage, double strikes, points) sits at the top of the opened report
   else if(OVK==='hit')$('ho').innerHTML=BRD.fx?theoHits(BRD.fx):hitHtml(BRD.P,BRD.list,BRD.order);
@@ -2405,8 +2423,7 @@ function calcRun0(){
   const eoMany=EPICS.filter(epOk).length>1,eoAct=eoMany?'<div data-act="eopen" class="stt':'<div class="stt',eoCar=eoMany?'\u00a0\u25be':'';      // a mode with a single epic (Arachne in 6-8 stacks): nothing to choose, so the tile is no button
   let scoreTile='';
   const KEP=ATK=='epics'&&P.kill?epCur():null;
-  if(KEP&&KEP.st&&KEP.score){const ks=killState(P,ordL(BRD.list,BRD.order),KEP),f=ks?ks.f*KEP.score:0,[a,ua]=sh(f);
-    scoreTile=tile('std','<span class="eph">'+epImg(KEP,'epi')+'<span><b>'+esc(KEP.n).replace('/','/<wbr>')+'</b> score'+eoCar+'</span></span>',ks?a+' '+ua:'\u2013',ks?'kills it from '+Math.round(ks.f*100)+' % health left \u00b7 '+ks.K+' stacks':'the army can not kill it','').replace('<div class="stt',eoAct)}
+  if(KEP&&KEP.st&&KEP.score)scoreTile=ksTile(P,BRD.list,BRD.order);
   else if(ATK=='epics'&&P.kill&&!KEP)scoreTile=tile('std ste','Epic score','<span class="epb">Choose epic \u25be</span>','','').replace('<div class="stt',eoAct);
   if(ATK=='epics'&&!P.kill&&!EP)scoreTile=tile('std ste','Epic score','<span class="epb">Choose epic \u25be</span>','','').replace('<div class="stt',eoAct);
   if(EP&&!(EP.st&&EP.score))scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b> score'+eoCar+'</span></span>','\u2013',EP.score?'stacks not set yet':'score not set yet','').replace('<div class="stt',eoAct);
