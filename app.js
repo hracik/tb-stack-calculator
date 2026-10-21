@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.7.23';
+const APP_VERSION='21.7.24';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1541,6 +1541,40 @@ function allocRen(P,live){                 // Renegades (14.8, 14.14, 14.16): th
   allocMonsters(P,Mo,[],true,{d:0,capHP:level,capSP:isFinite(capS)?capS-1:Infinity});
   return{A,Mo};
 }
+
+// 21.7.23: the LAST step. The order, the stacks and the partial monster stack are final; only the weak-strength stacks (Ariel, Grace) are sized again, together, with the Authority that is left:
+// each between what the stack behind it needs (it may not rise above it) and the stack in front of it (it may not rise above that one), the damage decides how the Authority is shared. Never worse than what came in.
+function polishWeak(P,st,A,Mo,U){
+  const wk=new Set(U.weak||[]);if(!wk.size||!(P.capU>0))return;
+  const ord=[...st.so,...U.ord],lst=[...A,...Mo,...U.list],W=U.list.filter(s=>wk.has(s.name)&&s.n>0);
+  if(W.length<1||W.length>2)return;
+  const live=()=>ord.map(n=>lst.find(s=>s.name==n)).filter(s=>s&&s.n>0);
+  const spare=P.capU-U.list.filter(s=>!wk.has(s.name)).reduce((q,s)=>q+s.n*s.cost,0);
+  const L0=live(),lim=W.map(w=>{
+    const i=L0.indexOf(w);let pv=null,nx=null;
+    for(let j=i-1;j>=0;j--)if(!wk.has(L0[j].name)){pv=L0[j];break}
+    for(let j=i+1;j<L0.length;j++)if(!wk.has(L0[j].name)){nx=L0[j];break}
+    let hi=Infinity,lo=0;
+    if(pv){hi=fitN(tot(pv.n,pv.hp)-1,w.hp);if(strRef(w)&&strRef(pv))hi=Math.min(hi,fitN(tot(pv.n,pv.str)-1,w.str))}
+    if(nx&&U.list.includes(nx)){lo=Math.ceil(tot(nx.n,nx.hp)/w.hp);while(lo>0&&tot(lo-1,w.hp)>=tot(nx.n,nx.hp))lo--}
+    return{hi,lo}});
+  if(lim.some(l=>l.lo>l.hi))return;
+  const run=(ns)=>{W.forEach((w,i)=>{w.n=ns[i]});return score(P,live().length==ord.length?lst:lst.filter(s=>s.n>0),live().map(s=>s.name),true).dmg};
+  const cur=W.map(w=>w.n);let best={ns:cur.slice(),d:run(cur)};
+  const take=(i,n)=>Math.max(lim[i].lo,Math.min(lim[i].hi,n));
+  const make=n1=>{      // the first weak stack gets n1, the second what is left (up to its limit), and what it can not take goes back to the first
+    if(W.length==1)return[take(0,Math.floor(spare/W[0].cost))];
+    n1=take(0,n1);const n2=take(1,Math.floor((spare-n1*W[0].cost)/W[1].cost));
+    const n1b=take(0,Math.floor((spare-n2*W[1].cost)/W[0].cost));return[Math.max(n1,n1b),n2]};
+  const cost=ns=>ns.reduce((q,n,i)=>q+n*W[i].cost,0),try1=ns=>{if(cost(ns)>spare+1e-9)return;const d=run(ns);if(d>best.d*(1+1e-9))best={ns,d}};
+  if(W.length==1)try1(make(0));
+  else{
+    const top=Math.min(lim[0].hi,Math.floor(spare/W[0].cost)),lo0=lim[0].lo;let a=lo0,b=top;
+    for(let r=0;r<3&&b>=a;r++){const st9=Math.max(1,(b-a)/8);let bn=null;
+      for(let n=a;n<=b+1e-9;n+=st9){const ns=make(Math.round(n));try1(ns);if(best.ns[0]==ns[0]&&best.ns[1]==ns[1])bn=ns[0]}
+      if(bn===null)break;a=Math.max(lo0,bn-st9);b=Math.min(top,bn+st9)}
+  }
+  run(best.ns);U.used=(U.used||0)+W.reduce((q,w,i)=>q+(w.n-cur[i])*w.cost,0)}
 function allocate(P,live){const md=modeOf(P);HO=md.ho;return md.size(P,live)}      // the sizing of the mode (HO: health only, read by the shared helpers)
 // the whole calculation of the engine: the order, the Leadership / Dominance stacks, then the mercenaries (they come last: the numbers before are final)
 const cloneSt=st=>{const c=st.map(s=>({...s}));c.so=st.so.slice();return c};      // the allocation writes the counts into the stacks: every variant gets its own copy of the searched stacks
@@ -1548,6 +1582,7 @@ function solve1(P,order,zeroPt,PS,stIn,light){const st=stIn?cloneSt(stIn):buildS
   if(zeroPt)Mo.forEach(s=>{if(s.pt)s.n=0});      // the partial tier (and the tiers below it) is taken out: the mercenaries are sized first, the stacks come back behind them (dominanceTail)
   const U=allocMerc(P,[...A,...Mo],st.so,XS);
   if(rgm(P))dominanceTail(P,st,A,Mo,U,light);
+  polishWeak(P,st,A,Mo,U);
   return{st,A,Mo,U}}
 let TCCACHE=null;      // the Tier check solves the same selection again and again (the damage, then the revive gold): while it runs, a selection is solved once (a Map: key -> solution); nothing else uses it
 function solveTC(P,order){
@@ -1612,29 +1647,12 @@ function dominanceTail(P,st,A,Mo,U,light){      // light (the Tier check): only 
       const tl=tail.filter(s=>s.n>0),ix={};[...st.so.filter(n=>!tl.some(s=>s.name==n)),...U.ord.slice(0,k),...tl.map(s=>s.name)].forEach((n,i)=>ix[n]=i);
       let H=Infinity,T=Infinity;[...ldm.filter(s=>s.n>0),...tl].sort((a,b)=>ix[a.name]-ix[b.name]).forEach(s=>{H=tot(s.n,s.hp);if(strRef(s))T=tot(s.n,s.str)});
       const cu=P.capU-main.reduce((q,s)=>q+s.n*s.cost,0),used=ns=>ns.reduce((q,n,i)=>q+n*rest[i].cost,0),fr=rest.findIndex(s=>wkn.has(s.name)),at=X=>sizeChain(P,rest,H,T,ldm.length+tl.length,X,fr);
-      const mk=fw=>{const at2=X=>sizeChain(P,rest,H,T,ldm.length+tl.length,X,fr,fw);let nr=at2(H-1);
-        if(used(nr)>cu){let lo=0,top=H-1;for(let k=0;k<60;k++){const mid=(lo+top)/2;if(used(at2(mid))<=cu)lo=mid;else top=mid}nr=at2(lo)}return nr};
-      const so3=st.so.filter(n=>!tl.some(s=>s.name==n));
-      const ev=(nr,fw)=>{rest.forEach((s,i)=>{s.n=nr[i]});const lst=[...main,...rest.filter(s=>s.n>0)],ord3=[...main.map(s=>s.name),...tl.map(s=>s.name),...rest.filter(s=>s.n>0).map(s=>s.name)];
-        return{nr,fw,lst,ord3,d:score(P,[...A,...Mo,...lst],[...so3,...ord3],true).dmg}};
-      let bb=ev(mk(),null);
-      if(!light&&fr>=0&&fr<rest.length){      // the weak-strength stacks (Ariel, Grace): each on its own share of the level, the damage decides (as in allocMerc), then each share as far up as the spare Authority reaches
-        const w=rest.length-fr,combos=[];(function g(a){if(a.length==w){combos.push(a);return}[1,0.5,0.2].forEach(f=>g([...a,f]))})([]);
-        for(const fw of combos){const r=ev(mk(fw),fw);if(r.d>bb.d*(1+5e-4))bb=r}
-        if(bb.fw){
-          for(const stp of [1.35,1.12])for(let rd=0;rd<4;rd++){let up=false;
-            for(let j=0;j<w;j++)for(const m of [stp,1/stp]){const f2=bb.fw.slice();f2[j]=Math.min(1,f2[j]*m);if(f2[j]===bb.fw[j])continue;const r=ev(mk(f2),f2);if(r.d>bb.d*(1+1e-6)){bb=r;up=true}}
-            if(!up)break}
-          for(let j=w-1;j>=0;j--){let lo=bb.fw[j],hi=1;if(lo>=1)continue;
-            for(let k=0;k<14;k++){const mid=(lo+hi)/2,f2=bb.fw.slice();f2[j]=mid;const r=ev(mk(f2),f2);if(r.d>=bb.d*(1-1e-9)){bb=r;lo=mid}else hi=mid}}}
-      }
-      const nr=bb.nr,lst=bb.lst,ord3=bb.ord3;let d=bb.d;rest.forEach((s,i)=>{s.n=nr[i]});
-      // the Authority that is left (Ariel behind the partial stack is capped by it): Grace in front of the partial stack takes it, as far as the stack in front of her allows
-      const extra=[],gi=main.findIndex(s=>s.name=='Grace');
-      if(!light&&gi>0){const g=main[gi],pv=main[gi-1],spare=P.capU-lst.reduce((q,s)=>q+s.n*s.cost,0);let up=Math.floor(Math.max(0,spare)/g.cost);
-        while(up>0&&!(tot(g.n+up,g.hp)<=tot(pv.n,pv.hp)-1&&(!strRef(g)||!strRef(pv)||tot(g.n+up,g.str)<=tot(pv.n,pv.str)-1)))up=Math.floor(up/2);
-        if(up>0){extra.push([g,g.n+up]);const n0=g.n;g.n+=up;d=score(P,[...A,...Mo,...lst],[...so3,...ord3],true).dmg;g.n=n0}}
-      cand({d,kind:3,ns:ns3,so3,lst,ord3,used:lst.reduce((q,s)=>q+s.n*s.cost,0)+extra.reduce((q,[s,n])=>q+(n-s.n)*s.cost,0),pairs:[...rest.map((s,i)=>[s,nr[i]]),...extra]},lst.reduce((q,s)=>q+s.n*s.cost,0)+extra.reduce((q,[s,n])=>q+(n-s.n)*s.cost,0));
+      let nr=at(H-1);
+      if(used(nr)>cu){let lo=0,top=H-1;for(let k=0;k<60;k++){const mid=(lo+top)/2;if(used(at(mid))<=cu)lo=mid;else top=mid}nr=at(lo)}
+      rest.forEach((s,i)=>{s.n=nr[i]});
+      const lst=[...main,...rest.filter(s=>s.n>0)],so3=st.so.filter(n=>!tl.some(s=>s.name==n)),ord3=[...main.map(s=>s.name),...tl.map(s=>s.name),...rest.filter(s=>s.n>0).map(s=>s.name)];
+      const d=score(P,[...A,...Mo,...lst],[...so3,...ord3],true).dmg;
+      cand({d,kind:3,ns:ns3,so3,lst,ord3,used:lst.reduce((q,s)=>q+s.n*s.cost,0),pairs:rest.map((s,i)=>[s,nr[i]])},lst.reduce((q,s)=>q+s.n*s.cost,0));
       set(null)}
     rest.forEach((s,i)=>{s.n=svM[i]})});
   if(best.kind==3){set(best.ns);best.pairs.forEach(([s,n])=>{s.n=n});st.so=best.so3;U.list=best.lst;U.ord=best.ord3;U.used=best.used}
@@ -2212,21 +2230,13 @@ function allocMerc(P,ld,so,X){
   const evalOne=(seq,fr,fw)=>{
     const ns=sizeOf(seq,fr,fw),lst=[],names=[];
     seq.forEach((s,i)=>{if(ns[i]>0){lst.push({...s,n:ns[i]});names.push(s.name)}});
-    return{d:score(P,[...ld,...lst],[...so,...names],true).dmg,seq,ns,fr,fw};
+    return{d:score(P,[...ld,...lst],[...so,...names],true).dmg,seq,ns,fr};
   };
   const evalSeq=(seq,fr)=>{      // with a weak-strength group at the end (fr): chained as before, or each one on its own share of the common level (the Authority they take is traded against the ones in front of them); the damage decides
     if(!(fr>=0&&fr<seq.length))return evalOne(seq,fr);
     const w=seq.length-fr,sh=[1,0.5,0.2];let b=evalOne(seq,-1);
     const combos=[];(function g(a){if(a.length==w){combos.push(a);return}sh.forEach(f=>g([...a,f]))})([]);
-    for(const fw of combos){const r=evalOne(seq,fr,fw);if(r.d>b.d*(1+5e-4))b=r}
-    if(b.fw){      // then a finer search around it, one stack at a time (a coarse step can leave Authority unspent)
-      for(const st of [1.35,1.12])for(let rounds=0;rounds<4;rounds++){let up=false;
-        for(let j=0;j<w;j++)for(const m of [st,1/st]){const f2=b.fw.slice();f2[j]=Math.min(1,f2[j]*m);if(f2[j]===b.fw[j])continue;const r=evalOne(seq,fr,f2);if(r.d>b.d*(1+1e-6)){b=r;up=true}}
-        if(!up)break}
-      for(let j=w-1;j>=0;j--){      // last: each share as far up as the spare Authority reaches (a step of the search can jump over it)
-        let lo=b.fw[j],hi=1;if(lo>=1)continue;
-        for(let k=0;k<14;k++){const mid=(lo+hi)/2,f2=b.fw.slice();f2[j]=mid;const r=evalOne(seq,fr,f2);if(r.d>=b.d*(1-1e-9)){b=r;lo=mid}else hi=mid}}}
-    return b};
+    for(const fw of combos){const r=evalOne(seq,fr,fw);if(r.d>b.d*(1+5e-4))b=r}return b};
   // ORDER: simply by the squad bonus, the smaller one dies first (the strongest bonuses die last and strike the most). The same bonus: nominal bonus, category, higher tier first.
   const q6=x=>Math.round(x*1e6),ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(...t.vs);
   // The bonus against epic enemies counts against EVERY enemy stack, a class bonus only against the stacks of that class: at the same size the epic one is the better one and dies later.
