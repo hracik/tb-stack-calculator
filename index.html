@@ -56,7 +56,7 @@ select{width:auto}.mu{color:var(--mu);font-size:13px}
 .bf{margin:8px 0 0;font-size:14px}
 @media(max-width:480px){.bl{gap:8px;padding:3px 8px;font-size:13px}.bv b{font-size:13px}.bo{flex-wrap:wrap}.bo .bb{order:5;flex:0 0 100%;flex-direction:row;align-items:baseline;justify-content:flex-start;gap:10px;padding-left:38px;font-size:12px}.bb small{font-size:11.5px}}      /* on a phone the bonus gets a line of its own under the name */
 .oi{display:flex;align-items:center;gap:10px;background:#dcc791;color:#2a2012;border:1px solid #8a6a2c;border-radius:6px;padding:5px 10px;margin:5px 0;user-select:none}
-.oi.dg{opacity:.65;outline:2px solid var(--ac)}
+.oi .ic2{width:56px;height:56px;border-radius:0}.oi.dg{opacity:.65;outline:2px solid var(--ac)}
 .oi .hd{cursor:grab;touch-action:none;font-weight:700;padding:2px 6px}.oi.dg .hd,.gs.ov.dg,#tabs.dg,#tabs.dg .tab{cursor:grabbing}
 .no{width:22px;height:22px;border-radius:50%;background:#2a2012;color:#e8dcc0;display:inline-flex;align-items:center;justify-content:center;font-size:12px}
 .oi.bz{border-left:5px solid #2c7480}.oi.bz .no{background:#2c7480;color:#fff}.oz{margin:12px 0 2px;color:#7cc2cc;font-size:13px}.oz.ro{color:#9a9080}      /* 14.21: the buffer zone of Renegades looks different from the first 16 in the dying order list */
@@ -205,7 +205,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.71';
+const APP_VERSION='21.6.72';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
