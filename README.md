@@ -1,6 +1,6 @@
 # Krappy Calculator
 
-A free calculator for **Total Battle** that tells you how to build your army for a hit on an epic monster or on other players. It runs in your browser as a single page. Nothing needs to be installed, and your inputs stay on your device.
+A free calculator for **Total Battle** that tells you how to build your army for a hit on an epic monster or on other players. It runs in your browser as one page (`index.html`, with `app.css`, `app.js` and `i18n.js` next to it). Nothing needs to be installed, and your inputs stay on your device.
 
 ## What it is for
 
@@ -27,3 +27,8 @@ You type in what you have (Leadership, Dominance, Authority and your bonuses). I
 ## Feedback
 
 Spotted something that looks wrong, or a mode or epic that is missing? Open an issue or tell the author.
+
+## For the author: files and versions
+
+- `index.html` holds the page; the styles are `app.css`, the program is `app.js`, the translations are `i18n.js`. `eng.traineddata.gz.b64.txt` is the language data of the screenshot reader (admin only, fetched only when used).
+- Raise the version with `python3 bump.py MAJOR.MINOR.PATCH`. It writes the version into `app.js` (`APP_VERSION`), `version.json` and the `?v=` of the three files in `index.html`, so a browser never mixes an old file with a new page. Upload all files together.
