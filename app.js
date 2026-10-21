@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.34';
+const APP_VERSION='21.8.35';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1781,7 +1781,7 @@ function epicSim(P,L,EP,dice,rng,trace){
   const strike=(i,rd)=>{const q=info[i],s=L[i];let bt=null,bb=0,tk=null;
     const b0=s.n*fr[i]*s.str*(i==heal?HALFHEALTHY:1);
     // no damage spill: a strike deals at most what the stack it hits has left. The troop hits the stack where the strike (with its bonus) does the most damage: usually the stack it has the biggest bonus against, but when that one has little health left the healthiest stack takes the strike instead
-    let bv=-1;e2.forEach(e=>{if(e.hp<=0)return;const bn=q.vs[e.ty]||0,v=Math.min(b0*q.d*(1+bn/q.ms),e.hp);if(v>bv+1e-9||(Math.abs(v-bv)<=1e-9&&bn>bb)){bv=v;tk=e;bt=e.ty;bb=bn}});
+    let bv=-1;e2.forEach(e=>{if(e.hp<=0)return;const bn=q.vs[e.ty]||0,v=Math.min(b0*q.d*(1+bn/q.ms),e.hp);if(v>bv+1e-9||(Math.abs(v-bv)<=1e-9&&(bn>bb||(bn==bb&&tk&&e.hp>tk.hp)))){bv=v;tk=e;bt=e.ty;bb=bn}});
     const k=1+bb/q.ms;ed+=(1-(1-q.pc)*(1-q.pa))*(1+q.p);es+=q.p;
     if(!dice){const base=b0*q.d;hit(i,base*k,bt,rd,'',base*(k-1),false,tk);if(q.p)hit(i,full?base*q.p*k:base*q.p,full?bt:null,rd,'',0,true,full?tk:null);return}
     const F=()=>(1+(rng()<q.pc?1:0))*(1+(rng()<q.pa?1:0)),m1=F();if(m1>1)nd++;
@@ -1811,7 +1811,7 @@ function epicPath(P,L,EP){
   const cps=[{left:tot,hp:hp.slice()}],full=P.enemy>4&&!P.raid;
   for(let it=0;it<4000&&hp.some(x=>x>1e-6);it++){
     const dv=hp.map(()=>0);let hi=-1;hp.forEach((x,i)=>{if(x>1e-6&&(hi<0||x>hp[hi]))hi=i});
-    info.forEach((q,j)=>{let bt=-1,bb=0;EP.st.forEach((x,i)=>{if(hp[i]>1e-6&&(q.vs[x[2]]||0)>bb){bb=q.vs[x[2]];bt=i}});
+    info.forEach((q,j)=>{let bt=-1,bb=0;EP.st.forEach((x,i)=>{if(hp[i]<=1e-6)return;const v=q.vs[x[2]]||0;if(v>bb||(v==bb&&bt>=0&&hp[i]>hp[bt])){bb=v;bt=i}});
       const base=q.d/N;if(bt<0)dv[hi]+=base;else dv[bt]+=base*(1+bb/q.ms);if(q.p){if(full&&bt>=0)dv[bt]+=base*q.p*(1+bb/q.ms);else dv[hi]+=base*q.p}});
     const R=dv.reduce((a,b)=>a+b,0);if(!(R>0))break;
     let dt=0.0025*tot/R;hp.forEach((x,i)=>{if(x>1e-6&&dv[i]>0&&x/dv[i]<dt)dt=x/dv[i]});
