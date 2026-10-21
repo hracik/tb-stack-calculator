@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.7.13';
+const APP_VERSION='21.7.14';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -323,7 +323,7 @@ function exportText(){
   let T='';for(const c of 'ESGM'){let q='';for(let i=1;i<=9;i++)if(d.chk['s'+c+i])q+=i;if(q)T+=c+q}
   t.push('T='+T);
   for(const [id,c] of Object.entries(d.chk))if(!/^s[ESGM]\d$/.test(id)&&c!==BLANK.chk[id])t.push(id+'='+(c?1:0));      // any other tick box (none now)
-  if(d.X.length)t.push('x='+d.X.map(xcode).join(''));      // 3 characters per switched-off troop (the first versions wrote the names, they are still read)
+  {const dx=BLANK.X||[];if(d.X.length!==dx.length||d.X.some(n=>!dx.includes(n)))t.push('x='+(d.X.length?d.X.map(xcode).join(''):'-'))}      // only when it differs from a new tab (x=- : nothing switched off)      // 3 characters per switched-off troop (the first versions wrote the names, they are still read)
   if(d.atk=='players')t.push('at=p');
   if(d.mode!='max')t.push('mo='+d.mode);
   if(d.enemy!='4')t.push('en='+d.enemy);
@@ -350,7 +350,7 @@ function parseKrappy(txt){      // the short text -> the same object the first (
     const i=tk.indexOf('=');if(i<1)continue;const k=tk.slice(0,i),w=tk.slice(i+1);let ok=true;
     if(k=='n')r.name=w.replace(/_/g,' ');
     else if(k=='T'){const on=new Set();for(const g of w.matchAll(/([ESGM])(\d+)/g))for(const c of g[2])on.add('s'+g[1]+c);Object.keys(BLANK.chk).forEach(id=>{if(/^s[ESGM]\d$/.test(id))r.chk[id]=on.has(id)})}
-    else if(k=='x')r.X=/^[0-9a-z]+$/.test(w)?(w.match(/.{3}/g)||[]).map(c=>xmap()[c]).filter(Boolean):w.split(',').filter(Boolean).map(q=>q.replace(/_/g,' '));      // codes (lower case and digits only) or, as before, names
+    else if(k=='x')r.X=w=='-'?[]:/^[0-9a-z]+$/.test(w)?(w.match(/.{3}/g)||[]).map(c=>xmap()[c]).filter(Boolean):w.split(',').filter(Boolean).map(q=>q.replace(/_/g,' '));      // codes (lower case and digits only) or, as before, names
     else if(k=='at')r.atk=w=='p'?'players':'epics';
     else if(k=='mo')r.mode=w;
     else if(k=='en')r.enemy=w;
@@ -2757,7 +2757,7 @@ document.addEventListener('keydown',e=>{if(e.key=='Enter'&&e.target.matches&&e.t
 document.addEventListener('dblclick',e=>{const t=e.target.closest&&e.target.closest('.tab[data-t]');if(t)rename(+t.dataset.t)});
 // start: dying order for a full enemy stack, with the default tiers
 runBest(4);
-DEF=snap();
+DEF=snap();DEF.X=['Grace'];      // Grace (a Scout) is switched off in every new tab; a tab that was saved keeps what it saved
 // Every tab starts blank: Leadership, Dominance, the basic bonuses, the monster bonuses (with the Double strike) and the Food production are all 0. BLANK is also the fallback for a saved tab that lacks a box (a box added by a newer version), so a release never puts a number of ours into a tab. The numbers a tab has saved are never replaced by a release: they live in localStorage under KEY, which must stay the same forever.
 const BLANK=clone(DEF);
 ['capA','capM','foodP','bh_G','bs_G','bh_S','bs_S','bh_M','bs_M','bh_E','bs_E','bs_Epic','bh_Players','bs_Players',...['Giant','Elemental','Dragon','Beast'].flatMap(k=>['bh_'+k,'bs_'+k,'dh_'+k])].forEach(id=>{if(id in BLANK.vals)BLANK.vals[id]='0'});
