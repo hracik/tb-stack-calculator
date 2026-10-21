@@ -205,7 +205,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.72';
+const APP_VERSION='21.6.73';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -274,7 +274,7 @@ const EPICS=[      // the epic monsters, alphabetical: n = name, score = the tot
   {n:'Arcanomancer',ic:'arcanomancer',score:800e6,st:[[47771360,210000,0],[58666640,171000,2],[54000000,300000,3],[4133333360,2160,1]],en:[3,4]},
   {n:'Armageddon/Basilisk',ic:'armbas',score:750e6,st:[[12150000,300000,0],[24100000,150000,2],[27500000,132000,3],[185375000,19500,1]],en:[3,4]},
   {n:'Briareus',ic:'briareus',score:null,st:null,en:[3,4]},
-  {n:'Doomsday',ic:'doomsday',score:50e6,st:[[2985710,210000,0],[3666665,171000,2],[3375000,300000,3],[289583335,2160,1]],en:[3,4]},
+  {n:'Doomsday',ic:'doomsday',score:50e6,st:[[2985710,210000,0,70000],[3666665,171000,2,57000],[3375000,300000,3,100000],[289583335,2160,1,720]],en:[3,4]},
   {n:'Fenrir',ic:'fenrir',score:750e6,st:null,en:[3,4]},
   {n:'Hellforge',score:150e6,st:null,en:[3,4]},
   {n:'J\u00f6rmungandr/Chimera',ic:'jormchimera',score:750e6,st:null,en:[3,4],raid:true}];      // 19.0.19 the epic monsters
@@ -1917,7 +1917,7 @@ let BRD=null,BRFXH='';
 // The whole hit on an epic whose stacks are known (4 stacks: [units, health, type]), event by event; the same rules as epicKill: the epic starts at full health, a strike goes to the living stack the troop has the biggest bonus against (no bonus: the healthiest stack),
 // the 2nd strike of a Double strike (no squad bonus) goes to the healthiest living stack, the damage past the health of a stack is lost. The enemy kills as many of our stacks per round as it has living stacks. dice: roll the Double damage and the Double strike, else the averages.
 function epicSim(P,L,EP,dice,rng){
-  const N=L.length,e2=EP.st.map(x=>({ty:x[2],hpu:x[1],hp:x[0]*x[1]})),alive=()=>e2.filter(e=>e.hp>0).length,ev=[],dead=new Set();
+  const N=L.length,e2=EP.st.map(x=>({ty:x[2],hpu:x[1],hp:x[0]*x[1],sp:x[3]||0})),alive=()=>e2.filter(e=>e.hp>0).length,ev=[],dead=new Set();
   let heal=0,hb=-1;L.forEach((s,i)=>{const v=s.n*s.hp;if(v>hb){hb=v;heal=i}});
   const info=L.map(s=>{const t=TRN[s.name],vs=t.vs.slice();if(P.epic&&t.ve>0)for(let i=0;i<4;i++)vs[i]=(vs[i]||0)+t.ve;return{vs,ms:mults(t,P)[2],p:dst(t,P),d:ddf(t,P),pc:(P['dd'+t.cls]||0)/100,pa:(P.ddA||0)/100}});
   const by=L.map((_,i)=>i).sort((a,b)=>L[b].n*L[b].str-L[a].n*L[a].str||a-b);
@@ -1932,8 +1932,8 @@ function epicSim(P,L,EP,dice,rng){
     hit(i,b0*m1*k,bt,rd,m1>1?'<i title="This strike rolled double damage">double damage</i>':'',b0*m1*(k-1));
     if(rng()<q.p){const m2=F();ns++;if(m2>1)nd++;hit(i,b0*m2,null,rd,'<i title="Double strike: the stack strikes a second time">double strike</i>'+(m2>1?'<i title="This strike rolled double damage">double damage</i>':''),0)}};
   let head=0;
-  for(let rd=0;head<N&&alive();rd++){const K=alive();let pos=0;const nx=()=>{while(pos<N&&by[pos]<head)pos++;return pos<N?by[pos++]:-1};
-    const kill=j=>{const lv=e2.filter(e=>e.hp>0),a=lv[j%lv.length]||e2[0];ev.push({r:rd,t:'e',i:head,ty:a.ty,u:Math.ceil(a.hp/a.hpu-1e-9)});dead.add(head++)};
+  for(let rd=0;head<N&&alive();rd++){const K=alive();const ord=e2.filter(e=>e.hp>0).sort((p,q)=>q.sp*q.hp/q.hpu-p.sp*p.hp/p.hpu),used=new Set();let pos=0;const nx=()=>{while(pos<N&&by[pos]<head)pos++;return pos<N?by[pos++]:-1};
+    const kill=j=>{const a=ord.find(e=>e.hp>0&&!used.has(e))||ord[0]||e2[0];used.add(a);ev.push({r:rd,t:'e',i:head,ty:a.ty,u:Math.ceil(a.hp/a.hpu-1e-9)});dead.add(head++)};
     for(let j=0;j<K&&head<N&&alive();j++){
       if(rd===0){const x=nx();if(x>=0)strike(x,rd);if(!alive())break;kill(j)}
       else{kill(j);const x=nx();if(x>=0)strike(x,rd)}}
