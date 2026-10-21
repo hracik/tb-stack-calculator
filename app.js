@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.39';
+const APP_VERSION='21.8.40';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -655,7 +655,7 @@ function drawMenu(){      // the menu row above the tabs: one button (signed out
   const t=$('mnt');m.hidden=!(FB.key||m.querySelector('.don:not([hidden]),.hlp:not([hidden])'));m.classList.toggle('open',MM&&!m.hidden);if(t){t.hidden=m.hidden;t.setAttribute('aria-expanded',String(MM&&!m.hidden))}
 }
 function drawAP(){      // the account window: a centred modal over the page (sign in / create account / the account / the choice when the account and this browser differ)
-  if(syncDebug())setTimeout(calc,0);      // the account became (or stopped being) an admin: the details appear or go
+  if(syncDebug()||(OVOP!==ovoOn()&&(OVOP=ovoOn(),true)))setTimeout(calc,0);      // the account became (or stopped being) an admin: the details appear or go
   const p=$('ap'),w=$('apw');if(!p)return;const open=!!(AP&&FB.key);p.hidden=!open;if(w)w.hidden=!open;document.documentElement.classList.toggle('mlock',open||HP||FMP);
   if(!open){p.innerHTML='';APO=false;return}
   p.classList.toggle('wide',!!SY.conf);
@@ -1939,7 +1939,8 @@ function runBest(n){                                     // Max vs. 3 stack / fu
 }
 const PV1=true;                                          // Pv1 modes (CP kill, CP death): on. Set false to switch them off: their buttons are greyed out and a tab that was left in one falls back to the 4-stack mode.
 const PVM=false;                                         // PvMany modes (Max damage): switched off for now, same behaviour. Set true to switch Max damage on.
-const OVO=true;                                         // One v. One on. Set false to switch it off.
+const ovoOn=()=>typeof SY!=='undefined'&&SY.role=='admin';      // One v. One is for the admin only (the account role); everyone else does not get the button
+let OVOP=null;
 const RENEGADES=false;                                   // Renegades off for now (14.30). Set true to switch back on.
 function runRen(){                                       // Renegades: fixed rule, nothing is refined
   if(!RENEGADES)return;
@@ -1950,7 +1951,7 @@ function runPM(){ if(!PVM)return;                                        // PvP 
   $('mode').value='pvpmax';SO=[];
   refresh();
 }
-function runOVO(){ if(!OVO)return;                                      // One v. One: Max damage against 12 enemy stacks (3 of each type), the Specialists die last
+function runOVO(){ if(!ovoOn())return;                                      // One v. One: Max damage against 12 enemy stacks (3 of each type), the Specialists die last
   $('mode').value='ovo';SO=[];
   refresh();
 }
@@ -2382,13 +2383,13 @@ function calcRun(){
   if(K4OK&&ATK=='epics'&&$('mode').value=='max'&&+$('enemy').value==K4LO){$('enemy').value=String(K4LO==3?4:8);SO=[];calcRun0()}}      // the 3-stack mode is off while the army kills from 4 stacks: the 4-stack mode instead
 function calcRun0(){
   epAuto();
-  const pvOK=m=>m=='cp'||m=='cpd'?PV1:m=='pvpmax'?PVM:m=='ovo'?OVO:m=='ren'?RENEGADES:false,okP=PVMODES.filter(pvOK);      // okP = the PvP modes that are switched on
+  const pvOK=m=>m=='cp'||m=='cpd'?PV1:m=='pvpmax'?PVM:m=='ovo'?ovoOn():m=='ren'?RENEGADES:false,okP=PVMODES.filter(pvOK);      // okP = the PvP modes that are switched on
   if($('mode').value=='kill4'&&!KS4){$('mode').value='max';SO=[]}      // Killshot v. 4 is off: a tab left in it falls back to the 4-stack mode
   document.querySelectorAll('.cm[data-m=kill4]').forEach(b=>{b.disabled=!KS4;b.title=KS4?'':'Switched off for now'});
   if(PVMODES.includes($('mode').value)&&!pvOK($('mode').value)){$('mode').value='max';SO=[]}      // a mode that is off: a tab left in it falls back to the 4-stack mode
   document.querySelectorAll('.cm[data-m=cp],.cm[data-m=cpd]').forEach(b=>{b.disabled=!PV1;b.title=PV1?'':'Switched off for now'});
   document.querySelectorAll('.cm[data-m=pvpmax]').forEach(b=>{b.disabled=!PVM;b.title=PVM?'':'Switched off for now'});
-  document.querySelectorAll('.cm[data-m=ovo]').forEach(b=>{b.disabled=!OVO;b.title=OVO?'':'Switched off for now'});
+  document.querySelectorAll('.cm[data-m=ovo]').forEach(b=>{b.disabled=!ovoOn();b.hidden=!ovoOn();b.title=ovoOn()?'':'Switched off for now'});
   if(okP.length){const pv=PVMODES.includes($('mode').value);      // the mode follows the view
     if(ATK=='players'&&!pv){$('mode').value=okP.includes(LASTP)?LASTP:okP[0];SO=[]}
     else if(ATK=='epics'&&pv){$('mode').value=LASTE.mode;$('enemy').value=LASTE.enemy;SO=[]}}
