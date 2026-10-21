@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.31';
+const APP_VERSION='21.8.32';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1827,6 +1827,8 @@ function killState(P,L,EP,dice,fast){      // dice: the luck of the rolled fight
     let A=cand[lo-1],B=c;
     for(let k=0;k<(fast?9:15);k++){const hp=A.hp.map((x,i)=>(x+B.hp[i])/2),m={hp,left:hp.reduce((q,x)=>q+x,0)};if(ok(m))B=m;else A=m}
     c=B}
+  // a hit that does not kill scores the damage it deals (at most what is left): if the biggest state the army kills is worth less than the damage it deals to the biggest state allowed, that hit is the better one (a killshot never scores less than a hit)
+  const c0=cand[0];if(c!==c0){const td0=epicSim(P,L,mk(c0),!!dice,dice?THEO.rngMk(dice):null).td,pt=Math.min(td0,c0.left);if(pt>c.left){const tot0=cps[0].left;return{left:pt,hp:c0.hp,K,alive:al(c0),tot:tot0,f:pt/tot0,EPS:mk(c0)}}}
   const tot=cps[0].left;return{left:c.left,hp:c.hp,K,alive:al(c),tot,f:c.left/tot,EPS:mk(c)}}
 // the range of the killshot: the same army, many rolled fights; each one finds the biggest state it kills (the 99 % range of those, and the average fight)
 function ksRange(P,L,EP){const f=[];for(let i=1;i<=14;i++){const k=killState(P,L,EP,i*7919,true);f.push(k?k.f:0)}
