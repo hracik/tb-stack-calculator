@@ -212,7 +212,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.91';
+const APP_VERSION='21.6.92';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -490,8 +490,8 @@ function tabClick(e){
     else if(k=='xshot'){const f=$('xfile');if(f)f.click()}
     else if(k=='xclose'){XPM=null;drawXP();drawTabs()}
     else if(k=='mnt'){MM=!MM;drawMenu()}      // the menu button of a phone: the menu opens as a dropdown under the logo line
-    else if(k=='acct'){MM=false;AP=!AP;drawAP();drawTabs();if(AP&&!aSes())gLoad().catch(()=>{})}      // the Google library is fetched while the panel opens, so the Google window can open at once on the click
-    else if(k=='help'){MM=false;HP=true;drawHP();drawMenu()}      // the 1-on-1 help window
+    else if(k=='acct'){AP=!AP;drawAP();drawTabs();if(AP&&!aSes())gLoad().catch(()=>{})}      // the Google library is fetched while the panel opens, so the Google window can open at once on the click
+    else if(k=='help'){HP=true;drawHP();drawMenu()}      // the 1-on-1 help window
     else if(k=='hclose')hpShut();
     else if(k=='eopen'){EPM=true;drawEP()}
     else if(k=='eclose')epShut();
@@ -920,13 +920,13 @@ function drawFM(){
 const fmShut=(applied)=>{if(FMP){FMP=false;if(!applied||!(v('foodP')>0)){const q=FMPREV||{cmp:false,shw:'hit'};$('shw').value=q.shw=='train'?'hit':q.shw;SHOWCMP=q.cmp;try{localStorage.setItem('sc_cmp',q.cmp?'1':'0')}catch(x){}calc()}FMPREV=null;drawFM()}};
 const apShut=()=>{if(AP&&!SY.conf){AP=false;drawAP();drawMenu()}};      // the window closes with the x, Escape, or a click on the dark area around it (not while the account/browser choice waits)
 const mmShut=()=>{if(MM){MM=false;drawMenu()}};      // the phone menu closes on a click outside it, on a menu item, or on Escape
-document.addEventListener('click',e=>{if(!MM)return;const pth=e.composedPath(),m=$('menu'),t=$('mnt');if(!pth.includes(t)&&(!pth.includes(m)||(e.target.closest&&e.target.closest('a.don'))))mmShut()});
-let apDn=null;document.addEventListener('pointerdown',e=>{apDn=e.target},true);
+document.addEventListener('click',e=>{if(!MM)return;const pth=e.composedPath(),m=$('menu'),t=$('mnt');if(inAmo||e.target.closest&&e.target.closest('.amo'))return;if(!pth.includes(t)&&(!pth.includes(m)||(e.target.closest&&e.target.closest('a.don'))))mmShut()});
+let apDn=null,inAmo=false;document.addEventListener('pointerdown',e=>{apDn=e.target;inAmo=!!(e.target.closest&&e.target.closest('.amo'))},true);document.addEventListener('click',()=>{setTimeout(()=>{inAmo=false},0)});
 document.addEventListener('click',e=>{if(AP&&e.target&&e.target.id=='apw'&&apDn&&apDn.id=='apw')apShut()});
 document.addEventListener('click',e=>{if(HP&&e.target&&e.target.id=='hw'&&apDn&&apDn.id=='hw')hpShut()});
 document.addEventListener('click',e=>{if(EPM&&e.target&&e.target.id=='epw'&&apDn&&apDn.id=='epw')epShut()});
 document.addEventListener('click',e=>{if(FMP&&e.target&&e.target.id=='fmw'&&apDn&&apDn.id=='fmw')fmShut()});
-document.addEventListener('keydown',e=>{if(e.key=='Escape'){apShut();mmShut();hpShut();fmShut();epShut()}});
+document.addEventListener('keydown',e=>{if(e.key=='Escape'){const md=!!document.querySelector('.amo:not([hidden])');apShut();hpShut();fmShut();epShut();if(!md)mmShut()}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncNow()});
 window.addEventListener('online',()=>syncNow());
 
