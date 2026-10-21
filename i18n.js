@@ -79,7 +79,8 @@ function init(){
   const s=document.getElementById('lang');
   if(s){s.innerHTML=LANGS.map(x=>'<option value="'+x[0]+'">'+x[1]+'</option>').join('');s.addEventListener('change',()=>{setLang(s.value,true);s.blur()})}
   let l=null;try{l=localStorage.getItem('tb_lang')}catch(e){}
-  if(!l||!(l=='en'||TR[l]))l='en';      // English until a language is picked (the choice is kept)
+  if(!l||!(l=='en'||TR[l])){const b=(navigator.language||'en').slice(0,2).toLowerCase();l=TR[b]?b:'en'}      // the browser's language when it is one of ours, else English; the choice is kept
+  s&&(s.value=l);      // the box is never empty: it holds English in the page itself until this runs
   mo.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:ATT});
   setLang(l,false);
 }
