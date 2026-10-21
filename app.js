@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.27';
+const APP_VERSION='21.8.28';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1845,9 +1845,9 @@ function ksInfo(P,list,order,EP){
   if(!av)return{none:true};
   const r=ksRange(Pk,L,EP);return{av:av.f*EP.score,lo:r.lo*EP.score,hi:r.hi*EP.score,left:av.f,K:av.K}}
 const ordL=(list,order)=>{const ix={};order.forEach((n,i)=>ix[n]=i);return list.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name])};
-let KSAVGF=null;
+let KSAVGF=null,KSROLLF=null;
 function battleHtml(P,list,order,sc){
-  KSAVGF=null;
+  KSAVGF=null;KSROLLF=null;
   const K=P.enemy,ix={};order.forEach((n,i)=>ix[n]=i);
   const L=list.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);
   if(!L.length)return '<p class="mu">No units.</p>';
@@ -1861,6 +1861,7 @@ function battleHtml(P,list,order,sc){
     const unIc=ty=>EPIC_UN[EPK.ic]&&EPIC_UN[EPK.ic][ty]?`<img class="ic2" src="${EPIC_UN[EPK.ic][ty]}" alt="">`:EN.ic;
     KSAVGF=P.kill?(killState(P,L,EPK)||{f:0}).f:null;      // the score of the average fight: what a rolled Killshot is compared with
     const ks=P.kill?killState(P,L,EPK,ex?0:THEOSEED):null,EPS=ks?ks.EPS:(P.enemy==3||P.enemy==6)?{...EPK,st:EPK.st.filter(x=>x[2]!=2)}:EPK;      // the 3-stack mode has no mounted enemy stack; the Killshot starts at the biggest state the army kills (killState)
+    KSROLLF=ks?ks.f:null;      // the score of the rolled fight (the Random effects points)
     const sim=epicSim(P,L,EPS,!ex,rng),avg=ex?sim:epicSim(P,L,EPS,false,null);td=sim.td;ad=avg.td;nd=sim.nd;ns=sim.ns;ed=sim.ed;es=sim.es;
     sim.ev.forEach(x=>{
       if(x.r!==rd){rd=x.r;h+=`<div class="brh">Round ${x.r+1}</div>`}
@@ -1889,7 +1890,7 @@ function battleHtml(P,list,order,sc){
   h+='</div>';
   
   const e=epCur(),th=e&&e.st&&e.score&&ATK=='epics'&&!P.cp&&!P.ren&&!P.one?e.st.filter(x=>!((P.enemy==3||P.enemy==6)&&x[2]==2)).reduce((q,x)=>q+x[0]*x[1],0):0,u=['','K','M','B','T'],fm=x=>{let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3)).toString()+u[i]};      // 118000000 -> 118M
-  const sm=brFxBox(ex,[[nd,ed,'double damage'],[ns,es,'double strikes']],ex?'':(()=>{const cp=(v,a)=>Math.abs(v-a)<=0.005*a?'= avg.':(v>a?'+':'\u2212')+fm(Math.abs(v-a))+' vs. avg.',p1=th?Math.min(1,td/th)*e.score:0,p2=KSAVGF!=null&&e?KSAVGF*e.score:th?Math.min(1,ad/th)*e.score:0;return th?`<div><b>${fm(p1)}</b> points (${cp(p1,p2)})</div>`:`<div>total <b>${fm(td)}</b> (${cp(td,ad)})</div>`})());
+  const sm=brFxBox(ex,[[nd,ed,'double damage'],[ns,es,'double strikes']],ex?'':(()=>{const cp=(v,a)=>Math.abs(v-a)<=0.005*a?'= avg.':(v>a?'+':'\u2212')+fm(Math.abs(v-a))+' vs. avg.',p1=th?(KSROLLF!=null?KSROLLF:Math.min(1,td/th))*e.score:0,p2=KSAVGF!=null&&e?KSAVGF*e.score:th?Math.min(1,ad/th)*e.score:0;return th?`<div><b>${fm(p1)}</b> points (${cp(p1,p2)})</div>`:`<div>total <b>${fm(td)}</b> (${cp(td,ad)})</div>`})());
   BRFXH=sm;return h;      // the Random effects block is shown in the summary, above the Battle in detail buttons
 }
 // The hitting order: who hits the enemy in round 1, in that order (the same battle as the report: strikes() with a log)
@@ -2361,7 +2362,7 @@ function calcRun(){
   KAUTO4=false;
   if($('mode').value=='kill'&&ATK=='epics'){
     KAUTO4=true;calcRun0();      // first with the 4-stack rules: the army must kill the epic from a state with all its 4 stacks
-    let e=epCur();const ks4=BRD&&e&&e.st&&e.score&&BRD.P.kill4&&killState(BRD.P,ordL(BRD.list,BRD.order),e),ok=ks4&&ks4.alive==4;
+    let e=epCur();const ks4=BRD&&e&&e.st&&e.score&&BRD.P.kill4&&killState(BRD.P,ordL(BRD.list,BRD.order),e),ok=ks4&&ks4.alive==e.st.length;
     if(!ok){KAUTO4=false;calcRun0()}      // else the 3-stack rules
     return}
   calcRun0();
