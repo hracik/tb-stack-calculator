@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.32';
+const APP_VERSION='21.8.33';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1729,7 +1729,7 @@ function epicKill(P,L,EP){
     if(!K0)return{dmg:0,killed:true,K0,dead,hp:hv.slice()};
     const ap=(amt,ty)=>{let e=ty==null?null:e2.find(x=>x.ty==ty&&x.hp>0);if(!e)e=e2.filter(x=>x.hp>0).sort((a,b)=>b.hp-a.hp)[0];if(!e)return;const a=Math.min(amt,e.hp);e.hp-=a;d+=a;if(e.hp<=0&&seq&&!seq.includes(e2.indexOf(e)))seq.push(e2.indexOf(e))};
     const strike=i=>{const q=info[i];let bt=null,bb=0;e2.forEach(e=>{if(e.hp>0&&q.vs[e.ty]>bb){bb=q.vs[e.ty];bt=e.ty}});const base=q.n*q.str*q.d*(i==heal?HALFHEALTHY:1);ap(base*(1+bb/q.ms),bt);if(q.p)ap(base*q.p,null)};
-    for(let rd=0;head<N&&alive();rd++){const K=alive();let pos=0;const nx=()=>{while(pos<N&&by[pos]<head)pos++;return pos<N?by[pos++]:-1};
+    for(let rd=0;head<N&&alive()&&rd<400;rd++){const K=alive();let pos=0;const nx=()=>{while(pos<N&&by[pos]<head)pos++;return pos<N?by[pos++]:-1};
       for(let j=0;j<K&&head<N&&alive();j++){
         if(rd===0){const x=nx();if(x>=0)strike(x);if(!alive())break;dead.add(head++)}
         else{dead.add(head++);const x=nx();if(x>=0)strike(x)}}
@@ -1770,6 +1770,7 @@ let BRD=null,BRFXH='';
 function epicSim(P,L,EP,dice,rng,trace){
   const N=L.length,e2=EP.st.map(x=>({ty:x[2],hpu:x[1],hp:x[0]*x[1],sp:x[3]||0})),alive=()=>e2.filter(e=>e.hp>0).length,ev=[],dead=new Set();
   let heal=0,hb=-1;L.forEach((s,i)=>{const v=s.n*s.hp;if(v>hb){hb=v;heal=i}});
+  const fr=L.map(()=>1);      // the health left of each of our stacks (1 = untouched): a small enemy stack only wounds
   const info=L.map(s=>{const t=TRN[s.name],vs=t.vs.slice();if(P.epic&&t.ve>0)for(let i=0;i<4;i++)vs[i]=(vs[i]||0)+t.ve;return{vs,ms:mults(t,P)[2],p:dst(t,P),d:ddf(t,P),pc:(P['dd'+t.cls]||0)/100,pa:(P.ddA||0)/100}});
   const by=L.map((_,i)=>i).sort((a,b)=>L[b].n*L[b].str-L[a].n*L[a].str||a-b);
   let td=0,nd=0,ns=0,ed=0,es=0;
@@ -1778,7 +1779,7 @@ function epicSim(P,L,EP,dice,rng,trace){
     const after=Math.ceil(e.hp/e.hpu-1e-9);ev.push({r:rd,t:'o',i,ty:e.ty,dmg:a,before,killed:before-after,dead:e.hp<=0,tg,sq:amt>0?bonus*a/amt:0})};
   const full=P.enemy>4&&!P.raid;      // 6 and 8 enemy stacks: the 2nd strike of a Double strike is the whole strike again (the same bonus, the same target); 3 and 4: the base strength only, to the healthiest stack
   const strike=(i,rd)=>{const q=info[i],s=L[i];let bt=null,bb=0,tk=null;
-    const b0=s.n*s.str*(i==heal?HALFHEALTHY:1);
+    const b0=s.n*fr[i]*s.str*(i==heal?HALFHEALTHY:1);
     // no damage spill: a strike deals at most what the stack it hits has left. The troop hits the stack where the strike (with its bonus) does the most damage: usually the stack it has the biggest bonus against, but when that one has little health left the healthiest stack takes the strike instead
     let bv=-1;e2.forEach(e=>{if(e.hp<=0)return;const bn=q.vs[e.ty]||0,v=Math.min(b0*q.d*(1+bn/q.ms),e.hp);if(v>bv+1e-9||(Math.abs(v-bv)<=1e-9&&bn>bb)){bv=v;tk=e;bt=e.ty;bb=bn}});
     const k=1+bb/q.ms;ed+=(1-(1-q.pc)*(1-q.pa))*(1+q.p);es+=q.p;
@@ -1788,7 +1789,11 @@ function epicSim(P,L,EP,dice,rng,trace){
     if(rng()<q.p){const m2=F();ns++;if(m2>1)nd++;hit(i,b0*m2*(full?k:1),full?bt:null,rd,'<i title="Double strike: the stack strikes a second time">double strike</i>'+(m2>1?'<i title="This strike rolled double damage">double damage</i>':''),0,false,full?tk:null)}};
   let head=0;
   for(let rd=0;head<N&&alive();rd++){const K=alive();const ord=e2.filter(e=>e.hp>0).sort((p,q)=>q.sp*q.hp/q.hpu-p.sp*p.hp/p.hpu),used=new Set();let pos=0;const nx=()=>{while(pos<N&&by[pos]<head)pos++;return pos<N?by[pos++]:-1};
-    const kill=j=>{const a=e2.filter(e=>e.hp>0&&!used.has(e)).sort((p,q)=>q.sp*q.hp/q.hpu-p.sp*p.hp/p.hpu)[0]||ord[0]||e2[0];used.add(a);ev.push({r:rd,t:'e',i:head,ty:a.ty,u:Math.ceil(a.hp/a.hpu-1e-9)});dead.add(head++)};
+    const kill=j=>{const a=e2.filter(e=>e.hp>0&&!used.has(e)).sort((p,q)=>q.sp*q.hp/q.hpu-p.sp*p.hp/p.hpu)[0]||ord[0]||e2[0];used.add(a);
+      // an enemy stack deals (its living units x its strength): the front stack of ours dies only when that is at least its health; a small stack only wounds it
+      const Dm=a.sp>0?a.hp/a.hpu*a.sp:Infinity,Hf=L[head].n*L[head].hp*fr[head];
+      if(Dm<Hf*(1-1e-9)){fr[head]-=Dm/(L[head].n*L[head].hp);ev.push({r:rd,t:'w',i:head,ty:a.ty,u:Math.ceil(a.hp/a.hpu-1e-9),dmg:Dm});return}
+      ev.push({r:rd,t:'e',i:head,ty:a.ty,u:Math.ceil(a.hp/a.hpu-1e-9)});dead.add(head++)};
     for(let j=0;j<K&&head<N&&alive();j++){
       if(rd===0){const x=nx();if(x>=0)strike(x,rd);if(!alive())break;kill(j)}
       else{kill(j);const x=nx();if(x>=0)strike(x,rd)}}
@@ -1873,6 +1878,7 @@ function battleHtml(P,list,order,sc){
       if(x.r!==rd){rd=x.r;h+=`<div class="brh">Round ${x.r+1}</div>`}
       const s=L[x.i];
       if(x.t=='o')h+=brRow({we:true,ourIc:brImg(s.name),ourName:esc(s.name),ourSub:num(s.n),enName:DEFCAT[x.ty]||'',enCnt:num(x.before),enIc:unIc(x.ty),enDead:x.dead,tg:x.tg,l2:`<b>+${num(x.dmg)}</b> damage \u00b7 ${num(x.killed)} killed`,sq:x.sq>=0.5?`squad bonus +${num(x.sq)}`:''});
+      else if(x.t=='w')h+=brRow({we:false,ourIc:brImg(s.name),ourName:esc(s.name),ourSub:num(s.n),enName:DEFCAT[x.ty]||'',enCnt:num(x.u),enIc:unIc(x.ty),l2:`<b>\u2212${num(x.dmg)}</b> damage \u00b7 wounded, still fighting`})
       else h+=brRow({we:false,ourIc:brImg(s.name),ourDead:true,ourName:esc(s.name),ourSub:num(s.n),enName:DEFCAT[x.ty]||'',enCnt:num(x.u),enIc:unIc(x.ty),l2:`<b>\u2212${num(tot(s.n,s.hp))}</b> damage`})})}
   const eepic=ATK=='epics'&&!P.cp&&!P.ren&&!P.one&&!P.pm;      // epic modes: the epic is shown by its icon only
   (known?[]:log).forEach(([r,t,i])=>{
