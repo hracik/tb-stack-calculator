@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.7.11';
+const APP_VERSION='21.7.12';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1591,12 +1591,14 @@ function dominanceTail(P,st,A,Mo,U,light){      // light (the Tier check): only 
     while(ns.length<seq.length)ns.push(0);
     return ns.some(n=>n>0)?ns:null};
   set(null);
+  const orig=new Map(U.list.map(s=>[s.name,s.n])),noCap=L=>[...orig].every(([n,k])=>{const t=L.find(x=>x.name==n);return t&&t.n>=k});      // the partial stack must not make the mercenaries smaller: a place for it counts only when every mercenary stack keeps the size it has without it (so it stands in front of them when the Authority is small, behind them when it is large)
   const dmg=(Us,so)=>score(P,[...A,...Mo,...Us.list],[...so,...Us.ord],true).dmg;
-  let best={d:dmg(U,st.so),kind:0};
+  const b0={d:dmg(U,st.so),kind:0};let best=b0,bestOK=b0;      // best: the most damage; bestOK: the most damage among the places where neither the mercenaries nor the partial stack are made smaller by the other (used when there is one)
+  const cand=(c,ok)=>{if(c.d>best.d*(1+5e-4))best=c;if(ok&&c.d>bestOK.d*(1+5e-4))bestOK=c},big=(ns,ref)=>!!ref&&ns.every((n,i)=>n>=ref[i]);      // big: the stack is as big as it is in front of the mercenaries (the mercenaries do not limit it)
   const ns1=sizeTail([...A,...Mo],st.so);
-  if(ns1){set(ns1);const U1=allocMerc(P,[...A,...Mo],st.so,XS),d=dmg(U1,st.so);if(d>best.d*(1+5e-4))best={d,kind:1,ns:ns1,U1};set(null)}
+  if(ns1){set(ns1);const U1=allocMerc(P,[...A,...Mo],st.so,XS),d=dmg(U1,st.so);cand({d,kind:1,ns:ns1,U1},noCap(U1.list));set(null)}
   const ns2=sizeTail([...A,...Mo,...U.list],[...st.so,...U.ord]);
-  if(ns2){set(ns2);const nm=new Set(tail.filter(s=>s.n>0).map(s=>s.name)),so2=st.so.filter(n=>!nm.has(n)),U2={list:U.list,ord:[...U.ord,...tail.filter(s=>s.n>0).map(s=>s.name)]},d=dmg(U2,so2);if(d>best.d*(1+5e-4))best={d,kind:2,ns:ns2,so2,U2};set(null)}
+  if(ns2){set(ns2);const nm=new Set(tail.filter(s=>s.n>0).map(s=>s.name)),so2=st.so.filter(n=>!nm.has(n)),U2={list:U.list,ord:[...U.ord,...tail.filter(s=>s.n>0).map(s=>s.name)]},d=dmg(U2,so2);cand({d,kind:2,ns:ns2,so2,U2},big(ns2,ns1));set(null)}
   // (3) INSIDE the mercenaries: behind the main chain, in front of the Epic monster hunters and the weak-strength stacks (Ariel). Those last ones are sized again behind the stack, with the Authority that is left.
   const ks=light?(U.mainN>0&&U.mainN<U.list.length?[U.mainN]:[]):[...Array(U.list.length).keys()];
   ks.forEach(k=>{
@@ -1613,9 +1615,10 @@ function dominanceTail(P,st,A,Mo,U,light){      // light (the Tier check): only 
       rest.forEach((s,i)=>{s.n=nr[i]});
       const lst=[...main,...rest.filter(s=>s.n>0)],so3=st.so.filter(n=>!tl.some(s=>s.name==n)),ord3=[...main.map(s=>s.name),...tl.map(s=>s.name),...rest.filter(s=>s.n>0).map(s=>s.name)];
       const d=score(P,[...A,...Mo,...lst],[...so3,...ord3],true).dmg;
-      if(d>best.d*(1+5e-4))best={d,kind:3,ns:ns3,so3,lst,ord3,used:lst.reduce((q,s)=>q+s.n*s.cost,0),pairs:rest.map((s,i)=>[s,nr[i]])};
+      cand({d,kind:3,ns:ns3,so3,lst,ord3,used:lst.reduce((q,s)=>q+s.n*s.cost,0),pairs:rest.map((s,i)=>[s,nr[i]])},noCap(lst)&&big(ns3,ns1));
       set(null)}
     rest.forEach((s,i)=>{s.n=svM[i]})});
+  if(bestOK.kind)best=bestOK;
   if(best.kind==3){set(best.ns);best.pairs.forEach(([s,n])=>{s.n=n});st.so=best.so3;U.list=best.lst;U.ord=best.ord3;U.used=best.used}
   else if(best.kind==1){set(best.ns);Object.assign(U,best.U1)}
   else if(best.kind==2){set(best.ns);st.so=best.so2;U.ord=best.U2.ord}
