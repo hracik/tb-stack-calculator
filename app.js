@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.7';
+const APP_VERSION='21.8.8';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1789,16 +1789,23 @@ function epicSim(P,L,EP,dice,rng,trace){
       else{kill(j);const x=nx();if(x>=0)strike(x,rd)}}
     for(let x=nx();x>=0&&alive();x=nx())strike(x,rd)}
   return{ev,td,nd,ns,ed,es}}
-// 21.8.1: THE KILLSHOT MODES against an epic with known stacks. The army does not hit a healthy epic: it finishes one that earlier hits have worn down. The way the epic goes down is taken from the army itself: the same army hits it again
-// and again (every hit with a fresh army), and the stacks lose health in the order the strikes land (every strike goes to the stack the troop has the biggest bonus against), so the mounted stack dies first, then it is a 3-stack.
-// The killshot starts at the biggest state on that way that has the right number of living stacks (4: the 4-stack rules, 3: the 3-stack rules) and that the army still kills in one hit (killState).
+// 21.8.1: THE KILLSHOT MODES against an epic with known stacks. The army does not hit a healthy epic: it finishes one that earlier hits have worn down. How the epic was worn down has nothing to do with our army (its size, its
+// Leadership, its bonuses): it is the same for every mode, the way a small balanced army with good stacking wears it down. Such an army never runs out of units, so only WHICH troop types we field matters, not how many: every troop
+// strikes the living stack it has the biggest bonus against (the Double strike part goes to the healthiest living stack), and the strikes are taken in equal shares (the sizes of our stacks are not used). The mounted stack, which
+// most troops have a bonus against, dies first; then the epic is a 3-stack. The killshot starts at the biggest state on that way that has the right number of living stacks (4: the 4-stack rules, 3: the 3-stack rules)
+// and that the army still kills in one hit (killState).
 function epicPath(P,L,EP){
-  const tyIx={};EP.st.forEach((x,i)=>tyIx[x[2]]=i);
-  const hp=EP.st.map(x=>x[0]*x[1]),sum=()=>hp.reduce((a,b)=>a+b,0),cps=[{left:sum(),hp:hp.slice()}];
-  for(let h=0;h<80&&hp.some(x=>x>1e-6);h++){
-    const tr=[],e={...EP,st:EP.st.map((x,i)=>[hp[i]/x[1],x[1],x[2],x[3]]).filter((x,i)=>hp[i]>1e-6)};
-    epicSim(P,L,e,false,null,tr);if(!tr.length)break;
-    tr.forEach(([ty,a])=>{const k=tyIx[ty],was=hp[k]>1e-6;hp[k]=Math.max(0,hp[k]-a);const c=cps[cps.length-1],l=sum();if(was&&hp[k]<=1e-6||c.left-l>=0.003*cps[0].left)cps.push({left:l,hp:hp.slice()})})}
+  const N=L.length,H=EP.st.map(x=>x[0]*x[1]),tot=H.reduce((a,b)=>a+b,0),hp=H.slice(),tyIx={};EP.st.forEach((x,i)=>tyIx[x[2]]=i);
+  const info=L.map(s=>{const t=TRN[s.name],vs=t.vs.slice();if(P.epic&&t.ve>0)for(let i=0;i<4;i++)vs[i]=(vs[i]||0)+t.ve;return{vs,ms:mults(t,P)[2],p:dst(t,P),d:ddf(t,P)}});
+  const cps=[{left:tot,hp:hp.slice()}];
+  for(let it=0;it<4000&&hp.some(x=>x>1e-6);it++){
+    const dv=hp.map(()=>0);let hi=-1;hp.forEach((x,i)=>{if(x>1e-6&&(hi<0||x>hp[hi]))hi=i});
+    info.forEach((q,j)=>{let bt=-1,bb=0;EP.st.forEach((x,i)=>{if(hp[i]>1e-6&&(q.vs[x[2]]||0)>bb){bb=q.vs[x[2]];bt=i}});
+      const base=q.d/N;if(bt<0)dv[hi]+=base;else dv[bt]+=base*(1+bb/q.ms);if(q.p)dv[hi]+=base*q.p});
+    const R=dv.reduce((a,b)=>a+b,0);if(!(R>0))break;
+    let dt=0.0025*tot/R;hp.forEach((x,i)=>{if(x>1e-6&&dv[i]>0&&x/dv[i]<dt)dt=x/dv[i]});
+    hp.forEach((x,i)=>{hp[i]=Math.max(0,x-dv[i]*dt);if(hp[i]<tot*1e-9)hp[i]=0});
+    cps.push({left:hp.reduce((a,b)=>a+b,0),hp:hp.slice()})}
   return cps}
 let KSC={k:'',cps:null};
 function killState(P,L,EP,dice){      // dice: the luck of the rolled fight (the same dice stream for every state that is tried); without it the average fight
