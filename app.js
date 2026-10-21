@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.0';
+const APP_VERSION='21.8.2';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1765,14 +1765,14 @@ function brRow(o){if(o.enIc&&o.enIc.indexOf('id="mo1"')>=0){const u=++BRU;o={...
 let BRD=null,BRFXH='';
 // The whole hit on an epic whose stacks are known (4 stacks: [units, health, type]), event by event; the same rules as epicKill: the epic starts at full health, a strike goes to the living stack the troop has the biggest bonus against (no bonus: the healthiest stack),
 // the 2nd strike of a Double strike (no squad bonus) goes to the healthiest living stack, the damage past the health of a stack is lost. The enemy kills as many of our stacks per round as it has living stacks. dice: roll the Double damage and the Double strike, else the averages.
-function epicSim(P,L,EP,dice,rng){
+function epicSim(P,L,EP,dice,rng,trace){
   const N=L.length,e2=EP.st.map(x=>({ty:x[2],hpu:x[1],hp:x[0]*x[1],sp:x[3]||0})),alive=()=>e2.filter(e=>e.hp>0).length,ev=[],dead=new Set();
   let heal=0,hb=-1;L.forEach((s,i)=>{const v=s.n*s.hp;if(v>hb){hb=v;heal=i}});
   const info=L.map(s=>{const t=TRN[s.name],vs=t.vs.slice();if(P.epic&&t.ve>0)for(let i=0;i<4;i++)vs[i]=(vs[i]||0)+t.ve;return{vs,ms:mults(t,P)[2],p:dst(t,P),d:ddf(t,P),pc:(P['dd'+t.cls]||0)/100,pa:(P.ddA||0)/100}});
   const by=L.map((_,i)=>i).sort((a,b)=>L[b].n*L[b].str-L[a].n*L[a].str||a-b);
   let td=0,nd=0,ns=0,ed=0,es=0;
   const hit=(i,amt,ty,rd,tg,bonus,silent)=>{let e=ty==null?null:e2.find(x=>x.ty==ty&&x.hp>0);if(!e)e=e2.filter(x=>x.hp>0).sort((a,b)=>b.hp-a.hp)[0];if(!e)return;
-    const before=Math.ceil(e.hp/e.hpu-1e-9),a=Math.min(amt,e.hp);e.hp-=a;td+=a;if(silent)return;
+    const before=Math.ceil(e.hp/e.hpu-1e-9),a=Math.min(amt,e.hp);e.hp-=a;td+=a;if(trace)trace.push([e.ty,a]);if(silent)return;
     const after=Math.ceil(e.hp/e.hpu-1e-9);ev.push({r:rd,t:'o',i,ty:e.ty,dmg:a,before,killed:before-after,dead:e.hp<=0,tg,sq:amt>0?bonus*a/amt:0})};
   const strike=(i,rd)=>{const q=info[i],s=L[i];let bt=null,bb=0;e2.forEach(e=>{if(e.hp>0&&q.vs[e.ty]>bb){bb=q.vs[e.ty];bt=e.ty}});
     const b0=s.n*s.str*(i==heal?HALFHEALTHY:1),k=1+bb/q.ms;ed+=(1-(1-q.pc)*(1-q.pa))*(1+q.p);es+=q.p;
@@ -1788,6 +1788,22 @@ function epicSim(P,L,EP,dice,rng){
       else{kill(j);const x=nx();if(x>=0)strike(x,rd)}}
     for(let x=nx();x>=0&&alive();x=nx())strike(x,rd)}
   return{ev,td,nd,ns,ed,es}}
+// 21.8.1: THE KILLSHOT MODES against an epic with known stacks. The army does not hit a healthy epic: it finishes one that earlier hits have worn down. On its way down the mounted stack loses health about twice as fast as any other stack
+// (MOUNTEDX; in absolute damage, so the other stacks have lost half of what the mounted one has when it dies), so it always dies first and the epic is a 3-stack from then on. The killshot starts at the biggest state on that way
+// that has the right number of living stacks (v. 3: three, v. 4: four) and that the army still kills in one hit (killState).
+const MOUNTEDX=2;
+function epicPath(P,L,EP){
+  const H=EP.st.map(x=>x[0]*x[1]),r=EP.st.map(x=>x[2]==2?MOUNTEDX:1),td=H.map((h,i)=>h/r[i]),tmax=Math.max(...td),ts=new Set(td);
+  for(let k=0;k<=600;k++)ts.add(tmax*k/600);
+  return[...ts].sort((a,b)=>a-b).map(t=>{const hp=H.map((h,i)=>Math.max(0,h-r[i]*t));return{left:hp.reduce((a,b)=>a+b,0),hp}})}
+function killState(P,L,EP){
+  const cps=epicPath(P,L,EP),K=P.kill4?4:3,al=c=>c.hp.filter(x=>x>1e-6).length,cand=cps.filter(c=>al(c)==K);
+  if(!cand.length)return null;
+  const mk=c=>({...EP,st:EP.st.map((x,i)=>[c.hp[i]/x[1],x[1],x[2],x[3]]).filter((x,i)=>c.hp[i]>1e-6)}),ok=c=>epicSim(P,L,mk(c),false,null).td>=c.left*(1-1e-6);
+  if(!ok(cand[cand.length-1]))return null;
+  let lo=0,hi=cand.length-1;while(lo<hi){const m=(lo+hi)>>1;if(ok(cand[m]))hi=m;else lo=m+1}
+  const c=cand[lo],tot=cps[0].left;return{left:c.left,hp:c.hp,K,tot,f:c.left/tot,EPS:mk(c)}}
+const ordL=(list,order)=>{const ix={};order.forEach((n,i)=>ix[n]=i);return list.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name])};
 function battleHtml(P,list,order,sc){
   const K=P.enemy,ix={};order.forEach((n,i)=>ix[n]=i);
   const L=list.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);
@@ -1800,7 +1816,7 @@ function battleHtml(P,list,order,sc){
   const EPK=epCur(),known=ATK=='epics'&&!P.cp&&!P.ren&&!P.one&&!P.pm&&(P.enemy==4||P.enemy==3)&&EPK&&EPK.st&&EPK.st.length==4&&EPK.score;      // an epic with known stacks: the report follows its stacks (type, units, units killed)
   if(known){
     const unIc=ty=>EPIC_UN[EPK.ic]&&EPIC_UN[EPK.ic][ty]?`<img class="ic2" src="${EPIC_UN[EPK.ic][ty]}" alt="">`:EN.ic;
-    const EPS=P.enemy==3?{...EPK,st:EPK.st.filter(x=>x[2]!=2)}:EPK;      // the 3-stack mode has no mounted enemy stack
+    const ks=P.kill?killState(P,L,EPK):null,EPS=ks?ks.EPS:P.enemy==3?{...EPK,st:EPK.st.filter(x=>x[2]!=2)}:EPK;      // the 3-stack mode has no mounted enemy stack; the Killshot starts at the biggest state the army kills (killState)
     const sim=epicSim(P,L,EPS,!ex,rng),avg=ex?sim:epicSim(P,L,EPS,false,null);td=sim.td;ad=avg.td;nd=sim.nd;ns=sim.ns;ed=sim.ed;es=sim.es;
     sim.ev.forEach(x=>{
       if(x.r!==rd){rd=x.r;h+=`<div class="brh">Round ${x.r+1}</div>`}
@@ -2376,6 +2392,10 @@ function calcRun(){
   const sh=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return[(+v.toPrecision(3)).toString(),u[i]]};      // 118000000 -> ['118','M']
   const eoMany=EPICS.filter(epOk).length>1,eoAct=eoMany?'<div data-act="eopen" class="stt':'<div class="stt',eoCar=eoMany?'\u00a0\u25be':'';      // a mode with a single epic (Arachne in 6-8 stacks): nothing to choose, so the tile is no button
   let scoreTile='';
+  const KEP=ATK=='epics'&&P.kill?epCur():null;
+  if(KEP&&KEP.st&&KEP.score){const ks=killState(P,ordL(BRD.list,BRD.order),KEP),f=ks?ks.f*KEP.score:0,[a,ua]=sh(f);
+    scoreTile=tile('std','<span class="eph">'+epImg(KEP,'epi')+'<span><b>'+esc(KEP.n).replace('/','/<wbr>')+'</b> score'+eoCar+'</span></span>',ks?a+' '+ua:'\u2013',ks?'kills it from '+Math.round(ks.f*100)+' % health left \u00b7 '+ks.K+' stacks':'the army can not kill it','').replace('<div class="stt',eoAct)}
+  else if(ATK=='epics'&&P.kill&&!KEP)scoreTile=tile('std ste','Epic score','<span class="epb">Choose epic \u25be</span>','','').replace('<div class="stt',eoAct);
   if(ATK=='epics'&&!P.kill&&!EP)scoreTile=tile('std ste','Epic score','<span class="epb">Choose epic \u25be</span>','','').replace('<div class="stt',eoAct);
   if(EP&&!(EP.st&&EP.score))scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b> score'+eoCar+'</span></span>','\u2013',EP.score?'stacks not set yet':'score not set yet','').replace('<div class="stt',eoAct);
   else if(EP){const th=EP.st.reduce((q,x)=>q+x[0]*x[1],0),f=d=>Math.min(1,d/th)*EP.score,lo=f(dRange?dRange[0]:sc.dmg),hi=f(dRange?dRange[1]:sc.dmg),[a,ua]=sh(lo),[b,ub]=sh(hi);
