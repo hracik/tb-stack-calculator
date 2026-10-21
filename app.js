@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.33';
+const APP_VERSION='21.8.34';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1825,7 +1825,7 @@ function killState(P,L,EP,dice,fast){      // dice: the luck of the rolled fight
   // every state on the way down with at most K living stacks (4: all of them, 3: the 3-stack states): the army kills the biggest one it can, however weak it is (the last state, nothing left, is always killed)
   const cps=KSC.cps,K=EP.st.length>4?(P.kill4?8:6):(P.kill4?4:3),al=c=>c.hp.filter(x=>x>1e-6).length,cand=cps.filter(c=>al(c)<=K);
   if(!cand.length)return null;
-  const mk=c=>({...EP,st:EP.st.map((x,i)=>[c.hp[i]/x[1],x[1],x[2],x[3]]).filter((x,i)=>c.hp[i]>1e-6)}),ok=c=>epicSim(P,L,mk(c),!!dice,dice?THEO.rngMk(dice):null).td>=c.left*(1-1e-6);
+  const mk=c=>({...EP,st:EP.st.map((x,i)=>[c.hp[i]/x[1],x[1],x[2],x[3],i]).filter((x,i)=>c.hp[i]>1e-6)}),ok=c=>epicSim(P,L,mk(c),!!dice,dice?THEO.rngMk(dice):null).td>=c.left*(1-1e-6);
   let lo=0,hi=cand.length-1;if(!ok(cand[hi]))return null;while(lo<hi){const m=(lo+hi)>>1;if(ok(cand[m]))hi=m;else lo=m+1}
   let c=cand[lo];
   if(lo>0){      // the grid of the way down is coarse (a quarter of a percent of the epic): between the last state that is not killed and the first that is, the biggest killed one is searched
@@ -1864,6 +1864,7 @@ function battleHtml(P,list,order,sc){
   if(!L.length)return '<p class="mu">No units.</p>';
   const log=[];strikes(L,K,log,P.ren?1:Infinity);
   const num=x=>Math.round(x).toLocaleString();
+  const fm0=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3)).toString()+u[i]};
   const XP='M4.1 5.9C6.9 6.9 9.5 8.6 11.7 11.5C14 14.4 17.2 17.4 20.3 18.9M4.7 4.8C7.6 7.3 10.2 9.4 12.4 12.1C14.6 14.8 17.3 17.9 19.4 20.2M19.5 4.3C16.9 6.7 13.9 9.6 11.2 12.9C8.8 15.8 6.6 18.4 4.3 19.9M20.2 5.2C17.3 8.1 14.4 11.4 12 14.2C10 16.5 7.6 19.2 5.2 20.7',XS='<svg class="bx" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="'+XP+'" stroke="rgba(0,0,0,.5)" stroke-width="3.6"/><path d="'+XP+'" stroke="#e5402a" stroke-width="1.7"/></g></svg>'; // a hand-drawn red X: four uneven pen strokes
   const EN=brEnemy(P),ex=THEOEXP,rng=THEO.rngMk(THEOSEED);      // the dice: the same seed gives the same fight until Roll again
   let rd=-1,td=0,ad=0,nd=0,ns=0,ed=0,es=0,h='<div class="br">';
@@ -1874,6 +1875,8 @@ function battleHtml(P,list,order,sc){
     const ks=P.kill?killState(P,L,EPK,ex?0:THEOSEED):null,EPS=ks?ks.EPS:(P.enemy==3||P.enemy==6)?{...EPK,st:EPK.st.filter(x=>x[2]!=2)}:EPK;      // the 3-stack mode has no mounted enemy stack; the Killshot starts at the biggest state the army kills (killState)
     KSROLLF=ks?ks.f:null;      // the score of the rolled fight (the Random effects points)
     const sim=epicSim(P,L,EPS,!ex,rng),avg=ex?sim:epicSim(P,L,EPS,false,null);td=sim.td;ad=avg.td;nd=sim.nd;ns=sim.ns;ed=sim.ed;es=sim.es;
+    h+=`<div class="brh">${P.kill?'Epic starting stacks (the state of the killshot)':'Epic starting stacks'}</div>`;      // the stacks the epic has when the hit starts: units, health left of the full epic
+    EPS.st.forEach(x=>{const f0=EPK.st[x[4]!=null?x[4]:EPK.st.indexOf(x)],full=f0?f0[0]:x[0],pc=Math.round(100*x[0]/full);h+=brRow({we:false,ourIc:unIc(x[2]),ourName:DEFCAT[x[2]]||'',ourSub:num(x[0]),l2:`${pc} % of its units \u00b7 <b>${fm0(x[0]*x[1])}</b> health`})});
     sim.ev.forEach(x=>{
       if(x.r!==rd){rd=x.r;h+=`<div class="brh">Round ${x.r+1}</div>`}
       const s=L[x.i];
