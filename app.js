@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.44';
+const APP_VERSION='21.8.45';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1845,8 +1845,11 @@ function killState(P,L,EP,dice,fast){
   const c0=cand[0];if(c!==c0){const td0=epicSim(P,L,mk(c0),!!dice,dice?THEO.rngMk(dice):null).td,pt=Math.min(td0,c0.left);if(pt>c.left){const tot0=cps[0].left;return{left:pt,hp:c0.hp,K,alive:al(c0),tot:tot0,f:pt/tot0,EPS:mk(c0)}}}
   const tot=cps[0].left;return{left:c.left,hp:c.hp,K,alive:al(c),tot,f:c.left/tot,EPS:mk(c)}}
 // the range of the killshot: the same army, many rolled fights; each one finds the biggest state it kills (the 99 % range of those, and the average fight)
-function ksRange(P,L,EP){const f=[];for(let i=1;i<=14;i++){const k=killState(P,L,EP,i*7919,true);f.push(k?k.f:0)}
-  const m=f.reduce((a,b)=>a+b,0)/f.length,sd=Math.sqrt(f.reduce((q,x)=>q+(x-m)*(x-m),0)/f.length);return{lo:Math.max(0,m-2.576*sd),hi:Math.min(1,m+2.576*sd)}}      // 99 %: the average of the fights and 2.576 standard deviations
+function ksRange(P,L,EP){      // the 99 % range: the luck of 400 rolled fights on the average killshot state (what the strikes were worth against what they are worth on average), its 0.5 % and 99.5 % ends, and the biggest state the army kills with that much luck
+  const av=killState(P,L,EP);if(!av)return{lo:0,hi:0};
+  const lk=[];for(let n=1;n<=400;n++){const r=epicSim(P,L,av.EPS,true,THEO.rngMk(n*7919));lk.push(r.pex>0?r.pot/r.pex:1)}
+  lk.sort((a,b)=>a-b);const lo=killState({...P,dmgScale:lk[Math.floor(0.005*lk.length)]},L,EP,0,true),hi=killState({...P,dmgScale:lk[Math.ceil(0.995*lk.length)-1]},L,EP,0,true);
+  return{lo:Math.max(0,Math.min(av.f,lo?lo.f:0)),hi:Math.min(1,Math.max(av.f,hi?hi.f:av.f))}}
 // the score tile of a Killshot: the average fight with its range, or the rolled fight (Roll the dice)
 function ksTile(P,list,order){
   const EP=epCur();if(!EP||!EP.st||!EP.score)return'';
