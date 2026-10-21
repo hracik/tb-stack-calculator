@@ -153,8 +153,8 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 .mrow{display:grid;gap:8px;align-items:stretch}
 #mrE button,#mrP button{width:100% !important;flex:none !important}
 .mrow button{width:100% !important;min-width:0;box-sizing:border-box;margin:0 !important;padding:6px 4px;white-space:normal !important;overflow-wrap:anywhere;line-height:1.2}
-#mrE{grid-template-columns:repeat(4,minmax(0,1fr))}
-#mrP{grid-template-columns:repeat(3,minmax(0,1fr))}
+#mrE,#mrP{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(min-width:480px){#mrE,#mrP{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(min-width:700px){#mrE{grid-template-columns:repeat(6,minmax(0,1fr))}#mrP{grid-template-columns:repeat(5,minmax(0,1fr))}}
 </style></head><body><main>
 <div class="imp" id="imp" hidden></div>
@@ -219,7 +219,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.101';
+const APP_VERSION='21.6.102';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
