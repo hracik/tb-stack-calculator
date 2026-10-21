@@ -237,7 +237,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.7.6';
+const APP_VERSION='21.7.7';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -640,21 +640,26 @@ function xRead(){
 }
 
 // ---- Import via screenshot (admin): a picture with the exported text on it is read in the browser (OCR: tesseract.js, loaded from a CDN only when this button is used), the text is cleaned up (the OCR mixes up the case of letters and adds stray marks) and opened like a pasted export ----
-const OCRV={js:'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js',lang:'https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_fast',lang2:'https://unpkg.com/@tesseract.js-data/eng@1.0.0/4.0.0_fast'};
+const OCRV={js:'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js',lang:'https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_fast',lang2:'https://unpkg.com/@tesseract.js-data/eng@1.0.0/4.0.0_fast',worker:'https://cdn.jsdelivr.net/npm/tesseract.js@v5.1.1/dist/worker.min.js',local:'eng.traineddata.gz.b64.txt'};
 let OCRW=null,OCRP=null;
+// The English language data (tessdata_fast, gzipped, as base64 text) is the file next to this page: it is fetched here (the page may not be allowed to let the reader's worker download from a CDN) and the reader's worker is started from a small script that answers the worker's request for eng.traineddata.gz from this copy, then loads the real worker
+function ocrWorkerUrl(b){
+  const code='const B64="'+b+'";let GZ=null;const of=self.fetch;self.fetch=function(u){const x=String(u&&u.url?u.url:u);if(/traineddata/.test(x)){if(!GZ){const s=atob(B64),a=new Uint8Array(s.length);for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i);GZ=a}return Promise.resolve(new Response(GZ.slice(),{status:200}))}return of.apply(self,arguments)};importScripts("'+OCRV.worker+'");';
+  return URL.createObjectURL(new Blob([code],{type:'text/javascript'}))}
 function ocrLoad(){if(window.Tesseract)return Promise.resolve();
   return OCRP||(OCRP=new Promise((ok,no)=>{const s=document.createElement('script');s.src=OCRV.js;s.onload=()=>ok();s.onerror=()=>{OCRP=null;no(new Error('the reader could not be loaded (no connection to the CDN?)'))};document.head.appendChild(s)}))}
 async function ocrRead(file,prog){await ocrLoad();
-  if(!OCRW){      // the language data is fetched by the worker: from the file next to this page, when that fails from the CDN, then from the second CDN without the cache
-    const here=new URL('.',location.href).href.replace(/\/$/,''),tries=[{lp:here},{lp:OCRV.lang},{lp:OCRV.lang2,c:'none'}];let last=null;
+  if(!OCRW){      // the language data: from the file next to this page, when that is missing or fails from the CDN, then from the second CDN without the cache
+    let b64=null;try{const r=await fetch(OCRV.local);if(r.ok)b64=(await r.text()).trim()}catch(e){}
+    const tries=[...(b64?[{lp:'https://ocr.invalid',c:'none',b:b64}]:[]),{lp:OCRV.lang},{lp:OCRV.lang2,c:'none'}];let last=null;
     for(const t of tries){let w=null,done=false;
-      try{const o={langPath:t.lp,logger:m=>{if(prog&&m&&typeof m.progress=='number')prog(m.status,m.progress)},errorHandler:e=>{last=e}};if(t.c)o.cacheMethod=t.c;
+      try{const o={langPath:t.lp,logger:m=>{if(prog&&m&&typeof m.progress=='number')prog(m.status,m.progress)},errorHandler:e=>{last=e}};if(t.c)o.cacheMethod=t.c;if(t.b){o.workerPath=ocrWorkerUrl(t.b);o.workerBlobURL=false}
         w=await Promise.race([Tesseract.createWorker('eng',1,o),new Promise((_,no)=>setTimeout(()=>{if(!done)no(new Error('timeout'))},40000))]);done=true;OCRW=w;break}
       catch(e){done=true;last=e;try{if(w)await w.terminate()}catch(x){}}}
     if(!OCRW)throw new Error('the language data could not be loaded (the network of this page may block it)'+(last&&last.message&&last.message!='timeout'?': '+last.message:''))}
   await OCRW.setParameters({tessedit_pageseg_mode:'4'});      // one column of text of different sizes
   const r=await OCRW.recognize(file);return r.data.text}
-// The English language data of the reader is the file eng.traineddata.gz next to this page (tessdata_fast, 2 MB, loaded only when the screenshot import is used); the CDN is the fallback
+// The English language data of the reader is the file eng.traineddata.gz.b64.txt next to this page (tessdata_fast; 2.6 MB, fetched only when the screenshot import is used); the CDN is the fallback
 // the OCR text -> the export text: the part from "Krappy Calculator" on, every key=value token with the key in its exact case (the OCR mixes sM / SM), digits that look like letters put right in the number boxes. Returns {text, n, bad: the tokens that are not sure, drop: the ones left out}
 function ocrClean(raw){
   const keys={},num={};      // canonical keys; num = the keys of number boxes
