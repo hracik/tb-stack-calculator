@@ -205,7 +205,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.6.77';
+const APP_VERSION='21.6.78';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1958,6 +1958,7 @@ function battleHtml(P,list,order,sc){
       const s=L[x.i];
       if(x.t=='o')h+=brRow({we:true,ourIc:brImg(s.name),ourName:esc(s.name),ourSub:num(s.n),enName:'',enCnt:num(x.before),enIc:unIc(x.ty),enDead:x.dead,tg:x.tg,l2:`<b>+${num(x.dmg)}</b> damage \u00b7 ${num(x.killed)} killed`,sq:x.sq>=0.5?`squad bonus +${num(x.sq)}`:''});
       else h+=brRow({we:false,ourIc:brImg(s.name),ourDead:true,ourName:esc(s.name),ourSub:num(s.n),enName:'',enCnt:num(x.u),enIc:unIc(x.ty),l2:`<b>\u2212${num(tot(s.n,s.hp))}</b> damage`})})}
+  const eepic=ATK=='epics'&&!P.cp&&!P.ren&&!P.one&&!P.pm;      // epic modes: the epic is shown by its icon only
   (known?[]:log).forEach(([r,t,i])=>{
     if(r!==rd){rd=r;h+=`<div class="brh">Round ${r+1}</div>`}
     const s=L[i],nmh=esc(s.name);
@@ -1971,10 +1972,10 @@ function battleHtml(P,list,order,sc){
         nd+=(m1>1?1:0)+(m2>1?1:0);ns+=sd?1:0;d=d0*m1;bn=bn0*m1;if(m1>1)tg='<i title="This strike rolled double damage">double damage</i>';
         if(sd)x2={d:d0*cs*m2,bn:cs>=1?bn0*m2:0,tg:'<i title="Double strike: the stack strikes a second time">double strike</i>'+(m2>1?'<i title="This strike rolled double damage">double damage</i>':'')}}
       const sbx=(dd,bb,t)=>({l2:`<b>+${num(dd)}</b> damage`,sq:bb>0?`<span title="The bonus listed on the troop itself against the enemy, and the damage it adds: units x the troop\'s own strength x that bonus. Your own bonuses are not part of it.">squad bonus +${num(bb)}</span>`:'',tg:t});
-      td+=d;h+=brRow({we:true,ourIc:brImg(s.name),ourName:nmh,ourSub:`${s.n.toLocaleString()}`,enName:EN.name,enIc:EN.ic,...sbx(d,bn,tg)});
-      if(x2){td+=x2.d;h+=brRow({we:true,ourIc:brImg(s.name),ourName:nmh,ourSub:`${s.n.toLocaleString()}`,enName:EN.name,enIc:EN.ic,...sbx(x2.d,x2.bn,x2.tg)})}}
+      td+=d;h+=brRow({we:true,ourIc:brImg(s.name),ourName:nmh,ourSub:`${s.n.toLocaleString()}`,enName:eepic?'':EN.name,enIc:EN.ic,...sbx(d,bn,tg)});
+      if(x2){td+=x2.d;h+=brRow({we:true,ourIc:brImg(s.name),ourName:nmh,ourSub:`${s.n.toLocaleString()}`,enName:eepic?'':EN.name,enIc:EN.ic,...sbx(x2.d,x2.bn,x2.tg)})}}
     else{const d=tot(s.n,s.hp);      // the stack is killed: the damage the enemy had to deal
-      h+=brRow({we:false,ourIc:brImg(s.name),ourDead:true,ourName:nmh,ourSub:`${s.n.toLocaleString()}`,enName:EN.name,enIc:EN.ic,l2:`<b>\u2212${num(d)}</b> damage`})}
+      h+=brRow({we:false,ourIc:brImg(s.name),ourDead:true,ourName:nmh,ourSub:`${s.n.toLocaleString()}`,enName:eepic?'':EN.name,enIc:EN.ic,l2:`<b>\u2212${num(d)}</b> damage`})}
   });
   h+='</div>';
   if(P.cp||P.ren)h+='<p class="mu bf">In this mode the game picks the order inside a group of equals, so this report shows one possible order.'+(P.ren?' The battle ends after round 1: the enemy is defeated by then.':'')+'</p>';
