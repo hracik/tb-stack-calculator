@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.2';
+const APP_VERSION='21.8.3';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -73,7 +73,8 @@ const EPICS=[      // the epic monsters, alphabetical: n = name, score = the tot
   {n:'Fenrir',ic:'fenrir',score:750e6,st:null,en:[3,4]},
   {n:'Hellforge',score:150e6,st:null,en:[3,4]},
   {n:'J\u00f6rmungandr/Chimera',ic:'jormchimera',score:750e6,st:null,en:[3,4],raid:true}];      // 19.0.19 the epic monsters
-const enemyNow=()=>{const m=$('mode').value;return m=='kill'?3:m=='kill4'?4:m=='ren'?8:m=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4},      // the number of enemy stacks of the chosen attack mode
+let KAUTO4=false;      // 21.8.3: the ONE Killshot mode picks its rules by itself: the 4-stack rules when the army kills the epic from its 4-stack state, else the 3-stack rules (calcRun)
+const enemyNow=()=>{const m=$('mode').value;return m=='kill'?(KAUTO4?4:3):m=='kill4'?4:m=='ren'?8:m=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4},      // the number of enemy stacks of the chosen attack mode
   epOk=e=>e.en.includes(enemyNow()),epCur=()=>{const e=EPICS.find(x=>x.n==$('epic').value);return e&&epOk(e)?e:null};      // an epic counts only in the modes it can be hit in
 $('epic').innerHTML='<option value="">-</option>'+EPICS.map(e=>`<option value="${e.n}">${e.n}</option>`).join('');
 const DHV=Array.from({length:11},(_,i)=>i/2);                // Double strike: 0 - 5 % in steps of 0.5
@@ -735,7 +736,7 @@ const fmt=x=>x>=1e12?(x/1e12).toFixed(2)+' T':x>=1e9?(x/1e9).toFixed(2)+' B':x>=
 // ---- settings, read once per calculation ----
 function getP(){
   if($('mode').value=='maxl')$('mode').value='max';   // the near-maximum modes were removed (old saved tabs)
-  const p={d:0,kill:$('mode').value=='kill'||$('mode').value=='kill4',kill4:$('mode').value=='kill4',raid:!!(epCur()||{}).raid,ren:$('mode').value=='ren',capA:v('capA'),capM:v('capM'),capU:v('capU'),enemy:enemyNow(),cat:DEFCAT.slice()};
+  const p={d:0,kill:$('mode').value=='kill'||$('mode').value=='kill4',kill4:$('mode').value=='kill4'||($('mode').value=='kill'&&KAUTO4),raid:!!(epCur()||{}).raid,ren:$('mode').value=='ren',capA:v('capA'),capM:v('capM'),capU:v('capU'),enemy:enemyNow(),cat:DEFCAT.slice()};
   ['G','S','M','E','Epic','Players','Giant','Elemental','Dragon','Beast','Melee','Mounted','Ranged','Flying','Scout','EMH'].forEach(k=>{p['h'+k]=$('bh_'+k)?v('bh_'+k):0;p['s'+k]=$('bs_'+k)?v('bs_'+k):0});
   ['Giant','Elemental','Dragon','Beast'].forEach(k=>{p['dh'+k]=$('dh_'+k)?snapDH($('dh_'+k).value):0});
   p.ov=$('mode').value=='ovo';      // 21.5.0 One v. One: Max damage against 12 enemy stacks (3 of each type), the Specialists die last by force
@@ -2296,8 +2297,7 @@ const MODEINFO={
   '8':['Regular · 8-stack','You hit a "full health" epic monster with 8 stacks, with the goal of maximizing damage by optimizing the number of troops used per stack.'],
   '3':['Sniper · 3-stack','You hit a weakened epic monster with the goal of maximizing damage. The mounted units have already been killed or significantly weakened. Stacks are slightly different from the 4-stack mode, to reflect that there are no mounted units and only 3 enemies.'],
   '6':['Sniper · 6-stack','You hit a weakened epic monster with the goal of maximizing damage. The mounted units have already been killed or significantly weakened. Stacks are slightly different from the 8-stack mode, to reflect that there are no mounted units and only 6 enemies.'],
-  'kill':['Sniper · Killshot v. 3','You hit an epic monster with the goal of killing it. The mounted units have already been killed or significantly weakened. The total damage to the enemy is a bit smaller than in the 3-stack or 4-stack modes, but the cost of reviving and training is significantly lower, which makes this mode very cost-effective.'],
-  'kill4':['Sniper · Killshot v. 4','You hit an epic monster with the goal of killing it while it still has all 4 stacks. The total damage to the enemy is a bit smaller than in the 3-stack or 4-stack modes, but the cost of reviving and training is significantly lower, which makes this mode very cost-effective.'],
+  'kill':['Sniper \u00b7 Killshot','You hit an epic monster with the goal of killing it. The rules are chosen by themselves from your army: if it can kill the epic while it still has all 4 stacks, the 4-stack rules are used; if it can only finish a 3-stack epic (the mounted stack already dead), the 3-stack rules. The total damage to the enemy is a bit smaller than in the 3-stack or 4-stack modes, but the cost of reviving and training is significantly lower, which makes this mode very cost-effective.'],
   'cp':['Pv1 · CP kill','You hit another player who has only one flying troop type in the city, and your army is strong enough to kill it quickly. The total damage to the enemy is smaller than in the CP death mode, but the cost of reviving and training is significantly lower, which makes this mode very cost-effective.'],
   'ovo':['Pv1 · One v. One','You fight another player with 12 equally distributed enemy stacks, 3 of each type. The stacks are built to win the fight, not to deal the most damage: the top tier in about equal stacks, the monsters biggest, the second tier as small extras, fewer mounted. They are tuned to your bonuses against full enemy cities, so they work against different enemies.'],
   'pm':['PvMany · Max damage','You hit another player who has every kind of troop in the city, so it is a total battle. Win or lose, stacks are created with the goal of maximizing damage, using the Specialists\' double damage.'],
@@ -2312,6 +2312,15 @@ function epAuto(){      // in a mode with only one epic (Arachne in 6-8 stacks) 
   if(ok.length==1){if(cur!=ok[0].n){if(ce)EPPREV=cur;$('epic').value=ok[0].n}}
   else if(ce&&!epOk(ce)){const pv=EPICS.find(x=>x.n==EPPREV);$('epic').value=pv&&epOk(pv)?pv.n:'';EPPREV=''}}
 function calcRun(){
+  if($('mode').value=='kill4'){$('mode').value='kill';SO=[]}      // one Killshot mode: an old tab or import in v. 4 is the same mode now
+  KAUTO4=false;
+  if($('mode').value=='kill'&&ATK=='epics'){
+    KAUTO4=true;calcRun0();      // first with the 4-stack rules: the army must kill the epic from a state with all its 4 stacks
+    let e=epCur();const ok=BRD&&e&&e.st&&e.score&&BRD.P.kill4&&killState(BRD.P,ordL(BRD.list,BRD.order),e);
+    if(!ok){KAUTO4=false;calcRun0()}      // else the 3-stack rules
+    return}
+  calcRun0()}
+function calcRun0(){
   epAuto();
   const pvOK=m=>m=='cp'||m=='cpd'?PV1:m=='pvpmax'?PVM:m=='ovo'?OVO:m=='ren'?RENEGADES:false,okP=PVMODES.filter(pvOK);      // okP = the PvP modes that are switched on
   if($('mode').value=='kill4'&&!KS4){$('mode').value='max';SO=[]}      // Killshot v. 4 is off: a tab left in it falls back to the 4-stack mode
@@ -2343,8 +2352,8 @@ function calcRun(){
   {const sx=[...st,...U.all];sx.so=[...st.so,...U.ord];drawSO(sx,P)}                  // after the allocation: the list shows the unit counts
   document.querySelectorAll('.pb').forEach(b=>b.classList.toggle('on',TY.every(t=>v('bh_'+t)==+b.dataset.p&&v('bs_'+t)==+b.dataset.p)));
   document.querySelectorAll('.eb').forEach(b=>b.classList.toggle('on',!P.kill&&!P.ren&&!P.cp&&+b.dataset.e==P.enemy));
-  document.querySelectorAll('.cm').forEach(b=>b.classList.toggle('on',(P.kill&&!P.kill4&&b.dataset.m=='kill')||(P.kill4&&b.dataset.m=='kill4')||(P.ren&&b.dataset.m=='ren')||(P.one&&!P.cpd&&b.dataset.m=='cp')||(P.one&&P.cpd&&b.dataset.m=='cpd')||(P.pm&&!P.ov&&b.dataset.m=='pvpmax')||(P.ov&&b.dataset.m=='ovo')));
-  {const m=MODEINFO[P.kill?(P.kill4?'kill4':'kill'):P.ov?'ovo':P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)],el=$('mdi');if(el){el.hidden=!m&&!pvOff;if(pvOff)el.innerHTML='<b>Attack players</b> - The PvP modes are switched off for now.';else if(m){const ik=({'4':'reg','8':'reg','3':'sn','6':'sn',kill:'sn',kill4:'sn',cp:'pv1',cpd:'pv1'})[P.kill?(P.kill4?'kill4':'kill'):P.ov?'ovo':P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)]||'pvm',ic=document.querySelector('#mics [data-i="'+ik+'"] svg');el.innerHTML=(ic?ic.outerHTML:'')+'<span><b>'+m[0].replace(/^(Regular|Sniper|Pv1|PvMany) \u00b7 /,'')+'</b>'+(P.ov?' <span class="tg">work in progress</span>':'')+' - '+m[1]+'</span>'}}}      // the explanation under the mode buttons (the tier tips under Tiers to use are fixed text, both are always shown)
+  document.querySelectorAll('.cm').forEach(b=>b.classList.toggle('on',(P.kill&&b.dataset.m=='kill')||(P.ren&&b.dataset.m=='ren')||(P.one&&!P.cpd&&b.dataset.m=='cp')||(P.one&&P.cpd&&b.dataset.m=='cpd')||(P.pm&&!P.ov&&b.dataset.m=='pvpmax')||(P.ov&&b.dataset.m=='ovo')));
+  {const m=MODEINFO[P.kill?'kill':P.ov?'ovo':P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)],el=$('mdi');if(el){el.hidden=!m&&!pvOff;if(pvOff)el.innerHTML='<b>Attack players</b> - The PvP modes are switched off for now.';else if(m){const ik=({'4':'reg','8':'reg','3':'sn','6':'sn',kill:'sn',kill4:'sn',cp:'pv1',cpd:'pv1'})[P.kill?(P.kill4?'kill4':'kill'):P.ov?'ovo':P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)]||'pvm',ic=document.querySelector('#mics [data-i="'+ik+'"] svg');el.innerHTML=(ic?ic.outerHTML:'')+'<span><b>'+m[0].replace(/^(Regular|Sniper|Pv1|PvMany) \u00b7 /,'')+'</b>'+(P.ov?' <span class="tg">work in progress</span>':'')+' - '+m[1]+'</span>'}}}      // the explanation under the mode buttons (the tier tips under Tiers to use are fixed text, both are always shown)
   const sc=score(P,[...A,...Mo,...U.list],[...st.so,...U.ord]);
   BRD={P,list:[...A,...Mo,...U.list],order:[...st.so,...U.ord],sc,fx};drawBR();      // the battle report (drawn only while it is open)
   const food=[...A,...Mo,...U.list].reduce((q,s)=>q+(s.n||0)*foodOf(s.name),0);      // total food consumption of all the units, 25 % less than the plain values (mercenaries use none)
