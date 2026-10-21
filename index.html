@@ -160,7 +160,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 .bq .bnm{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left}
 .bq .bnn{font-size:15px;font-weight:500;line-height:1.25}
 .bq .btg{display:flex;flex-wrap:wrap;gap:3px;font-size:12px}
-.bq .btg i{margin-left:0}
+.bq .btg i{margin-left:0}.bq .bmt{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px}
 .bq .bun{font-size:13px;opacity:.85}
 .bq .bnm .bl2{font-size:13.5px}
 .bq .bnm .bl3{font-size:11.5px}
@@ -237,7 +237,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.7.1';
+const APP_VERSION='21.7.3';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1947,7 +1947,7 @@ let BRU=0;
 function brRow(o){if(o.enIc&&o.enIc.indexOf('id="mo1"')>=0){const u=++BRU;o={...o,enIc:o.enIc.replace(/(id="mo[1-9]|url\(#mo[1-9])/g,'$1'+u)}}      // every drawn monster gets its own gradient ids (the same ids twice in a page can fail to paint)
   const eu=o.enCnt||o.enSub;
   const en=!(o.enIc||o.enName||eu)?'':`<span class="beg"><span class="bar" aria-hidden="true">${o.we?'\u2192':'\u2190'}</span>${(o.enName||eu)?`<span class="bnm ben">${o.enName?`<b class="bnn">${o.enName}</b>`:''}${eu?`<span class="bun">${eu} units</span>`:''}</span>`:''}<span class="bic${o.enDead?' dd':''}">${o.enIc}${o.enDead?BRX:''}</span></span>`;
-  return`<div class="bl bq ${o.we?'bo':'ba'}"><div class="bl1"><span class="bog"><span class="bic${o.ourDead?' dd':''}">${o.ourIc}${o.ourDead?BRX:''}</span><span class="bnm"><b class="bnn">${o.ourName||''}</b>${o.tg?`<span class="btg">${o.tg}</span>`:''}${o.ourSub?`<span class="bun">${o.ourSub} units</span>`:''}<span class="bl2">${o.l2}</span>${o.sq?`<span class="bl3 sqb devo">${o.sq}</span>`:''}${o.l3?`<span class="bl3 devo">${o.l3}</span>`:''}</span></span>${en}</div></div>`}
+  return`<div class="bl bq ${o.we?'bo':'ba'}"><div class="bl1"><span class="bog"><span class="bic${o.ourDead?' dd':''}">${o.ourIc}${o.ourDead?BRX:''}</span><span class="bnm"><b class="bnn">${o.ourName||''}</b>${o.tg||o.ourSub?`<span class="bmt">${o.tg?`<span class="btg">${o.tg}</span>`:''}${o.ourSub?`<span class="bun">${o.ourSub} units</span>`:''}</span>`:''}<span class="bl2">${o.l2}</span>${o.sq?`<span class="bl3 sqb devo">${o.sq}</span>`:''}${o.l3?`<span class="bl3 devo">${o.l3}</span>`:''}</span></span>${en}</div></div>`}
 let BRD=null,BRFXH='';
 // The whole hit on an epic whose stacks are known (4 stacks: [units, health, type]), event by event; the same rules as epicKill: the epic starts at full health, a strike goes to the living stack the troop has the biggest bonus against (no bonus: the healthiest stack),
 // the 2nd strike of a Double strike (no squad bonus) goes to the healthiest living stack, the damage past the health of a stack is lost. The enemy kills as many of our stacks per round as it has living stacks. dice: roll the Double damage and the Double strike, else the averages.
@@ -2050,7 +2050,7 @@ function runBest(n){                                     // Max vs. 3 stack / fu
 }
 const PV1=true;                                          // Pv1 modes (CP kill, CP death): on. Set false to switch them off: their buttons are greyed out and a tab that was left in one falls back to the 4-stack mode.
 const PVM=false;                                         // PvMany modes (Max damage): switched off for now, same behaviour. Set true to switch Max damage on.
-const OVO=true;                                          // One v. One on. Set false to switch it off.
+const OVO=false;                                         // One v. One on. Set false to switch it off.
 const RENEGADES=false;                                   // Renegades off for now (14.30). Set true to switch back on.
 function runRen(){                                       // Renegades: fixed rule, nothing is refined
   if(!RENEGADES)return;
