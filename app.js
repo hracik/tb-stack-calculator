@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.48';
+const APP_VERSION='21.8.49';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1837,6 +1837,7 @@ function killState(P,L,EP,dice,fast){
     const av=KSAV.v;if(!av)return null;
     const sd=epicSim(P,L,av.EPS,true,THEO.rngMk(dice)),lam=sd.pex>0?sd.pot/sd.pex:1;      // the luck of the fight that the report shows (the average killshot state): what its strikes were really worth against what they are worth on average
     const f=ksF(P,L,EP,lam);return{...av,f,left:f*av.tot,lam,avg:av}}      // dice: the luck of the rolled fight (the same dice stream for every state that is tried); without it the average fight
+  if(P.kill4&&!P.k3){const a=killState({...P,kill4:false,k3:1},L,EP,0,fast),b=killState({...P,k3:1},L,EP,0,fast);return a&&(!b||a.f>b.f+1e-12)?a:b}      // allowing all the stacks alive can never score less than allowing one stack fewer: the better of the two
   const key=EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA,P.enemy>4]);
   if(KSC.k!=key)KSC={k:key,cps:epicPath(P,L,EP)};
   // every state on the way down with at most K living stacks (4: all of them, 3: the 3-stack states): the army kills the biggest one it can, however weak it is (the last state, nothing left, is always killed)
