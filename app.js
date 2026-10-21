@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.46';
+const APP_VERSION='21.8.47';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1822,10 +1822,11 @@ function epicPath(P,L,EP){
   return cps}
 let KSC={k:'',cps:null};
 let KSAV={k:'',v:null},KSG={k:'',g:null};
+function ksAvg(P,L,EP){const av=killState(P,L,EP);return av?{...av,f:ksF(P,L,EP,1)}:av}
 // how much of the epic the army kills with a given luck (1 = average): the biggest state it kills with that damage; the killable states are not in a tidy order (a bigger state can be killed while a smaller one is not), so the result is the best it does with that luck or less: more luck is never worse
 function ksF(P,L,EP,lam){
   const key='G'+EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA,P.enemy>4,P.kill4,P.dmgScale]);
-  if(KSG.k!=key){const gs=[],fs=[];let best=0;for(let l=0.8;l<=1.2801;l+=0.02){const r=killState({...P,dmgScale:(P.dmgScale||1)*l},L,EP,0,true);best=Math.max(best,r?r.f:0);gs.push(l);fs.push(best)}KSG={k:key,g:gs,f:fs}}
+  if(KSG.k!=key){const gs=[],fs=[];let best=0;for(let l=0.8;l<=1.2801;l+=0.02){const r=killState({...P,dmgScale:(P.dmgScale||1)*l},L,EP,0,true);best=Math.max(best,r?r.f:0);gs.push(l);fs.push(best)}const sm=fs.map((_,i)=>{let t=0,c=0;for(let j=Math.max(0,i-2);j<=Math.min(fs.length-1,i+2);j++){t+=fs[j];c++}return t/c});KSG={k:key,g:gs,f:sm}}      // smoothed over a few neighbouring luck levels: the fight is chaotic, so single levels jump in steps; the average of the neighbours is a smooth curve
   const g=KSG.g,f=KSG.f;if(lam<=g[0])return f[0];if(lam>=g[g.length-1])return f[f.length-1];
   let i=0;while(g[i+1]<lam)i++;return f[i]+(f[i+1]-f[i])*(lam-g[i])/(g[i+1]-g[i])}
 function killState(P,L,EP,dice,fast){
@@ -1852,7 +1853,7 @@ function killState(P,L,EP,dice,fast){
   const tot=cps[0].left;return{left:c.left,hp:c.hp,K,alive:al(c),tot,f:c.left/tot,EPS:mk(c)}}
 // the range of the killshot: the same army, many rolled fights; each one finds the biggest state it kills (the 99 % range of those, and the average fight)
 function ksRange(P,L,EP){      // the 99 % range: the luck of 400 rolled fights on the average killshot state (what the strikes were worth against what they are worth on average), its 0.5 % and 99.5 % ends, and how much of the epic the army kills with that much luck
-  const av=killState(P,L,EP);if(!av)return{lo:0,hi:0};
+  const av=ksAvg(P,L,EP);if(!av)return{lo:0,hi:0};
   const lk=[];for(let n=1;n<=400;n++){const r=epicSim(P,L,av.EPS,true,THEO.rngMk(n*7919));lk.push(r.pex>0?r.pot/r.pex:1)}
   lk.sort((a,b)=>a-b);const lo=ksF(P,L,EP,lk[Math.floor(0.005*lk.length)]),hi=ksF(P,L,EP,lk[Math.ceil(0.995*lk.length)-1]);
   return{lo:Math.max(0,Math.min(av.f,lo)),hi:Math.min(1,Math.max(av.f,hi))}}
@@ -1860,7 +1861,7 @@ function ksRange(P,L,EP){      // the 99 % range: the luck of 400 rolled fights 
 function ksTile(P,list,order){
   const EP=epCur();if(!EP||!EP.st||!EP.score)return'';
   const L=ordL(list,order),sh=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return[(+v.toPrecision(3)).toString(),u[i]]},
-    ex=THEOEXP,av=killState(P,L,EP),rl=ex?av:killState(P,L,EP,THEOSEED),eoMany=EPICS.filter(epOk).length>1,eoCar=eoMany?'\u00a0\u25be':'';
+    ex=THEOEXP,av=ksAvg(P,L,EP),rl=ex?av:killState(P,L,EP,THEOSEED),eoMany=EPICS.filter(epOk).length>1,eoCar=eoMany?'\u00a0\u25be':'';
   const fm=f=>sh(f*EP.score).join(' ');let v,sub;
   if(!av)v='\u2013',sub='the army can not kill it';
   else{const r=ksRange(P,L,EP);v=Math.abs(r.hi-r.lo)<1e-9?fm(av.f):(()=>{const[a,ua]=sh(r.lo*EP.score),[b,ub]=sh(r.hi*EP.score);return ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub})();
@@ -1870,7 +1871,7 @@ function ksTile(P,list,order){
 // the same army as a killshot: in the 3- and 4-stack modes the score tile also tells what a killshot hit with these stacks scores (average, 99 % range, the state it kills from)
 function ksInfo(P,list,order,EP){
   if(P.kill||P.ren||P.cp||P.one||P.pm||P.pvp||!(P.enemy==3||P.enemy==4||P.enemy==6||P.enemy==8)||!EP||!EP.st||!EP.score)return null;
-  const L=ordL(list,order),Pk={...P,kill:true,kill4:P.enemy==4||P.enemy==8},av=killState(Pk,L,EP);
+  const L=ordL(list,order),Pk={...P,kill:true,kill4:P.enemy==4||P.enemy==8},av=ksAvg(Pk,L,EP);
   if(!av)return{none:true};
   const r=ksRange(Pk,L,EP);return{av:av.f*EP.score,lo:r.lo*EP.score,hi:r.hi*EP.score,left:av.f,K:av.K}}
 const ordL=(list,order)=>{const ix={};order.forEach((n,i)=>ix[n]=i);return list.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name])};
@@ -1889,7 +1890,7 @@ function battleHtml(P,list,order,sc){
   const EPK=epCur(),known=ATK=='epics'&&!P.cp&&!P.ren&&!P.one&&!P.pm&&(P.enemy==4||P.enemy==3||P.enemy==6||P.enemy==8)&&EPK&&EPK.st&&(EPK.st.length==4||EPK.st.length==8)&&EPK.score;      // an epic with known stacks: the report follows its stacks (type, units, units killed)
   if(known){
     const unIc=ty=>EPIC_UN[EPK.ic]&&EPIC_UN[EPK.ic][ty]?`<img class="ic2" src="${EPIC_UN[EPK.ic][ty]}" alt="">`:EN.ic;
-    KSAVGF=P.kill?(killState(P,L,EPK)||{f:0}).f:null;      // the score of the average fight: what a rolled Killshot is compared with
+    KSAVGF=P.kill?(ksAvg(P,L,EPK)||{f:0}).f:null;      // the score of the average fight: what a rolled Killshot is compared with
     const ks=P.kill?killState(P,L,EPK,ex?0:THEOSEED):null,EPS=ks?(ks.avg?ks.avg.EPS:ks.EPS):(P.enemy==3||P.enemy==6)?{...EPK,st:EPK.st.filter(x=>x[2]!=2)}:EPK;      // the 3-stack mode has no mounted enemy stack; the Killshot starts at the biggest state the army kills (killState)
     KSROLLF=ks?ks.f:null;      // the score of the rolled fight (the Random effects points)
     const sim=epicSim(P,L,EPS,!ex,rng),avg=ex?sim:epicSim(P,L,EPS,false,null);td=sim.td;ad=avg.td;nd=sim.nd;ns=sim.ns;ed=sim.ed;es=sim.es;
