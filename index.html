@@ -237,7 +237,7 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 <footer class="ft"><span id="appver" class="ver"></span></footer>
 <script>
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.7.3';
+const APP_VERSION='21.7.4';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -572,7 +572,7 @@ function exportText(){
 function drawXP(){
   const p=$('xp');p.hidden=!XPM;if(!XPM){p.innerHTML='';return}
   const ex=XPM=='exp';
-  p.innerHTML=`<div class="mu">${ex?'All inputs of this tab as a short text. Copy it and keep it anywhere (a note, a chat); Import reads it back.':'Paste the exported text here. It opens as a new tab; your other tabs are not changed.'}</div><textarea id="xt" spellcheck="false" ${ex?'readonly':'placeholder="Paste the exported text here"'}></textarea><div class="xr">${ex?'<button class="tl" data-act="xcopy">Copy</button>':'<button class="tl" data-act="xread">Read the inputs</button>'+(SY.role=='admin'?'<button class="tl" data-act="xshot" title="Admin: a screenshot with the exported text on it (a chat, a note) is read and opened as a new tab">Import via screenshot</button><input type="file" id="xfile" accept="image/*" hidden>':'')}<button class="tl" data-act="xclose">Close</button><span class="mu" id="xmsg"></span></div>`;
+  p.innerHTML=`<div class="mu">${ex?'All inputs of this tab as a short text. Copy it and keep it anywhere (a note, a chat); Import reads it back.':'Paste the exported text here. It opens as a new tab; your other tabs are not changed.'}</div><textarea id="xt" spellcheck="false" ${ex?'readonly':'placeholder="Paste the exported text here"'}></textarea><div class="xr">${ex?'<button class="tl" data-act="xcopy">Copy</button>':'<button class="tl" data-act="xread">Import</button><button class="tl" data-act="xshot" title="A screenshot with the exported text on it (a chat, a note) is read and opened as a new tab">Import via screenshot</button><input type="file" id="xfile" accept="image/*" hidden>'}<button class="tl" data-act="xclose">Close</button><span class="mu" id="xmsg"></span></div>`;
   const t=$('xt');if(ex)t.value=exportText();t.focus();if(ex){t.select();t.scrollTop=0}
 }
 async function xCopy(){
@@ -640,12 +640,18 @@ function xRead(){
 }
 
 // ---- Import via screenshot (admin): a picture with the exported text on it is read in the browser (OCR: tesseract.js, loaded from a CDN only when this button is used), the text is cleaned up (the OCR mixes up the case of letters and adds stray marks) and opened like a pasted export ----
-const OCRV={js:'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js',lang:'https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_fast'};
+const OCRV={js:'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js',lang:'https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_fast',lang2:'https://unpkg.com/@tesseract.js-data/eng@1.0.0/4.0.0_fast'};
 let OCRW=null,OCRP=null;
 function ocrLoad(){if(window.Tesseract)return Promise.resolve();
   return OCRP||(OCRP=new Promise((ok,no)=>{const s=document.createElement('script');s.src=OCRV.js;s.onload=()=>ok();s.onerror=()=>{OCRP=null;no(new Error('the reader could not be loaded (no connection to the CDN?)'))};document.head.appendChild(s)}))}
 async function ocrRead(file,prog){await ocrLoad();
-  if(!OCRW)OCRW=await Tesseract.createWorker('eng',1,{langPath:OCRV.lang,logger:m=>{if(prog&&m&&typeof m.progress=='number')prog(m.status,m.progress)}});
+  if(!OCRW){      // the language data (a few MB) is fetched by the worker: when it stalls (blocked network, a stuck browser cache) the next try goes without the cache, then from the second CDN
+    const tries=[{lp:OCRV.lang},{lp:OCRV.lang,c:'none'},{lp:OCRV.lang2,c:'none'}];let last=null;
+    for(const t of tries){let w=null,done=false;
+      try{const o={langPath:t.lp,logger:m=>{if(prog&&m&&typeof m.progress=='number')prog(m.status,m.progress)},errorHandler:e=>{last=e}};if(t.c)o.cacheMethod=t.c;
+        w=await Promise.race([Tesseract.createWorker('eng',1,o),new Promise((_,no)=>setTimeout(()=>{if(!done)no(new Error('timeout'))},30000))]);done=true;OCRW=w;break}
+      catch(e){done=true;last=e;try{if(w)await w.terminate()}catch(x){}}}
+    if(!OCRW)throw new Error('the language data could not be loaded (the network of this page may block it)'+(last&&last.message&&last.message!='timeout'?': '+last.message:''))}
   await OCRW.setParameters({tessedit_pageseg_mode:'4'});      // one column of text of different sizes
   const r=await OCRW.recognize(file);return r.data.text}
 // the OCR text -> the export text: the part from "Krappy Calculator" on, every key=value token with the key in its exact case (the OCR mixes sM / SM), digits that look like letters put right in the number boxes. Returns {text, n, bad: the tokens that are not sure, drop: the ones left out}
@@ -668,7 +674,6 @@ function ocrClean(raw){
   return{text:'Krappy Calculator v'+(ver||APP_VERSION.split('.').slice(0,2).join('.'))+'\n'+out.join(' ')+'\n',n:out.length,bad,drop}}
 async function xShot(file){
   const msg=t=>{const e=$('xmsg');if(e)e.textContent=t},box=$('xt');
-  if(SY.role!='admin')return;
   try{msg('Reading the picture ... (the first time the reader is loaded: a few MB)');
     const raw=await ocrRead(file,(s,p)=>msg('Reading the picture ... '+(s||'')+' '+Math.round(p*100)+'%')),c=ocrClean(raw);
     if(!c.n){msg('No exported text found in the picture. Is the whole text visible (the line Krappy Calculator and the lines under it)?');return}
