@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.72';
+const APP_VERSION='21.8.73';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1846,15 +1846,15 @@ function killState0(P,L,EP,dice,fast){
     const key='A'+EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA,P.enemy>4,P.kill4,P.dmgScale]);
     if(KSAV.k!=key)KSAV={k:key,v:killState(P,L,EP)};
     const av=KSAV.v;if(!av)return null;
-    const cand=ksCps(P,L,EP).filter(c=>c.hp.filter(x=>x>1e-6).length<=av.K),tot=av.tot,aL=ksF(P,L,EP,1)*tot;
+    const cand=ksCps(P,L,EP).filter(c=>c.hp.filter(x=>x>1e-6).length<=av.K),tot=av.tot;
     // the enemy of the rolled fight: the state on the way down with the health that the points belong to, so that the report shows the enemy the points are for
     const stateAt=left=>{for(let i=0;i<cand.length-1;i++){const A=cand[i],B=cand[i+1];if(A.left>=left&&B.left<=left){const t=A.left==B.left?0:(A.left-left)/(A.left-B.left);return A.hp.map((x,q)=>x+t*(B.hp[q]-x))}}return cand[0].hp},
       mkS=hp=>({...EP,st:EP.st.map((x,q)=>[hp[q]/x[1],x[1],x[2],x[3],q]).filter((x,q)=>hp[q]>1e-6)});
-    // the luck of the dice (what the strikes of the fight at the average killshot state were really worth against what they are worth on average) gives the points on the curve. The same dice must kill the enemy of those points (the biggest state a little below the curve's value that they kill), and more luck than the average never scores less than the average, less luck never more. The rare dice that can not do that are skipped: the next ones are rolled
+    // the luck of the dice (what the strikes of the fight at the average killshot state were really worth against what they are worth on average) gives the points on the curve. The same dice must kill the enemy of those points (the biggest state a little below the curve's value that they kill); more luck can still score below the average (it fell on a stack where it was not needed). The rare dice that can not kill it are skipped: the next ones are rolled
     let last=null;
     for(let tr=0;tr<12;tr++){const sdv=dice+tr*104729,sd=epicSim(P,L,av.EPS,true,THEO.rngMk(sdv)),lam=sd.pex>0?sd.pot/sd.pex:1,f=ksF(P,L,EP,lam),
         kills=left=>{const E2=mkS(stateAt(left));return{E2,ok:epicSim(P,L,E2,true,THEO.rngMk(sdv)).td>=left*(1-1e-6)}},
-        tg=Math.min(f*tot,cand[0].left),loL=lam>=1?Math.max(tg*0.9,Math.min(aL,tg)):tg*0.9;let hiL=tg,r=kills(hiL);
+        tg=Math.min(f*tot,cand[0].left),loL=tg*0.9;let hiL=tg,r=kills(hiL);
       if(!r.ok){const r0=kills(loL);if(r0.ok){let A=loL,B=hiL;r=r0;for(let k=0;k<10;k++){const m=(A+B)/2,t=kills(m);if(t.ok){A=m;r=t}else B=m}hiL=A}else{r=r0;hiL=loL}}
       last={...av,f:hiL/tot,left:hiL,lam,avg:av,EPSR:r.E2,seed:sdv};if(r.ok)return last}
     return last}      // dice: the luck of the rolled fight (the same dice stream for every state that is tried); without it the average fight
