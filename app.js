@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.49';
+const APP_VERSION='21.8.50';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -76,7 +76,7 @@ const EPICS=[      // the epic monsters, alphabetical: n = name, score = the tot
 let K4OK=false,K4LO=3;      // 21.8.19: the army kills the chosen epic from a state that still has all 4 stacks: a 3-stack hit is of no use then (the 3-stack mode is switched off)
 let KAUTO4=false;      // 21.8.3: the ONE Killshot mode picks its rules by itself: the 4-stack rules when the army kills the epic from its 4-stack state, else the 3-stack rules (calcRun)
 const enemyNow=()=>{const m=$('mode').value;return m=='kill'?(((EPICS.find(x=>x.n==$('epic').value)||{}).st||[]).length>4?(KAUTO4?8:6):(KAUTO4?4:3)):m=='kill4'?4:m=='ren'?8:m=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4},      // the number of enemy stacks of the chosen attack mode
-  epOk=e=>$('mode').value=='kill'?(e.ks||e.en.includes(3)||e.en.includes(4)):e.en.includes(enemyNow()),epCur=()=>{const e=EPICS.find(x=>x.n==$('epic').value);return e&&epOk(e)?e:null};      // an epic counts only in the modes it can be hit in
+  epOk=e=>$('mode').value=='kill'?(e.ks||e.en.includes(3)||e.en.includes(4)):e.en.includes(enemyNow()),epCur=()=>EPICS.find(x=>x.n==$('epic').value)||null;      // an epic counts only in the modes it can be hit in
 $('epic').innerHTML='<option value="">-</option>'+EPICS.map(e=>`<option value="${e.n}">${e.n}</option>`).join('');
 const DHV=Array.from({length:11},(_,i)=>i/2);                // Double strike: 0 - 5 % in steps of 0.5
 const snapDH=x=>{x=parseFloat(String(x).replace(',','.'));if(!isFinite(x))x=0;return Math.min(5,Math.max(0,Math.round(x*2)/2))};
@@ -1863,7 +1863,7 @@ function ksRange(P,L,EP){      // the 99 % range: the average fight tells how mu
 function ksTile(P,list,order){
   const EP=epCur();if(!EP||!EP.st||!EP.score)return'';
   const L=ordL(list,order),sh=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return[(+v.toPrecision(3)).toString(),u[i]]},
-    ex=THEOEXP,av=ksAvg(P,L,EP),rl=ex?av:killState(P,L,EP,THEOSEED),eoMany=EPICS.filter(epOk).length>1,eoCar=eoMany?'\u00a0\u25be':'';
+    ex=THEOEXP,av=ksAvg(P,L,EP),rl=ex?av:killState(P,L,EP,THEOSEED),eoMany=false,eoCar='';
   const fm=f=>sh(f*EP.score).join(' ');let v,sub;
   if(!av)v='\u2013',sub='the army can not kill it';
   else{const r=ksRange(P,L,EP);v=Math.abs(r.hi-r.lo)<1e-9?fm(av.f):(()=>{const[a,ua]=sh(r.lo*EP.score),[b,ub]=sh(r.hi*EP.score);return ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub})();
@@ -2388,10 +2388,10 @@ const PVMODES=['cp','cpd','ovo','pvpmax','ren'];      // the modes of the Attack
 let ATK='epics',LASTE={mode:'max',enemy:'4'},LASTP='cp';      // ATK = the view (stored in the tab, like the inputs; a new tab starts in Attack epics). LASTE / LASTP = the last mode of each view, so switching back returns to it.
 function calc(){const t0=performance.now();clearTimeout(CALCT);syncDebug();try{calcRun()}finally{CALCMS=performance.now()-t0}}      // every calculation measures itself: the wait after typing follows it
 let EPPREV='';
-function epAuto(){      // in a mode with only one epic (Arachne in 6-8 stacks) that epic is picked by itself; the earlier choice comes back when the mode does
-  if(ATK!='epics')return;const ok=EPICS.filter(epOk),cur=$('epic').value,ce=EPICS.find(x=>x.n==cur);
-  if(ok.length==1){if(cur!=ok[0].n){if(ce)EPPREV=cur;$('epic').value=ok[0].n}}
-  else if(ce&&!epOk(ce)){const pv=EPICS.find(x=>x.n==EPPREV);$('epic').value=pv&&epOk(pv)?pv.n:'';EPPREV=''}}
+function epAuto(){      // the epic is chosen first (Choose epic card): no epic yet = the first one that fits the mode; a mode the epic can not be hit in = the nearest mode it can (3 <-> 6, 4 <-> 8)
+  if(ATK!='epics')return;let ce=EPICS.find(x=>x.n==$('epic').value);
+  if(!ce){ce=EPICS.find(epOk)||EPICS[0];$('epic').value=ce.n}
+  if(!epOk(ce)){const w=+$('enemy').value||4,t=ce.en.includes(w)?w:ce.en.includes(({3:6,4:8,6:3,8:4})[w])?({3:6,4:8,6:3,8:4})[w]:ce.en[ce.en.length-1];$('mode').value='max';$('enemy').value=String(t);SO=[]}}
 function calcRun(){
   if($('mode').value=='kill4'){$('mode').value='kill';SO=[]}      // one Killshot mode: an old tab or import in v. 4 is the same mode now
   KAUTO4=false;
@@ -2440,6 +2440,10 @@ function calcRun0(){
   BRD={P,list:[...A,...Mo,...U.list],order:[...st.so,...U.ord],sc,fx};
   K4OK=false;K4LO=3;{const e=ATK=='epics'&&!P.ren&&!P.cp&&!P.one&&!P.pm?EPICS.find(x=>x.n==$('epic').value):null;
     if(e&&e.st&&e.score&&e.en.length==2){K4LO=e.en[0];const k=killState({...P,kill:true,kill4:true},ordL(BRD.list,BRD.order),e);K4OK=!!(k&&k.alive==e.st.length)}}
+  {const ce=ATK=='epics'?EPICS.find(x=>x.n==$('epic').value):null,ec=$('ecard');if(ec)ec.hidden=ATK!='epics';
+    if(ec&&!ec.hidden){const cur=$('epic').value,h='<!--'+cur+'-->'+EPICS.map(e=>'<button type="button" data-act="epick" data-e="'+esc(e.n)+'"'+(e.n==cur?' class="on"':'')+'>'+(epImg(e,'epi')||'<span class="epi epe"></span>')+'<span class="epn">'+esc(e.n)+'</span><small>'+(e.score?sh0(e.score)+' score':'score not set yet')+'</small></button>').join(''),el=$('ecl');if(el&&el.dataset.k!==cur){el.dataset.k=cur;el.innerHTML=h;}}
+    document.querySelectorAll('.eb').forEach(b=>{b.hidden=!!ce&&!ce.en.includes(+b.dataset.e)});
+    document.querySelectorAll('.cm[data-m=kill]').forEach(b=>{b.hidden=!!ce&&!(ce.ks||ce.en.includes(3)||ce.en.includes(4))})}
   document.querySelectorAll('.eb').forEach(b=>{const lo=+b.dataset.e==K4LO;b.disabled=lo&&K4OK;b.title=lo&&K4OK?'Your army kills this epic while it still has all its stacks, so a hit on a '+K4LO+'-stack epic is not needed':''});
   drawBR();      // the battle report (drawn only while it is open)
   const food=[...A,...Mo,...U.list].reduce((q,s)=>q+(s.n||0)*foodOf(s.name),0);      // total food consumption of all the units, 25 % less than the plain values (mercenaries use none)
@@ -2485,7 +2489,7 @@ function calcRun0(){
   const tile=(c,l,v,sub,tip)=>`<div class="stt ${c}"${tip?` title="${esc(tip)}"`:''}><div class="stl">${l}</div><div class="stv">${v}</div>${sub?`<div class="sts">${sub}</div>`:''}</div>`;
   const EP=ATK=='epics'&&!P.kill?epCur():null;      // 20.2.1: no epic scoring in the Killshot modes
   const sh=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return[(+v.toPrecision(3)).toString(),u[i]]};      // 118000000 -> ['118','M']
-  const eoMany=EPICS.filter(epOk).length>1,eoAct=eoMany?'<div data-act="eopen" class="stt':'<div class="stt',eoCar=eoMany?'\u00a0\u25be':'';      // a mode with a single epic (Arachne in 6-8 stacks): nothing to choose, so the tile is no button
+  const eoMany=false,eoAct=eoMany?'<div data-act="eopen" class="stt':'<div class="stt',eoCar=eoMany?'\u00a0\u25be':'';      // a mode with a single epic (Arachne in 6-8 stacks): nothing to choose, so the tile is no button
   let scoreTile='';
   const KEP=ATK=='epics'&&P.kill?epCur():null;
   if(KEP&&KEP.st&&KEP.score)scoreTile=ksTile(P,BRD.list,BRD.order);
