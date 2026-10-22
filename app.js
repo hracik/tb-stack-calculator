@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.11.8';
+const APP_VERSION='21.11.9';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -117,7 +117,7 @@ document.addEventListener('click',e=>{
   if(vb){if(!vb.disabled&&vb.dataset.v!=VIEW){VIEW=vb.dataset.v;try{localStorage.setItem('sc_view',VIEW)}catch(x){}calc()}return}
   const cm=e.target.closest('.cm');if(cm){if(!cm.disabled){if(cm.dataset.m=='kill')runKill();else if(cm.dataset.m=='kill4')runKill4();else if(cm.dataset.m=='ren')runRen();else if(cm.dataset.m=='cp')runCP();else if(cm.dataset.m=='cpd')runCPD();else if(cm.dataset.m=='pvpmax')runPM();else if(cm.dataset.m=='ovo')runOVO()}return}
   const eb=e.target.closest('.eb');if(eb){runBest(+eb.dataset.e);return}
-  const tc=e.target.closest('[data-troop]');if(tc){const nm=tc.dataset.troop;if(XS.has(nm))XS.delete(nm);else XS.add(nm);calc();return}
+  const tc=e.target.closest('[data-troop]');if(tc){const nm=tc.dataset.troop;if(TRN[nm]&&TRN[nm].cat=='Scout'){if(XS.has(nm)||SCAUTO.has(nm)){XS.delete(nm);SCAUTO.delete(nm);SCFORCE.add(nm)}else{XS.add(nm);SCFORCE.delete(nm)}}else if(XS.has(nm))XS.delete(nm);else XS.add(nm);calc();return}
   const pb=e.target.closest('.pb');
   if(pb){TY.forEach(t=>{$('bh_'+t).value=pb.dataset.p;$('bs_'+t).value=pb.dataset.p;if(pb.dataset.dh!==undefined)$('dh_'+t).value=pb.dataset.dh});calc();return}   // research I and II set Double strike to 0, III to 5 % for every group
 });
@@ -212,7 +212,7 @@ const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const clone=o=>JSON.parse(JSON.stringify(o));
 const MODE_IDS=['mode','enemy'];                       // the two hidden mode boxes are kept out of the input lists: the mode is stored in the tab as mode / enemy (see snap and load)
 function snap(){
-  const d={vals:{},chk:{},O:O.slice(),X:[...XS],S:SO.slice(),atk:ATK,mode:$('mode').value,enemy:$('enemy').value,le:{...LASTE},lp:LASTP,cmp:{...CMPV}};      // the Attack epics / Attack players switch, the attack mode (4-stack, CP kill ...) and the last mode of each view belong to the tab
+  const d={vals:{},chk:{},O:O.slice(),X:[...XS],F:[...SCFORCE],S:SO.slice(),atk:ATK,mode:$('mode').value,enemy:$('enemy').value,le:{...LASTE},lp:LASTP,cmp:{...CMPV}};      // the Attack epics / Attack players switch, the attack mode (4-stack, CP kill ...) and the last mode of each view belong to the tab
   document.querySelectorAll('input[id],select[id]').forEach(el=>{if(MODE_IDS.includes(el.id))return;if(el.type=='checkbox')d.chk[el.id]=el.checked;else d.vals[el.id]=(el.value===''&&el.matches(NUMBOX))?'0':el.value});      // a box that is empty only while it is being typed in counts as 0
   return d;
 }
@@ -221,7 +221,7 @@ function load(d){
   Object.entries(vals).forEach(([id,val])=>{const el=$(id);if(el&&!MODE_IDS.includes(id))el.value=id.startsWith('dh_')?snapDH(val):id=='temple'?tempNorm(val):(val===''&&el.matches(NUMBOX)?'0':val)});
   Object.entries(chk).forEach(([id,c])=>{const el=$(id);if(el)el.checked=c});
   fmtAll();
-  O=(d.O||[]).slice();XS=new Set(d.X||[]);SO=(d.S||[]).slice();
+  O=(d.O||[]).slice();XS=new Set(d.X||[]);SCFORCE=new Set(d.F||[]);SO=(d.S||[]).slice();
   ATK=d.atk=='players'?'players':'epics';      // tabs saved before this existed open in Attack epics, in the 4-stack mode
   $('mode').value=d.mode||'max';$('enemy').value=d.enemy||'4';LASTE=d.le?{...d.le}:{mode:'max',enemy:'4'};LASTP=d.lp||'cp';
   CMPV=d.cmp&&typeof d.cmp=='object'?{...d.cmp}:{};CMPK='';      // the units typed in Compare belong to the tab
@@ -1155,7 +1155,7 @@ const MD={
 const modeOf=P=>rgm(P)?MD.epic:P.ov?MD.ovo:P.cp?MD.cp:P.kill?MD.kill:MD.ren;
 // SCOUTS: they are in the calculation only when a player attacks a player and they beat (on damage = strength per Leadership, your bonuses in) a troop of a ticked tier: every Scout of a ticked Specialists tier
 // that deals more per Leadership than the weakest ticked Guardsmen / Specialists troop. Otherwise they do not show up at all.
-let SCON=new Set(),SCMODE='auto';      // SCMODE 'none': the calculation without any Scouts (see solveSc)
+let SCON=new Set(),SCMODE='auto',SCFORCE=new Set(),SCAUTO=new Set();      // SCMODE 'autooff': the Scouts are in the list but switched off, except the ones you switched on yourself (SCFORCE); SCAUTO = the Scouts the calculator switched off (see solveSc)
 function scoutSet(P,order){
   const s=new Set();if(ATK!='players')return s;
   const nt=[];order.forEach(g=>{if(g[0]=='G'||g[0]=='S')(BYG[g]||[]).forEach(t=>{if(t.cat!='Scout')nt.push(t)})});
@@ -1163,13 +1163,13 @@ function scoutSet(P,order){
   const tk=new Set(order.filter(g=>g[0]=='S').map(g=>+g.slice(1)));
   const per=t=>t.str*mults(t,P)[1]*(t.cls=='S'&&t.cat!='Scout'?2:1)/t.cost,low=Math.min(...nt.map(per));
   TR.forEach(t=>{if(t.cat=='Scout'&&t.cls=='S'&&tk.has(t.tier)&&per(t)>low)s.add(t.name)});
-  if(SCMODE=='none')[...s].forEach(n=>{if(!XS.has(n))s.delete(n)});      // the run without Scouts: the ones you clicked off stay in the list (off), so you can click them on again
   return s;
 }
 function buildStacks(P,order,X){
   const mk=(t,i)=>{const[mh,ms]=mults(t,P);
     return{r:t.cls+t.tier,p:t.pool,c:t.pool=='M'?t.type:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i,dh:dhf(t,P)}};
   SCON=scoutSet(P,order);
+  if(SCMODE=='autooff'){X=new Set(X);SCON.forEach(n=>{if(!SCFORCE.has(n))X.add(n)})}
   const ts=[];order.forEach(g=>(BYG[g]||[]).forEach(t=>{if(t.cat!='Scout')ts.push(t)}));TR.forEach(t=>{if(SCON.has(t.name))ts.push(t)});      // one total order, troop by troop (the Scouts only when they are in: see scoutSet)
   const live=new Set(ts.filter(t=>!X.has(t.name)).map(t=>t.name));
   const mkOut=(so,c)=>{const o=so.map(n=>mk(TRN[n],0)),mt=monTiers(so.map(n=>TRN[n]));o.forEach(s=>{if(s.p=='M')s.pt=mt.indexOf(+s.r.slice(1))>=c});return o};   // pt: the stack belongs to the partial tier or below
@@ -1620,15 +1620,17 @@ function solveTC(P,order){
   const res=solve(P,order,true);TCCACHE.set(key,res);return res}
 // 21.5.9: ONE order search, the one WITHOUT the mercenaries (Authority 0): the Leadership and the monsters keep the layout they have with 0 Authority. The partial monster stacks are left to the Dominance tail (dominanceTail),
 // which puts them behind the mercenaries when the Authority allows it, before them when it does not. No variants are compared.
-// Scouts are in only when they really raise the damage: the army is solved with the Scouts that beat a ticked troop (scoutSet) and without any, and the one with the more damage is kept. (Damage per Leadership alone is not enough:
-// a Scout has little health for its Leadership, so it can die too soon and lower the total.)
+// Scouts are shown whenever they beat a ticked troop (scoutSet), but they are SWITCHED ON only when they really raise the damage: the army is solved with them off and with them on, and the one with the more damage is kept
+// (a Scout has little health for its Leadership, so it can die too soon and lower the total). Click a Scout on and it stays on; click it off and it stays off.
 function solveSc(P,order){
+  SCAUTO=new Set();
+  if(ATK!='players'){SCMODE='auto';return solve(P,order)}
+  SCMODE='autooff';const r0=solve(P,order);
+  if(!SCON.size){SCMODE='auto';return r0}
+  const dm=x=>score(P,[...x.A,...x.Mo,...x.U.list],[...x.st.so,...x.U.ord]).dmg,w=dm(r0);
   SCMODE='auto';const r=solve(P,order);
-  if(ATK!='players'||!SCON.size)return r;
-  const dm=x=>score(P,[...x.A,...x.Mo,...x.U.list],[...x.st.so,...x.U.ord]).dmg,w=dm(r);
-  SCMODE='none';const r0=solve(P,order);
-  if(dm(r0)>=w)return r0;
-  SCMODE='auto';return solve(P,order);
+  if(dm(r)>w)return r;
+  SCMODE='autooff';SCAUTO=new Set([...SCON].filter(n=>!SCFORCE.has(n)&&!XS.has(n)));return solve(P,order);
 }
 function solve(P,order,light){
   if(!rgm(P))return solve1(P,order);
