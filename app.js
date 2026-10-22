@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.67';
+const APP_VERSION='21.8.69';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1826,11 +1826,11 @@ let KSC={k:'',cps:null};
 let KSAV={k:'',v:null},KSG={k:'',g:null};
 function ksAvg(P,L,EP){const av=killState(P,L,EP);return av?{...av,f:ksF(P,L,EP,1)}:av}
 // how much of the epic the army kills with a given luck (1 = average): the biggest state it kills with that damage; the killable states are not in a tidy order (a bigger state can be killed while a smaller one is not), so the result is the best it does with that luck or less: more luck is never worse
-// how far the dice can move the damage of the average fight (the spread of its double damage and double strikes, as a share of its damage): the 99 % luck window is 2.576 of these around 1
+// how far the dice can move the damage of the average fight (the spread of its double damage and double strikes, as a share of its damage): the 95 % luck window is 1.96 of these around 1
 function ksSg(P,L,EP){const av=killState(P,L,EP);if(!av)return 0;const sd=epicSim(P,L,av.EPS,false,null);return sd.pex>0?Math.sqrt(Math.max(0,sd.pvar))/sd.pex:0}
 function ksF(P,L,EP,lam){
   const key='G'+EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA,P.enemy>4,P.kill4,P.dmgScale]);
-  if(KSG.k!=key){const gs=[],fs=[];let best=0;const sg=ksSg(P,L,EP),k0=Math.max(0,Math.floor((1-2.576*sg-0.04-0.8)/0.02+1e-9)),k1=Math.min(24,Math.ceil((1+2.576*sg+0.04-0.8)/0.02-1e-9));for(let k=k0;k<=k1;k++){const l=0.8+0.02*k;const r=killState({...P,dmgScale:(P.dmgScale||1)*l},L,EP,0,true);best=Math.max(best,r?r.f:0);gs.push(l);fs.push(best)}const sm=fs.map((_,i)=>{let t=0,c=0;for(let j=Math.max(0,i-2);j<=Math.min(fs.length-1,i+2);j++){t+=fs[j];c++}return t/c});KSG={k:key,g:gs,f:sm}}      // smoothed over a few neighbouring luck levels: the fight is chaotic, so single levels jump in steps; the average of the neighbours is a smooth curve
+  if(KSG.k!=key){const gs=[],fs=[];let best=0;const sg=ksSg(P,L,EP),k0=Math.max(0,Math.floor((1-1.96*sg-0.04-0.8)/0.02+1e-9)),k1=Math.min(24,Math.ceil((1+1.96*sg+0.04-0.8)/0.02-1e-9));for(let k=k0;k<=k1;k++){const l=0.8+0.02*k;const r=killState({...P,dmgScale:(P.dmgScale||1)*l},L,EP,0,true);best=Math.max(best,r?r.f:0);gs.push(l);fs.push(best)}const sm=fs.map((_,i)=>{let t=0,c=0;for(let j=Math.max(0,i-2);j<=Math.min(fs.length-1,i+2);j++){t+=fs[j];c++}return t/c});KSG={k:key,g:gs,f:sm}}      // smoothed over a few neighbouring luck levels: the fight is chaotic, so single levels jump in steps; the average of the neighbours is a smooth curve
   const g=KSG.g,f=KSG.f;if(lam<=g[0])return f[0];if(lam>=g[g.length-1])return f[f.length-1];
   let i=0;while(g[i+1]<lam)i++;return f[i]+(f[i+1]-f[i])*(lam-g[i])/(g[i+1]-g[i])}
 function ksCps(P,L,EP){const key=EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA,P.enemy>4]);if(KSC.k!=key)KSC={k:key,cps:epicPath(P,L,EP)};return KSC.cps}
@@ -1869,10 +1869,10 @@ function killState0(P,L,EP,dice,fast){
   // a hit that does not kill scores the damage it deals (at most what is left): if the biggest state the army kills is worth less than the damage it deals to the biggest state allowed, that hit is the better one (a killshot never scores less than a hit)
   const c0=cand[0];if(c!==c0){const td0=epicSim(P,L,mk(c0),!!dice,dice?THEO.rngMk(dice):null).td,pt=Math.min(td0,c0.left);if(pt>c.left){const tot0=cps[0].left;return{left:pt,hp:c0.hp,K,alive:al(c0),tot:tot0,f:pt/tot0,EPS:mk(c0)}}}
   const tot=cps[0].left;return{left:c.left,hp:c.hp,K,alive:al(c),tot,f:c.left/tot,EPS:mk(c)}}
-// the range of the killshot: the same army, many rolled fights; each one finds the biggest state it kills (the 99 % range of those, and the average fight)
-function ksRange(P,L,EP){      // the 99 % range: the average fight tells how much the dice can move the damage (statistics: the spread of double damage and double strikes over all its strikes); a 99 % bad roll is 2.576 spreads below average, a 99 % good roll the same above; for each, the biggest state the army kills
+// the range of the killshot: the same army, many rolled fights; each one finds the biggest state it kills (the 95 % range of those, and the average fight)
+function ksRange(P,L,EP){      // the 95 % range: the average fight tells how much the dice can move the damage (statistics: the spread of double damage and double strikes over all its strikes); a 95 % bad roll is 1.96 spreads below average, a 95 % good roll the same above; for each, the biggest state the army kills
   const av=ksAvg(P,L,EP);if(!av)return{lo:0,hi:0};
-  const sg=ksSg(P,L,EP),z=2.576;
+  const sg=ksSg(P,L,EP),z=1.96;
   const lo=ksF(P,L,EP,1-z*sg),hi=ksF(P,L,EP,1+z*sg);
   return{lo:Math.max(0,Math.min(av.f,lo)),hi:Math.min(1,Math.max(av.f,hi)),sg}}
 // the score tile of a Killshot: the average fight with its range, or the rolled fight (Roll the dice)
@@ -1883,10 +1883,10 @@ function ksTile(P,list,order){
   const fm=f=>sh(f*EP.score).join(' ');let v,sub;
   if(!av)v='\u2013',sub='the army can not kill it';
   else{const r=ksRange(P,L,EP);v=Math.abs(r.hi-r.lo)<1e-9?fm(av.f):(()=>{const[a,ua]=sh(r.lo*EP.score),[b,ub]=sh(r.hi*EP.score);return ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub})();
-    sub='99 % range<br>killshot avg. '+fm(av.f);
+    sub='95 % range<br>killshot avg. '+fm(av.f);
 }
   return'<div data-kt="1"'+(eoMany?' data-act="eopen"':'')+' class="stt std"><div class="stl"><span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b> score'+eoCar+'</span></span></div><div class="stv">'+v+'</div><div class="sts">'+sub+'</div></div>'}
-// the same army as a killshot: in the 3- and 4-stack modes the score tile also tells what a killshot hit with these stacks scores (average, 99 % range, the state it kills from)
+// the same army as a killshot: in the 3- and 4-stack modes the score tile also tells what a killshot hit with these stacks scores (average, 95 % range, the state it kills from)
 function ksInfo(P,list,order,EP){
   if(P.kill||P.ren||P.cp||P.one||P.pm||P.pvp||!(P.enemy==3||P.enemy==4||P.enemy==6||P.enemy==8)||!EP||!EP.st||!EP.score)return null;
   const L=ordL(list,order),Pk={...P,kill:true,kill4:P.enemy==4||P.enemy==8},av=ksAvg(Pk,L,EP);
@@ -2183,12 +2183,12 @@ function cmpUpdate(){
   const scf=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3))+' '+u[i]},
     d=(a,b,low)=>{if(!(b>0))return'<td></td>';const p=(a/b-1)*100,t=Math.abs(p)<0.05,pb=!t&&(low?p>0:p<0);return`<td data-w="${pb?'p':'y'}" class="${t?'':pb?'cmg':'cmb'}">${p>0?'+':''}${p.toFixed(1)} %</td>`};
   const EPS=X.EP&&X.EP.st&&X.EP.score?X.EP:null,th=EPS?EPS.st.reduce((q,x)=>q+x[0]*x[1],0):0,f=x=>Math.min(1,x/th)*(EPS?EPS.score:0);
-  const Z=2.576,lo=(m,sd)=>Math.max(0,m-Z*sd),hi=(m,sd)=>m+Z*sd,rn=(a,b,fm)=>sd0(a,b)?'':`<small class="cmr">${fm(a)}\u2013${fm(b)}</small>`,sd0=(a,b)=>!(b>a),
+  const Z=1.96,lo=(m,sd)=>Math.max(0,m-Z*sd),hi=(m,sd)=>m+Z*sd,rn=(a,b,fm)=>sd0(a,b)?'':`<small class="cmr">${fm(a)}\u2013${fm(b)}</small>`,sd0=(a,b)=>!(b>a),
     cell=(m,sd,fm,fr)=>fm(fr(m))+(sd>0?rn(fr(lo(m,sd)),fr(hi(m,sd)),fm):'');
   const rows=[['Estimated damage',cell(pr.sc.dmg,pr.sc.sd,fmt,x=>x),cell(sc.dmg,sc.sd,fmt,x=>x),d(sc.dmg,pr.sc.dmg)]];
   if(EPS)rows.push([esc(X.EP.n)+' score',cell(pr.sc.dmg,pr.sc.sd,scf,f),cell(sc.dmg,sc.sd,scf,f),d(sc.dmg,pr.sc.dmg)]);
   rows.push(['Revive cost',scost==rcost?fmt(pr.scost):fmt(pr.scost)+' / '+fmt(pr.rcost),scost==rcost?fmt(scost):fmt(scost)+' / '+fmt(rcost),d(scost,pr.scost,true)],['Strikes',cell(pr.sc.hits,pr.sc.hsd,x=>Math.round(x),x=>x),cell(sc.hits,sc.hsd,x=>Math.round(x),x=>x),d(sc.hits,pr.sc.hits)]);
-  out.innerHTML=`<div class="cmu">${chips}</div><table class="cmt"><tr><th></th><th>Proposed</th><th>Yours</th><th>Difference</th></tr>${rows.map(r=>{const w=(r[3].match(/data-w="(.)"/)||[])[1]=='p';return`<tr><td>${r[0]}</td><td${w?' class="cmy"':''}>${r[1]}</td><td${w?'':' class="cmy"'}>${r[2]}</td>${r[3]}</tr>`}).join('')}</table><p class="mu cmn">Small numbers: the 99 % range.</p>`;
+  out.innerHTML=`<div class="cmu">${chips}</div><table class="cmt"><tr><th></th><th>Proposed</th><th>Yours</th><th>Difference</th></tr>${rows.map(r=>{const w=(r[3].match(/data-w="(.)"/)||[])[1]=='p';return`<tr><td>${r[0]}</td><td${w?' class="cmy"':''}>${r[1]}</td><td${w?'':' class="cmy"'}>${r[2]}</td>${r[3]}</tr>`}).join('')}</table><p class="mu cmn">Small numbers: the 95 % range.</p>`;
 }
 document.addEventListener('input',e=>{const i=e.target.closest&&e.target.closest('.cmi');if(!i)return;
   const c=i.value.replace(/\D/g,'').replace(/^0+(?=\d)/,'');if(c!==i.value)i.value=c;cmpFit(i);
@@ -2501,7 +2501,7 @@ function calcRun0(){
   const tgt=P.ren?renTarget():0,lvN=Math.floor(+$('renLv').value);      // 14.19: Renegades with a Level: is the target reached?
   const kmb=x=>{let v=Math.abs(x),i=0;const up=t=>{if(t<=0)return 0;const p=Math.pow(10,Math.floor(Math.log10(t))-2);return Math.round(+(t/p).toFixed(6))*p};while(v>=1e3&&i<3){v/=1e3;i++}let c=i?up(v):Math.round(v);if(c>=1e3&&i<3){c=up(c/1e3);i++}return (x<0?'-':'')+(i?(+c.toPrecision(3)).toString()+'KMB'[i-1]:String(c))};      // 19.0.30: normal rounding to 3 digits: 1,900,949 -> 1.9M, 626,252 -> 626K, 42,300 -> 42.3K, 8,650 -> 8.65K, 999,999 -> 1M
   const enTxt=P.one?'one flying enemy stack':P.ov?'12 enemy stacks (3 of each type)':P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks';
-  const RZ=2.576,rg=(a,b)=>{const A=fmt(a).split(' '),B=fmt(b).split(' ');return A[1]==B[1]?A[0]+'\u2013'+B[0]+(B[1]?' '+B[1]:''):fmt(a)+' \u2013 '+fmt(b)};      // 19.0.16: a range, e.g. 4.90\u20135.30 T
+  const RZ=1.96,rg=(a,b)=>{const A=fmt(a).split(' '),B=fmt(b).split(' ');return A[1]==B[1]?A[0]+'\u2013'+B[0]+(B[1]?' '+B[1]:''):fmt(a)+' \u2013 '+fmt(b)};      // 19.0.16: a range, e.g. 4.90\u20135.30 T
   const dRange=sc.sd>0?[Math.max(0,sc.dmg-RZ*sc.sd),sc.dmg+RZ*sc.sd]:null,hRange=sc.hsd>0?[Math.max(0,sc.hits-RZ*sc.hsd),sc.hits+RZ*sc.hsd]:null;
   const tile=(c,l,v,sub,tip)=>`<div class="stt ${c}"${tip?` title="${esc(tip)}"`:''}><div class="stl">${l}</div><div class="stv">${v}</div>${sub?`<div class="sts">${sub}</div>`:''}</div>`;
   const EP=ATK=='epics'&&!P.kill?epCur():null;      // 20.2.1: no epic scoring in the Killshot modes
@@ -2516,9 +2516,9 @@ function calcRun0(){
     let lo=f(dRange?dRange[0]:sc.dmg),hi=f(dRange?dRange[1]:sc.dmg);const avg=f(sc.dmg);
     if(kk){lo=Math.min(lo,kk.lo);hi=Math.max(hi,kk.hi)}      // the main number covers both: the hit on a healthy epic and the killshot with the same stacks
     const [a,ua]=sh(lo),[b,ub]=sh(hi),rngTxt=(a!=b||ua!=ub)&&(dRange||kk);
-    const sub=(dRange||kk?'99 % range<br>':'')+P.enemy+'-stack avg. '+sh(avg).join(' ')+(ki?' \u00b7 '+(kk?'killshot avg. '+sh(kk.av).join(' '):'Killshot: the army can not kill it'):'');
+    const sub=(dRange||kk?'95 % range<br>':'')+P.enemy+'-stack avg. '+sh(avg).join(' ')+(ki?' \u00b7 '+(kk?'killshot avg. '+sh(kk.av).join(' '):'Killshot: the army can not kill it'):'');
     scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b> score'+eoCar+'</span></span>',rngTxt?(ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub):a+' '+ua,sub,'').replace('<div class="stt',eoAct)}
-  $('rsm').innerHTML=`<div class="stl stch">Summary</div><div class="stg">${scoreTile}${tile('','Revive cost',scost==rcost?kmb(scost):`${kmb(scost)} <span class="stu">/</span> ${kmb(rcost)}`,'',rtip+' ('+(scost==rcost?num(scost):num(scost)+' / '+num(rcost))+' gold)')}${tile(ATK=='epics'?'':'std','Estimated damage',dRange?rg(dRange[0],dRange[1]):fmt(sc.dmg),dRange?'99 % range \u00b7 average '+fmt(sc.dmg):tgt?`level ${lvN} ${sc.dmg>=tgt?'reached':'short by '+((1-sc.dmg/tgt)*100).toFixed(1)+' %'}`:'',dRange?'99 % of the battles end between these two numbers (every strike rolls its own Double strike / Double damage chance)':tgt?`Level ${lvN}: the stacks must reach ${tgt.toLocaleString('en-US')} damage.`:'')}${tile('','Strikes',hRange?Math.round(hRange[0])+'\u2013'+Math.round(hRange[1]):Math.round(sc.hits),hRange?'99 % range \u00b7 average '+Math.round(sc.hits):'','Strikes against '+enTxt+(hRange?' (99 % range)':''))}</div>${hitsRow?`<div class="stl stch">Hits per revive mode</div><div class="stc">${REVCASES.map(([k,l])=>`<div class="stt${k==REVM?' stm':''}"><div class="stv">${HIT[k].toFixed(2)}</div><div class="sts">${l}</div></div>`).join('')}</div>`:''}`;      // 19.0.2: the summary as tiles (damage, strikes, stacks, revive cost); the army / monster / engineer count is gone
+  $('rsm').innerHTML=`<div class="stl stch">Summary</div><div class="stg">${scoreTile}${tile('','Revive cost',scost==rcost?kmb(scost):`${kmb(scost)} <span class="stu">/</span> ${kmb(rcost)}`,'',rtip+' ('+(scost==rcost?num(scost):num(scost)+' / '+num(rcost))+' gold)')}${tile(ATK=='epics'?'':'std','Estimated damage',dRange?rg(dRange[0],dRange[1]):fmt(sc.dmg),dRange?'95 % range \u00b7 average '+fmt(sc.dmg):tgt?`level ${lvN} ${sc.dmg>=tgt?'reached':'short by '+((1-sc.dmg/tgt)*100).toFixed(1)+' %'}`:'',dRange?'95 % of the battles end between these two numbers (every strike rolls its own Double strike / Double damage chance)':tgt?`Level ${lvN}: the stacks must reach ${tgt.toLocaleString('en-US')} damage.`:'')}${tile('','Strikes',hRange?Math.round(hRange[0])+'\u2013'+Math.round(hRange[1]):Math.round(sc.hits),hRange?'95 % range \u00b7 average '+Math.round(sc.hits):'','Strikes against '+enTxt+(hRange?' (95 % range)':''))}</div>${hitsRow?`<div class="stl stch">Hits per revive mode</div><div class="stc">${REVCASES.map(([k,l])=>`<div class="stt${k==REVM?' stm':''}"><div class="stv">${HIT[k].toFixed(2)}</div><div class="sts">${l}</div></div>`).join('')}</div>`:''}`;      // 19.0.2: the summary as tiles (damage, strikes, stacks, revive cost); the army / monster / engineer count is gone
   $('res').innerHTML=secs;
   cmpSet({P,Aall,Mall,mItems,ordp:[...st.so,...U.ord],O:O.slice(),sc,rcost,scost,EP});      // the Compare card under the Result
   {const tcb=document.querySelector('.tc');if(tcb)tcb.disabled=pvOff||!(P.capA>0||P.capM>0)}      // the Tier check button: nothing to check without a capacity
