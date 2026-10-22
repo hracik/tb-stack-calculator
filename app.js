@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.58';
+const APP_VERSION='21.8.61';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -74,7 +74,7 @@ const EPICS=[      // the epic monsters, alphabetical: n = name, score = the tot
   {n:'Hellforge',score:150e6,st:null,en:[3,4]},
   {n:'J\u00f6rmungandr/Chimera',ic:'jormchimera',score:750e6,st:null,en:[3,4],raid:true}];      // 19.0.19 the epic monsters
 let K4OK=false,K4LO=3;      // 21.8.19: the army kills the chosen epic from a state that still has all 4 stacks: a 3-stack hit is of no use then (the 3-stack mode is switched off)
-let KAUTO4=false;      // 21.8.3: the ONE Killshot mode picks its rules by itself: the 4-stack rules when the army kills the epic from its 4-stack state, else the 3-stack rules (calcRun)
+let KSLITE=false,KAUTO4=false;      // 21.8.3: the ONE Killshot mode picks its rules by itself: the 4-stack rules when the army kills the epic from its 4-stack state, else the 3-stack rules (calcRun)
 const enemyNow=()=>{const m=$('mode').value;return m=='kill'?(((EPICS.find(x=>x.n==$('epic').value)||{}).st||[]).length>4?(KAUTO4?8:6):(KAUTO4?4:3)):m=='kill4'?4:m=='ren'?8:m=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4},      // the number of enemy stacks of the chosen attack mode
   epOk=e=>$('mode').value=='kill'?(e.ks||e.en.includes(3)||e.en.includes(4)):e.en.includes(enemyNow()),epCur=()=>EPICS.find(x=>x.n==$('epic').value)||null;      // an epic counts only in the modes it can be hit in
 $('epic').innerHTML='<option value="">None</option>'+EPICS.map(e=>`<option value="${e.n}">${e.n}</option>`).join('');
@@ -1828,17 +1828,26 @@ function ksAvg(P,L,EP){const av=killState(P,L,EP);return av?{...av,f:ksF(P,L,EP,
 // how much of the epic the army kills with a given luck (1 = average): the biggest state it kills with that damage; the killable states are not in a tidy order (a bigger state can be killed while a smaller one is not), so the result is the best it does with that luck or less: more luck is never worse
 function ksF(P,L,EP,lam){
   const key='G'+EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA,P.enemy>4,P.kill4,P.dmgScale]);
-  if(KSG.k!=key){const gs=[],fs=[];let best=0;for(let l=0.8;l<=1.2801;l+=0.02){const r=killState({...P,dmgScale:(P.dmgScale||1)*l},L,EP,0,true);best=Math.max(best,r?r.f:0);gs.push(l);fs.push(best)}const sm=fs.map((_,i)=>{let t=0,c=0;for(let j=Math.max(0,i-2);j<=Math.min(fs.length-1,i+2);j++){t+=fs[j];c++}return t/c});KSG={k:key,g:gs,f:sm}}      // smoothed over a few neighbouring luck levels: the fight is chaotic, so single levels jump in steps; the average of the neighbours is a smooth curve
+  if(KSG.k!=key){const gs=[],fs=[];let best=0;for(let l=0.8;l<=1.2801;l+=0.04){const r=killState({...P,dmgScale:(P.dmgScale||1)*l},L,EP,0,true);best=Math.max(best,r?r.f:0);gs.push(l);fs.push(best)}const sm=fs.map((_,i)=>{let t=0,c=0;for(let j=Math.max(0,i-1);j<=Math.min(fs.length-1,i+1);j++){t+=fs[j];c++}return t/c});KSG={k:key,g:gs,f:sm}}      // smoothed over a few neighbouring luck levels: the fight is chaotic, so single levels jump in steps; the average of the neighbours is a smooth curve
   const g=KSG.g,f=KSG.f;if(lam<=g[0])return f[0];if(lam>=g[g.length-1])return f[f.length-1];
   let i=0;while(g[i+1]<lam)i++;return f[i]+(f[i+1]-f[i])*(lam-g[i])/(g[i+1]-g[i])}
+let KSM=new Map();
 function killState(P,L,EP,dice,fast){
+  if(dice)return killState0(P,L,EP,dice,fast);
+  const key=EP.n+'|'+(fast?1:0)+'|'+L.map(x=>x.name+':'+x.n+':'+x.hp+':'+x.str).join(',')+'|'+JSON.stringify(P);      // the same army, bonuses and rules give the same answer: asked many times in one calculation (tile, report, range, the Killshot check), computed once
+  if(KSM.has(key))return KSM.get(key);
+  const r=killState0(P,L,EP,dice,fast);if(KSM.size>150)KSM=new Map();KSM.set(key,r);return r}
+function killState0(P,L,EP,dice,fast){
   if(dice){      // a rolled fight: the luck of the dice on the fight at the average killshot state (what the strikes were worth, with and without the dice) scales the damage of the army; the biggest state that army kills is the rolled killshot. More luck always means more points
     const key='A'+EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA,P.enemy>4,P.kill4,P.dmgScale]);
     if(KSAV.k!=key)KSAV={k:key,v:killState(P,L,EP)};
     const av=KSAV.v;if(!av)return null;
     const sd=epicSim(P,L,av.EPS,true,THEO.rngMk(dice)),lam=sd.pex>0?sd.pot/sd.pex:1;      // the luck of the fight that the report shows (the average killshot state): what its strikes were really worth against what they are worth on average
     const f=ksF(P,L,EP,lam);return{...av,f,left:f*av.tot,lam,avg:av}}      // dice: the luck of the rolled fight (the same dice stream for every state that is tried); without it the average fight
-  if(P.kill4&&!P.k3){const a=killState({...P,kill4:false,k3:1},L,EP,0,fast),b=killState({...P,k3:1},L,EP,0,fast);return a&&(!b||a.f>b.f+1e-12)?a:b}      // allowing all the stacks alive can never score less than allowing one stack fewer: the better of the two
+  if(P.kill4&&!P.k3){const a=killState({...P,kill4:false,k3:1},L,EP,0,fast);      // the rules with every stack alive can only beat the rules with one stack fewer when the army kills the epic while all its stacks are alive: that is asked first (the smallest state with all of them), and only then searched
+    let last=null;if(KSC.cps)KSC.cps.forEach(c=>{if(c.hp.filter(x=>x>1e-6).length==EP.st.length)last=c});
+    if(!last||!(epicSim(P,L,{...EP,st:EP.st.map((x,i)=>[last.hp[i]/x[1],x[1],x[2],x[3],i]).filter((x,i)=>last.hp[i]>1e-6)},false,null).td>=last.left*(1-1e-6)))return a;
+    const b=killState({...P,k3:1},L,EP,0,fast);return a&&(!b||a.f>b.f+1e-12)?a:b}
   const key=EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA,P.enemy>4]);
   if(KSC.k!=key)KSC={k:key,cps:epicPath(P,L,EP)};
   // every state on the way down with at most K living stacks (4: all of them, 3: the 3-stack states): the army kills the biggest one it can, however weak it is (the last state, nothing left, is always killed)
@@ -2395,12 +2404,13 @@ function epAuto(){      // the epic is optional (Choose epic): none = all the st
   if(!epOk(ce)){const w=+$('enemy').value||4,t=ce.en.includes(w)?w:ce.en.includes(({3:6,4:8,6:3,8:4})[w])?({3:6,4:8,6:3,8:4})[w]:ce.en[ce.en.length-1];$('mode').value='max';$('enemy').value=String(t);SO=[]}}
 function calcRun(){
   if($('mode').value=='kill4'){$('mode').value='kill';SO=[]}      // one Killshot mode: an old tab or import in v. 4 is the same mode now
-  KAUTO4=false;
+  KAUTO4=false;KSLITE=false;
   if($('mode').value=='kill'&&ATK=='epics'){
-    KAUTO4=true;calcRun0();      // first with the 4-stack rules: the army must kill the epic from a state with all its 4 stacks
+    KAUTO4=true;KSLITE=true;try{calcRun0()}finally{KSLITE=false}      // the first pass only finds the army for the 4-stack rules (no score tile): which rules the Killshot uses is decided from it, and only the pass with the right rules is drawn in full
+          // first with the 4-stack rules: the army must kill the epic from a state with all its 4 stacks
     let e=epCur();const ks4=BRD&&e&&e.st&&e.score&&BRD.P.kill4&&killState(BRD.P,ordL(BRD.list,BRD.order),e),ok=ks4&&ks4.alive==e.st.length;
-    if(!ok){KAUTO4=false;calcRun0()}      // else the 3-stack rules
-    return}
+    if(!ok)KAUTO4=false;      // else the 3-stack rules
+    calcRun0();return}
   calcRun0();
   if(K4OK&&ATK=='epics'&&$('mode').value=='max'&&+$('enemy').value==K4LO){$('enemy').value=String(K4LO==3?4:8);SO=[];calcRun0()}}      // the 3-stack mode is off while the army kills from 4 stacks: the 4-stack mode instead
 function calcRun0(){
@@ -2492,7 +2502,7 @@ function calcRun0(){
   const eoMany=false,eoAct=eoMany?'<div data-act="eopen" class="stt':'<div class="stt',eoCar=eoMany?'\u00a0\u25be':'';      // a mode with a single epic (Arachne in 6-8 stacks): nothing to choose, so the tile is no button
   let scoreTile='';
   const KEP=ATK=='epics'&&P.kill?epCur():null;
-  if(KEP&&KEP.st&&KEP.score)scoreTile=ksTile(P,BRD.list,BRD.order);
+  if(KEP&&KEP.st&&KEP.score)scoreTile=KSLITE?'':ksTile(P,BRD.list,BRD.order);
   else if(KEP&&!(KEP.st&&KEP.score))scoreTile=tile('std','<span class="eph">'+epImg(KEP,'epi')+'<span><b>'+esc(KEP.n).replace('/','/<wbr>')+'</b> score'+eoCar+'</span></span>','\u2013',KEP.score?'stacks not set yet':'score not set yet','').replace('<div class="stt',eoAct);
   if(EP&&!(EP.st&&EP.score))scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b> score'+eoCar+'</span></span>','\u2013',EP.score?'stacks not set yet':'score not set yet','').replace('<div class="stt',eoAct);
   else if(EP){const th=EP.st.reduce((q,x)=>q+x[0]*x[1],0),f=d=>Math.min(1,d/th)*EP.score,ki=ksInfo(P,BRD.list,BRD.order,EP),kk=ki&&!ki.none?ki:null;
