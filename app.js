@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.11.7';
+const APP_VERSION='21.11.8';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -2240,17 +2240,18 @@ document.addEventListener('input',e=>{const i=e.target.closest&&e.target.closest
   if(c&&c!='0')CMPV[i.dataset.n]=c;else delete CMPV[i.dataset.n];
   cmpUpdate();save()});
 const MON_DISP=['Kraken II','Fire Phoenix II','Devastator II','Trickster II','Kraken I','Fire Phoenix I','Devastator I','Trickster I','Wind Lord','Black Dragon','Destructive Colossus','Ancient Terror'];
-const DISP_KEY=s=>{if(s.c=='Engineer')return -1;const m=MON_DISP.indexOf(s.name);return m>=0?m-100:DISP.indexOf(s.cat||s.c)};
+const DISP_KEY=s=>{if(s.c=='Engineer')return -1;if(s.cat=='Scout')return 99;      // the Scouts are the last card of their row
+  const m=MON_DISP.indexOf(s.name);return m>=0?m-100:DISP.indexOf(s.cat||s.c)};
 function table(st,cellf){
   const cell=cellf||(s=>`<td class="${s.off?'off':!(s.n>0)?'zero':''}" data-troop="${esc(s.name)}">${ICD[s.name]?`<img class="ic" src="${ICD[s.name]}" alt="">`:'<div class="ic ph"></div>'}<span class="kp">${KP[s.name]?'#'+KP[s.name]:''}</span><span class="mu">${s.name}</span>${cnt(s,(s.n||0).toLocaleString())}</td>`);
-  // one block per tier (all engineer tiers share one block): the label, then the cards in ONE line, 4 cards wide. A block with more than 4 cards is one line that scrolls sideways (finger, wheel, scrollbar or dragging with the mouse), so it never wraps into a second line. A block with fewer than 4 cards is padded with blank cells, so all blocks line up.
+  // one block per tier (all engineer tiers share one block): the label, then the cards in ONE line, 5 cards wide. A block with more than 5 cards is one line that scrolls sideways (finger, wheel, scrollbar or dragging with the mouse), so it never wraps into a second line. A block with fewer than 5 cards is padded with blank cells, so all blocks line up.
   const keys=[];st.forEach(s=>{const k=s.cat=='Engineer'?'E*':s.r;if(!keys.includes(k))keys.push(k)});
   if(prepMob()&&VIEW=='grouped'&&keys.length){const ti=k=>k=='E*'?Math.max(...st.filter(s=>s.cat=='Engineer').map(s=>+s.r.slice(1))):+k.slice(1),cr={G:0,S:1,E:2,M:0},top={};keys.forEach(k=>{top[k[0]]=Math.max(top[k[0]]||0,ti(k))});keys.sort((a,b)=>cr[a[0]]-cr[b[0]]||tierKey(ti(a),top[a[0]])-tierKey(ti(b),top[b[0]]))}      // 16.5 Preparation: all the Guardsmen blocks, then all the Specialists blocks, then the Engineers; inside a class the top tier first, then the other tiers from the lowest up
   let o='<div class="sc"><div class="sci">';
   keys.forEach(k=>{
     const list=k=='E*'?st.filter(s=>s.cat=='Engineer').sort((a,b)=>+b.r.slice(1)-+a.r.slice(1)):st.filter(x=>x.r==k).sort((a,b)=>prepMob()&&VIEW=='grouped'?(k[0]=='M'?prepIdx(a.name)-prepIdx(b.name):prepCat(a)-prepCat(b))||DISP_KEY(a)-DISP_KEY(b):DISP_KEY(a)-DISP_KEY(b));
-    const n=Math.max(4,list.length),row=list.map(cell);while(row.length<n)row.push('<td></td>');
-    o+=`<div class="glh">${k=='E*'?'Engineer Corps':`${NM[k[0]]} ${k.slice(1)}`}</div><div class="gs${list.length>4?' ov':''}"><table class="gt" data-n="${n}"><colgroup>${'<col>'.repeat(n)}</colgroup><tr>${row.join('')}</tr></table></div>`;
+    const n=Math.max(5,list.length),row=list.map(cell);while(row.length<n)row.push('<td></td>');
+    o+=`<div class="glh">${k=='E*'?'Engineer Corps':`${NM[k[0]]} ${k.slice(1)}`}</div><div class="gs${list.length>5?' ov':''}"><table class="gt" data-n="${n}"><colgroup>${'<col>'.repeat(n)}</colgroup><tr>${row.join('')}</tr></table></div>`;
   });
   return o+'</div></div>';
 }
@@ -2268,7 +2269,7 @@ function mobList(items,heads,rowf){      // heads (Preparation, Mobile): a title
 // Guardsmen before Specialists, then Flying, Mounted, Ranged, Melee (so ranged before melee), then the order of the cards in the Grouped view.
 const MOBM=['Wyvern','Warden','Eternal Cannoneer','Demonic Salamander','Warregal','Jago','Ariel','Superior Epic Monster Hunter','Quicksand','Galloper','Highlander','Slavic Warrior','Pounder','Scarface','Grace'];
 const mobOrder=list=>{const cr={G:0,S:1,E:2,M:3},mi=n=>{const i=MOBM.indexOf(n);return i<0?999:i};
-  return list.map((s,i)=>[s,i]).sort(([a,i],[b,j])=>TRN[b.name].hp-TRN[a.name].hp||mi(a.name)-mi(b.name)||+b.r.slice(1)-+a.r.slice(1)||cr[a.r[0]]-cr[b.r[0]]||DISP.indexOf(a.cat)-DISP.indexOf(b.cat)||i-j).map(x=>x[0])};
+  return list.map((s,i)=>[s,i]).sort(([a,i],[b,j])=>TRN[b.name].hp-TRN[a.name].hp||mi(a.name)-mi(b.name)||+b.r.slice(1)-+a.r.slice(1)||cr[a.r[0]]-cr[b.r[0]]||(a.cat=='Scout'?99:DISP.indexOf(a.cat))-(b.cat=='Scout'?99:DISP.indexOf(b.cat))||i-j).map(x=>x[0])};
 // COMPUTER order: the Mobile order with a few units moved by hand (the Monsters stay as in Mobile). A unit that is not listed keeps its place; the listed ones that are present take the places they have in the
 // Mobile order, in the order of the list.
 const COMPM=['Wyvern','Warden','Eternal Cannoneer','Demonic Salamander','Warregal','Jago','Ariel','Superior Epic Monster Hunter','Quicksand','Galloper','Highlander','Scarface','Pounder','Slavic Warrior','Grace'];
