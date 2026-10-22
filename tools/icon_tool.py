@@ -118,6 +118,10 @@ def cmd_unit(a):
         name = rest[0]
         if f'"{name}":"data:image' in js: js = re.sub(r'("%s":")data:image/[^"]+' % re.escape(name), lambda m: m.group(1) + data, js, 1)
         else: js = js.replace('const ICD={', 'const ICD={"%s":"%s",' % (name, data), 1)
+    elif kind == 'troop':                         # a regular troop picture: IC
+        name = rest[0]
+        if re.search(r'"%s": ?"data:image' % re.escape(name), js): js = re.sub(r'("%s": ?")data:image/[^"]+' % re.escape(name), lambda m: m.group(1) + data, js, 1)
+        else: js = js.replace('const IC={', 'const IC={"%s": "%s",' % (name, data), 1)
     elif kind == 'epicunit':                      # one stack of an epic: EPIC_UN[epic][type]
         key, ty = rest[0], rest[1]
         m = re.search(r'(const EPIC_UN=\{(?:.*?,)?%s:\{)([^}]*)\}' % re.escape(key), js)
