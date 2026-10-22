@@ -166,3 +166,5 @@ table.gt[data-n="4"]{width:100%;--n:4}table.gt[data-n="5"]{width:125%;--n:5}tabl
 .bq .beg .bnm{flex:0 1 auto;align-items:flex-end;text-align:right}
 .bq .beg .bnn{font-size:14px}
 .bq .bar{margin:0 2px}
+
+.epsel{display:flex;align-items:center;gap:10px;width:100%;box-sizing:border-box;margin:0;padding:6px 10px;min-height:40px;background:#e2cf9e;color:#2a2012;border:1px solid #8a6a2c;border-radius:6px;font:inherit;text-align:left;cursor:pointer}.epsel .epi{width:28px;height:28px;border-radius:5px;flex:none}.epsel .epn{flex:1;min-width:0}.epsel .epc{margin-left:auto;font-size:13px}

@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.53';
+const APP_VERSION='21.8.54';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -695,7 +695,7 @@ function drawEP(){
   if(!EPM){p.innerHTML='';return}
   const cur=$('epic').value;
   p.innerHTML='<div class="amh"><div class="amt">Choose the epic monster</div><button class="amx" data-act="eclose" aria-label="Close" title="Close">\u00d7</button></div>'
-    +'<div class="epl">'+EPICS.filter(epOk).map(e=>'<button type="button" data-act="epick" data-e="'+esc(e.n)+'"'+(e.n==cur?' class="on"':'')+'>'+(epImg(e,'epi')||'<span class="epi epe"></span>')+'<span class="epn">'+esc(e.n)+'</span><small>'+(e.score?sh0(e.score)+' score':'score not set yet')+'</small></button>').join('')
+    +'<div class="epl">'+EPICS.map(e=>'<button type="button" data-act="epick" data-e="'+esc(e.n)+'"'+(e.n==cur?' class="on"':'')+'>'+(epImg(e,'epi')||'<span class="epi epe"></span>')+'<span class="epn">'+esc(e.n)+'</span><small>'+(e.score?sh0(e.score)+' score':'score not set yet')+'</small></button>').join('')
     +'<button type="button" data-act="epick" data-e=""'+(cur?'':' class="on"')+'><span>None</span><small>no score estimate</small></button></div>';
 }
 const epImg=(e,c)=>e&&e.ic&&EPIC_IC[e.ic]?'<img class="'+c+'" src="'+EPIC_IC[e.ic]+'" alt="">':'';
@@ -2440,6 +2440,7 @@ function calcRun0(){
   K4OK=false;K4LO=3;{const e=ATK=='epics'&&!P.ren&&!P.cp&&!P.one&&!P.pm?EPICS.find(x=>x.n==$('epic').value):null;
     if(e&&e.st&&e.score&&e.en.length==2){K4LO=e.en[0];const k=killState({...P,kill:true,kill4:true},ordL(BRD.list,BRD.order),e);K4OK=!!(k&&k.alive==e.st.length)}}
   {const ce=ATK=='epics'?EPICS.find(x=>x.n==$('epic').value):null,ec=$('ecard');if(ec)ec.hidden=ATK!='epics';
+    {const eb=$('ebtn');if(eb){const k=ce?ce.n:'';if(eb.dataset.k!==k){eb.dataset.k=k;eb.innerHTML=ce?epImg(ce,'epi')+'<span class="epn">'+esc(ce.n)+'</span><span class="epc">\u25be</span>':'<span class="epn">Choose epic</span><span class="epc">\u25be</span>'}}}
     document.querySelectorAll('.eb').forEach(b=>{b.hidden=!!ce&&!ce.en.includes(+b.dataset.e)});
     document.querySelectorAll('.cm[data-m=kill]').forEach(b=>{b.hidden=!ce||!(ce.ks||ce.en.includes(3)||ce.en.includes(4))})}
   document.querySelectorAll('.eb').forEach(b=>{if(+b.dataset.e==K4LO&&K4OK)b.hidden=true;b.disabled=false;b.title=''});      // the army kills this epic while it still has all its stacks: the 3-stack button is not shown at all (it is there or it is not)
