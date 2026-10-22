@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.9.5';
+const APP_VERSION='21.9.6';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -2328,6 +2328,7 @@ function sizeChain(P,seq,H,T,idx,X,fr,fw){      // fr: the place from which the 
   });
   return ns;
 }
+let PRIO=true;      // 21.9.6 the Authority goes to the real mercenaries first, Ariel / Grace take the rest (false: the old way, the damage decides how much the weak stacks take)
 function allocMerc(P,ld,so,X){
   const all=MT.map(t=>mkM(t,P,X)),res={all,list:[],ord:[],used:0};
   if(P.ren)all.forEach(s=>s.grp='REST');      // 14.14 Renegades: the mercenaries stand in the one block with the rest of the Leadership and the monsters
@@ -2361,8 +2362,22 @@ function allocMerc(P,ld,so,X){
     seq.forEach((s,i)=>{if(ns[i]>0){lst.push({...s,n:ns[i]});names.push(s.name)}});
     return{d:score(P,[...ld,...lst],[...so,...names],true).dmg,seq,ns,fr};
   };
+  // 21.9.6 PRIORITY: the Authority goes to the real mercenaries first (the main chain and the hunters, as big as it reaches), the weak-strength stacks (Ariel, then Grace) get only what is left over
+  const evalPrio=(seq,fr)=>{
+    const mainS=seq.slice(0,fr),wkS=seq.slice(fr),nm=sizeOf(mainS,-1);
+    let left=P.capU-used(mainS,nm);
+    const full=(()=>{      // the level of the main chain, and with it the biggest size every weak stack may have (behind the stack in front of it, no budget yet)
+      const hi=L.length?H-1:1e15,at=X=>sizeChain(P,seq,L.length?H:Infinity,L.length?T:Infinity,L.length,X,fr,null);
+      let lo=0,top=hi;const U0=ns=>used(mainS,ns.slice(0,fr));
+      if(U0(at(hi))<=P.capU)return at(hi);
+      for(let k=0;k<60;k++){const mid=(lo+top)/2;if(U0(at(mid))<=P.capU)lo=mid;else top=mid}
+      return at(lo)})();
+    const ns=full.slice();wkS.forEach((s,j)=>{const i=fr+j,n=Math.max(0,Math.min(ns[i],Math.floor(left/s.cost)));ns[i]=n;left-=n*s.cost});
+    const lst=[],names=[];seq.forEach((s,i)=>{if(ns[i]>0){lst.push({...s,n:ns[i]});names.push(s.name)}});
+    return{d:score(P,[...ld,...lst],[...so,...names],true).dmg,seq,ns,fr}};
   const evalSeq=(seq,fr)=>{      // with a weak-strength group at the end (fr): chained as before, or each one on its own share of the common level (the Authority they take is traded against the ones in front of them); the damage decides
     if(!(fr>=0&&fr<seq.length))return evalOne(seq,fr);
+    if(PRIO)return evalPrio(seq,fr);
     const w=seq.length-fr,sh=[1,0.5,0.2];let b=evalOne(seq,-1);
     const combos=[];(function g(a){if(a.length==w){combos.push(a);return}sh.forEach(f=>g([...a,f]))})([]);
     for(const fw of combos){const r=evalOne(seq,fr,fw);if(r.d>b.d*(1+5e-4))b=r}return b};
