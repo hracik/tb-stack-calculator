@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.69';
+const APP_VERSION='21.8.70';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1791,14 +1791,15 @@ function epicSim(P,L,EP,dice,rng,trace){
     const F=()=>(1+(rng()<q.pc?1:0))*(1+(rng()<q.pa?1:0)),m1=F();if(m1>1)nd++;
     hit(i,b0*m1*k,bt,rd,m1>1?'<i title="This strike rolled double damage">double damage</i>':'',b0*m1*(k-1),false,tk);
     if(rng()<q.p){const m2=F();ns++;if(m2>1)nd++;hit(i,b0*m2*(full?k:1),full?bt:null,rd,'<i title="Double strike: the stack strikes a second time">double strike</i>'+(m2>1?'<i title="This strike rolled double damage">double damage</i>':''),0,false,full?tk:null)}};
-  let head=0;
-  for(let rd=0;head<N&&alive();rd++){const K=alive();const ord=e2.filter(e=>e.hp>0).sort((p,q)=>q.sp*q.hp/q.hpu-p.sp*p.hp/p.hpu),used=new Set();let pos=0;const nx=()=>{while(pos<N&&by[pos]<head)pos++;return pos<N?by[pos++]:-1};
+  for(let rd=0;dead.size<N&&alive();rd++){const K=alive();const ord=e2.filter(e=>e.hp>0).sort((p,q)=>q.sp*q.hp/q.hpu-p.sp*p.hp/p.hpu),used=new Set();let pos=0;const nx=()=>{while(pos<N&&dead.has(by[pos]))pos++;return pos<N?by[pos++]:-1};
     const kill=j=>{const a=e2.filter(e=>e.hp>0&&!used.has(e)).sort((p,q)=>q.sp*q.hp/q.hpu-p.sp*p.hp/p.hpu)[0]||ord[0]||e2[0];used.add(a);
       // an enemy stack deals (its living units x its strength): the front stack of ours dies only when that is at least its health; a small stack only wounds it
-      const Dm=a.sp>0?a.hp/a.hpu*a.sp:Infinity,Hf=L[head].n*L[head].hp*fr[head];
-      if(Dm<Hf*(1-1e-9)){fr[head]-=Dm/(L[head].n*L[head].hp);ev.push({r:rd,t:'w',i:head,ty:a.ty,u:Math.ceil(a.hp/a.hpu-1e-9),dmg:Dm,un:Math.round(L[head].n*fr[head]),hl:Hf});return}
-      ev.push({r:rd,t:'e',i:head,ty:a.ty,u:Math.ceil(a.hp/a.hpu-1e-9),un:Math.round(L[head].n*fr[head]),hl:Hf});dead.add(head++)};
-    for(let j=0;j<K&&head<N&&alive();j++){
+      // the enemy stack goes for the healthiest stack of ours that is still alive (a wounded stack is no longer the healthiest, so it dies later; ties: the earlier in the order)
+      let t=-1,tb=-1;for(let q=0;q<N;q++){if(dead.has(q))continue;const hq=L[q].n*L[q].hp*fr[q];if(hq>tb*(1+1e-9)){tb=hq;t=q}}
+      const Dm=a.sp>0?a.hp/a.hpu*a.sp:Infinity,Hf=L[t].n*L[t].hp*fr[t];
+      if(Dm<Hf*(1-1e-9)){fr[t]-=Dm/(L[t].n*L[t].hp);ev.push({r:rd,t:'w',i:t,ty:a.ty,u:Math.ceil(a.hp/a.hpu-1e-9),dmg:Dm,un:Math.round(L[t].n*fr[t]),hl:Hf});return}
+      ev.push({r:rd,t:'e',i:t,ty:a.ty,u:Math.ceil(a.hp/a.hpu-1e-9),un:Math.round(L[t].n*fr[t]),hl:Hf});dead.add(t)};
+    for(let j=0;j<K&&dead.size<N&&alive();j++){
       if(rd===0){const x=nx();if(x>=0)strike(x,rd);if(!alive())break;kill(j)}
       else{kill(j);const x=nx();if(x>=0)strike(x,rd)}}
     for(let x=nx();x>=0&&alive();x=nx())strike(x,rd)}
