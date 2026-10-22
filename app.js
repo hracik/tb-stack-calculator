@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.64';
+const APP_VERSION='21.8.65';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1826,9 +1826,11 @@ let KSC={k:'',cps:null};
 let KSAV={k:'',v:null},KSG={k:'',g:null};
 function ksAvg(P,L,EP){const av=killState(P,L,EP);return av?{...av,f:ksF(P,L,EP,1)}:av}
 // how much of the epic the army kills with a given luck (1 = average): the biggest state it kills with that damage; the killable states are not in a tidy order (a bigger state can be killed while a smaller one is not), so the result is the best it does with that luck or less: more luck is never worse
+// how far the dice can move the damage of the average fight (the spread of its double damage and double strikes, as a share of its damage): the 99 % luck window is 2.576 of these around 1
+function ksSg(P,L,EP){const av=killState(P,L,EP);if(!av)return 0;const sd=epicSim(P,L,av.EPS,false,null);return sd.pex>0?Math.sqrt(Math.max(0,sd.pvar))/sd.pex:0}
 function ksF(P,L,EP,lam){
   const key='G'+EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA,P.enemy>4,P.kill4,P.dmgScale]);
-  if(KSG.k!=key){const gs=[],fs=[];let best=0;for(let l=0.8;l<=1.2801;l+=0.02){const r=killState({...P,dmgScale:(P.dmgScale||1)*l},L,EP,0,true);best=Math.max(best,r?r.f:0);gs.push(l);fs.push(best)}const sm=fs.map((_,i)=>{let t=0,c=0;for(let j=Math.max(0,i-2);j<=Math.min(fs.length-1,i+2);j++){t+=fs[j];c++}return t/c});KSG={k:key,g:gs,f:sm}}      // smoothed over a few neighbouring luck levels: the fight is chaotic, so single levels jump in steps; the average of the neighbours is a smooth curve
+  if(KSG.k!=key){const gs=[],fs=[];let best=0;const sg=ksSg(P,L,EP),k0=Math.max(0,Math.floor((1-2.576*sg-0.04-0.8)/0.02+1e-9)),k1=Math.min(24,Math.ceil((1+2.576*sg+0.04-0.8)/0.02-1e-9));for(let k=k0;k<=k1;k++){const l=0.8+0.02*k;const r=killState({...P,dmgScale:(P.dmgScale||1)*l},L,EP,0,true);best=Math.max(best,r?r.f:0);gs.push(l);fs.push(best)}const sm=fs.map((_,i)=>{let t=0,c=0;for(let j=Math.max(0,i-2);j<=Math.min(fs.length-1,i+2);j++){t+=fs[j];c++}return t/c});KSG={k:key,g:gs,f:sm}}      // smoothed over a few neighbouring luck levels: the fight is chaotic, so single levels jump in steps; the average of the neighbours is a smooth curve
   const g=KSG.g,f=KSG.f;if(lam<=g[0])return f[0];if(lam>=g[g.length-1])return f[f.length-1];
   let i=0;while(g[i+1]<lam)i++;return f[i]+(f[i+1]-f[i])*(lam-g[i])/(g[i+1]-g[i])}
 let KSM=new Map();
@@ -1863,7 +1865,7 @@ function killState0(P,L,EP,dice,fast){
 // the range of the killshot: the same army, many rolled fights; each one finds the biggest state it kills (the 99 % range of those, and the average fight)
 function ksRange(P,L,EP){      // the 99 % range: the average fight tells how much the dice can move the damage (statistics: the spread of double damage and double strikes over all its strikes); a 99 % bad roll is 2.576 spreads below average, a 99 % good roll the same above; for each, the biggest state the army kills
   const av=ksAvg(P,L,EP);if(!av)return{lo:0,hi:0};
-  const sd=epicSim(P,L,av.EPS,false,null),sg=sd.pex>0?Math.sqrt(Math.max(0,sd.pvar))/sd.pex:0,z=2.576;
+  const sg=ksSg(P,L,EP),z=2.576;
   const lo=ksF(P,L,EP,1-z*sg),hi=ksF(P,L,EP,1+z*sg);
   return{lo:Math.max(0,Math.min(av.f,lo)),hi:Math.min(1,Math.max(av.f,hi)),sg}}
 // the score tile of a Killshot: the average fight with its range, or the rolled fight (Roll the dice)
