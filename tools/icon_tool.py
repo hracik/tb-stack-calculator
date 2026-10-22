@@ -8,7 +8,7 @@
   python3 tools/icon_tool.py unit SHOT.png --badge 2 --style army  --to epicunit:candle:1      # one stack of an epic (the 1 = type: 0 melee, 1 ranged, 2 mounted, 3 flying)
   python3 tools/icon_tool.py unit SHOT.png --badge 1 --style sales --to merc:"Elder Witch"     # a mercenary / unit picture
         --badge  = the number from `find`, or x,y,r (centre and radius of the tier badge in pixels)
-        --style  = which screen the card comes from: army (the Start march screen, the number sits on a dark band at the bottom of the art)
+        --style  = which screen the card comes from: list (the troop list), army (the Start march screen, the number sits on a dark band at the bottom of the art)
                    or sales (the Sales / shop screen, the number sits on the art and the card has a parchment frame)
         --crop   = optional, "x0,x1,y0,y1" in units of the badge radius, measured from the badge centre (to override the style)
         The picture is cut from the art only (the number is left out), put into the standard frame (dark gold, 112 x 112) and gets the tier badge of
@@ -31,7 +31,7 @@ OUT = 112
 # the picture is 6 px inside; so there is no black rim on a dark or light background
 FRAME = [(4, 0, 0, 4), (6, 0, 0, 0), (17, 9, 0, 133), (42, 29, 10, 212), (88, 63, 33, 244), (101, 78, 36, 253)]
 # art window, from the badge centre, in badge radii: x0, x1, y0, y1 (the part of the card that is only picture - no number, no frame)
-STYLES = {'army': (0.29, 5.06, -0.19, 3.61), 'sales': (0.41, 4.78, -0.47, 3.91)}
+STYLES = {'army': (0.29, 5.06, -0.19, 3.61), 'sales': (0.41, 4.78, -0.47, 3.91), 'list': (0.1, 5.0, -0.3, 4.75)}      # list = the troop list of the game (one troop per line, the name to the right of the picture)
 
 
 def b64(im, fmt='AVIF', **k):
@@ -112,6 +112,8 @@ def cmd_unit(a):
     crop = [float(v) for v in a.crop.split(',')] if a.crop else None
     ic = make_unit(im, x, y, r, a.style, crop); data = 'data:image/avif;base64,' + b64(ic, quality=75)
     js = open(APP, encoding='utf-8').read(); kind, *rest = a.to.split(':')
+    if kind == 'preview':                         # only the picture (PNG, 112 px, see-through edge), nothing is written into app.js
+        p = os.path.splitext(a.shot)[0] + '_' + re.sub(r'\W+', '_', rest[0]) + '.png'; ic.save(p); print('written', p); return
     if kind == 'merc':                            # a mercenary / unit picture: ICD
         name = rest[0]
         if f'"{name}":"data:image' in js: js = re.sub(r'("%s":")data:image/[^"]+' % re.escape(name), lambda m: m.group(1) + data, js, 1)
