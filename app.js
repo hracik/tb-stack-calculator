@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.10.1';
+const APP_VERSION='21.10.2';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1894,9 +1894,9 @@ function ksTile(P,list,order){
   const fm=f=>sh(f*EP.score).join(' ');let v,sub;
   if(!av)v='\u2013',sub='the army can not kill it';
   else{const r=ksRange(P,L,EP);v=Math.abs(r.hi-r.lo)<1e-9?fm(av.f):(()=>{const[a,ua]=sh(r.lo*EP.score),[b,ub]=sh(r.hi*EP.score);return ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub})();
-    sub='99 % range<br>killshot avg. '+fm(av.f);
+    sub='99 % score range<br>killshot avg. '+fm(av.f);
 }
-  return'<div data-kt="1"'+(eoMany?' data-act="eopen"':'')+' class="stt std"><div class="stl"><span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b> score'+eoCar+'</span></span></div><div class="stv">'+v+'</div><div class="sts">'+sub+'</div></div>'}
+  return'<div data-kt="1"'+(eoMany?' data-act="eopen"':'')+' class="stt std"><div class="stl"><span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span></div><div class="stv">'+v+'</div><div class="sts">'+sub+'</div></div>'}
 // the same army as a killshot: in the 3- and 4-stack modes the score tile also tells what a killshot hit with these stacks scores (average, 99 % range, the state it kills from)
 function ksInfo(P,list,order,EP){
   if(P.kill||P.ren||P.cp||P.one||P.pm||P.pvp||!(P.enemy==3||P.enemy==4||P.enemy==6||P.enemy==8)||!EP||!EP.st||!EP.score)return null;
@@ -2539,14 +2539,14 @@ function calcRun0(){
   let scoreTile='';
   const KEP=ATK=='epics'&&P.kill?epCur():null;
   if(KEP&&KEP.st&&KEP.score)scoreTile=KSLITE?'':ksTile(P,BRD.list,BRD.order);
-  else if(KEP&&!(KEP.st&&KEP.score))scoreTile=tile('std','<span class="eph">'+epImg(KEP,'epi')+'<span><b>'+esc(KEP.n).replace('/','/<wbr>')+'</b> score'+eoCar+'</span></span>','\u2013',KEP.score?'stacks not set yet':'score not set yet','').replace('<div class="stt',eoAct);
-  if(EP&&!(EP.st&&EP.score))scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b> score'+eoCar+'</span></span>','\u2013',EP.score?'stacks not set yet':'score not set yet','').replace('<div class="stt',eoAct);
+  else if(KEP&&!(KEP.st&&KEP.score))scoreTile=tile('std','<span class="eph">'+epImg(KEP,'epi')+'<span><b>'+esc(KEP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span>','\u2013',KEP.score?'stacks not set yet':'score not set yet','').replace('<div class="stt',eoAct);
+  if(EP&&!(EP.st&&EP.score))scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span>','\u2013',EP.score?'stacks not set yet':'score not set yet','').replace('<div class="stt',eoAct);
   else if(EP){const th=EP.st.reduce((q,x)=>q+x[0]*x[1],0),f=d=>Math.min(1,d/th)*EP.score,ki=ksInfo(P,BRD.list,BRD.order,EP),kk=ki&&!ki.none?ki:null;
     let lo=f(dRange?dRange[0]:sc.dmg),hi=f(dRange?dRange[1]:sc.dmg);const avg=f(sc.dmg);
     if(kk){lo=Math.min(lo,kk.lo);hi=Math.max(hi,kk.hi)}      // the main number covers both: the hit on a healthy epic and the killshot with the same stacks
     const [a,ua]=sh(lo),[b,ub]=sh(hi),rngTxt=(a!=b||ua!=ub)&&(dRange||kk);
-    const sub=(dRange||kk?'99 % range<br>':'')+P.enemy+'-stack avg. '+sh(avg).join(' ')+(ki?' \u00b7 '+(kk?'killshot avg. '+sh(kk.av).join(' '):'Killshot: the army can not kill it'):'');
-    scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b> score'+eoCar+'</span></span>',rngTxt?(ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub):a+' '+ua,sub,'').replace('<div class="stt',eoAct)}
+    const sub=(dRange||kk?'99 % score range<br>':'')+P.enemy+'-stack avg. '+sh(avg).join(' ')+(ki?' \u00b7 '+(kk?'killshot avg. '+sh(kk.av).join(' '):'Killshot: the army can not kill it'):'');
+    scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span>',rngTxt?(ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub):a+' '+ua,sub,'').replace('<div class="stt',eoAct)}
   $('rsm').innerHTML=`<div class="stl stch">Summary</div><div class="stg">${scoreTile}${tile('','Revive cost',scost==rcost?kmb(scost):`${kmb(scost)} <span class="stu">/</span> ${kmb(rcost)}`,'',rtip+' ('+(scost==rcost?num(scost):num(scost)+' / '+num(rcost))+' gold)')}${tile(ATK=='epics'?'':'std','Estimated damage',dRange?rg(dRange[0],dRange[1]):fmt(sc.dmg),dRange?'99 % range \u00b7 average '+fmt(sc.dmg):tgt?`level ${lvN} ${sc.dmg>=tgt?'reached':'short by '+((1-sc.dmg/tgt)*100).toFixed(1)+' %'}`:'',dRange?'99 % of the battles end between these two numbers (every strike rolls its own Double strike / Double damage chance)':tgt?`Level ${lvN}: the stacks must reach ${tgt.toLocaleString('en-US')} damage.`:'')}${tile('','Strikes',hRange?Math.round(hRange[0])+'\u2013'+Math.round(hRange[1]):Math.round(sc.hits),hRange?'99 % range \u00b7 average '+Math.round(sc.hits):'','Strikes against '+enTxt+(hRange?' (99 % range)':''))}</div>${hitsRow?`<div class="stl stch">Hits per revive mode</div><div class="stc">${REVCASES.map(([k,l])=>`<div class="stt${k==REVM?' stm':''}"><div class="stv">${HIT[k].toFixed(2)}</div><div class="sts">${l}</div></div>`).join('')}</div>`:''}`;      // 19.0.2: the summary as tiles (damage, strikes, stacks, revive cost); the army / monster / engineer count is gone
   $('res').innerHTML=secs;
   cmpSet({P,Aall,Mall,mItems,ordp:[...st.so,...U.ord],O:O.slice(),sc,rcost,scost,EP});      // the Compare card under the Result
