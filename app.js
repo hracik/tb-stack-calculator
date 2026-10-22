@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.11.2';
+const APP_VERSION='21.11.3';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -39,7 +39,7 @@ const NUMBOX='input[inputmode=decimal]';
 function fmtInt(s){s=String(s).replace(/[^\d.]/g,'');const i=s.indexOf('.');let a=i<0?s:s.slice(0,i);const b=i<0?'':'.'+s.slice(i+1).replace(/\./g,'');a=a.replace(/^0+(?=\d)/,'');return a.replace(/\B(?=(\d{3})+(?!\d))/g,',')+b}
 function fmtBox(el){const old=el.value,pos=el.selectionStart==null?old.length:el.selectionStart,sig=old.slice(0,pos).replace(/[^\d.]/g,'').length,nv=fmtInt(old);if(nv===old)return;el.value=nv;let n=0,i=0;for(;i<nv.length&&n<sig;i++)if(nv[i]!==',')n++;try{el.setSelectionRange(i,i)}catch(x){}}      // formats while typing and keeps the cursor next to the same digit
 const fmtAll=()=>document.querySelectorAll(NUMBOX).forEach(el=>{el.value=fmtInt(el.value)});
-const SCOUTS=["Spy I", "Spy II", "Spy III", "Spy IV", "Spy V", "Swift jaeger VI", "Swift jaeger VII", "Panoptic I", "Panoptic II"];      // 21.12 the regular Scouts (Specialists, 1/2 of the health and strength of the melee unit of the tier, 5 Leadership each, no Double strength against players): switched off in a new tab, a tab saved before them gets them switched off too
+const SCOUTS=["Spy I", "Spy II", "Spy III", "Spy IV", "Spy V", "Swift jaeger VI", "Swift jaeger VII", "Panoptic I", "Panoptic II"];      // 21.11.3 the regular Scouts (Specialists, 1/2 of the health and strength of the melee unit of the tier, 5 Leadership each, no Double strength against players): switched off in a new tab, a tab saved before them gets them switched off too
 const CO=['Melee','Mounted','Ranged','Flying','Scout'],TY=['Giant','Elemental','Dragon','Beast'];
 const NM={G:'Guardsmen',S:'Specialists',E:'Engineer Corps',M:'Monsters'};
 // ---------- troop catalog (straight from the troop JSON): army [class, tier, name, category, health, strength, cost, vs melee/ranged/mounted/flying, beast, food consumption, revival cost in gold (attack)]; monsters [tier, name, type, category, health, strength, cost, vs melee/ranged/mounted/flying, food, gold]; engineers ENGN/ENGH/ENGS/ENGF/ENGG = name/health/strength/food/gold ----------
@@ -212,7 +212,7 @@ const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const clone=o=>JSON.parse(JSON.stringify(o));
 const MODE_IDS=['mode','enemy'];                       // the two hidden mode boxes are kept out of the input lists: the mode is stored in the tab as mode / enemy (see snap and load)
 function snap(){
-  const d={vals:{},chk:{},SCK:1,O:O.slice(),X:[...XS],S:SO.slice(),atk:ATK,mode:$('mode').value,enemy:$('enemy').value,le:{...LASTE},lp:LASTP,cmp:{...CMPV}};      // the Attack epics / Attack players switch, the attack mode (4-stack, CP kill ...) and the last mode of each view belong to the tab
+  const d={vals:{},chk:{},O:O.slice(),X:[...XS],S:SO.slice(),atk:ATK,mode:$('mode').value,enemy:$('enemy').value,le:{...LASTE},lp:LASTP,cmp:{...CMPV}};      // the Attack epics / Attack players switch, the attack mode (4-stack, CP kill ...) and the last mode of each view belong to the tab
   document.querySelectorAll('input[id],select[id]').forEach(el=>{if(MODE_IDS.includes(el.id))return;if(el.type=='checkbox')d.chk[el.id]=el.checked;else d.vals[el.id]=(el.value===''&&el.matches(NUMBOX))?'0':el.value});      // a box that is empty only while it is being typed in counts as 0
   return d;
 }
@@ -221,8 +221,7 @@ function load(d){
   Object.entries(vals).forEach(([id,val])=>{const el=$(id);if(el&&!MODE_IDS.includes(id))el.value=id.startsWith('dh_')?snapDH(val):id=='temple'?tempNorm(val):(val===''&&el.matches(NUMBOX)?'0':val)});
   Object.entries(chk).forEach(([id,c])=>{const el=$(id);if(el)el.checked=c});
   fmtAll();
-  O=(d.O||[]).slice();XS=new Set(d.X||[]);if(!d.SCK)SCOUTS.forEach(n=>XS.add(n));      // a tab saved before the Scouts existed: they stay switched off
-  SO=(d.S||[]).slice();
+  O=(d.O||[]).slice();XS=new Set(d.X||[]);SO=(d.S||[]).slice();
   ATK=d.atk=='players'?'players':'epics';      // tabs saved before this existed open in Attack epics, in the 4-stack mode
   $('mode').value=d.mode||'max';$('enemy').value=d.enemy||'4';LASTE=d.le?{...d.le}:{mode:'max',enemy:'4'};LASTP=d.lp||'cp';
   CMPV=d.cmp&&typeof d.cmp=='object'?{...d.cmp}:{};CMPK='';      // the units typed in Compare belong to the tab
@@ -352,7 +351,7 @@ async function xCopy(){
 function parseKrappy(txt){      // the short text -> the same object the first (JSON) version read
   const m=txt.search(/Krappy Calculator/i);if(m<0)return null;
   const ids={};Object.keys(BLANK.vals).forEach(id=>{ids[xkey(id)]=id});ids.epic='epic';
-  const hv=/Krappy Calculator\s*v?(\d+)\.(\d+)/i.exec(txt.slice(m));const r={vals:{},chk:{},got:0,xv:hv?+hv[1]*100+ +hv[2]:0},tok=txt.slice(m).replace(/^Krappy Calculator\s*v?\S*/i,'').match(/\S+/g)||[];
+  const r={vals:{},chk:{},got:0},tok=txt.slice(m).replace(/^Krappy Calculator\s*v?\S*/i,'').match(/\S+/g)||[];
   for(const tk of tok){
     const i=tk.indexOf('=');if(i<1)continue;const k=tk.slice(0,i),w=tk.slice(i+1);let ok=true;
     if(k=='n')r.name=w.replace(/_/g,' ');
@@ -392,7 +391,7 @@ function importText(txt){
   }
   if(r.chk&&typeof r.chk=='object')for(const [id,c] of Object.entries(r.chk))if(own(BLANK.chk,id)&&typeof c=='boolean')d.chk[id]=c;
   d.O=[];for(const c of 'ESGM')for(let i=1;i<=9;i++)if(d.chk['s'+c+i])d.O.push(c+i);      // the kill order of the ticked tiers (the same as sync() builds it)
-  if(Array.isArray(r.X))d.X=list(r.X);d.SCK=(r.xv|0)>=2112?1:0;d.S=[];
+  if(Array.isArray(r.X))d.X=list(r.X);d.S=[];
   d.atk=r.atk=='players'?'players':'epics';
   d.mode=XMODES.includes(r.mode)?r.mode:'max';d.enemy=XENEMY.includes(String(r.enemy))?String(r.enemy):'4';
   d.le=r.le&&typeof r.le=='object'&&XMODES.includes(r.le.mode)&&XENEMY.includes(String(r.le.enemy))?{mode:r.le.mode,enemy:String(r.le.enemy)}:{mode:'max',enemy:'4'};
@@ -1145,10 +1144,23 @@ const MD={
       return{so,out};}}
 };
 const modeOf=P=>rgm(P)?MD.epic:P.ov?MD.ovo:P.cp?MD.cp:P.kill?MD.kill:MD.ren;
+// SCOUTS: they are in the calculation only when a player attacks a player and they beat (on damage = strength per Leadership, your bonuses in) a troop of a ticked tier: the Scouts of the tiers up to the highest ticked Specialists tier
+// that deal more per Leadership than the weakest ticked Guardsmen / Specialists troop. Otherwise they do not show up at all.
+let SCON=new Set();
+function scoutSet(P,order){
+  const s=new Set();if(ATK!='players')return s;
+  const nt=[];order.forEach(g=>{if(g[0]=='G'||g[0]=='S')(BYG[g]||[]).forEach(t=>{if(t.cat!='Scout')nt.push(t)})});
+  const top=Math.max(0,...order.filter(g=>g[0]=='S').map(g=>+g.slice(1)));
+  if(!nt.length||!top)return s;
+  const per=t=>t.str*mults(t,P)[1]*(t.cls=='S'&&t.cat!='Scout'?2:1)/t.cost,low=Math.min(...nt.map(per));
+  TR.forEach(t=>{if(t.cat=='Scout'&&t.cls=='S'&&t.tier<=top&&per(t)>low)s.add(t.name)});
+  return s;
+}
 function buildStacks(P,order,X){
   const mk=(t,i)=>{const[mh,ms]=mults(t,P);
     return{r:t.cls+t.tier,p:t.pool,c:t.pool=='M'?t.type:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i,dh:dhf(t,P)}};
-  const ts=[];order.forEach(g=>(BYG[g]||[]).forEach(t=>ts.push(t)));      // one total order, troop by troop
+  SCON=scoutSet(P,order);
+  const ts=[];order.forEach(g=>(BYG[g]||[]).forEach(t=>{if(t.cat!='Scout')ts.push(t)}));TR.forEach(t=>{if(SCON.has(t.name))ts.push(t)});      // one total order, troop by troop (the Scouts only when they are in: see scoutSet)
   const live=new Set(ts.filter(t=>!X.has(t.name)).map(t=>t.name));
   const mkOut=(so,c)=>{const o=so.map(n=>mk(TRN[n],0)),mt=monTiers(so.map(n=>TRN[n]));o.forEach(s=>{if(s.p=='M')s.pt=mt.indexOf(+s.r.slice(1))>=c});return o};   // pt: the stack belongs to the partial tier or below
   const nT=monTiers([...live].map(n=>TRN[n])).length;
@@ -2682,7 +2694,7 @@ const tfm=x=>Math.round(x).toLocaleString('en-US'),tpc=x=>Math.round(x*100)+'%',
 const TSIZES=[1,1.05,1.1,1.2];      // the enemy Leadership and Dominance the stacks are shown against (the search uses 100 % and 110 %: an all-rounder)
 function theoSel(){const s=[];['S','G','M'].forEach(c=>{for(let i=1;i<=9;i++){const el=$('s'+c+i);if(el&&el.checked)s.push(c+i)}});return s}
 const theoTiers=sel=>[...new Set(sel.map(x=>+x.slice(1)))].sort((a,b)=>b-a);      // the ticked tier numbers, the highest first
-const theoNames=(sel,tiers)=>TR.filter(t=>'GSM'.includes(t.cls)&&sel.includes(t.cls+t.tier)&&tiers.includes(t.tier)&&!XS.has(t.name)).map(t=>t.name);
+const theoNames=(sel,tiers)=>TR.filter(t=>'GSM'.includes(t.cls)&&t.cat!='Scout'&&sel.includes(t.cls+t.tier)&&tiers.includes(t.tier)&&!XS.has(t.name)).map(t=>t.name);
 const theoEs=P=>[[1,1],[1,0],[1.1,1],[1.1,0]].map(([sc,eq])=>THEO.mkEnemy(P,eq,sc));      // the search: equal health / equal cost monsters, at 100 % and 110 %
 function theoStats(P,names,w,N){const L=THEO.layout(P,names,w),rows=[];
   TSIZES.forEach(sz=>{const o={sz,A:{win:0,ra:0,rb:0,margin:0},B:{win:0,ra:0,rb:0,margin:0}};
@@ -2969,7 +2981,7 @@ document.addEventListener('keydown',e=>{if(e.key=='Enter'&&e.target.matches&&e.t
 document.addEventListener('dblclick',e=>{const t=e.target.closest&&e.target.closest('.tab[data-t]');if(t)rename(+t.dataset.t)});
 // start: dying order for a full enemy stack, with the default tiers
 runBest(4);
-DEF=snap();DEF.X=['Grace',...SCOUTS];      // Grace (a Scout) is switched off in every new tab; a tab that was saved keeps what it saved
+DEF=snap();DEF.X=['Grace'];      // Grace (a Scout) is switched off in every new tab; a tab that was saved keeps what it saved
 // Every tab starts blank: Leadership, Dominance, the basic bonuses, the monster bonuses (with the Double strike) and the Food production are all 0. BLANK is also the fallback for a saved tab that lacks a box (a box added by a newer version), so a release never puts a number of ours into a tab. The numbers a tab has saved are never replaced by a release: they live in localStorage under KEY, which must stay the same forever.
 const BLANK=clone(DEF);
 ['capA','capM','foodP','bh_G','bs_G','bh_S','bs_S','bh_M','bs_M','bh_E','bs_E','bs_Epic','bh_Players','bs_Players',...['Giant','Elemental','Dragon','Beast'].flatMap(k=>['bh_'+k,'bs_'+k,'dh_'+k])].forEach(id=>{if(id in BLANK.vals)BLANK.vals[id]='0'});
