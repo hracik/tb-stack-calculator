@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.65';
+const APP_VERSION='21.8.66';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1955,6 +1955,7 @@ function drawBR(){
   [['die','os'],['hit','ho'],['rep','br']].forEach(([k,id])=>{const el=$(id);if(el)el.hidden=OVK!==k});
   document.querySelectorAll('.ob').forEach(b=>{const on=b.dataset.o===OVK;b.classList.toggle('on',on);b.setAttribute('aria-expanded',String(on))});
   if(!BRD){BRFXH='';fxPlace();return}
+  if(KSLITE){BRFXH='';return}      // the first Killshot pass only finds the army: no report, no Random effects (the pass that is drawn builds them)
   BRFXH='';const rep=BRD.fx?theoReport(BRD):battleHtml(BRD.P,BRD.list,BRD.order,BRD.sc);      // always built: it also gives the Random effects block of the summary (One v. One with found stacks: a fight against the known enemy)
   {const kt=document.querySelector('#rsm [data-kt]');if(kt&&BRD.P.kill){const h=ksTile(BRD.P,BRD.list,BRD.order);if(h)kt.outerHTML=h}}      // the Killshot score follows the roll
   fxPlace();requestAnimationFrame(fxPlace);      // again after the summary is drawn
