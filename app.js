@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.11.6';
+const APP_VERSION='21.11.7';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1157,12 +1157,13 @@ const modeOf=P=>rgm(P)?MD.epic:P.ov?MD.ovo:P.cp?MD.cp:P.kill?MD.kill:MD.ren;
 // that deals more per Leadership than the weakest ticked Guardsmen / Specialists troop. Otherwise they do not show up at all.
 let SCON=new Set(),SCMODE='auto';      // SCMODE 'none': the calculation without any Scouts (see solveSc)
 function scoutSet(P,order){
-  const s=new Set();if(ATK!='players'||SCMODE=='none')return s;
+  const s=new Set();if(ATK!='players')return s;
   const nt=[];order.forEach(g=>{if(g[0]=='G'||g[0]=='S')(BYG[g]||[]).forEach(t=>{if(t.cat!='Scout')nt.push(t)})});
   if(!nt.length)return s;
   const tk=new Set(order.filter(g=>g[0]=='S').map(g=>+g.slice(1)));
   const per=t=>t.str*mults(t,P)[1]*(t.cls=='S'&&t.cat!='Scout'?2:1)/t.cost,low=Math.min(...nt.map(per));
   TR.forEach(t=>{if(t.cat=='Scout'&&t.cls=='S'&&tk.has(t.tier)&&per(t)>low)s.add(t.name)});
+  if(SCMODE=='none')[...s].forEach(n=>{if(!XS.has(n))s.delete(n)});      // the run without Scouts: the ones you clicked off stay in the list (off), so you can click them on again
   return s;
 }
 function buildStacks(P,order,X){
