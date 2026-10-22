@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.11.3';
+const APP_VERSION='21.11.4';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1144,16 +1144,15 @@ const MD={
       return{so,out};}}
 };
 const modeOf=P=>rgm(P)?MD.epic:P.ov?MD.ovo:P.cp?MD.cp:P.kill?MD.kill:MD.ren;
-// SCOUTS: they are in the calculation only when a player attacks a player and they beat (on damage = strength per Leadership, your bonuses in) a troop of a ticked tier: the Scouts of the tiers up to the highest ticked Specialists tier
-// that deal more per Leadership than the weakest ticked Guardsmen / Specialists troop. Otherwise they do not show up at all.
+// SCOUTS: they are in the calculation only when a player attacks a player and they beat (on damage = strength per Leadership, your bonuses in) a troop of a ticked tier: every Scout (any tier)
+// that deals more per Leadership than the weakest ticked Guardsmen / Specialists troop. Otherwise they do not show up at all.
 let SCON=new Set();
 function scoutSet(P,order){
   const s=new Set();if(ATK!='players')return s;
   const nt=[];order.forEach(g=>{if(g[0]=='G'||g[0]=='S')(BYG[g]||[]).forEach(t=>{if(t.cat!='Scout')nt.push(t)})});
-  const top=Math.max(0,...order.filter(g=>g[0]=='S').map(g=>+g.slice(1)));
-  if(!nt.length||!top)return s;
+  if(!nt.length)return s;
   const per=t=>t.str*mults(t,P)[1]*(t.cls=='S'&&t.cat!='Scout'?2:1)/t.cost,low=Math.min(...nt.map(per));
-  TR.forEach(t=>{if(t.cat=='Scout'&&t.cls=='S'&&t.tier<=top&&per(t)>low)s.add(t.name)});
+  TR.forEach(t=>{if(t.cat=='Scout'&&t.cls=='S'&&per(t)>low)s.add(t.name)});
   return s;
 }
 function buildStacks(P,order,X){
