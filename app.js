@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.62';
+const APP_VERSION='21.8.64';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1828,7 +1828,7 @@ function ksAvg(P,L,EP){const av=killState(P,L,EP);return av?{...av,f:ksF(P,L,EP,
 // how much of the epic the army kills with a given luck (1 = average): the biggest state it kills with that damage; the killable states are not in a tidy order (a bigger state can be killed while a smaller one is not), so the result is the best it does with that luck or less: more luck is never worse
 function ksF(P,L,EP,lam){
   const key='G'+EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA,P.enemy>4,P.kill4,P.dmgScale]);
-  if(KSG.k!=key){const gs=[],fs=[];let best=0;for(let l=0.8;l<=1.2801;l+=0.04){const r=killState({...P,dmgScale:(P.dmgScale||1)*l},L,EP,0,true);best=Math.max(best,r?r.f:0);gs.push(l);fs.push(best)}const sm=fs.map((_,i)=>{let t=0,c=0;for(let j=Math.max(0,i-1);j<=Math.min(fs.length-1,i+1);j++){t+=fs[j];c++}return t/c});KSG={k:key,g:gs,f:sm}}      // smoothed over a few neighbouring luck levels: the fight is chaotic, so single levels jump in steps; the average of the neighbours is a smooth curve
+  if(KSG.k!=key){const gs=[],fs=[];let best=0;for(let l=0.8;l<=1.2801;l+=0.02){const r=killState({...P,dmgScale:(P.dmgScale||1)*l},L,EP,0,true);best=Math.max(best,r?r.f:0);gs.push(l);fs.push(best)}const sm=fs.map((_,i)=>{let t=0,c=0;for(let j=Math.max(0,i-2);j<=Math.min(fs.length-1,i+2);j++){t+=fs[j];c++}return t/c});KSG={k:key,g:gs,f:sm}}      // smoothed over a few neighbouring luck levels: the fight is chaotic, so single levels jump in steps; the average of the neighbours is a smooth curve
   const g=KSG.g,f=KSG.f;if(lam<=g[0])return f[0];if(lam>=g[g.length-1])return f[f.length-1];
   let i=0;while(g[i+1]<lam)i++;return f[i]+(f[i+1]-f[i])*(lam-g[i])/(g[i+1]-g[i])}
 let KSM=new Map();
@@ -1844,12 +1844,7 @@ function killState0(P,L,EP,dice,fast){
     const av=KSAV.v;if(!av)return null;
     const sd=epicSim(P,L,av.EPS,true,THEO.rngMk(dice)),lam=sd.pex>0?sd.pot/sd.pex:1;      // the luck of the fight that the report shows (the average killshot state): what its strikes were really worth against what they are worth on average
     const f=ksF(P,L,EP,lam);return{...av,f,left:f*av.tot,lam,avg:av}}      // dice: the luck of the rolled fight (the same dice stream for every state that is tried); without it the average fight
-  if(P.kill4&&!P.k3){const a=killState({...P,kill4:false,k3:1},L,EP,0,fast);      // the rules with every stack alive can only beat the rules with one stack fewer when the army kills the epic while all its stacks are alive: that is asked first (the smallest such state: the way down just before the first stack dies, that stack with a sliver left), and only then searched
-    let ok4=true;if(!window.KSBRUTE&&KSC.cps){const cp=KSC.cps,al=c=>c.hp.filter(x=>x>1e-6).length;let k=-1;cp.forEach((c,x)=>{if(al(c)==EP.st.length)k=x});
-      if(k<0)ok4=false;else{const hp=(cp[k+1]||cp[k]).hp.map((x,q)=>x>1e-6?x:(cp[k].hp[q]>1e-6?2e-6:0)),left=hp.reduce((q,x)=>q+x,0);
-        ok4=epicSim(P,L,{...EP,st:EP.st.map((x,q)=>[hp[q]/x[1],x[1],x[2],x[3],q]).filter((x,q)=>hp[q]>1e-6)},false,null).td>=left*(1-1e-6)}}
-    if(!ok4)return a;
-    const b=killState({...P,k3:1},L,EP,0,fast);return a&&(!b||a.f>b.f+1e-12)?a:b}
+  if(P.kill4&&!P.k3){const a=killState({...P,kill4:false,k3:1},L,EP,0,fast),b=killState({...P,k3:1},L,EP,0,fast);return a&&(!b||a.f>b.f+1e-12)?a:b}      // allowing all the stacks alive can never score less than allowing one stack fewer: the better of the two (both searched: whether the army kills the epic while every stack is alive can hang on a sliver of one stack, so no shortcut)
   const key=EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA,P.enemy>4]);
   if(KSC.k!=key)KSC={k:key,cps:epicPath(P,L,EP)};
   // every state on the way down with at most K living stacks (4: all of them, 3: the 3-stack states): the army kills the biggest one it can, however weak it is (the last state, nothing left, is always killed)
