@@ -27,8 +27,9 @@ import cv2
 
 APP = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'app.js')
 OUT = 112
-# the frame of the existing unit pictures, outside in (sampled from them): black, dark, dark, brown, brown-gold x3
-FRAME = [(1, 0, 0), (15, 9, 0), (15, 9, 0), (43, 28, 7), (85, 66, 33), (85, 66, 33), (85, 66, 33)]
+# the frame of the existing unit pictures, outside in, as they are in the app (sampled from them): RGBA - the two outer lines are (nearly) see-through,
+# the picture is 6 px inside; so there is no black rim on a dark or light background
+FRAME = [(4, 0, 0, 4), (6, 0, 0, 0), (17, 9, 0, 133), (42, 29, 10, 212), (88, 63, 33, 244), (101, 78, 36, 253)]
 # art window, from the badge centre, in badge radii: x0, x1, y0, y1 (the part of the card that is only picture - no number, no frame)
 STYLES = {'army': (0.29, 5.06, -0.19, 3.61), 'sales': (0.41, 4.78, -0.47, 3.91)}
 
@@ -92,9 +93,9 @@ def clean_badge(im, x, y, r):                    # takes the old badge out of th
 def make_unit(im, x, y, r, style, crop=None):
     x0, x1, y0, y1 = crop or STYLES[style]
     art = clean_badge(im, x, y, r).crop((round(x + x0 * r), round(y + y0 * r), round(x + x1 * r), round(y + y1 * r)))
-    c = Image.new('RGB', (OUT, OUT), (0, 0, 0)); d = ImageDraw.Draw(c)
+    c = Image.new('RGBA', (OUT, OUT), (0, 0, 0, 0)); d = ImageDraw.Draw(c); n = len(FRAME)
+    c.paste(art.resize((OUT - 2 * n, OUT - 2 * n), Image.LANCZOS).convert('RGBA'), (n, n))
     for i, col in enumerate(FRAME): d.rectangle((i, i, OUT - 1 - i, OUT - 1 - i), outline=col)
-    n = len(FRAME); c.paste(art.resize((OUT - 2 * n, OUT - 2 * n), Image.LANCZOS), (n, n))
     b, m = circle(im, x, y, int(r * 0.88)); R = 15
     c.paste(b.resize((2 * R, 2 * R), Image.LANCZOS), (1, 1), m.resize((2 * R, 2 * R), Image.LANCZOS))
     return c
@@ -125,7 +126,7 @@ def cmd_unit(a):
         else: js = js.replace('const EPIC_UN={', 'const EPIC_UN={%s:{%s:"%s"},' % (key, ty, data), 1)
     else: raise SystemExit('--to must be merc:NAME or epicunit:KEY:TYPE')
     open(APP, 'w', encoding='utf-8').write(js)
-    p = os.path.splitext(a.shot)[0] + '_' + re.sub(r'\W+', '_', a.to) + '.png'; ic.resize((224, 224), Image.LANCZOS).save(p)
+    p = os.path.splitext(a.shot)[0] + '_' + re.sub(r'\W+', '_', a.to) + '.png'; bg = Image.new('RGBA', (224, 224), (60, 60, 60, 255)); bg.alpha_composite(ic.resize((224, 224), Image.LANCZOS)); bg.convert('RGB').save(p)
     print('put into app.js:', a.to, '| preview', p)
 
 
