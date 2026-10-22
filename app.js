@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.66';
+const APP_VERSION='21.8.67';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1833,6 +1833,7 @@ function ksF(P,L,EP,lam){
   if(KSG.k!=key){const gs=[],fs=[];let best=0;const sg=ksSg(P,L,EP),k0=Math.max(0,Math.floor((1-2.576*sg-0.04-0.8)/0.02+1e-9)),k1=Math.min(24,Math.ceil((1+2.576*sg+0.04-0.8)/0.02-1e-9));for(let k=k0;k<=k1;k++){const l=0.8+0.02*k;const r=killState({...P,dmgScale:(P.dmgScale||1)*l},L,EP,0,true);best=Math.max(best,r?r.f:0);gs.push(l);fs.push(best)}const sm=fs.map((_,i)=>{let t=0,c=0;for(let j=Math.max(0,i-2);j<=Math.min(fs.length-1,i+2);j++){t+=fs[j];c++}return t/c});KSG={k:key,g:gs,f:sm}}      // smoothed over a few neighbouring luck levels: the fight is chaotic, so single levels jump in steps; the average of the neighbours is a smooth curve
   const g=KSG.g,f=KSG.f;if(lam<=g[0])return f[0];if(lam>=g[g.length-1])return f[f.length-1];
   let i=0;while(g[i+1]<lam)i++;return f[i]+(f[i+1]-f[i])*(lam-g[i])/(g[i+1]-g[i])}
+function ksCps(P,L,EP){const key=EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA,P.enemy>4]);if(KSC.k!=key)KSC={k:key,cps:epicPath(P,L,EP)};return KSC.cps}
 let KSM=new Map();
 function killState(P,L,EP,dice,fast){
   if(dice)return killState0(P,L,EP,dice,fast);
@@ -1845,10 +1846,16 @@ function killState0(P,L,EP,dice,fast){
     if(KSAV.k!=key)KSAV={k:key,v:killState(P,L,EP)};
     const av=KSAV.v;if(!av)return null;
     const sd=epicSim(P,L,av.EPS,true,THEO.rngMk(dice)),lam=sd.pex>0?sd.pot/sd.pex:1;      // the luck of the fight that the report shows (the average killshot state): what its strikes were really worth against what they are worth on average
-    const f=ksF(P,L,EP,lam);return{...av,f,left:f*av.tot,lam,avg:av}}      // dice: the luck of the rolled fight (the same dice stream for every state that is tried); without it the average fight
+    const f=ksF(P,L,EP,lam),tot=av.tot,cand=ksCps(P,L,EP).filter(c=>c.hp.filter(x=>x>1e-6).length<=av.K);
+    // the enemy of the rolled fight: the state on the way down with the health that the points belong to, so that the report shows the enemy the points are for. The same dice must kill it: the biggest state a little below the curve's value that they kill
+    const stateAt=left=>{for(let i=0;i<cand.length-1;i++){const A=cand[i],B=cand[i+1];if(A.left>=left&&B.left<=left){const t=A.left==B.left?0:(A.left-left)/(A.left-B.left);return A.hp.map((x,q)=>x+t*(B.hp[q]-x))}}return cand[0].hp},
+      mkS=hp=>({...EP,st:EP.st.map((x,q)=>[hp[q]/x[1],x[1],x[2],x[3],q]).filter((x,q)=>hp[q]>1e-6)}),
+      kills=left=>{const hp=stateAt(left),E2=mkS(hp);return{E2,ok:epicSim(P,L,E2,true,THEO.rngMk(dice)).td>=left*(1-1e-6)}};
+    let hiL=Math.min(f*tot,cand[0].left),loL=hiL*0.9,r=kills(hiL);
+    if(!r.ok){const r0=kills(loL);if(r0.ok){let A=loL,B=hiL;r=r0;for(let k=0;k<10;k++){const m=(A+B)/2,t=kills(m);if(t.ok){A=m;r=t}else B=m}hiL=A}else{r=r0;hiL=loL}}
+    return{...av,f:hiL/tot,left:hiL,lam,avg:av,EPSR:r.E2}}      // dice: the luck of the rolled fight (the same dice stream for every state that is tried); without it the average fight
   if(P.kill4&&!P.k3){const a=killState({...P,kill4:false,k3:1},L,EP,0,fast),b=killState({...P,k3:1},L,EP,0,fast);return a&&(!b||a.f>b.f+1e-12)?a:b}      // allowing all the stacks alive can never score less than allowing one stack fewer: the better of the two (both searched: whether the army kills the epic while every stack is alive can hang on a sliver of one stack, so no shortcut)
-  const key=EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA,P.enemy>4]);
-  if(KSC.k!=key)KSC={k:key,cps:epicPath(P,L,EP)};
+  ksCps(P,L,EP);
   // every state on the way down with at most K living stacks (4: all of them, 3: the 3-stack states): the army kills the biggest one it can, however weak it is (the last state, nothing left, is always killed)
   const cps=KSC.cps,K=EP.st.length>4?(P.kill4?8:6):(P.kill4?4:3),al=c=>c.hp.filter(x=>x>1e-6).length,cand=cps.filter(c=>al(c)<=K);
   if(!cand.length)return null;
@@ -1902,7 +1909,7 @@ function battleHtml(P,list,order,sc){
   if(known){
     const unIc=ty=>EPIC_UN[EPK.ic]&&EPIC_UN[EPK.ic][ty]?`<img class="ic2" src="${EPIC_UN[EPK.ic][ty]}" alt="">`:EN.ic;
     KSAVGF=P.kill?(ksAvg(P,L,EPK)||{f:0}).f:null;      // the score of the average fight: what a rolled Killshot is compared with
-    const ks=P.kill?killState(P,L,EPK,ex?0:THEOSEED):null,EPS=ks?(ks.avg?ks.avg.EPS:ks.EPS):(P.enemy==3||P.enemy==6)?{...EPK,st:EPK.st.filter(x=>x[2]!=2)}:EPK;      // the 3-stack mode has no mounted enemy stack; the Killshot starts at the biggest state the army kills (killState)
+    const ks=P.kill?killState(P,L,EPK,ex?0:THEOSEED):null,EPS=ks?(ks.EPSR||(ks.avg?ks.avg.EPS:ks.EPS)):(P.enemy==3||P.enemy==6)?{...EPK,st:EPK.st.filter(x=>x[2]!=2)}:EPK;      // the 3-stack mode has no mounted enemy stack; the Killshot starts at the biggest state the army kills (killState)
     KSROLLF=ks?ks.f:null;      // the score of the rolled fight (the Random effects points)
     const sim=epicSim(P,L,EPS,!ex,rng),avg=ex?sim:epicSim(P,L,EPS,false,null);td=sim.td;ad=avg.td;nd=sim.nd;ns=sim.ns;ed=sim.ed;es=sim.es;
     sim.ev.forEach(x=>{
