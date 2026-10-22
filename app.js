@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.8.61';
+const APP_VERSION='21.8.62';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -1844,9 +1844,11 @@ function killState0(P,L,EP,dice,fast){
     const av=KSAV.v;if(!av)return null;
     const sd=epicSim(P,L,av.EPS,true,THEO.rngMk(dice)),lam=sd.pex>0?sd.pot/sd.pex:1;      // the luck of the fight that the report shows (the average killshot state): what its strikes were really worth against what they are worth on average
     const f=ksF(P,L,EP,lam);return{...av,f,left:f*av.tot,lam,avg:av}}      // dice: the luck of the rolled fight (the same dice stream for every state that is tried); without it the average fight
-  if(P.kill4&&!P.k3){const a=killState({...P,kill4:false,k3:1},L,EP,0,fast);      // the rules with every stack alive can only beat the rules with one stack fewer when the army kills the epic while all its stacks are alive: that is asked first (the smallest state with all of them), and only then searched
-    let last=null;if(KSC.cps)KSC.cps.forEach(c=>{if(c.hp.filter(x=>x>1e-6).length==EP.st.length)last=c});
-    if(!last||!(epicSim(P,L,{...EP,st:EP.st.map((x,i)=>[last.hp[i]/x[1],x[1],x[2],x[3],i]).filter((x,i)=>last.hp[i]>1e-6)},false,null).td>=last.left*(1-1e-6)))return a;
+  if(P.kill4&&!P.k3){const a=killState({...P,kill4:false,k3:1},L,EP,0,fast);      // the rules with every stack alive can only beat the rules with one stack fewer when the army kills the epic while all its stacks are alive: that is asked first (the smallest such state: the way down just before the first stack dies, that stack with a sliver left), and only then searched
+    let ok4=true;if(!window.KSBRUTE&&KSC.cps){const cp=KSC.cps,al=c=>c.hp.filter(x=>x>1e-6).length;let k=-1;cp.forEach((c,x)=>{if(al(c)==EP.st.length)k=x});
+      if(k<0)ok4=false;else{const hp=(cp[k+1]||cp[k]).hp.map((x,q)=>x>1e-6?x:(cp[k].hp[q]>1e-6?2e-6:0)),left=hp.reduce((q,x)=>q+x,0);
+        ok4=epicSim(P,L,{...EP,st:EP.st.map((x,q)=>[hp[q]/x[1],x[1],x[2],x[3],q]).filter((x,q)=>hp[q]>1e-6)},false,null).td>=left*(1-1e-6)}}
+    if(!ok4)return a;
     const b=killState({...P,k3:1},L,EP,0,fast);return a&&(!b||a.f>b.f+1e-12)?a:b}
   const key=EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA,P.enemy>4]);
   if(KSC.k!=key)KSC={k:key,cps:epicPath(P,L,EP)};
