@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.13.1';
+const APP_VERSION='21.13.2';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
@@ -2022,16 +2022,16 @@ function runBest(n){                                     // Max vs. 3 stack / fu
   refresh();
 }
 const PV1=true;                                          // Pv1 modes (CP kill, CP death): on. Set false to switch them off: their buttons are greyed out and a tab that was left in one falls back to the 4-stack mode.
-const PVM=false;                                         // PvMany modes (Max damage): switched off for now, same behaviour. Set true to switch Max damage on.
+const PVM=()=>typeof SY!=='undefined'&&SY.role=='admin';        // PvMany modes (Max damage): for the admin only (the account role) for now; everyone else gets the greyed-out button. Set to ()=>true to switch Max damage on for everyone.
 const ovoOn=()=>typeof SY!=='undefined'&&SY.role=='admin';      // One v. One is for the admin only (the account role); everyone else does not get the button
 let OVOP=null;
-const RENEGADES=false;                                   // Renegades off for now (14.30). Set true to switch back on.
+const RENEGADES=()=>typeof SY!=='undefined'&&SY.role=='admin';   // Renegades: for the admin only (the account role) for now (off for everyone else since 14.30). Set to ()=>true to switch back on for everyone.
 function runRen(){                                       // Renegades: fixed rule, nothing is refined
-  if(!RENEGADES)return;
+  if(!RENEGADES())return;
   $('mode').value='ren';SO=[];
   refresh();
 }
-function runPM(){ if(!PVM)return;                                        // PvP Max damage: the CP death rules against a fully equipped enemy (all bonuses count), the rule decides the order, nothing is refined
+function runPM(){ if(!PVM())return;                                        // PvP Max damage: the CP death rules against a fully equipped enemy (all bonuses count), the rule decides the order, nothing is refined
   $('mode').value='pvpmax';SO=[];
   refresh();
 }
@@ -2487,12 +2487,12 @@ function calcRun(){
   if(K4OK&&ATK=='epics'&&$('mode').value=='max'&&+$('enemy').value==K4LO){$('enemy').value=String(K4LO==3?4:8);SO=[];calcRun0()}}      // the 3-stack mode is off while the army kills from 4 stacks: the 4-stack mode instead
 function calcRun0(){
   epAuto();
-  const pvOK=m=>m=='cp'||m=='cpd'?PV1:m=='pvpmax'?PVM:m=='ovo'?ovoOn():m=='ren'?RENEGADES:false,okP=PVMODES.filter(pvOK);      // okP = the PvP modes that are switched on
+  const pvOK=m=>m=='cp'||m=='cpd'?PV1:m=='pvpmax'?PVM():m=='ovo'?ovoOn():m=='ren'?RENEGADES():false,okP=PVMODES.filter(pvOK);      // okP = the PvP modes that are switched on
   if($('mode').value=='kill4'&&!KS4){$('mode').value='max';SO=[]}      // Killshot v. 4 is off: a tab left in it falls back to the 4-stack mode
   document.querySelectorAll('.cm[data-m=kill4]').forEach(b=>{b.disabled=!KS4;b.title=KS4?'':'Switched off for now'});
   if(PVMODES.includes($('mode').value)&&!pvOK($('mode').value)){$('mode').value='max';SO=[]}      // a mode that is off: a tab left in it falls back to the 4-stack mode
   document.querySelectorAll('.cm[data-m=cp],.cm[data-m=cpd]').forEach(b=>{b.disabled=!PV1;b.title=PV1?'':'Switched off for now'});
-  document.querySelectorAll('.cm[data-m=pvpmax]').forEach(b=>{b.disabled=!PVM;b.title=PVM?'':'Switched off for now'});
+  document.querySelectorAll('.cm[data-m=pvpmax]').forEach(b=>{b.disabled=!PVM();b.title=PVM()?'':'Switched off for now'});
   document.querySelectorAll('.cm[data-m=ovo]').forEach(b=>{b.disabled=!ovoOn();b.hidden=!ovoOn();b.title=ovoOn()?'':'Switched off for now'});
   if(okP.length){const pv=PVMODES.includes($('mode').value);      // the mode follows the view
     if(ATK=='players'&&!pv){$('mode').value=okP.includes(LASTP)?LASTP:okP[0];SO=[]}
@@ -2507,8 +2507,8 @@ function calcRun0(){
   [['bcEpic',['bs_Epic'],ep],['bcPlayers',['bh_Players','bs_Players'],!ep]].forEach(([c,ids,on])=>{const el=$(c);if(el)el.hidden=!on;ids.forEach(i=>{const x=$(i);if(x)x.disabled=!on})});
   document.querySelectorAll('#rare .bi.pl').forEach(r=>{r.hidden=ep;const x=r.querySelector('input');if(x)x.disabled=ep});      // 19.0.11: Strength against players (Guardsmen, Specialists) shows only in the Attack players view
   //      // the Against box that does not count in the chosen view is hidden and its inputs are disabled
-  if(!RENEGADES&&$('mode').value=='ren'){$('mode').value='max';SO=[]}      // Renegades is off: a tab saved in it falls back to Max damage
-  {const rb=document.querySelector('.cm[data-m=ren]');if(rb){rb.disabled=!RENEGADES;rb.title=RENEGADES?'':'Switched off for now'}}
+  if(!RENEGADES()&&$('mode').value=='ren'){$('mode').value='max';SO=[]}      // Renegades is off: a tab saved in it falls back to Max damage
+  {const rb=document.querySelector('.cm[data-m=ren]');if(rb){rb.disabled=!RENEGADES();rb.title=RENEGADES()?'':'Switched off for now'}}
   const P=getP(),{st,A,Mo,U}=solveSc(P,O);
   const fx=P.ov?theoFix(P):null;if(fx)theoApply(fx,st,U);      // 21.6.2 One v. One: the stacks the simulator found go into the Result
   {const rl=$('renlv'),tg=P.ren?renTarget():0,nt=$('renlt');if(rl)rl.hidden=!P.ren;if(nt)nt.textContent=tg?'Damage to reach: '+tg.toLocaleString('en-US'):'No level: the Tier check looks for the most damage per gold of the full revive.'}      // 14.19: the Level box is shown in Renegades only
