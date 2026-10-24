@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.17.2';
+const APP_VERSION='21.17.3';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -720,9 +720,9 @@ function drawEP(){
   const p=$('epp'),w=$('epw');if(!p)return;p.hidden=!EPM;if(w)w.hidden=!EPM;document.documentElement.classList.toggle('mlock',EPM||FMP||HP||!!(AP&&FB.key));
   if(!EPM){p.innerHTML='';return}
   const cur=$('epic').value;
+  const none='<button type="button" data-act="epick" data-e=""'+(cur?'':' class="on"')+'><span>None</span><small>no score estimate</small></button>';      // "None" (no epic) stands first in the list
   p.innerHTML='<div class="amh"><div class="amt">Choose the epic monster</div><button class="amx" data-act="eclose" aria-label="Close" title="Close">\u00d7</button></div>'
-    +'<div class="epl">'+EPICS.map(e=>'<button type="button" data-act="epick" data-e="'+esc(e.n)+'"'+(e.n==cur?' class="on"':'')+'>'+(epImg(e,'epi')||'<span class="epi epe"></span>')+'<span class="epn">'+esc(e.n)+'</span><small>'+(e.score?sh0(e.score)+' score':'score not set yet')+'</small></button>').join('')
-    +'<button type="button" data-act="epick" data-e=""'+(cur?'':' class="on"')+'><span>None</span><small>no score estimate</small></button></div>';
+    +'<div class="epl">'+none+EPICS.map(e=>'<button type="button" data-act="epick" data-e="'+esc(e.n)+'"'+(e.n==cur?' class="on"':'')+'>'+(epImg(e,'epi')||'<span class="epi epe"></span>')+'<span class="epn">'+esc(e.n)+'</span><small>'+(e.score?sh0(e.score)+' score':'score not set yet')+'</small></button>').join('')+'</div>';
 }
 const epImg=(e,c)=>e&&e.ic&&EPIC_IC[e.ic]?'<img class="'+c+'" src="'+EPIC_IC[e.ic]+'" alt="">':'';
 const sh0=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3)).toString()+' '+u[i]};
