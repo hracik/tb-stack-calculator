@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.16.41';
+const APP_VERSION='21.16.42';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1588,22 +1588,17 @@ function growMain(P,st,A,Mo,U){
   if(!(P.capU>0)||P.ren||!U.list.length)return;
   const wk=new Set(U.weak||[]),ord=[...st.so,...U.ord],lst=[...A,...Mo,...U.list];
   const W=U.list.filter(s=>wk.has(s.name)),wn=W.map(s=>s.n);W.forEach(s=>{s.n=0});
-  const seq=ord.map(n=>lst.find(s=>s.name==n)).filter(s=>s&&s.n>0),isM=s=>U.list.includes(s)&&!wk.has(s.name)&&/^M/.test(s.r||''),isU=s=>U.list.includes(s)&&!wk.has(s.name);
-  const grow=(gr,L)=>{      // the stacks of gr (all of them on one common health level) rise as far as L reaches: each up to the stack in front of it (health and total strength); the stacks behind keep their size
-    const n0=new Map(seq.map(s=>[s,s.n]));
-    const at=X=>{let H=Infinity,T=Infinity;const ns=[];
-      seq.forEach((s,i)=>{const rs=kn1Stack(P,i,s);let n=n0.get(s);
-        if(gr(s)){let c=fitN(Math.floor(X),s.hp);if(isFinite(H))c=Math.min(c,fitN(H-1,s.hp));if(!HO&&strRuled(s)&&isFinite(T))c=Math.min(c,fitN(T-1,s.str));n=Math.max(n,c)}
-        ns.push(n);H=tot(n,s.hp);if(strRef(s,rs))T=tot(n,s.str)});
-      return ns};
-    const extra=ns=>ns.reduce((q,n,i)=>q+(gr(seq[i])?(n-n0.get(seq[i]))*seq[i].cost:0),0);
-    if(!(L>0)||!seq.some(gr))return;
-    let lo=0,hi=1e15;
-    if(extra(at(hi))<=L)lo=hi;else for(let k=0;k<70;k++){const mid=(lo+hi)/2;if(extra(at(mid))<=L)lo=mid;else hi=mid}
-    const ns=at(lo);seq.forEach((s,i)=>{if(gr(s))s.n=ns[i]})};
+  const seq=ord.map(n=>lst.find(s=>s.name==n)).filter(s=>s&&s.n>0),isU=s=>U.list.includes(s)&&!wk.has(s.name);
   const spent=()=>U.list.reduce((q,s)=>q+s.n*s.cost,0);
-  grow(isM,P.capU-spent());      // first the monsters (they stand right behind the army's monsters, the gap there is the biggest) ...
-  grow(isU,P.capU-spent());      // ... then every other mercenary stack that still has room
+  // one unit to the first stack, one to the next, and so on, round after round, until the Authority is spent or no stack can rise any more: a stack rises only while it stays below the stack in front of it
+  // (health and total strength), so the order never changes and the stacks behind keep their size
+  const room=i=>{const s=seq[i];let H=Infinity,T=Infinity;
+    if(i>0)H=tot(seq[i-1].n,seq[i-1].hp);
+    for(let j=i-1;j>=0;j--)if(strRef(seq[j],kn1Stack(P,j,seq[j]))){T=tot(seq[j].n,seq[j].str);break}
+    return tot(s.n+1,s.hp)<=H-1&&(HO||!strRuled(s)||!isFinite(T)||tot(s.n+1,s.str)<=T-1)};
+  let left0=P.capU-spent();
+  for(let go=left0>0;go;){go=false;
+    for(let i=0;i<seq.length;i++){const s=seq[i];if(!isU(s)||s.cost>left0||!room(i))continue;s.n++;left0-=s.cost;go=true}}
   let left=P.capU-spent();
   W.forEach((s,i)=>{const k=Math.max(0,Math.min(wn[i],Math.floor(left/s.cost)));s.n=k;left-=k*s.cost});      // Ariel / Grace: what they had, as far as the rest of the Authority reaches
   U.used=spent()}
