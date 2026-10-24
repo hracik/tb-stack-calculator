@@ -175,3 +175,8 @@ html[dir=rtl] .stv{direction:ltr;text-align:right}
 
 .lgb{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;background:transparent;cursor:pointer;z-index:1;-webkit-tap-highlight-color:transparent}#lang{pointer-events:none}
 .epl button{-webkit-tap-highlight-color:transparent;outline:0}.epl button:hover,.epl button:focus,.epl button:active{border-color:var(--bd);background:var(--bg)}.epl button.on,.epl button.on:hover,.epl button.on:focus,.epl button.on:active{border-color:var(--ac)}
+html[dir=rtl] .hq{margin:0 auto 0 0}      /* Arabic: the help button stands at the far end (the left) of every card header, like the right end in the other languages */
+html[dir=rtl] .bq .bar{display:inline-block;transform:scaleX(-1)}      /* the arrow points from our stack (right) to the enemy (left) */
+html[dir=rtl] .bq .beg{margin-left:0;margin-right:auto}
+html[dir=rtl] .bq .bnm{text-align:right}
+html[dir=rtl] .bq .beg .bnm{text-align:left}
