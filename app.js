@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.18.10';
+const APP_VERSION='21.18.11';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2918,7 +2918,7 @@ async function tierHintRun(gen,body0){
     if(gen!==HINTGEN)return;
     const ok=dd.dmg>=tg,fin=ok?cur:bestSet,d1=ok?dd:bestD,d0=det.get(kk(sel0)),ok0=d0.dmg>=tg;
     const add=fin.filter(x=>!sel0.includes(x)),rem=sel0.filter(x=>!fin.includes(x)),ls=a=>a.sort((x,y)=>key(x)-key(y)).join(', ');
-    const sug=add.length||rem.length?`<p><b>Suggestion:</b> ${[add.length?'tick <b>'+ls(add)+'</b>':'',rem.length?'untick <b>'+ls(rem)+'</b>':''].filter(Boolean).join(' and ')}. ${tcBtn(fin)}</p>`:'';
+    const sug=add.length||rem.length?`<p><b>Suggestion:</b> ${[add.length?'tick <b>'+ls(add)+'</b>':'',rem.length?'untick <b>'+ls(rem)+'</b>':''].filter(Boolean).join(' and ')}.</p>`:'';
     const head=`<p>Level ${lv}: the stacks must reach <b>${fg(tg)}</b> damage.</p>`,nums=`<p>Estimated damage: ${fg(d0.dmg)} &rarr; ${fg(d1.dmg)}${ok0?'':' (before: short of the target)'}. Full revive cost: ${fg(d0.gold)} &rarr; <b>${fg(d1.gold)}</b> gold${ok0?' ('+sg(pc(d1.gold,d0.gold))+' %)':''}.</p>`;
     if(!ok)body.innerHTML=head+`<p>Even with only the top tier of every type the stacks reach ${fg(d1.dmg)} damage (${(d1.dmg/tg*100).toFixed(1)} % of the target).</p>`+(sug?sug+nums:`<p>Your ticked tiers already give the most damage.</p>`);
     else body.innerHTML=head+(sug?sug+nums:`<p>Your ticked tiers are already the set: estimated damage ${fg(d1.dmg)}, full revive cost ${fg(d1.gold)} gold.</p>`)+(out?`<p class="mu">${out} lowest tier${out>1?'s':''} taken out to reach the damage.</p>`:`<p class="mu">All the tiers together already beat the target by ${pc(d1.dmg,tg)} %: with fewer troops (a smaller Leadership) it would be reached too.</p>`);
@@ -2973,7 +2973,7 @@ async function tierHintRun(gen,body0){
   const add=cur.filter(x=>!sel0.includes(x)),rem=sel0.filter(x=>!cur.includes(x)),ls=a=>a.sort((x,y)=>key(x)-key(y)).join(', ');
   if(P.ren){      // 14.13 Renegades: the best damage for the least gold of the full revive (damage per gold), not the highest damage
     const d0=det.get(kk(sel0)),d1=det.get(kk(cur)),pc=(a,b)=>((a/b-1)*100).toFixed(1),sg=x=>(x>=0?'+':'')+x,fg=x=>Math.round(x).toLocaleString('en-US');
-    body.innerHTML=add.length||rem.length?`<p><b>Suggestion:</b> ${[add.length?'tick <b>'+ls(add)+'</b>':'',rem.length?'untick <b>'+ls(rem)+'</b>':''].filter(Boolean).join(' and ')}. ${tcBtn(cur)}</p><p>Damage per gold of the full revive: ${fmt(base)} &rarr; <b>${fmt(best)}</b> (${sg(pc(best,base))} %).</p><p>Estimated damage: ${fmt(d0.dmg)} &rarr; ${fmt(d1.dmg)} (${sg(pc(d1.dmg,d0.dmg))} %). Full revive cost: ${fg(d0.gold)} &rarr; ${fg(d1.gold)} gold (${sg(pc(d1.gold,d0.gold))} %).</p>`:`<p>No other choice of tiers gives more damage for the gold of the full revive.</p>`;
+    body.innerHTML=add.length||rem.length?`<p><b>Suggestion:</b> ${[add.length?'tick <b>'+ls(add)+'</b>':'',rem.length?'untick <b>'+ls(rem)+'</b>':''].filter(Boolean).join(' and ')}.</p><p>Damage per gold of the full revive: ${fmt(base)} &rarr; <b>${fmt(best)}</b> (${sg(pc(best,base))} %).</p><p>Estimated damage: ${fmt(d0.dmg)} &rarr; ${fmt(d1.dmg)} (${sg(pc(d1.dmg,d0.dmg))} %). Full revive cost: ${fg(d0.gold)} &rarr; ${fg(d1.gold)} gold (${sg(pc(d1.gold,d0.gold))} %).</p>`:`<p>No other choice of tiers gives more damage for the gold of the full revive.</p>`;
     return;
   }
   // 19.0.132: the 2nd and 3rd best sets among all that the check calculated (it is a search, not every possible set)
@@ -3078,6 +3078,3 @@ function themeBtn(){const lt=document.documentElement.dataset.theme=='light',b=d
 themeBtn();
 
 
-// a select picked with the mouse/finger lets go of focus at once, so no focus effect stays on it
-(function(){let ptr=false;document.addEventListener('pointerdown',()=>{ptr=true},true);document.addEventListener('keydown',()=>{ptr=false},true);
-document.addEventListener('change',e=>{const t=e.target;if(ptr&&t&&t.tagName=='SELECT'&&t.id!='lang')setTimeout(()=>t.blur(),0)},true)})();
