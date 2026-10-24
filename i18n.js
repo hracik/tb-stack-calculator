@@ -5,6 +5,9 @@ const esc=s=>s.replace(/[.*+?^${}()|[\]\\\/]/g,'\\$&');
 const RX=new RegExp('(?<![A-Za-z])(?:'+NAMES.map(esc).join('|')+')(?![A-Za-z])|\\d+(?:[.,]\\d+)*(?:[.,](?=\\s|$))?','g');
 const IDX=new Map();KEYS.forEach((k,i)=>IDX.set(k,i));
 let LANG='en',MISS=new Set();
+const UN={de:{"Ruby Golem":"Rubin-Golem","Jungle Destroyer":"Dschungelzerstörer","Troll Rider":"Trollreiter","Destructive Colossus":"Zerstörerischer Koloss","Wind Lord":"Windlord","Ancient Terror":"Altes Ungeheuer","Black Dragon":"Schwarzer Drache","Devastator":"Zerstörer","Fire Phoenix":"Feuerphönix","Water Elemental":"Wasserelementare","Battle Boar":"Kampfschwein","Emerald Dragon":"Smaragd-Drachen","Stone Gargoyle":"Steinerner Wasserspeier","Magic Dragon":"Magischer Drache","Gorgon Medusa":"Medusa","Many-Armed Guardian":"Verschiedenartig bewaffneter Wächter","Ice Phoenix":"Eis-Phönix","Desert Vanquisher":"Wüstenbändiger","Flaming Centaur":"Flammender Zentaur","Fearsome Manticore":"Furchterregender Mantikor","Crystal Dragon":"Kristalldrache","Catapult":"Katapult","Siege Ballistae":"Belagerungsballiste","Cannon":"Kanone","Deadshot":"Armbrustschütze","Heavy Knight":"Schwerer Ritter","Lion Rider":"Löwenreiter","Vulture":"Geier","Swift Jaeger":"Schneller Jäger","Swordsman":"Schwertkämpfer","Spy":"Spion","Panoptic":"Allsehender","Duelist":"Duellant","Whitemane":"Weiße Mähne","Royal Lion":"Königlicher Löwe","Battle Griffin":"Kampfgryphon","Heavy Arbalester":"Schwerer Armbrustschütze","Heavy Halberdier":"Schwerer Hellebardier","Mounted Knight":"Berittener Ritter","Purifier":"Säuberer","Punisher":"Bestrafer","Smiter":"Zerschmetterer","Corax":"Rabe","Archer":"Bogenschütze","Spearman":"Speerkämpfer","Rider":"Reiter"}};
+const unTr=n=>{const u=UN[LANG];if(!u)return n;const m=n.match(/^(.*?)( [IVX]+)?$/);return u[m[1]]?u[m[1]]+(m[2]||''):n};      // unit names in the game's own words, where a language has them (base name + tier numeral)
+
 const FACT={
 ru:{nb:'без бонуса',dd:'двойной урон',t:(p,c)=>'+'+p+'% против '+c,c:{melee:'ближних',ranged:'дальних',mounted:'конных',flying:'летающих',epic:'эпиков'}},
 de:{nb:'kein Bonus',dd:'Doppelschaden',t:(p,c)=>'+'+p+'% gegen '+c,c:{melee:'Infanterie',ranged:'Schützen',mounted:'Reiter',flying:'Fliegende',epic:'Epics'}},
@@ -40,11 +43,11 @@ function tr(src){
   if(i==null){      // a number with a unit (20 M, 950 K, 1.2 B, 3 T): the key without the units is looked up and each unit goes back behind its number
     const un=[];const k2=key.replace(/#( [KMBT](?![A-Za-z]))?/g,(a,u)=>{un.push(u?u:'');return '#'});
     if(un.some(x=>x)&&IDX.get(k2)!=null){i=IDX.get(k2);ua=un}}
-  if(i==null){const f=facts(core);if(f!==null)return m[1]+f+m[3];if(/[A-Za-z]{3}/.test(key.replace(/@/g,'')))MISS.add(key);return null}
-  const t=TR[LANG][i];if(t===key)return null;
+  if(i==null){const f=facts(core);if(f!==null)return m[1]+f+m[3];if(/[A-Za-z]{3}/.test(key.replace(/@/g,'')))MISS.add(key);if(nms.length&&UN[LANG]){const o=core.replace(RX,x=>/^\d/.test(x)?x:unTr(x));return o===core?null:m[1]+o+m[3]}return null}
+  const t=TR[LANG][i];if(t===key&&!(nms.length&&UN[LANG]))return null;
   let hi=0;
-  const o=t.replace(/[#@]/g,(c,p)=>{if(c=='@')return nms.length?nms.shift():c;if(!nums.length)return c;let n=nums.shift();const e=/[.,]$/.test(n);if(e){n=n.slice(0,-1);if(p==t.length-1)n+=src.trim().slice(-1)}const u=ua&&ua[hi]?ua[hi]:'';hi++;return n+u});
-  return m[1]+o+m[3];
+  const o=t.replace(/[#@]/g,(c,p)=>{if(c=='@')return nms.length?unTr(nms.shift()):c;if(!nums.length)return c;let n=nums.shift();const e=/[.,]$/.test(n);if(e){n=n.slice(0,-1);if(p==t.length-1)n+=src.trim().slice(-1)}const u=ua&&ua[hi]?ua[hi]:'';hi++;return n+u});
+  return o===core?null:m[1]+o+m[3];
 }
 const NR=new WeakMap(),AR=new WeakMap(),ATT=['title','placeholder','aria-label'];
 function skip(n){const p=n.parentElement;return !p||/^(SCRIPT|STYLE|TEXTAREA)$/.test(p.tagName)||!!p.closest('[data-notr],#lang')}
