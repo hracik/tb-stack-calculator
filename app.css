@@ -195,3 +195,7 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 .tab.add{position:static;margin:0 0 6px;box-shadow:none;flex:none}
 #tabs{overscroll-behavior-x:contain;scrollbar-width:none !important}#tabs::-webkit-scrollbar{display:none;height:0}
 #tabsin{border-bottom-color:transparent}#tabrow{position:relative}#tabrow:after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--bd);z-index:0}#tabs{position:relative;z-index:1}
+/* one look for every toggle button: not selected = outline, selected = filled */
+.ob,.pb,.eb,.cm,.vb{background:transparent;border:1px solid var(--ac);color:var(--ac)}
+.ob:not(.on):not(:disabled):hover,.pb:not(.on):hover,.eb:not(.on):hover,.cm:not(.on):not(:disabled):hover,.vb:not(.on):not(:disabled):hover{background:rgba(217,164,65,.14)}
+.ob.on,.pb.on,.eb.on,.cm.on,.vb.on{background:var(--af);border-color:var(--af);color:#000}
