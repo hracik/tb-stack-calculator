@@ -1616,21 +1616,7 @@ function polishWeak(P,st,A,Mo,U){
 function allocate(P,live){const md=modeOf(P);HO=md.ho;return md.size(P,live)}      // the sizing of the mode (HO: health only, read by the shared helpers)
 // the whole calculation of the engine: the order, the Leadership / Dominance stacks, then the mercenaries (they come last: the numbers before are final)
 const cloneSt=st=>{const c=st.map(s=>({...s}));c.so=st.so.slice();return c};      // the allocation writes the counts into the stacks: every variant gets its own copy of the searched stacks
-// 21.16.39: Ariel and Grace take Authority only when it raises the damage: the whole setup is also solved with each choice of them turned off (none, one, both) and the best damage stays
-function solve1(P,order,zeroPt,PS,stIn,light){
-  let best=solve1x(P,order,zeroPt,PS,stIn,light);
-  const dm=r=>score(P,[...r.A,...r.Mo,...r.U.list],[...r.st.so,...r.U.ord],true).dmg;
-  const wk=(best.U.weak||[]).filter(nm=>best.U.list.some(s=>s.name==nm&&s.n>0&&!XS.has(nm)));
-  if(!wk.length||!(P.capU>0))return best;
-  let bd=dm(best);
-  for(let k=1;k<(1<<wk.length);k++){
-    const off=wk.filter((_,i)=>k>>i&1),sv=new Set(XS);
-    try{off.forEach(nm=>XS.add(nm));const r=solve1x(P,order,zeroPt,PS,stIn,light),d=dm(r);if(d>bd*(1+1e-6)){bd=d;best=r;best.drop=off}}
-    finally{XS=sv}
-  }
-  if(best.drop)best.U.all.forEach(s=>{if(best.drop.includes(s.name)&&!XS.has(s.name))s.off=false});      // a stack the choice dropped is not a stack the user turned off: its card stays, at 0, not crossed out
-  return best}
-function solve1x(P,order,zeroPt,PS,stIn,light){const st=stIn?cloneSt(stIn):buildStacks(PS||P,order,XS),{A,Mo}=allocate(P,st.filter(s=>!s.off));      // PS: the settings the ORDER is searched with (the search without the mercenaries keeps the Leadership and the monsters as flat as it is with 0 Authority)
+function solve1(P,order,zeroPt,PS,stIn,light){const st=stIn?cloneSt(stIn):buildStacks(PS||P,order,XS),{A,Mo}=allocate(P,st.filter(s=>!s.off));      // PS: the settings the ORDER is searched with (the search without the mercenaries keeps the Leadership and the monsters as flat as it is with 0 Authority)
   if(zeroPt)Mo.forEach(s=>{if(s.pt)s.n=0});      // the partial tier (and the tiers below it) is taken out: the mercenaries are sized first, the stacks come back behind them (dominanceTail)
   const U=allocMerc(P,[...A,...Mo],st.so,XS);
   if(rgm(P))dominanceTail(P,st,A,Mo,U,light);
@@ -1699,8 +1685,10 @@ function dominanceTail(P,st,A,Mo,U,light){      // light (the Tier check): only 
       const tl=tail.filter(s=>s.n>0),ix={};[...st.so.filter(n=>!tl.some(s=>s.name==n)),...U.ord.slice(0,k),...tl.map(s=>s.name)].forEach((n,i)=>ix[n]=i);
       let H=Infinity,T=Infinity;[...ldm.filter(s=>s.n>0),...tl].sort((a,b)=>ix[a.name]-ix[b.name]).forEach(s=>{H=tot(s.n,s.hp);if(strRef(s))T=tot(s.n,s.str)});
       const cu=P.capU-main.reduce((q,s)=>q+s.n*s.cost,0),used=ns=>ns.reduce((q,n,i)=>q+n*rest[i].cost,0),fr=rest.findIndex(s=>wkn.has(s.name)),at=X=>sizeChain(P,rest,H,T,ldm.length+tl.length,X,fr);
+      const um=ns=>ns.reduce((q,n,i)=>q+(fr>=0&&i>=fr?0:n*rest[i].cost),0);      // 21.16.39: the Authority goes to the regular stacks first (as big as it reaches, up to the stack in front of them); Ariel / Grace only get what is left
       let nr=at(H-1);
-      if(used(nr)>cu){let lo=0,top=H-1;for(let k=0;k<60;k++){const mid=(lo+top)/2;if(used(at(mid))<=cu)lo=mid;else top=mid}nr=at(lo)}
+      if(um(nr)>cu){let lo=0,top=H-1;for(let k=0;k<60;k++){const mid=(lo+top)/2;if(um(at(mid))<=cu)lo=mid;else top=mid}nr=at(lo)}
+      if(fr>=0){let left=cu-um(nr);for(let i=fr;i<rest.length;i++){const w=Math.max(0,Math.min(nr[i],Math.floor(left/rest[i].cost)));nr[i]=w;left-=w*rest[i].cost}}
       rest.forEach((s,i)=>{s.n=nr[i]});
       const lst=[...main,...rest.filter(s=>s.n>0)],so3=st.so.filter(n=>!tl.some(s=>s.name==n)),ord3=[...main.map(s=>s.name),...tl.map(s=>s.name),...rest.filter(s=>s.n>0).map(s=>s.name)];
       const d=score(P,[...A,...Mo,...lst],[...so3,...ord3],true).dmg;
