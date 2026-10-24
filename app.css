@@ -194,3 +194,4 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 #tabrow{display:flex;align-items:flex-end;gap:8px}#tabs{flex:1 1 auto;min-width:0}
 .tab.add{position:static;margin:0 0 6px;box-shadow:none;flex:none}
 #tabs{overscroll-behavior-x:contain;scrollbar-width:none !important}#tabs::-webkit-scrollbar{display:none;height:0}
+#tabsin{border-bottom-color:transparent}#tabrow{position:relative}#tabrow:after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--bd);z-index:0}#tabs{position:relative;z-index:1}
