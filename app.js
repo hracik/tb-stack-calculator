@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.18.11';
+const APP_VERSION='21.18.13';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2884,17 +2884,6 @@ function evalSel(sel){      // the tier selection sel: the same steps as calc, w
   return{m:gold>0?dmg/gold:0,dmg,gold};
 }
 function goldOf(sel){const P=getP(),{st,A,Mo,U}=solveTC(P,[...sel].sort((a,b)=>key(a)-key(b))),hl=[...A,...Mo,...U.list],{rv}=fullRevive(P,hl,[...st.so,...U.ord]),tl=templeLv();return(rv.A+rv.M+rv.U)/(tl>=1?TEMPLE[tl-1]:1)}      // 19.0.146: the full revive gold of a tier selection
-// 21.18.1: the suggestions of the Tier check have an Apply button: the tiers are set at once, a message with Undo follows
-const tcBtn=set=>`<button type="button" class="tcap" data-set="${[...set].join(',')}">Apply</button>`;
-let TCUNDO=null,TCTO=0;
-const tierSel=()=>{const r=[];['E','S','G','M'].forEach(c=>{for(let i=1;i<=9;i++){const el=$('s'+c+i);if(el&&el.checked)r.push(c+i)}});return r};
-function tierSet(sel){let ch=null;['E','S','G','M'].forEach(c=>{for(let i=1;i<=9;i++){const el=$('s'+c+i);if(el){const on=sel.includes(c+i);if(el.checked!==on){el.checked=on;ch=el}}}});TCC=null;if(ch)ch.dispatchEvent(new Event('change',{bubbles:true}));return!!ch}
-function tcToast(msg,undo){const t=$('toast');if(!t)return;clearTimeout(TCTO);t.innerHTML='<span>'+msg+'</span>'+(undo?'<button type="button" class="tcun">Undo</button>':'')+'<button type="button" class="tcx2" aria-label="Close">\u00d7</button>';t.hidden=false;TCTO=setTimeout(()=>{t.hidden=true},undo?20000:4000)}
-document.addEventListener('click',e=>{
-  const b=e.target.closest&&e.target.closest('.tcap');
-  if(b){const prev=tierSel();if(!tierSet(b.dataset.set.split(',').filter(Boolean)))return;TCUNDO={tab:active,sel:prev};if(!$('tcm').hidden)closeTierCheck();else closeBubble();0;return}
-  if(e.target.closest&&e.target.closest('.tcun')){if(TCUNDO&&TCUNDO.tab===active){tierSet(TCUNDO.sel);TCUNDO=null;$('toast').hidden=true}else{$('toast').hidden=true}return}
-  if(e.target.closest&&e.target.closest('.tcx2'))$('toast').hidden=true});
 async function tierHint(gen,body0){TCCACHE=new Map();try{return await tierHintRun(gen,body0)}finally{TCCACHE=null}}
 async function tierHintRun(gen,body0){
   const body=body0||$('tcb');
@@ -2991,7 +2980,7 @@ async function tierHintRun(gen,body0){
   const hasBest=add.length||rem.length,bk=kk(cur),bg=hasBest?goldOf(cur):0,dAlts=all.filter(c=>!(hasBest&&(kk(c.set)==bk||(Math.abs(c.m/best-1)<1e-6&&Math.abs(c.g/bg-1)<1e-6)))&&(hasBest?kk(c.set)==k0||!same(c):!same(c))).map(c=>({set:c.set,m:c.m,g:c.g})).sort((a,b)=>b.m-a.m||(kk(b.set)==k0)-(kk(a.set)==k0)||a.set.length-b.set.length).filter((c,i,a)=>a.findIndex(d=>Math.abs(d.m/c.m-1)<1e-6&&Math.abs(d.g/c.g-1)<1e-6)==i).slice(0,3),tbl=(rs,rt)=>`<table class="tct"><thead><tr><th>Tiers</th><th>Damage</th><th>${rt?'Gold/dmg':'Gold revive'}</th></tr></thead><tbody>${rs}</tbody></table>`;      // the same table (the same columns and font) for the best and for the alternatives
   const rws=(a,rt)=>a.map(r=>row(chn(r.set),r.m,r.set,'tcr',rt)).join('');      // each row has its Apply button (row)
   const dBest=hasBest?[{set:cur,m:best}]:[];
-  const bestH=(t,rs,none,rt)=>(rs.length?rs.map(r=>`<p class="tcb"><small>${t}</small>${chn(r.set)}<br><span>Damage ${pcs((r.m/base-1)*100)} &middot; ${rt?'Gold per damage '+pcs(((goldOf(r.set)/r.m)/(g0/base)-1)*100):'Gold revive '+pcs((goldOf(r.set)/g0-1)*100)}</span><span class="tcar">${tcBtn(r.set)}</span></p>`).join(''):`<p class="tcb"><small>${t}</small>${none}</p>`);      // 19.0.156: the best sets as highlighted text, not a table
+  const bestH=(t,rs,none,rt)=>(rs.length?rs.map(r=>`<p class="tcb"><small>${t}</small>${chn(r.set)}<br><span>Damage ${pcs((r.m/base-1)*100)} &middot; ${rt?'Gold per damage '+pcs(((goldOf(r.set)/r.m)/(g0/base)-1)*100):'Gold revive '+pcs((goldOf(r.set)/g0-1)*100)}</span></p>`).join(''):`<p class="tcb"><small>${t}</small>${none}</p>`);      // 19.0.156: the best sets as highlighted text, not a table
   const alt=(rs,none,rt)=>rs.length?tbl(rws(rs,rt),rt):`<p>${none}</p>`;
   body.innerHTML=`<p>Current tiers: <b>${fmt(base)}</b>, full revive <b>${kg(g0)}</b> gold</p>${bestH('&#128165; Best damage',dBest,'No other choice of tiers gives more damage.')}${bestH('&#128176; Best efficiency',effBest?[effBest]:[],'No other choice of tiers gives more damage per gold.',1)}<p class="mu tcalt0">Next best alternatives</p><div class="pbrow tctab"><button type="button" class="vb" data-t="d">&#128165; Max. damage</button><button type="button" class="vb" data-t="e">&#128176; Max. efficiency</button></div><div class="tcpd" hidden>${alt(dAlts,'No more alternatives.')}</div><div class="tcpe" hidden>${alt(eAlts,'No more alternatives.',1)}</div>`;
   body.querySelectorAll('.tctab .vb').forEach(b=>b.addEventListener('click',()=>{const on=!b.classList.contains('on');body.querySelectorAll('.tctab .vb').forEach(x=>x.classList.toggle('on',on&&x===b));body.querySelector('.tcpd').hidden=!(on&&b.dataset.t=='d');body.querySelector('.tcpe').hidden=!(on&&b.dataset.t=='e')}));
