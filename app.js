@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.16.38';
+const APP_VERSION='21.16.39';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1616,7 +1616,21 @@ function polishWeak(P,st,A,Mo,U){
 function allocate(P,live){const md=modeOf(P);HO=md.ho;return md.size(P,live)}      // the sizing of the mode (HO: health only, read by the shared helpers)
 // the whole calculation of the engine: the order, the Leadership / Dominance stacks, then the mercenaries (they come last: the numbers before are final)
 const cloneSt=st=>{const c=st.map(s=>({...s}));c.so=st.so.slice();return c};      // the allocation writes the counts into the stacks: every variant gets its own copy of the searched stacks
-function solve1(P,order,zeroPt,PS,stIn,light){const st=stIn?cloneSt(stIn):buildStacks(PS||P,order,XS),{A,Mo}=allocate(P,st.filter(s=>!s.off));      // PS: the settings the ORDER is searched with (the search without the mercenaries keeps the Leadership and the monsters as flat as it is with 0 Authority)
+// 21.16.39: Ariel and Grace take Authority only when it raises the damage: the whole setup is also solved with each choice of them turned off (none, one, both) and the best damage stays
+function solve1(P,order,zeroPt,PS,stIn,light){
+  let best=solve1x(P,order,zeroPt,PS,stIn,light);
+  const dm=r=>score(P,[...r.A,...r.Mo,...r.U.list],[...r.st.so,...r.U.ord],true).dmg;
+  const wk=(best.U.weak||[]).filter(nm=>best.U.list.some(s=>s.name==nm&&s.n>0&&!XS.has(nm)));
+  if(!wk.length||!(P.capU>0))return best;
+  let bd=dm(best);
+  for(let k=1;k<(1<<wk.length);k++){
+    const off=wk.filter((_,i)=>k>>i&1),sv=new Set(XS);
+    try{off.forEach(nm=>XS.add(nm));const r=solve1x(P,order,zeroPt,PS,stIn,light),d=dm(r);if(d>bd*(1+1e-6)){bd=d;best=r;best.drop=off}}
+    finally{XS=sv}
+  }
+  if(best.drop)best.U.all.forEach(s=>{if(best.drop.includes(s.name)&&!XS.has(s.name))s.off=false});      // a stack the choice dropped is not a stack the user turned off: its card stays, at 0, not crossed out
+  return best}
+function solve1x(P,order,zeroPt,PS,stIn,light){const st=stIn?cloneSt(stIn):buildStacks(PS||P,order,XS),{A,Mo}=allocate(P,st.filter(s=>!s.off));      // PS: the settings the ORDER is searched with (the search without the mercenaries keeps the Leadership and the monsters as flat as it is with 0 Authority)
   if(zeroPt)Mo.forEach(s=>{if(s.pt)s.n=0});      // the partial tier (and the tiers below it) is taken out: the mercenaries are sized first, the stacks come back behind them (dominanceTail)
   const U=allocMerc(P,[...A,...Mo],st.so,XS);
   if(rgm(P))dominanceTail(P,st,A,Mo,U,light);
