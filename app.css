@@ -172,3 +172,5 @@ table.gt[data-n="5"]{width:100%;--n:5}table.gt[data-n="6"]{width:120%;--n:6}tabl
 
 /* Arabic reads right to left: the big result numbers (ranges with units) stay in their own left-to-right order */
 html[dir=rtl] .stv{direction:ltr;text-align:right}
+
+.lgb{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;background:transparent;cursor:pointer;z-index:1;-webkit-tap-highlight-color:transparent}#lang{pointer-events:none}

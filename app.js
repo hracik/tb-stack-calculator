@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.16.33';
+const APP_VERSION='21.16.35';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -305,6 +305,9 @@ function tabClick(e){
     else if(k=='hclose')hpShut();
     else if(k=='eopen'){EPM=true;drawEP()}
     else if(k=='eclose')epShut();
+    else if(k=='lopen'){LGM=true;drawLG()}
+    else if(k=='lclose')lgShut();
+    else if(k=='lpick'){lgShut();if(window.i18nSet)window.i18nSet(a.dataset.l)}
     else if(k=='epick'){$('epic').value=a.dataset.e||'';{const pe=EPICS.find(x=>x.n==$('epic').value);$('mode').value='max';$('enemy').value=pe&&!pe.en.includes(4)?String(pe.en[pe.en.length-1]):'4';SO=[]}      // a new choice starts in the full-health mode: 4-stack (8-stack for Arachne), 4-stack with no epic
     epShut();$('epic').dispatchEvent(new Event('change',{bubbles:true}))}
     else if(k=='fclose')fmShut();
@@ -723,6 +726,15 @@ function drawEP(){
 const epImg=(e,c)=>e&&e.ic&&EPIC_IC[e.ic]?'<img class="'+c+'" src="'+EPIC_IC[e.ic]+'" alt="">':'';
 const sh0=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3)).toString()+' '+u[i]};
 const epShut=()=>{if(EPM){EPM=false;drawEP()}};
+let LGM=false;      // the language chooser (opened by the language row of the menu), a window like the epic chooser
+function drawLG(){
+  const p=$('lgp'),w=$('lgw2');if(!p)return;p.hidden=!LGM;if(w)w.hidden=!LGM;document.documentElement.classList.toggle('mlock',LGM||EPM||FMP||HP||!!(AP&&FB.key));
+  if(!LGM){p.innerHTML='';return}
+  const cur=window.i18nCur?window.i18nCur():'en',L=window.i18nLangs?window.i18nLangs():[['en','English']];
+  p.innerHTML='<div class="amh"><div class="amt">Choose the language</div><button class="amx" data-act="lclose" aria-label="Close" title="Close">\u00d7</button></div>'
+    +'<div class="epl" data-notr>'+L.map(x=>'<button type="button" data-act="lpick" data-l="'+x[0]+'"'+(x[0]==cur?' class="on"':'')+'><span class="epn">'+esc(x[1])+'</span></button>').join('')+'</div>';
+}
+const lgShut=()=>{if(LGM){LGM=false;drawLG()}};
 let FMP=false,FMPREV=null;      // 14.27: Food settings modal (opened when Preparation clicked with no food)
 function drawFM(){
   const p=$('fmp'),w=$('fmw');if(!p)return;p.hidden=!FMP;if(w)w.hidden=!FMP;document.documentElement.classList.toggle('mlock',FMP||HP||!!(AP&&FB.key));
@@ -747,9 +759,10 @@ document.addEventListener('click',e=>{if(!MM)return;const pth=e.composedPath(),m
 let apDn=null,inAmo=false;document.addEventListener('pointerdown',e=>{apDn=e.target;inAmo=!!(e.target.closest&&e.target.closest('.amo'))},true);document.addEventListener('click',()=>{setTimeout(()=>{inAmo=false},0)});
 document.addEventListener('click',e=>{if(AP&&e.target&&e.target.id=='apw'&&apDn&&apDn.id=='apw')apShut()});
 document.addEventListener('click',e=>{if(HP&&e.target&&e.target.id=='hw'&&apDn&&apDn.id=='hw')hpShut()});
+document.addEventListener('click',e=>{if(LGM&&e.target&&e.target.id=='lgw2'&&apDn&&apDn.id=='lgw2')lgShut()});
 document.addEventListener('click',e=>{if(EPM&&e.target&&e.target.id=='epw'&&apDn&&apDn.id=='epw')epShut()});
 document.addEventListener('click',e=>{if(FMP&&e.target&&e.target.id=='fmw'&&apDn&&apDn.id=='fmw')fmShut()});
-document.addEventListener('keydown',e=>{if(e.key=='Escape'){const md=!!document.querySelector('.amo:not([hidden])');apShut();hpShut();fmShut();epShut();if(!md)mmShut()}});
+document.addEventListener('keydown',e=>{if(e.key=='Escape'){const md=!!document.querySelector('.amo:not([hidden])');apShut();hpShut();fmShut();epShut();lgShut();if(!md)mmShut()}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncNow()});
 window.addEventListener('online',()=>syncNow());
 
@@ -2430,11 +2443,11 @@ function allocMerc(P,ld,so,X){
 }
 // the order of the cards in the Mercenaries section (the ones not listed come after them, by name)
 const MORD=['Ariel','Grim Stalker Leader','Wasp-Man Leader','Chitinous Defender Leader','Combat Anteater Leader','Warregal','Quicksand','Highlander','Slavic Warrior','Superior Epic Monster Hunter','Elder Witch','Jago','Galloper','Pounder','Scarface','Grace','Wyvern','Warden','Eternal Cannoneer','Demonic Salamander'];
-const mercVis=s=>s.n>0||s.off;      // the Mercenaries section shows only the ones with units (a turned-off one stays, to be turned on again)
+const mercVis=s=>s.n>0||s.off||s.name=='Ariel'||s.name=='Grace';      // the Mercenaries section shows only the ones with units (a turned-off one stays, to be turned on again); Ariel and Grace stay even at 0 units
 const mercSorted=c=>{const rk=m=>{const i=MORD.indexOf(m[2]);return i<0?999:i};return MERC.filter(m=>m[0]==c&&mercOK(m)).sort((a,b)=>rk(a)-rk(b)||a[2].localeCompare(b[2]))};
 function mercTable(all){
   const by={};all.forEach(s=>by[s.name]=s);
-  const cell=m=>{const s=by[m[2]];return`<td class="${s.off?'off':''}" data-troop="${esc(m[2])}"><img class="ic" src="${ICD[m[2]]}" alt=""><span class="kp">${KP[m[2]]?'#'+KP[m[2]]:''}</span><span class="mu">${esc(m[2])}</span>${cnt(s,s.n.toLocaleString())}</td>`};
+  const cell=m=>{const s=by[m[2]];return`<td class="${s.off?'off':!(s.n>0)?'zero':''}" data-troop="${esc(m[2])}"><img class="ic" src="${ICD[m[2]]}" alt=""><span class="kp">${KP[m[2]]?'#'+KP[m[2]]:''}</span><span class="mu">${esc(m[2])}</span>${cnt(s,s.n.toLocaleString())}</td>`};
   let o='<div class="sc"><table><colgroup><col><col><col><col><col></colgroup>';    // 5 cards per row
   [['E','Engineer Corps'],['G','Guardsmen'],['S','Specialists'],['M','Monsters']].forEach(([c,label])=>{
     const list=mercSorted(c).filter(m=>mercVis(by[m[2]]));
