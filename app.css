@@ -206,7 +206,7 @@ input:disabled{cursor:not-allowed}
 .tab.rdr{box-shadow:inset -3px 0 0 var(--ac)}
 #tabs .tab{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .tab{width:104px;text-align:center;background:transparent;color:var(--mu);border:0;border-bottom:3px solid transparent;border-radius:0;padding:8px 2px;margin:0;font:inherit;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}
-.tab.on{color:var(--ac);border-bottom-color:var(--ac);font-weight:600}
+.tab.on{color:var(--ac);border-bottom-color:var(--ac);font-weight:600;background:rgba(217,164,65,.16);border-radius:7px 7px 0 0}
 .tab.add{display:inline-flex;align-items:center;justify-content:center;color:var(--ac);border:1px solid var(--bd);border-radius:999px;font:600 17px 'Cinzel',Georgia,serif;padding:0;right:0;width:34px;height:34px;border-color:var(--ac);font-size:21px;line-height:1;background:linear-gradient(rgba(217,164,65,.14),rgba(217,164,65,.14)),var(--bg);position:static;margin:0 0 6px;box-shadow:none;flex:none}
 @media(max-width:480px){#tabtools{flex-wrap:wrap}#tabtools .tl{flex:1 1 72px;text-align:center;justify-content:center}}
 .tabin{width:104px;box-sizing:border-box;flex:0 0 auto;margin:0 0 4px;padding:5px 8px;background:#e2cf9e;color:#2a2012;border:1px solid #8a6a2c;border-radius:8px;font:inherit}
