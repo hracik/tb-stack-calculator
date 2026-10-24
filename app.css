@@ -193,8 +193,8 @@ input:disabled{cursor:not-allowed}
 @media(max-width:560px){.vwl.c2 .vwt{padding-right:0}.vwl.c2 .vwr{gap:6px;padding:5px 6px}.vwl.c2 .vwr .ic{width:40px;height:40px}.vwl.c2 .vwn{font-size:12px;padding-right:24px}.vwl.c2 .vwc{font-size:15px}.vwl.c2 .vwr .kp{top:3px;right:5px;transform:none;font-size:11px}}
 @media(max-width:340px){.vwl.c2{column-gap:5px}.vwl.c2 .vwr{gap:4px;padding:4px}.vwl.c2 .vwr .ic{width:32px;height:32px}.vwl.c2 .vwn{font-size:11px;padding-right:20px}.vwl.c2 .vwc{font-size:14px}.vwl.c2 .vwr .kp{right:3px;font-size:10px}}
 #tabrow{margin:12px 0 6px;display:flex;align-items:flex-end;gap:8px;position:relative}
-#tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1 1 auto;min-width:0;overscroll-behavior-x:contain;scrollbar-width:none !important;position:relative;z-index:1}
-#tabs::-webkit-scrollbar{display:none;height:0}
+#tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1 1 auto;min-width:0;overscroll-behavior-x:contain;position:relative;z-index:1}
+#tabs::-webkit-scrollbar{height:6px}
 #tabs::-webkit-scrollbar-track{background:transparent}
 #tabs::-webkit-scrollbar-thumb{background:transparent;border-radius:3px;transition:background .3s}
 #tabs.sc::-webkit-scrollbar-thumb,#tabs:hover::-webkit-scrollbar-thumb{background:var(--bd)}
