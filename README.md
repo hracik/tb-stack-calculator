@@ -32,3 +32,7 @@ Spotted something that looks wrong, or a mode or epic that is missing? Open an i
 
 - `index.html` holds the page; the styles are `app.css`, the program is `app.js`, the translations are `i18n.js`. `eng.traineddata.gz.b64.txt` is the language data of the screenshot reader (admin only, fetched only when used).
 - Raise the version with `python3 bump.py MAJOR.MINOR.PATCH`. It writes the version into `app.js` (`APP_VERSION`), `version.json` and the `?v=` of the three files in `index.html`, so a browser never mixes an old file with a new page. Upload all files together.
+
+## Traffic statistics
+
+The page can report visits to GoatCounter (no cookies, no personal data). It is off until `GC_CODE` at the top of `app.js` holds the code of the GoatCounter site. It runs only on the live site, never for an admin account, and sends only the page visit plus once per visit the view, attack mode, epic and language in use. Nothing typed in the app, no export text and no account data is sent.

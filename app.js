@@ -1,7 +1,24 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.14.0';
+const APP_VERSION='21.14.1';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
+// ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
+// It runs only on the real site (not in a preview) and never for an admin account. A visit is counted by GoatCounter itself; on top of that every VISIT reports once which view, attack mode, epic and language it used (events "view/...", "mode/...", "epic/...", "lang/...").
+// Nothing you type, no export text and no account data is ever sent.
+const GC_CODE='';
+const gcOn=()=>!!GC_CODE&&location.hostname=='hracik.github.io';
+(function(){if(!gcOn())return;const s=document.createElement('script');s.async=true;s.dataset.goatcounter='https://'+GC_CODE+'.goatcounter.com/count';s.src='https://gc.zgo.at/count.js';document.head.appendChild(s)})();
+const GCSEEN=new Set();
+function track(path){
+  if(!gcOn()||GCSEEN.has(path)||(typeof SY!=='undefined'&&SY.role=='admin'))return;GCSEEN.add(path);
+  const go=()=>{try{window.goatcounter.count({path,title:path,event:true})}catch(e){}};
+  if(window.goatcounter&&window.goatcounter.count)go();else setTimeout(go,3000);
+}
+function trackUse(P){
+  if(!gcOn())return;
+  track('lang/'+(document.documentElement.lang||'en'));track('view/'+ATK);track('mode/'+$('mode').value);
+  if(ATK=='epics'){const e=$('epic');if(e&&e.value)track('epic/'+e.value)}
+}
 function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='admin');if(on===DEV)return false;DEV=on;document.documentElement.classList.toggle('dev',on);return true}
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
@@ -2519,6 +2536,7 @@ function calcRun0(){
   document.querySelectorAll('.cm').forEach(b=>b.classList.toggle('on',(P.kill&&b.dataset.m=='kill')||(P.ren&&b.dataset.m=='ren')||(P.one&&!P.cpd&&b.dataset.m=='cp')||(P.one&&P.cpd&&b.dataset.m=='cpd')||(P.pm&&!P.ov&&b.dataset.m=='pvpmax')||(P.ov&&b.dataset.m=='ovo')));
   {const m=MODEINFO[P.kill?'kill':P.ov?'ovo':P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)],el=$('mdi');if(el){el.hidden=!m&&!pvOff;if(pvOff)el.innerHTML='<b>Attack players</b> - The PvP modes are switched off for now.';else if(m){const ik=({'4':'reg','8':'reg','3':'sn','6':'sn',kill:'sn',kill4:'sn',cp:'pv1',cpd:'pv1'})[P.kill?(P.kill4?'kill4':'kill'):P.ov?'ovo':P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)]||'pvm',ic=document.querySelector('#mics [data-i="'+ik+'"] svg');el.innerHTML=(ic?ic.outerHTML:'')+'<span><b>'+m[0].replace(/^(Regular|Sniper|Pv1|PvMany) \u00b7 /,'')+'</b>'+(P.ov?' <span class="tg">work in progress</span>':'')+' - '+m[1]+'</span>'}}}      // the explanation under the mode buttons (the tier tips under Tiers to use are fixed text, both are always shown)
   const sc=score(P,[...A,...Mo,...U.list],[...st.so,...U.ord]);
+  trackUse(P);
   BRD={P,list:[...A,...Mo,...U.list],order:[...st.so,...U.ord],sc,fx};
   K4OK=false;K4LO=3;{const e=ATK=='epics'&&!P.ren&&!P.cp&&!P.one&&!P.pm?EPICS.find(x=>x.n==$('epic').value):null;
     if(e&&e.st&&e.score&&e.en.length==2){K4LO=e.en[0];const k=killState({...P,kill:true,kill4:true},ordL(BRD.list,BRD.order),e);K4OK=!!(k&&k.alive==e.st.length)}}
