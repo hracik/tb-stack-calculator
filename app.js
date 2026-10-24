@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.18.0';
+const APP_VERSION='21.18.2';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -302,6 +302,7 @@ function tabClick(e){
     else if(k=='xclose'){XPM=null;drawXP();drawTabs()}
     else if(k=='mnt'){MM=!MM;drawMenu()}      // the menu button of a phone: the menu opens as a dropdown under the logo line
     else if(k=='acct'){AP=!AP;drawAP();drawTabs();if(AP&&!aSes())gLoad().catch(()=>{})}      // the Google library is fetched while the panel opens, so the Google window can open at once on the click
+    else if(k=='theme'){const lt=document.documentElement.dataset.theme!='light';if(lt)document.documentElement.dataset.theme='light';else delete document.documentElement.dataset.theme;try{localStorage.setItem('tb_theme',lt?'light':'dark')}catch(x){}themeBtn()}      // the colour theme: dark (the default) or light for reading outdoors; the choice is kept in the browser
     else if(k=='help'){HP=true;drawHP();drawMenu()}      // the 1-on-1 help window
     else if(k=='hclose')hpShut();
     else if(k=='eopen'){EPM=true;drawEP()}
@@ -716,24 +717,29 @@ async function hCopy(){      // the inputs of the open tab as the Export text, s
 }
 const hpShut=()=>{if(HP){HP=false;drawHP()}};
 let EPM=false;      // 19.0.36: the epic chooser (opened by the score tile)
+let MFOCUS=null;      // the button that opened a choice window: the focus goes back to it when the window closes
+const mIn=(sel,was)=>{if(!was)MFOCUS=document.activeElement;const b=document.querySelector(sel+' .epl button.on')||document.querySelector(sel+' .epl button');if(b&&!was)b.focus()};
+const mBack=fb=>{const o=MFOCUS;MFOCUS=null;const t=o&&o!==document.body&&document.contains(o)?o:$(fb);if(t)t.focus()};
 function drawEP(){
-  const p=$('epp'),w=$('epw');if(!p)return;p.hidden=!EPM;if(w)w.hidden=!EPM;document.documentElement.classList.toggle('mlock',EPM||FMP||HP||!!(AP&&FB.key));
-  if(!EPM){p.innerHTML='';return}
+  const p=$('epp'),w=$('epw');if(!p)return;const was=!p.hidden;p.hidden=!EPM;if(w)w.hidden=!EPM;document.documentElement.classList.toggle('mlock',EPM||FMP||HP||!!(AP&&FB.key));
+  if(!EPM){p.innerHTML='';if(was)mBack('ebtn');return}
   const cur=$('epic').value;
   const none='<button type="button" data-act="epick" data-e=""'+(cur?'':' class="on"')+'><span>None</span><small>no score estimate</small></button>';      // "None" (no epic) stands first in the list
   p.innerHTML='<div class="amh"><div class="amt">Choose the epic monster</div><button class="amx" data-act="eclose" aria-label="Close" title="Close">\u00d7</button></div>'
     +'<div class="epl">'+none+EPICS.map(e=>'<button type="button" data-act="epick" data-e="'+esc(e.n)+'"'+(e.n==cur?' class="on"':'')+'>'+(epImg(e,'epi')||'<span class="epi epe"></span>')+'<span class="epn">'+esc(e.n)+'</span><small>'+(e.score?sh0(e.score)+' score':'score not set yet')+'</small></button>').join('')+'</div>';
+  mIn('#epp',was);
 }
 const epImg=(e,c)=>e&&e.ic&&EPIC_IC[e.ic]?'<img class="'+c+'" src="'+EPIC_IC[e.ic]+'" alt="">':'';
 const sh0=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3)).toString()+' '+u[i]};
 const epShut=()=>{if(EPM){EPM=false;drawEP()}};
 let LGM=false;      // the language chooser (opened by the language row of the menu), a window like the epic chooser
 function drawLG(){
-  const p=$('lgp'),w=$('lgw2');if(!p)return;p.hidden=!LGM;if(w)w.hidden=!LGM;document.documentElement.classList.toggle('mlock',LGM||EPM||FMP||HP||!!(AP&&FB.key));
-  if(!LGM){p.innerHTML='';return}
+  const p=$('lgp'),w=$('lgw2');if(!p)return;const was=!p.hidden;p.hidden=!LGM;if(w)w.hidden=!LGM;document.documentElement.classList.toggle('mlock',LGM||EPM||FMP||HP||!!(AP&&FB.key));
+  if(!LGM){p.innerHTML='';if(was)mBack('lbtn');return}
   const cur=window.i18nCur?window.i18nCur():'en',L=window.i18nLangs?window.i18nLangs():[['en','English']];
   p.innerHTML='<div class="amh"><div class="amt">Choose the language</div><button class="amx" data-act="lclose" aria-label="Close" title="Close">\u00d7</button></div>'
-    +'<div class="epl" data-notr>'+L.map(x=>'<button type="button" data-act="lpick" data-l="'+x[0]+'"'+(x[0]==cur?' class="on"':'')+'><span class="epn">'+esc(x[1])+'</span></button>').join('')+'</div>';
+    +'<div class="epl" data-notr>'+L.map(x=>'<button type="button" data-act="lpick" data-l="'+x[0]+'"'+(x[0]==cur?' class="on"':'')+'><span class="lgc">'+x[0].toUpperCase()+'</span><span class="epn">'+esc(x[1])+'</span></button>').join('')+'</div>';
+  mIn('#lgp',was);
 }
 const lgShut=()=>{if(LGM){LGM=false;drawLG()}};
 let FMP=false,FMPREV=null;      // 14.27: Food settings modal (opened when Preparation clicked with no food)
@@ -763,6 +769,13 @@ document.addEventListener('click',e=>{if(HP&&e.target&&e.target.id=='hw'&&apDn&&
 document.addEventListener('click',e=>{if(LGM&&e.target&&e.target.id=='lgw2'&&apDn&&apDn.id=='lgw2')lgShut()});
 document.addEventListener('click',e=>{if(EPM&&e.target&&e.target.id=='epw'&&apDn&&apDn.id=='epw')epShut()});
 document.addEventListener('click',e=>{if(FMP&&e.target&&e.target.id=='fmw'&&apDn&&apDn.id=='fmw')fmShut()});
+document.addEventListener('keydown',e=>{      // the epic and language windows: arrow keys move through the list, Tab stays inside the window
+  if(!(EPM||LGM))return;const k=e.key;if(!['ArrowDown','ArrowUp','Home','End','Tab'].includes(k))return;
+  const win=document.querySelector(EPM?'#epp':'#lgp');if(!win)return;
+  if(k=='Tab'){const f=[...win.querySelectorAll('button')];if(!f.length)return;const i=f.indexOf(document.activeElement);if(e.shiftKey&&i<=0){e.preventDefault();f[f.length-1].focus()}else if(!e.shiftKey&&(i<0||i==f.length-1)){e.preventDefault();f[0].focus()}return}
+  const bs=[...win.querySelectorAll('.epl button')];if(!bs.length)return;const i=bs.indexOf(document.activeElement);
+  let n=k=='ArrowDown'?(i<0?0:i+1):k=='ArrowUp'?(i<0?bs.length-1:i-1):k=='Home'?0:bs.length-1;
+  e.preventDefault();bs[Math.max(0,Math.min(bs.length-1,n))].focus()});
 document.addEventListener('keydown',e=>{if(e.key=='Escape'){const md=!!document.querySelector('.amo:not([hidden])');apShut();hpShut();fmShut();epShut();lgShut();if(!md)mmShut()}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncNow()});
 window.addEventListener('online',()=>syncNow());
@@ -2873,6 +2886,17 @@ function evalSel(sel){      // the tier selection sel: the same steps as calc, w
   return{m:gold>0?dmg/gold:0,dmg,gold};
 }
 function goldOf(sel){const P=getP(),{st,A,Mo,U}=solveTC(P,[...sel].sort((a,b)=>key(a)-key(b))),hl=[...A,...Mo,...U.list],{rv}=fullRevive(P,hl,[...st.so,...U.ord]),tl=templeLv();return(rv.A+rv.M+rv.U)/(tl>=1?TEMPLE[tl-1]:1)}      // 19.0.146: the full revive gold of a tier selection
+// 21.18.1: the suggestions of the Tier check have an Apply button: the tiers are set at once, a message with Undo follows
+const tcBtn=set=>`<button type="button" class="tcap" data-set="${[...set].join(',')}">Apply</button>`;
+let TCUNDO=null,TCTO=0;
+const tierSel=()=>{const r=[];['E','S','G','M'].forEach(c=>{for(let i=1;i<=9;i++){const el=$('s'+c+i);if(el&&el.checked)r.push(c+i)}});return r};
+function tierSet(sel){let ch=null;['E','S','G','M'].forEach(c=>{for(let i=1;i<=9;i++){const el=$('s'+c+i);if(el){const on=sel.includes(c+i);if(el.checked!==on){el.checked=on;ch=el}}}});TCC=null;if(ch)ch.dispatchEvent(new Event('change',{bubbles:true}));return!!ch}
+function tcToast(msg,undo){const t=$('toast');if(!t)return;clearTimeout(TCTO);t.innerHTML='<span>'+msg+'</span>'+(undo?'<button type="button" class="tcun">Undo</button>':'')+'<button type="button" class="tcx2" aria-label="Close" title="Close">\u00d7</button>';t.hidden=false;TCTO=setTimeout(()=>{t.hidden=true},undo?20000:4000)}
+document.addEventListener('click',e=>{
+  const b=e.target.closest&&e.target.closest('.tcap');
+  if(b){const prev=tierSel();if(!tierSet(b.dataset.set.split(',').filter(Boolean)))return;TCUNDO={tab:active,sel:prev};if(!$('tcm').hidden)closeTierCheck();else closeBubble();tcToast('Tiers applied.',true);return}
+  if(e.target.closest&&e.target.closest('.tcun')){if(TCUNDO&&TCUNDO.tab===active){tierSet(TCUNDO.sel);TCUNDO=null;tcToast('Tiers restored.',false)}else{$('toast').hidden=true}return}
+  if(e.target.closest&&e.target.closest('.tcx2'))$('toast').hidden=true});
 async function tierHint(gen,body0){TCCACHE=new Map();try{return await tierHintRun(gen,body0)}finally{TCCACHE=null}}
 async function tierHintRun(gen,body0){
   const body=body0||$('tcb');
@@ -2896,7 +2920,7 @@ async function tierHintRun(gen,body0){
     if(gen!==HINTGEN)return;
     const ok=dd.dmg>=tg,fin=ok?cur:bestSet,d1=ok?dd:bestD,d0=det.get(kk(sel0)),ok0=d0.dmg>=tg;
     const add=fin.filter(x=>!sel0.includes(x)),rem=sel0.filter(x=>!fin.includes(x)),ls=a=>a.sort((x,y)=>key(x)-key(y)).join(', ');
-    const sug=add.length||rem.length?`<p><b>Suggestion:</b> ${[add.length?'tick <b>'+ls(add)+'</b>':'',rem.length?'untick <b>'+ls(rem)+'</b>':''].filter(Boolean).join(' and ')}.</p>`:'';
+    const sug=add.length||rem.length?`<p><b>Suggestion:</b> ${[add.length?'tick <b>'+ls(add)+'</b>':'',rem.length?'untick <b>'+ls(rem)+'</b>':''].filter(Boolean).join(' and ')}. ${tcBtn(fin)}</p>`:'';
     const head=`<p>Level ${lv}: the stacks must reach <b>${fg(tg)}</b> damage.</p>`,nums=`<p>Estimated damage: ${fg(d0.dmg)} &rarr; ${fg(d1.dmg)}${ok0?'':' (before: short of the target)'}. Full revive cost: ${fg(d0.gold)} &rarr; <b>${fg(d1.gold)}</b> gold${ok0?' ('+sg(pc(d1.gold,d0.gold))+' %)':''}.</p>`;
     if(!ok)body.innerHTML=head+`<p>Even with only the top tier of every type the stacks reach ${fg(d1.dmg)} damage (${(d1.dmg/tg*100).toFixed(1)} % of the target).</p>`+(sug?sug+nums:`<p>Your ticked tiers already give the most damage.</p>`);
     else body.innerHTML=head+(sug?sug+nums:`<p>Your ticked tiers are already the set: estimated damage ${fg(d1.dmg)}, full revive cost ${fg(d1.gold)} gold.</p>`)+(out?`<p class="mu">${out} lowest tier${out>1?'s':''} taken out to reach the damage.</p>`:`<p class="mu">All the tiers together already beat the target by ${pc(d1.dmg,tg)} %: with fewer troops (a smaller Leadership) it would be reached too.</p>`);
@@ -2951,12 +2975,12 @@ async function tierHintRun(gen,body0){
   const add=cur.filter(x=>!sel0.includes(x)),rem=sel0.filter(x=>!cur.includes(x)),ls=a=>a.sort((x,y)=>key(x)-key(y)).join(', ');
   if(P.ren){      // 14.13 Renegades: the best damage for the least gold of the full revive (damage per gold), not the highest damage
     const d0=det.get(kk(sel0)),d1=det.get(kk(cur)),pc=(a,b)=>((a/b-1)*100).toFixed(1),sg=x=>(x>=0?'+':'')+x,fg=x=>Math.round(x).toLocaleString('en-US');
-    body.innerHTML=add.length||rem.length?`<p><b>Suggestion:</b> ${[add.length?'tick <b>'+ls(add)+'</b>':'',rem.length?'untick <b>'+ls(rem)+'</b>':''].filter(Boolean).join(' and ')}.</p><p>Damage per gold of the full revive: ${fmt(base)} &rarr; <b>${fmt(best)}</b> (${sg(pc(best,base))} %).</p><p>Estimated damage: ${fmt(d0.dmg)} &rarr; ${fmt(d1.dmg)} (${sg(pc(d1.dmg,d0.dmg))} %). Full revive cost: ${fg(d0.gold)} &rarr; ${fg(d1.gold)} gold (${sg(pc(d1.gold,d0.gold))} %).</p>`:`<p>No other choice of tiers gives more damage for the gold of the full revive.</p>`;
+    body.innerHTML=add.length||rem.length?`<p><b>Suggestion:</b> ${[add.length?'tick <b>'+ls(add)+'</b>':'',rem.length?'untick <b>'+ls(rem)+'</b>':''].filter(Boolean).join(' and ')}. ${tcBtn(cur)}</p><p>Damage per gold of the full revive: ${fmt(base)} &rarr; <b>${fmt(best)}</b> (${sg(pc(best,base))} %).</p><p>Estimated damage: ${fmt(d0.dmg)} &rarr; ${fmt(d1.dmg)} (${sg(pc(d1.dmg,d0.dmg))} %). Full revive cost: ${fg(d0.gold)} &rarr; ${fg(d1.gold)} gold (${sg(pc(d1.gold,d0.gold))} %).</p>`:`<p>No other choice of tiers gives more damage for the gold of the full revive.</p>`;
     return;
   }
   // 19.0.132: the 2nd and 3rd best sets among all that the check calculated (it is a search, not every possible set)
   const sgn=x=>(x>=0?'+':'')+x.toFixed(1),kg=x=>x>=1e6?(x/1e6).toPrecision(3)+'M':x>=1e3?Math.round(x/1e3)+'K':String(Math.round(x)),g0=goldOf(sel0);
-  const pcs=x=>sgn(x)+' %',row=(l,m,set,k,rt)=>`<tr class="${k}"><td>${l}</td><td>${pcs((m/base-1)*100)}</td><td>${pcs(((rt?(goldOf(set)/m)/(g0/base):goldOf(set)/g0)-1)*100)}</td></tr>`;      // 19.0.148: a table: tiers, damage, gold revive (only the % against the current tiers)
+  const pcs=x=>sgn(x)+' %',row=(l,m,set,k,rt)=>`<tr class="${k}"><td>${l} ${tcBtn(set)}</td><td>${pcs((m/base-1)*100)}</td><td>${pcs(((rt?(goldOf(set)/m)/(g0/base):goldOf(set)/g0)-1)*100)}</td></tr>`;      // 19.0.148: a table: tiers, damage, gold revive (only the % against the current tiers)
   const chn=set=>{const ad=set.filter(x=>!sel0.includes(x)),rm=sel0.filter(x=>!set.includes(x));return[ad.length?'tick <b>'+ls(ad)+'</b>':'',rm.length?'untick <b>'+ls(rm)+'</b>':''].filter(Boolean).join(' and ')||'-'};
   // 19.0.135: the best set, then the best sets that use FEWER tiers than the best (and again fewer than that one): the tiers that are not worth their cost can be left out
   const alts=(()=>{const all=[...det.entries()].map(([k,r])=>({set:k.split(','),m:r.m})),o=[];let n=cur.length;
@@ -2967,9 +2991,9 @@ async function tierHintRun(gen,body0){
   const same=c=>Math.abs(c.m/base-1)<1e-6&&Math.abs(c.g/g0-1)<1e-6,dAlts0=alts.map(a=>({...a,g:goldOf(a.set)})).filter(a=>!dom(a)&&!same(a));
   const eff=all.filter(c=>kk(c.set)==k0||!same(c)).sort((a,b)=>b.q-a.q||(kk(b.set)==k0)-(kk(a.set)==k0)||a.set.length-b.set.length),effBest=eff[0]&&eff[0].rt>r0*(1+HGAIN)?eff[0]:null,eAlts=eff.filter(c=>c!==effBest&&(effBest||kk(c.set)!=k0)).filter((c,i,a)=>a.findIndex(d=>Math.abs(d.m/c.m-1)<1e-6&&Math.abs(d.g/c.g-1)<1e-6)==i).slice(0,3);
   const hasBest=add.length||rem.length,bk=kk(cur),bg=hasBest?goldOf(cur):0,dAlts=all.filter(c=>!(hasBest&&(kk(c.set)==bk||(Math.abs(c.m/best-1)<1e-6&&Math.abs(c.g/bg-1)<1e-6)))&&(hasBest?kk(c.set)==k0||!same(c):!same(c))).map(c=>({set:c.set,m:c.m,g:c.g})).sort((a,b)=>b.m-a.m||(kk(b.set)==k0)-(kk(a.set)==k0)||a.set.length-b.set.length).filter((c,i,a)=>a.findIndex(d=>Math.abs(d.m/c.m-1)<1e-6&&Math.abs(d.g/c.g-1)<1e-6)==i).slice(0,3),tbl=(rs,rt)=>`<table class="tct"><thead><tr><th>Tiers</th><th>Damage</th><th>${rt?'Gold/dmg':'Gold revive'}</th></tr></thead><tbody>${rs}</tbody></table>`;      // the same table (the same columns and font) for the best and for the alternatives
-  const rws=(a,rt)=>a.map(r=>row(chn(r.set),r.m,r.set,'tcr',rt)).join('');
+  const rws=(a,rt)=>a.map(r=>row(chn(r.set),r.m,r.set,'tcr',rt)).join('');      // each row has its Apply button (row)
   const dBest=hasBest?[{set:cur,m:best}]:[];
-  const bestH=(t,rs,none,rt)=>(rs.length?rs.map(r=>`<p class="tcb"><small>${t}</small>${chn(r.set)}<br><span>Damage ${pcs((r.m/base-1)*100)} &middot; ${rt?'Gold per damage '+pcs(((goldOf(r.set)/r.m)/(g0/base)-1)*100):'Gold revive '+pcs((goldOf(r.set)/g0-1)*100)}</span></p>`).join(''):`<p class="tcb"><small>${t}</small>${none}</p>`);      // 19.0.156: the best sets as highlighted text, not a table
+  const bestH=(t,rs,none,rt)=>(rs.length?rs.map(r=>`<p class="tcb"><small>${t}</small>${chn(r.set)} ${tcBtn(r.set)}<br><span>Damage ${pcs((r.m/base-1)*100)} &middot; ${rt?'Gold per damage '+pcs(((goldOf(r.set)/r.m)/(g0/base)-1)*100):'Gold revive '+pcs((goldOf(r.set)/g0-1)*100)}</span></p>`).join(''):`<p class="tcb"><small>${t}</small>${none}</p>`);      // 19.0.156: the best sets as highlighted text, not a table
   const alt=(rs,none,rt)=>rs.length?tbl(rws(rs,rt),rt):`<p>${none}</p>`;
   body.innerHTML=`<p>Current tiers: <b>${fmt(base)}</b>, full revive <b>${kg(g0)}</b> gold</p>${bestH('&#128165; Best damage',dBest,'No other choice of tiers gives more damage.')}${bestH('&#128176; Best efficiency',effBest?[effBest]:[],'No other choice of tiers gives more damage per gold.',1)}<p class="mu tcalt0">Next best alternatives</p><div class="pbrow tctab"><button type="button" class="vb" data-t="d">&#128165; Max. damage</button><button type="button" class="vb" data-t="e">&#128176; Max. efficiency</button></div><div class="tcpd" hidden>${alt(dAlts,'No more alternatives.')}</div><div class="tcpe" hidden>${alt(eAlts,'No more alternatives.',1)}</div>`;
   body.querySelectorAll('.tctab .vb').forEach(b=>b.addEventListener('click',()=>{const on=!b.classList.contains('on');body.querySelectorAll('.tctab .vb').forEach(x=>x.classList.toggle('on',on&&x===b));body.querySelector('.tcpd').hidden=!(on&&b.dataset.t=='d');body.querySelector('.tcpe').hidden=!(on&&b.dataset.t=='e')}));
@@ -3051,3 +3075,6 @@ ready=true;
 drawTabs();
 refresh();
 if(FB.key&&aSes())syncNow();      // signed in before: pick up the account's changes (or send this browser's)
+
+function themeBtn(){const lt=document.documentElement.dataset.theme=='light',b=document.querySelector('.thm .nvn');if(b){b.textContent=lt?"Dark theme":"Light theme";if(window.i18nCur&&i18nCur()!="en"&&window.i18nSet)i18nSet(i18nCur())}const m=document.querySelector('meta[name=theme-color]');if(m)m.content=lt?'#f3ecd9':'#0f0e0b'}
+themeBtn();
