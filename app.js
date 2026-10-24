@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.16.14';
+const APP_VERSION='21.16.15';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2332,7 +2332,8 @@ const MERC_LATER=[
 // unless its card is clicked off. Bonuses: its class (Guardsmen / Specialists / Engineers / Monsters) with its category, a monster also its type; the order of the mercenary
 // stacks is simply by the squad bonus: the smaller one dies first.
 const veOf=(t,P)=>P.epic?(t.ve||0)+((epCur()||{}).pk?t.vp||0:0):0;      // the bonus against the chosen epic: the one against every epic + the one against Pumpkin epics
-const MT=MERC.map(m=>({cls:m[0],tier:m[1],name:m[2],cat:m[3],hp:m[4],str:m[5],cost:m[6],vs:m[7],ve:m[10]||0,vp:m[12]||0,jungle:!!m[8],type:m[9]||'',beast:m[0]!='M'&&m[9]=='Beast',food:0,gold:m[11],pool:'U'}));      // food: every mercenary uses no food (the troop JSON lists a food value for most of them, but it is wrong - they consume none, so it is NOT stored)
+const MERC_MINT=9;      // only the top tier mercenaries are shown and used for now (the rule for the lower tiers - they depend on the Guardsmen tier available - comes later); set it lower to bring them back
+const MT=MERC.filter(m=>m[1]>=MERC_MINT).map(m=>({cls:m[0],tier:m[1],name:m[2],cat:m[3],hp:m[4],str:m[5],cost:m[6],vs:m[7],ve:m[10]||0,vp:m[12]||0,jungle:!!m[8],type:m[9]||'',beast:m[0]!='M'&&m[9]=='Beast',food:0,gold:m[11],pool:'U'}));      // food: every mercenary uses no food (the troop JSON lists a food value for most of them, but it is wrong - they consume none, so it is NOT stored)
 MT.forEach(t=>TRN[t.name]=t);
 const mkM=(t,P,X)=>{const[mh,ms]=mults(t,P);return{r:t.cls+t.tier,p:'U',c:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i:0,dh:dhf(t,P),n:0}};
 // the counts of a row of stacks: H and T = health and total strength of the stack before (Infinity = none), idx = its place, X = the health level no stack goes above
@@ -2423,7 +2424,7 @@ function allocMerc(P,ld,so,X){
 // the order of the cards in the Mercenaries section (the ones not listed come after them, by name)
 const MORD=['Ariel','Grim Stalker Leader','Wasp-Man Leader','Chitinous Defender Leader','Combat Anteater Leader','Warregal','Quicksand','Highlander','Slavic Warrior','Superior Epic Monster Hunter','Elder Witch','Jago','Galloper','Pounder','Scarface','Grace','Wyvern','Warden','Eternal Cannoneer','Demonic Salamander'];
 const mercVis=s=>s.n>0||s.off;      // the Mercenaries section shows only the ones with units (a turned-off one stays, to be turned on again)
-const mercSorted=c=>{const rk=m=>{const i=MORD.indexOf(m[2]);return i<0?999:i};return MERC.filter(m=>m[0]==c).sort((a,b)=>rk(a)-rk(b)||a[2].localeCompare(b[2]))};
+const mercSorted=c=>{const rk=m=>{const i=MORD.indexOf(m[2]);return i<0?999:i};return MERC.filter(m=>m[0]==c&&m[1]>=MERC_MINT).sort((a,b)=>rk(a)-rk(b)||a[2].localeCompare(b[2]))};
 function mercTable(all){
   const by={};all.forEach(s=>by[s.name]=s);
   const cell=m=>{const s=by[m[2]];return`<td class="${s.off?'off':''}" data-troop="${esc(m[2])}"><img class="ic" src="${ICD[m[2]]}" alt=""><span class="kp">${KP[m[2]]?'#'+KP[m[2]]:''}</span><span class="mu">${esc(m[2])}</span>${cnt(s,s.n.toLocaleString())}</td>`};
