@@ -199,3 +199,6 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 .ob,.pb,.eb,.cm,.vb{background:transparent;border:1px solid var(--ac);color:var(--ac)}
 .ob:not(.on):not(:disabled):hover,.pb:not(.on):hover,.eb:not(.on):hover,.cm:not(.on):not(:disabled):hover,.vb:not(.on):not(:disabled):hover{background:rgba(217,164,65,.14)}
 .ob.on,.pb.on,.eb.on,.cm.on,.vb.on{background:var(--af);border-color:var(--af);color:#000}
+.tt label span{background:transparent;border:1px solid var(--ac);color:var(--ac)}
+.tt label:hover span{background:rgba(217,164,65,.14);border-color:var(--ac);color:var(--ac)}
+.tt label input:checked+span{background:var(--af);border-color:var(--af);color:#000;font-weight:400;box-shadow:none}
