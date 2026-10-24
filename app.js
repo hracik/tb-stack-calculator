@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.16.31';
+const APP_VERSION='21.16.32';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -227,15 +227,16 @@ const DEFCAT=['Melee','Ranged','Mounted','Flying'];
 let tabs=null,active=0,IMP=null,ready=false,delPending=false,DEF=null,XS=new Set(),SO=[],CALCT=0,CALCMS=0,SAVET=0;      // CALCT = the timer of the calculation that waits for the typing to stop, CALCMS = how long the last calculation took, SAVET = the timer of the saving
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const clone=o=>JSON.parse(JSON.stringify(o));
-const MODE_IDS=['mode','enemy'];                       // the two hidden mode boxes are kept out of the input lists: the mode is stored in the tab as mode / enemy (see snap and load)
+const MODE_IDS=['mode','enemy'],APP_IDS=['lang'];      // APP_IDS = settings of the whole app (the language): never stored in a tab and never changed by opening one
+                       // the two hidden mode boxes are kept out of the input lists: the mode is stored in the tab as mode / enemy (see snap and load)
 function snap(){
   const d={vals:{},chk:{},O:O.slice(),X:[...XS],S:SO.slice(),atk:ATK,mode:$('mode').value,enemy:$('enemy').value,le:{...LASTE},lp:LASTP,cmp:{...CMPV}};      // the Attack epics / Attack players switch, the attack mode (4-stack, CP kill ...) and the last mode of each view belong to the tab
-  document.querySelectorAll('input[id],select[id]').forEach(el=>{if(MODE_IDS.includes(el.id))return;if(el.type=='checkbox')d.chk[el.id]=el.checked;else d.vals[el.id]=(el.value===''&&el.matches(NUMBOX))?'0':el.value});      // a box that is empty only while it is being typed in counts as 0
+  document.querySelectorAll('input[id],select[id]').forEach(el=>{if(MODE_IDS.includes(el.id)||APP_IDS.includes(el.id))return;if(el.type=='checkbox')d.chk[el.id]=el.checked;else d.vals[el.id]=(el.value===''&&el.matches(NUMBOX))?'0':el.value});      // a box that is empty only while it is being typed in counts as 0
   return d;
 }
 function load(d){
   const vals={...BLANK.vals,...(d.vals||{})},chk={...BLANK.chk,...(d.chk||{})};      // what the tab saved always wins; only a box the tab never saved gets the blank value (0)
-  Object.entries(vals).forEach(([id,val])=>{const el=$(id);if(el&&!MODE_IDS.includes(id))el.value=id.startsWith('dh_')?snapDH(val):id=='temple'?tempNorm(val):(val===''&&el.matches(NUMBOX)?'0':val)});
+  Object.entries(vals).forEach(([id,val])=>{const el=$(id);if(el&&!MODE_IDS.includes(id)&&!APP_IDS.includes(id))el.value=id.startsWith('dh_')?snapDH(val):id=='temple'?tempNorm(val):(val===''&&el.matches(NUMBOX)?'0':val)});
   Object.entries(chk).forEach(([id,c])=>{const el=$(id);if(el)el.checked=c});
   fmtAll();
   O=(d.O||[]).slice();XS=new Set(d.X||[]);SO=(d.S||[]).slice();
