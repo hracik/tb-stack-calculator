@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.15.2';
+const APP_VERSION='21.15.3';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1644,23 +1644,25 @@ function solveSc(P,order){
   const r=solve(P,order);
   if(!SCOUTS_ON||ATK!='players'||!P.ren)return r;
   const cand=[...scoutSet(P,order)];if(!cand.length)return r;
-  const gT=[...new Set(r.A.filter(s=>s.r[0]=='G'&&s.n>0).map(s=>+s.r.slice(1)))].sort((a,b)=>a-b);
-  const proto=r.A.filter(s=>s.p=='A'&&s.r[0]=='G'&&s.n>0).sort((a,b)=>+a.r.slice(1)-+b.r.slice(1))[0];
-  if(!proto||!gT.length)return r;
+  const pl=s=>s.str*(s.f||1)/s.cost;      // damage per Leadership of a stack
+  const army=r.A.filter(s=>s.p=='A'&&(s.r[0]=='G'||s.r[0]=='S')&&s.cat!='Scout'&&s.n>0);
+  const proto=army.slice().sort((a,b)=>pl(a)-pl(b))[0];
+  if(!proto)return r;
   const mkS=n=>{const t=TRN[n],[mh,ms]=mults(t,P);return{...proto,r:t.cls+t.tier,name:n,cat:'Scout',c:'Scout',hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),dh:dhf(t,P),n:0,off:XS.has(n)}};
   const place=(so,name)=>{const i=so.findIndex(n=>TRN[n]&&TRN[n].pool=='M'),o=so.slice();o.splice(i<0?o.length:i,0,name);return o};
   const dm=(A,so)=>score(P,[...A,...r.Mo,...r.U.list],[...so,...r.U.ord]).dmg;
   const base=dm(r.A,r.st.so),stacks=cand.map(mkS);let best=null;
   stacks.filter(x=>!x.off).forEach(sc=>{
-    for(let k=1;k<=Math.min(6,gT.length);k++){
-      const vic=new Set(gT.slice(0,k));let freed=0;
-      const A2=r.A.map(s=>{const c={...s};if(c.r[0]=='G'&&vic.has(+c.r.slice(1))&&c.n>0){freed+=c.n*c.cost;c.n=0}return c});
+    const grp=[...new Set(army.filter(s=>pl(s)<pl(sc)).map(s=>s.r))].sort((a,b)=>pl(army.find(s=>s.r==a))-pl(army.find(s=>s.r==b)));      // the groups (G2, S1 ...) the Scout beats, the weakest per Leadership first
+    for(let k=1;k<=Math.min(8,grp.length);k++){
+      const vic=new Set(grp.slice(0,k));let freed=0;
+      const A2=r.A.map(s=>{const c={...s};if(vic.has(c.r)&&c.cat!='Scout'&&c.n>0&&c.p=='A'){freed+=c.n*c.cost;c.n=0}return c});
       const n=Math.floor(freed/sc.cost);if(n<1)continue;
       let d=0;try{d=dm([...A2,{...sc,n}],place(r.st.so,sc.name))}catch(e){}
       if(d>base*(1+1e-9)&&(!best||d>best.d))best={d,sc,n,vic};
     }});
   if(best){
-    r.A.forEach(s=>{if(s.r[0]=='G'&&best.vic.has(+s.r.slice(1))&&s.n>0)s.n=0});
+    r.A.forEach(s=>{if(best.vic.has(s.r)&&s.cat!='Scout'&&s.p=='A'&&s.n>0)s.n=0});
     best.sc.n=best.n;r.A.push(best.sc);r.st.push(best.sc);r.st.so=place(r.st.so,best.sc.name);SCON.add(best.sc.name);
   }
   stacks.forEach(x=>{if(x.off){r.st.push(x);SCON.add(x.name)}});      // the ones clicked off stay in the list
