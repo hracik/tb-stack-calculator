@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.18.5';
+const APP_VERSION='21.18.6';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -23,11 +23,11 @@ function syncDebug(){const on=!!(DBGWANT&&typeof SY!=='undefined'&&SY.role=='adm
 // 1-on-1 help (paid service, the menu button 1-on-1 help; the button is hidden since 12.3: delete the word hidden in <button class="nvb hlp" hidden ...> to show it): the hourly rate and the booking link are set here. HELP_URL empty = no Book button, the window says that booking opens soon.
 const HELP_RATE='\u20ac25 / hour',HELP_URL='';
 (function(){
-  const setBadge=(t,tip,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.title=tip||'';b.dataset.s=st||'ok'}};
+  const setBadge=(t,st)=>{const b=document.getElementById('appver');if(b){b.textContent=t;b.dataset.s=st||'ok'}};
   const me='v'+APP_VERSION;
-  setBadge(me,'Version '+APP_VERSION,'unk');
+  setBadge(me,'unk');
   // Stale-page check: the live site publishes version.json. If it names a NEWER version than this page, the page is reloaded - once per live version, so a browser that keeps serving the old copy cannot loop. A page that is newer than the live site (a test copy) never reloads.
-  if(!/^https?:$/.test(location.protocol)){setBadge(me,'Version '+APP_VERSION+' - a local copy, the update check runs on the website','unk');return}
+  if(!/^https?:$/.test(location.protocol)){setBadge(me,'unk');return}
   const LIVE='https://hracik.github.io/tb-stack-calculator/';
   const base=/\.github\.io$/.test(location.hostname)?location.origin+location.pathname.replace(/[^\/]*$/,''):LIVE;
   const tried=()=>{let t=null;try{t=sessionStorage.getItem('sc_reload')}catch(e){}return t||(/^sc_reload=/.test(window.name)?window.name.slice(10):null)};
@@ -38,11 +38,11 @@ const HELP_RATE='\u20ac25 / hour',HELP_URL='';
     const now=Date.now();if(now-last<300000)return;last=now;
     fetch(base+'version.json?_='+now,{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{
       const ll=String((j&&(j.label||j.version))||''),live=vnum(ll);      // an old version.json also has a label (MAJOR.MINOR): it is read too
-      if(!live){setBadge(me,'Version '+APP_VERSION+' - the update check could not reach the website','unk');return}
-      if(live<vnum(APP_VERSION)){setBadge(me,'Version '+APP_VERSION+' - a test copy, newer than the live version '+ll,'ahead');return}
-      if(live==vnum(APP_VERSION)){setBadge(me,'Version '+APP_VERSION+' - up to date','ok');return}
-      if(String(tried())===ll){setBadge(me+' \u00b7 live v'+ll,'Version '+ll+' is live, but the browser still serves version '+APP_VERSION+'. Reload with Ctrl+F5.','old');return}
-      mark(ll);setBadge(me+' \u00b7 updating','Version '+ll+' is live - reloading','upd');
+      if(!live){setBadge(me,'unk');return}
+      if(live<vnum(APP_VERSION)){setBadge(me,'ahead');return}
+      if(live==vnum(APP_VERSION)){setBadge(me,'ok');return}
+      if(String(tried())===ll){setBadge(me+' \u00b7 live v'+ll,'old');return}
+      mark(ll);setBadge(me+' \u00b7 updating','upd');
       try{if(typeof save=='function')save()}catch(e){}      // the numbers typed so far are stored first, the reload then brings them back
       fetch(location.href.split('#')[0],{cache:'reload'}).catch(()=>{}).then(()=>location.reload());
     }).catch(()=>{});
@@ -264,8 +264,8 @@ function drawTabs(){
   if(XPM=='exp'&&XTAB!==tabs[active]){XPM=null;drawXP()}      // the export text belongs to the tab it was made in
   const tools=delPending
     ?`<span class="nb">Delete "${esc(tabs[active].name)}"?</span><button class="tl" data-act="yes">Yes, delete</button><button class="tl" data-act="no">Cancel</button>`
-    :`<button class="tli" data-act="ren" aria-label="Rename" title="Rename">${ICOREN}</button><button class="tli" data-act="dup" aria-label="Duplicate" title="Duplicate">${ICODUP}</button>${tabs.length>1?`<button class="tli" data-act="del" aria-label="Delete" title="Delete">${ICODEL}</button>`:''}<button class="tli${XPM=='imp'?' on':''}" data-act="imp" aria-label="Import" title="Paste exported text: it opens as a new tab">${ICOIMP}</button><button class="tl${XPM=='exp'?' on':''}" data-act="exp" title="Show all inputs of this tab as text, to copy">${ICOEXP}Export</button>`;
-  $('tabs').innerHTML='<div id="tabsin">'+tabs.map((t,i)=>`<button class="tab${i==active?' on':''}" data-t="${i}" title="${esc(t.name)} - double-click to rename">${esc(t.name)}</button>`).join('')+'<button type="button" class="tab add" id="tabadd" data-add="1" title="New tab">+</button></div>';
+    :`<button class="tli" data-act="ren" aria-label="Rename">${ICOREN}</button><button class="tli" data-act="dup" aria-label="Duplicate">${ICODUP}</button>${tabs.length>1?`<button class="tli" data-act="del" aria-label="Delete">${ICODEL}</button>`:''}<button class="tli${XPM=='imp'?' on':''}" data-act="imp" aria-label="Import">${ICOIMP}</button><button class="tl${XPM=='exp'?' on':''}" data-act="exp">${ICOEXP}Export</button>`;
+  $('tabs').innerHTML='<div id="tabsin">'+tabs.map((t,i)=>`<button class="tab${i==active?' on':''}" data-t="${i}">${esc(t.name)}</button>`).join('')+'<button type="button" class="tab add" id="tabadd" data-add="1">+</button></div>';
   $('tabtools').innerHTML=tools;tabVis(document.querySelector('#tabs .tab.on'));
 }
 function newName(){let n=tabs.length+1;while(tabs.some(t=>t.name==='Tab '+n))n++;return 'Tab '+n}
@@ -363,7 +363,7 @@ function exportText(){
 function drawXP(){
   const p=$('xp');p.hidden=!XPM;if(!XPM){p.innerHTML='';return}
   const ex=XPM=='exp';
-  p.innerHTML=`<div class="mu">${ex?'All inputs of this tab as a short text. Copy it and keep it anywhere (a note, a chat); Import reads it back.':'Paste the exported text here. It opens as a new tab; your other tabs are not changed.'}</div><textarea id="xt" spellcheck="false" ${ex?'readonly':'placeholder="Paste the exported text here"'}></textarea><div class="xr">${ex?'<button class="tl" data-act="xcopy">Copy</button>':'<button class="tl" data-act="xread">Import</button>'+(SY.role=='admin'?'<button class="tl" data-act="xshot" title="Admin: a screenshot with the exported text on it (a chat, a note) is read and opened as a new tab">Import via screenshot</button><input type="file" id="xfile" accept="image/*" hidden>':'')}<button class="tl" data-act="xclose">Close</button><span class="mu" id="xmsg"></span></div>`;
+  p.innerHTML=`<div class="mu">${ex?'All inputs of this tab as a short text. Copy it and keep it anywhere (a note, a chat); Import reads it back.':'Paste the exported text here. It opens as a new tab; your other tabs are not changed.'}</div><textarea id="xt" spellcheck="false" ${ex?'readonly':'placeholder="Paste the exported text here"'}></textarea><div class="xr">${ex?'<button class="tl" data-act="xcopy">Copy</button>':'<button class="tl" data-act="xread">Import</button>'+(SY.role=='admin'?'<button class="tl" data-act="xshot">Import via screenshot</button><input type="file" id="xfile" accept="image/*" hidden>':'')}<button class="tl" data-act="xclose">Close</button><span class="mu" id="xmsg"></span></div>`;
   const t=$('xt');if(ex)t.value=exportText();t.focus();if(ex){t.select();t.scrollTop=0}
 }
 async function xCopy(){
@@ -632,7 +632,7 @@ function drawUL(){
   const b=$('aul');if(!b)return;const s=aSes(),q=ADM.q.trim().toLowerCase();
   const L=(ADM.list||[]).filter(u=>(!s||u.uid!==s.uid)&&(!q||(u.name+' '+u.email+' '+u.uid).toLowerCase().includes(q)));
   b.innerHTML=(ADM.busy&&!ADM.list?'<div class="mu">Loading…</div>':'')+(ADM.err?'<div class="mu er">'+esc(ADM.err)+'</div>':'')+(ADM.st?'<div class="mu">'+esc(ADM.st)+'</div>':'')
-    +(L.length?L.map(u=>`<button class="tl urw" data-act="aview" data-u="${esc(u.uid)}" title="Open the saved tabs of this user (read-only)"><span><b>${esc(u.name||u.email||u.uid.slice(0,8))}</b>${u.role!='user'?'<i class="rl ad">'+esc(u.role)+'</i>':''}</span><span class="mu">${esc(u.name&&u.email?u.email+' · ':'')}saved ${u.t?esc(new Date(u.t).toLocaleDateString()):'-'}</span></button>`).join(''):ADM.list&&!ADM.busy?'<div class="mu">'+(q?'No user matches.':'No other users yet.')+'</div>':'');
+    +(L.length?L.map(u=>`<button class="tl urw" data-act="aview" data-u="${esc(u.uid)}"><span><b>${esc(u.name||u.email||u.uid.slice(0,8))}</b>${u.role!='user'?'<i class="rl ad">'+esc(u.role)+'</i>':''}</span><span class="mu">${esc(u.name&&u.email?u.email+' · ':'')}saved ${u.t?esc(new Date(u.t).toLocaleDateString()):'-'}</span></button>`).join(''):ADM.list&&!ADM.busy?'<div class="mu">'+(q?'No user matches.':'No other users yet.')+'</div>':'');
 }
 function drawImp(){
   const b=$('imp');if(!b)return;
@@ -678,7 +678,7 @@ const aShort=e=>e.length>22?e.slice(0,19)+'…':e;
 function drawMenu(){      // the menu row above the tabs: one button (signed out = Sign in; signed in = the username); it opens the account window (drawAP)
   const m=$('menu'),a=$('menuacct');if(!m||!a)return;const q=FB.key&&aSes();
   const USER=`<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
-  a.innerHTML=!FB.key?'':q?`<button class="nvb" data-act="acct" aria-haspopup="dialog" aria-expanded="${AP}" title="${esc(SY.st||'Signed in')}"><span class="nva">${esc(([...aName(q)][0]||'?').toUpperCase())}</span><span class="nvn">${esc(aShort(aName(q)))}</span><i class="nvd${SY.err?' err':SY.busy?' busy':''}"></i></button>`:`<button class="nvb" data-act="acct" aria-haspopup="dialog" aria-expanded="${AP}" title="Sign in to keep your tabs on an account">${USER}<span class="nvn">Sign in</span></button>`;
+  a.innerHTML=!FB.key?'':q?`<button class="nvb" data-act="acct" aria-haspopup="dialog" aria-expanded="${AP}"><span class="nva">${esc(([...aName(q)][0]||'?').toUpperCase())}</span><span class="nvn">${esc(aShort(aName(q)))}</span><i class="nvd${SY.err?' err':SY.busy?' busy':''}"></i></button>`:`<button class="nvb" data-act="acct" aria-haspopup="dialog" aria-expanded="${AP}">${USER}<span class="nvn">Sign in</span></button>`;
   const t=$('mnt');m.hidden=!(FB.key||m.querySelector('.don:not([hidden]),.hlp:not([hidden])'));m.classList.toggle('open',MM&&!m.hidden);if(t){t.hidden=m.hidden;t.setAttribute('aria-expanded',String(MM&&!m.hidden))}
 }
 function drawAP(){      // the account window: a centred modal over the page (sign in / create account / the account / the choice when the account and this browser differ)
@@ -687,10 +687,10 @@ function drawAP(){      // the account window: a centred modal over the page (si
   if(!open){p.innerHTML='';APO=false;return}
   p.classList.toggle('wide',!!SY.conf);
   const s=aSes(),fq=!!(document.activeElement&&document.activeElement.name=='aq');
-  const names=a=>a.map(t=>esc(t.name)).join(', '),H=(t,x)=>`<div class="amh"><div class="amt">${t}</div>${x===false?'':'<button class="amx" data-act="aclose" aria-label="Close" title="Close">×</button>'}</div>`;
-  const goog='<button class="tl amg" data-act="agoog" title="Sign in with a Google account (creates the account on first use)"><b class="gb">G</b> Continue with Google</button>',sep='<div class="ams"><span>or</span></div>';
+  const names=a=>a.map(t=>esc(t.name)).join(', '),H=(t,x)=>`<div class="amh"><div class="amt">${t}</div>${x===false?'':'<button class="amx" data-act="aclose" aria-label="Close">×</button>'}</div>`;
+  const goog='<button class="tl amg" data-act="agoog"><b class="gb">G</b> Continue with Google</button>',sep='<div class="ams"><span>or</span></div>';
   if(SY.conf)p.innerHTML=H('Choose which tabs to keep',false)+`<div class="mu"><b class="tb">The account and this browser both have saved tabs, and they differ.</b> Nothing has been changed yet. Choose what to do:</div><div class="acs"><button class="tl" data-act="aboth">Keep both (recommended)</button><span class="mu">The account's tabs are added next to this browser's, then everything is saved to the account.</span><button class="tl" data-act="aacct">Use the account's tabs</button><span class="mu">They replace the tabs in this browser (a backup copy of these is kept in this browser).</span><button class="tl" data-act="ahere">Use this browser's tabs</button><span class="mu">They replace the tabs on the account.</span></div><div class="mu">Account (${SY.conf.rem.tabs.length}): ${names(SY.conf.rem.tabs)}<br>This browser (${tabs.length}): ${names(tabs)}</div><div class="xr"><span class="mu" id="amsg"></span></div>`;
-  else if(s){const nm=aName(s);p.innerHTML=H('Account')+`<div class="amu"><span class="nva big">${esc(([...nm][0]||'?').toUpperCase())}</span><div><div class="amn"><b>${esc(nm)}</b>${SY.role?'<i class="rl'+(SY.role=='admin'?' ad':'')+'">'+esc(SY.role)+'</i>':''}</div>${s.name?'<div class="mu">'+esc(s.email)+'</div>':''}</div></div><div class="mu">Your tabs are saved to the account a moment after every change and open on every device you sign in on.</div><form class="ar" data-f="nm" autocomplete="off"><input type="text" name="aun" maxlength="24" value="${esc(s.name||'')}" placeholder="Username (your in-game name)" aria-label="Username"><button class="tl" type="button" data-act="anm">${s.name?'Change username':'Save username'}</button></form><div class="mu" id="amsg">${esc(SY.st)}</div>${SY.role=='admin'?`<div class="nvr"><div class="mu"><b class="tb">Admin:</b> open the saved tabs of a user. It is a read-only view: nothing you change there is saved.</div><div class="xr"><button class="tl" data-act="aul">${ADM.open?'Hide the users':'Show the users'}</button><button class="tl" data-act="adbg" title="Shows the extra details used for debugging (the SH ratio, the full / taken / squad bonus damage of a strike). Only you see them.">${DBGWANT?'Disable':'Enable'} debug mode</button></div>${ADM.open?'<input type="search" name="aq" placeholder="Find a user (name or e-mail)" aria-label="Find a user" autocomplete="off" value="'+esc(ADM.q)+'"><div class="aul" id="aul"></div>':''}</div>`:''}<div class="nvr"><button class="tl nvo" data-act="aout" title="Log out of the account (your tabs stay in this browser)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Log out</button></div>`}
+  else if(s){const nm=aName(s);p.innerHTML=H('Account')+`<div class="amu"><span class="nva big">${esc(([...nm][0]||'?').toUpperCase())}</span><div><div class="amn"><b>${esc(nm)}</b>${SY.role?'<i class="rl'+(SY.role=='admin'?' ad':'')+'">'+esc(SY.role)+'</i>':''}</div>${s.name?'<div class="mu">'+esc(s.email)+'</div>':''}</div></div><div class="mu">Your tabs are saved to the account a moment after every change and open on every device you sign in on.</div><form class="ar" data-f="nm" autocomplete="off"><input type="text" name="aun" maxlength="24" value="${esc(s.name||'')}" placeholder="Username (your in-game name)" aria-label="Username"><button class="tl" type="button" data-act="anm">${s.name?'Change username':'Save username'}</button></form><div class="mu" id="amsg">${esc(SY.st)}</div>${SY.role=='admin'?`<div class="nvr"><div class="mu"><b class="tb">Admin:</b> open the saved tabs of a user. It is a read-only view: nothing you change there is saved.</div><div class="xr"><button class="tl" data-act="aul">${ADM.open?'Hide the users':'Show the users'}</button><button class="tl" data-act="adbg">${DBGWANT?'Disable':'Enable'} debug mode</button></div>${ADM.open?'<input type="search" name="aq" placeholder="Find a user (name or e-mail)" aria-label="Find a user" autocomplete="off" value="'+esc(ADM.q)+'"><div class="aul" id="aul"></div>':''}</div>`:''}<div class="nvr"><button class="tl nvo" data-act="aout"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Log out</button></div>`}
   else if(AM=='up')p.innerHTML=H('Create account')+`<div class="mu">Keep your tabs on every device you sign in on. The username is shown instead of your e-mail: best use your in-game name (it does not have to be unique).</div><form class="ar" data-f="up"><input type="text" name="aun" maxlength="24" placeholder="Username (your in-game name)" autocomplete="nickname" aria-label="Username"><input type="email" name="aem" placeholder="E-mail" autocomplete="email" aria-label="E-mail"><input type="password" name="apw" placeholder="Password (6 or more characters)" autocomplete="new-password" aria-label="Password"></form><button class="amp" data-act="aup">Create account</button><div class="mu amm" id="amsg"></div>${sep}${goog}<div class="amf">Already have an account? <button class="aml" data-act="amin">Sign in</button></div>`;
   else p.innerHTML=H('Sign in')+`<div class="mu">Sign in to keep your tabs on an account: they open on every device you sign in on. Without an account the tabs stay in this browser only.</div><form class="ar" data-f="in" autocomplete="on"><input type="email" name="aem" placeholder="E-mail" autocomplete="username" aria-label="E-mail"><input type="password" name="apw" placeholder="Password" autocomplete="current-password" aria-label="Password"></form><button class="amp" data-act="ain">Sign in</button><div class="mu amm" id="amsg"></div><div class="amf"><button class="aml" data-act="arst">Forgot the password?</button></div>${sep}${goog}<div class="amf">No account yet? <button class="aml" data-act="amup">Create account</button></div>`;
   if(!APO){APO=true;if(!s&&!SY.conf&&window.matchMedia&&matchMedia('(pointer:fine)').matches){const i=p.querySelector('input');if(i)i.focus()}}      // on a computer the first box is ready to type in (not on a phone: the keyboard would cover the window)
@@ -703,12 +703,12 @@ document.addEventListener('input',e=>{const t=e.target;if(t&&t.matches&&t.matche
 function drawHP(){      // the 1-on-1 help window: what is offered, the rate, how to book (HELP_RATE, HELP_URL); a centred modal like the account window
   const p=$('hp'),w=$('hw');if(!p)return;p.hidden=!HP;if(w)w.hidden=!HP;document.documentElement.classList.toggle('mlock',HP||FMP||!!(AP&&FB.key));
   if(!HP){p.innerHTML='';return}
-  p.innerHTML=`<div class="amh"><div class="amt">1-on-1 help</div><button class="amx" data-act="hclose" aria-label="Close" title="Close">\u00d7</button></div><div class="mu">Paid personal help from the author of this calculator, one player at a time.</div>`
+  p.innerHTML=`<div class="amh"><div class="amt">1-on-1 help</div><button class="amx" data-act="hclose" aria-label="Close">\u00d7</button></div><div class="mu">Paid personal help from the author of this calculator, one player at a time.</div>`
     +`<div class="hpo"><b>Stacking</b><span class="mu">Your army planned together: which troops, how many and in which order, for your Leadership, Dominance, Authority and bonuses. For any attack mode.</span></div>`
     +`<div class="hpo"><b>Report analysis</b><span class="mu">Bring your in-game battle reports. We go through them and look for what cost you damage or troops, and what to change next time.</span></div>`
     +`<div class="hpr"><span>Rate</span><b>${esc(HELP_RATE)}</b></div>`
     +`<ol><li>${HELP_URL?'Press Book a session and say':'Say'} what you need: stacking, reports or both.</li><li>We agree a time.</li><li>We go through your setup or your reports together.</li></ol>`
-    +`<div class="hpb">${HELP_URL?`<a class="amp" href="${esc(HELP_URL)}" target="_blank" rel="noopener noreferrer">Book a session</a>`:'<div class="mu">Booking opens soon.</div>'}<button class="tl" type="button" data-act="hcopy" title="Copies the inputs of the open tab as a short text, to paste into your message">Copy my setup</button></div><div class="mu" id="hmsg"></div>`;
+    +`<div class="hpb">${HELP_URL?`<a class="amp" href="${esc(HELP_URL)}" target="_blank" rel="noopener noreferrer">Book a session</a>`:'<div class="mu">Booking opens soon.</div>'}<button class="tl" type="button" data-act="hcopy">Copy my setup</button></div><div class="mu" id="hmsg"></div>`;
 }
 async function hCopy(){      // the inputs of the open tab as the Export text, so the helper can see the numbers
   let ok=false;const t=exportText();
@@ -725,7 +725,7 @@ function drawEP(){
   if(!EPM){p.innerHTML='';if(was)mBack('ebtn');return}
   const cur=$('epic').value;
   const none='<button type="button" data-act="epick" data-e=""'+(cur?'':' class="on"')+'><span>None</span><small>no score estimate</small></button>';      // "None" (no epic) stands first in the list
-  p.innerHTML='<div class="amh"><div class="amt">Choose the epic monster</div><button class="amx" data-act="eclose" aria-label="Close" title="Close">\u00d7</button></div>'
+  p.innerHTML='<div class="amh"><div class="amt">Choose the epic monster</div><button class="amx" data-act="eclose" aria-label="Close">\u00d7</button></div>'
     +'<div class="epl">'+none+EPICS.map(e=>'<button type="button" data-act="epick" data-e="'+esc(e.n)+'"'+(e.n==cur?' class="on"':'')+'>'+(epImg(e,'epi')||'<span class="epi epe"></span>')+'<span class="epn">'+esc(e.n)+'</span><small>'+(e.score?sh0(e.score)+' score':'score not set yet')+'</small></button>').join('')+'</div>';
   mIn('#epp',was);
 }
@@ -737,7 +737,7 @@ function drawLG(){
   const p=$('lgp'),w=$('lgw2');if(!p)return;const was=!p.hidden;p.hidden=!LGM;if(w)w.hidden=!LGM;document.documentElement.classList.toggle('mlock',LGM||EPM||FMP||HP||!!(AP&&FB.key));
   if(!LGM){p.innerHTML='';if(was)mBack('lbtn');return}
   const cur=window.i18nCur?window.i18nCur():'en',L=window.i18nLangs?window.i18nLangs():[['en','English']];
-  p.innerHTML='<div class="amh"><div class="amt">Choose the language</div><button class="amx" data-act="lclose" aria-label="Close" title="Close">\u00d7</button></div>'
+  p.innerHTML='<div class="amh"><div class="amt">Choose the language</div><button class="amx" data-act="lclose" aria-label="Close">\u00d7</button></div>'
     +'<div class="epl" data-notr>'+L.map(x=>'<button type="button" data-act="lpick" data-l="'+x[0]+'"'+(x[0]==cur?' class="on"':'')+'><span class="lgc">'+x[0].toUpperCase()+'</span><span class="epn">'+esc(x[1])+'</span></button>').join('')+'</div>';
   mIn('#lgp',was);
 }
@@ -746,14 +746,14 @@ let FMP=false,FMPREV=null;      // 14.27: Food settings modal (opened when Prepa
 function drawFM(){
   const p=$('fmp'),w=$('fmw');if(!p)return;p.hidden=!FMP;if(w)w.hidden=!FMP;document.documentElement.classList.toggle('mlock',FMP||HP||!!(AP&&FB.key));
   if(!FMP){p.innerHTML='';return}
-  p.innerHTML='<div class="amh"><div class="amt">Food capacity &amp; revive settings</div><button class="amx" data-act="fclose" aria-label="Close" title="Close">×</button></div>'
+  p.innerHTML='<div class="amh"><div class="amt">Food capacity &amp; revive settings</div><button class="amx" data-act="fclose" aria-label="Close">×</button></div>'
     +'<div class="mu fmi">Enter your Food production to see the numbers to prepare for maximum hits per training.</div>'
     +'<div class="fg">'
     +'<label class="bi"><span>Food prod.</span><input id="fmFood" type="text" inputmode="decimal" value="'+($('foodP')?$('foodP').value:'')+'" placeholder="0"></label>'
-    +'<label class="bi" title="After a hit, 90% of a revived stack (rounded down per stack) comes back, so only the rest has to be prepared again."><span>Revive</span><select id="fmRev">'
+    +'<label class="bi"><span>Revive</span><select id="fmRev">'
     +REVCASES.map(c=>'<option value="'+c[0]+'"'+(c[0]==($('revm')?$('revm').value:'top')?' selected':'')+'>'+esc(c[1])+'</option>').join('')
     +'</select></label>'
-    +'<label class="bi" title="Your Temple level (0-45). The revival gold cost of the troops is divided by the factor of that level (level 45: 5.91 times cheaper). 0 = no Temple."><span>Temple</span><select id="fmTemple">'
+    +'<label class="bi"><span>Temple</span><select id="fmTemple">'
     +Array.from({length:46},(_,i)=>'<option value="'+i+'"'+(i==templeLv()?' selected':'')+'>'+i+'</option>').join('')
     +'</select></label>'
     +'</div>'
@@ -1830,7 +1830,7 @@ function brEnemy(P){if(P.one)return{name:'Corax II',ic:brImg('Corax II')};if(P.p
 const brA=x=>Math.round(x).toString();      // whole numbers only
 function brFxBox(ex,items,extra,pre){
   const ln=items.map(([v,av,lb,sf])=>{let t;if(ex)t=`avg. ${brA(av)} ${brA(av)=='1'?lb.replace(/s$/,''):lb}`;else{const d=Math.round(v)-Math.round(av),l=v==1?lb.replace(/s$/,''):lb;t=`<b>${brA(v)}</b> ${l} (${d==0?'= '+brA(av)+' avg.':(d>0?'+':'\u2212')+Math.abs(d)+' vs. '+brA(av)+' avg.'})`}return`<div>${t}${sf||''}</div>`}).join('');
-  return`<div class="stt rfx"><div class="stl">Random effects</div><div class="tfr"><button type="button" data-ta="expect" class="${ex?'on':''}" title="Every strike deals its avg. damage: no luck">No random effect</button><button type="button" data-ta="dice" class="${ex?'':'on'}" title="Double damage and double strike are rolled; roll again for another fight">${ex?'Roll the dice':'Roll again'}</button></div>${pre||''}<div class="bsm">${ln}${extra||''}</div></div>`}
+  return`<div class="stt rfx"><div class="stl">Random effects</div><div class="tfr"><button type="button" data-ta="expect" class="${ex?'on':''}">No random effect</button><button type="button" data-ta="dice" class="${ex?'':'on'}">${ex?'Roll the dice':'Roll again'}</button></div>${pre||''}<div class="bsm">${ln}${extra||''}</div></div>`}
 let BRU=0;
 function brRow(o){if(o.enIc&&o.enIc.indexOf('id="mo1"')>=0){const u=++BRU;o={...o,enIc:o.enIc.replace(/(id="mo[1-9]|url\(#mo[1-9])/g,'$1'+u)}}      // every drawn monster gets its own gradient ids (the same ids twice in a page can fail to paint)
   const eu=o.enCnt||o.enSub;
@@ -1861,8 +1861,8 @@ function epicSim(P,L,EP,dice,rng,trace){
     pex+=b0*k*q.d*(1+q.p*(full?1:1/k));ed+=(1-(1-q.pc)*(1-q.pa))*(1+q.p);es+=q.p;
     if(!dice){const base=b0*q.d;hit(i,base*k,bt,rd,'',base*(k-1),false,tk);if(q.p)hit(i,full?base*q.p*k:base*q.p,full?bt:null,rd,'',0,true,full?tk:null);return}
     const F=()=>(1+(rng()<q.pc?1:0))*(1+(rng()<q.pa?1:0)),m1=F();if(m1>1)nd++;
-    hit(i,b0*m1*k,bt,rd,m1>1?'<i title="This strike rolled double damage">double damage</i>':'',b0*m1*(k-1),false,tk);
-    if(rng()<q.p){const m2=F();ns++;if(m2>1)nd++;hit(i,b0*m2*(full?k:1),full?bt:null,rd,'<i title="Double strike: the stack strikes a second time">double strike</i>'+(m2>1?'<i title="This strike rolled double damage">double damage</i>':''),0,false,full?tk:null)}};
+    hit(i,b0*m1*k,bt,rd,m1>1?'<i>double damage</i>':'',b0*m1*(k-1),false,tk);
+    if(rng()<q.p){const m2=F();ns++;if(m2>1)nd++;hit(i,b0*m2*(full?k:1),full?bt:null,rd,'<i>double strike</i>'+(m2>1?'<i>double damage</i>':''),0,false,full?tk:null)}};
   for(let rd=0;dead.size<N&&alive();rd++){const K=alive();const ord=e2.filter(e=>e.hp>0).sort((p,q)=>q.sp*q.hp/q.hpu-p.sp*p.hp/p.hpu),used=new Set(),struck=new Set();const nx=()=>{let bi=-1,bv=-1;for(const i of by){if(dead.has(i)||struck.has(i))continue;const v=L[i].n*fr[i]*L[i].str;if(v>bv*(1+1e-9)){bv=v;bi=i}}if(bi>=0)struck.add(bi);return bi};      // the strongest living stack that has not struck in this round, by its strength NOW (a wounded stack has fewer units, so it strikes later)
     
     const kill=j=>{const a=e2.filter(e=>e.hp>0&&!used.has(e)).sort((p,q)=>q.sp*q.hp/q.hpu-p.sp*p.hp/p.hpu)[0]||ord[0]||e2[0];used.add(a);
@@ -2009,9 +2009,9 @@ function battleHtml(P,list,order,sc){
       ed+=(1-(1-pc)*(1-pa))*(1+pt);es+=pt;ad+=d0*(1+pc)*(1+pa)*(1+cs*pt);      // the average number of double damage strikes and double strikes
       if(!ex){      // dice: the class and army Double damage (each +100 %); the Double strike is a 2nd strike of the same stack, its own row (on 3 and 4 enemy stacks without the squad bonus, as in the estimate)
         const F=()=>(1+(rng()<pc?1:0))*(1+(rng()<pa?1:0)),m1=F(),sd=rng()<pt,m2=sd?F():0;
-        nd+=(m1>1?1:0)+(m2>1?1:0);ns+=sd?1:0;d=d0*m1;bn=bn0*m1;if(m1>1)tg='<i title="This strike rolled double damage">double damage</i>';
-        if(sd)x2={d:d0*cs*m2,bn:cs>=1?bn0*m2:0,tg:'<i title="Double strike: the stack strikes a second time">double strike</i>'+(m2>1?'<i title="This strike rolled double damage">double damage</i>':'')}}
-      const sbx=(dd,bb,t)=>({l2:`<b>+${num(dd)}</b> damage`,sq:bb>0?`<span title="The bonus listed on the troop itself against the enemy, and the damage it adds: units x the troop\'s own strength x that bonus. Your own bonuses are not part of it.">squad bonus +${num(bb)}</span>`:'',tg:t});
+        nd+=(m1>1?1:0)+(m2>1?1:0);ns+=sd?1:0;d=d0*m1;bn=bn0*m1;if(m1>1)tg='<i>double damage</i>';
+        if(sd)x2={d:d0*cs*m2,bn:cs>=1?bn0*m2:0,tg:'<i>double strike</i>'+(m2>1?'<i>double damage</i>':'')}}
+      const sbx=(dd,bb,t)=>({l2:`<b>+${num(dd)}</b> damage`,sq:bb>0?`<span>squad bonus +${num(bb)}</span>`:'',tg:t});
       td+=d;h+=brRow({we:true,ourIc:brImg(s.name),ourName:nmh,ourSub:`${s.n.toLocaleString()}`,enName:eepic?'':EN.name,enIc:EN.ic,...sbx(d,bn,tg)});
       if(x2){td+=x2.d;h+=brRow({we:true,ourIc:brImg(s.name),ourName:nmh,ourSub:`${s.n.toLocaleString()}`,enName:eepic?'':EN.name,enIc:EN.ic,...sbx(x2.d,x2.bn,x2.tg)})}}
     else{const d=tot(s.n,s.hp);      // the stack is killed: the damage the enemy had to deal
@@ -2531,11 +2531,11 @@ function calcRun0(){
   epAuto();
   const pvOK=m=>m=='cp'||m=='cpd'?PV1:m=='pvpmax'?PVM():m=='ovo'?ovoOn():m=='ren'?RENEGADES():false,okP=PVMODES.filter(pvOK);      // okP = the PvP modes that are switched on
   if($('mode').value=='kill4'&&!KS4){$('mode').value='max';SO=[]}      // Killshot v. 4 is off: a tab left in it falls back to the 4-stack mode
-  document.querySelectorAll('.cm[data-m=kill4]').forEach(b=>{b.disabled=!KS4;b.title=KS4?'':'Switched off for now'});
+  document.querySelectorAll('.cm[data-m=kill4]').forEach(b=>{b.disabled=!KS4});
   if(PVMODES.includes($('mode').value)&&!pvOK($('mode').value)){$('mode').value='max';SO=[]}      // a mode that is off: a tab left in it falls back to the 4-stack mode
-  document.querySelectorAll('.cm[data-m=cp],.cm[data-m=cpd]').forEach(b=>{b.disabled=!PV1;b.title=PV1?'':'Switched off for now'});
-  document.querySelectorAll('.cm[data-m=pvpmax]').forEach(b=>{b.disabled=!PVM();b.title=PVM()?'':'Switched off for now'});
-  document.querySelectorAll('.cm[data-m=ovo]').forEach(b=>{b.disabled=!ovoOn();b.hidden=!ovoOn();b.title=ovoOn()?'':'Switched off for now'});
+  document.querySelectorAll('.cm[data-m=cp],.cm[data-m=cpd]').forEach(b=>{b.disabled=!PV1});
+  document.querySelectorAll('.cm[data-m=pvpmax]').forEach(b=>{b.disabled=!PVM()});
+  document.querySelectorAll('.cm[data-m=ovo]').forEach(b=>{b.disabled=!ovoOn();b.hidden=!ovoOn()});
   if(okP.length){const pv=PVMODES.includes($('mode').value);      // the mode follows the view
     if(ATK=='players'&&!pv){$('mode').value=okP.includes(LASTP)?LASTP:okP[0];SO=[]}
     else if(ATK=='epics'&&pv){$('mode').value=LASTE.mode;$('enemy').value=LASTE.enemy;SO=[]}}
@@ -2550,7 +2550,7 @@ function calcRun0(){
   document.querySelectorAll('#rare .bi.pl').forEach(r=>{r.hidden=ep;const x=r.querySelector('input');if(x)x.disabled=ep});      // 19.0.11: Strength against players (Guardsmen, Specialists) shows only in the Attack players view
   //      // the Against box that does not count in the chosen view is hidden and its inputs are disabled
   if(!RENEGADES()&&$('mode').value=='ren'){$('mode').value='max';SO=[]}      // Renegades is off: a tab saved in it falls back to Max damage
-  {const rb=document.querySelector('.cm[data-m=ren]');if(rb){rb.disabled=!RENEGADES();rb.title=RENEGADES()?'':'Switched off for now'}}
+  {const rb=document.querySelector('.cm[data-m=ren]');if(rb){rb.disabled=!RENEGADES()}}
   const P=getP(),{st,A,Mo,U}=solve(P,O);
   const fx=P.ov?theoFix(P):null;if(fx)theoApply(fx,st,U);      // 21.6.2 One v. One: the stacks the simulator found go into the Result
   {const rl=$('renlv'),tg=P.ren?renTarget():0,nt=$('renlt');if(rl)rl.hidden=!P.ren;if(nt)nt.textContent=tg?'Damage to reach: '+tg.toLocaleString('en-US'):'No level: the Tier check looks for the most damage per gold of the full revive.'}      // 14.19: the Level box is shown in Renegades only
@@ -2569,7 +2569,7 @@ function calcRun0(){
     {const eb=$('ebtn');if(eb){const k=ce?ce.n:'';if(eb.dataset.k!==k){eb.dataset.k=k;eb.innerHTML=ce?epImg(ce,'epi')+'<span class="epn">'+esc(ce.n)+'</span><span class="epc">\u25be</span>':'<span class="epn">Choose epic</span><span class="epc">\u25be</span>'}}}
     document.querySelectorAll('.eb').forEach(b=>{b.hidden=!!ce&&!ce.en.includes(+b.dataset.e)});
     document.querySelectorAll('.cm[data-m=kill]').forEach(b=>{b.hidden=!ce||!(ce.ks||ce.en.includes(3)||ce.en.includes(4))})}
-  document.querySelectorAll('.eb').forEach(b=>{if(+b.dataset.e==K4LO&&K4OK)b.hidden=true;b.disabled=false;b.title=''});      // the army kills this epic while it still has all its stacks: the 3-stack button is not shown at all (it is there or it is not)
+  document.querySelectorAll('.eb').forEach(b=>{if(+b.dataset.e==K4LO&&K4OK)b.hidden=true;b.disabled=false});      // the army kills this epic while it still has all its stacks: the 3-stack button is not shown at all (it is there or it is not)
   drawBR();      // the battle report (drawn only while it is open)
   const food=[...A,...Mo,...U.list].reduce((q,s)=>q+(s.n||0)*foodOf(s.name),0);      // total food consumption of all the units, 25 % less than the plain values (mercenaries use none)
   const noFood=!(v('foodP')>0);      // no Food production: there are no hits to train for, so the Preparation button is off (the choice itself stays saved and comes back when the production is filled in)
@@ -2579,13 +2579,11 @@ function calcRun0(){
   const {rv,dies}=fullRevive(P,hl,[...st.so,...U.ord]);      // 13.1, 13.3, 14.12: the revival gold of the whole hit in the full revive (see fullRevive)
   const tl=templeLv(),tf=tl>=1?TEMPLE[tl-1]:1,rcost=(rv.A+rv.M+rv.U)/tf;      // the Temple divides the cost
   const rvs=hl.filter(s=>dies(s)&&revives(s,REVM)).reduce((g,s)=>{const t=TRN[s.name];if(t&&(s.n||0)>0)g[t.pool]+=Math.floor(s.n*REV/100)*(t.gold||0);return g},{A:0,M:0,U:0}),scost=(rvs.A+rvs.M+rvs.U)/tf;      // 13.4: the same, only for the stacks that the Revive select brings back (none: 0, all: the same as the full revive)
-  const rtip=`Revive cost in gold: selected / full. Selected = the stacks that the Revive select brings back (${REVCASES.find(c=>c[0]==REVM)[1]}), full = a full revive of the whole hit${P.ren?' (Renegades: only the stacks the enemy kills in round 1, the first '+hl.filter(dies).length+' of the dying order; the others stay alive)':''}. ${REV} % of each stack comes back (rounded down per stack, a stack of 1 unit gets nothing back), the revival gold of each troop x the revived units${tl>=1?', divided by the Temple factor of level '+tl+' ('+tf.toFixed(2)+')':' (Temple level 0, no reduction)'}. Selected: Army (with engineers) ${num(rvs.A/tf)} \u00b7 Monsters ${num(rvs.M/tf)} \u00b7 Mercenaries ${num(rvs.U/tf)} gold. Full: Army (with engineers) ${num(rv.A/tf)} \u00b7 Monsters ${num(rv.M/tf)} \u00b7 Mercenaries ${num(rv.U/tf)} gold.`;
   const HIT={};REVCASES.forEach(([k])=>HIT[k]=hitsFor(food,v('foodP')*(100+FOODADD)/100,hl,k));      // hits the Food production pays for in every Training case
   {const w=$('prepw'),low=SHOWTR&&food>0&&!(HIT[REVM]>=1);w.hidden=!low||SHOWCMP;if(low)w.textContent='Food production is too low: it pays for less than 1 hit ('+(HIT[REVM]||0).toFixed(2)+'). The numbers show the whole stacks.'}
   MUL=HIT[REVM]>1?HIT[REVM]:1;      // the chosen Revive: the hits it pays for (1 = the food pays for one hit or less: the units to train are the stack itself)
   document.querySelectorAll('.sb').forEach(b=>b.classList.toggle('on',!SHOWCMP&&(b.dataset.sh=='train')==($('shw').value=='train')));
   if(FMP&&!noFood)fmShut();      // 14.27: close the Food modal if the user entered food elsewhere while it was open
-  {const rl=$('revl');if(rl)rl.title='After a hit, 90% of a revived stack (rounded down per stack) comes back, so only the rest has to be prepared again. The top line is the highest tier in use ('+['A:Army','M:Monsters','U:Mercenaries'].filter(x=>TOPT[x[0]]).map(x=>x.slice(2)+' '+TOPT[x[0]]).join(', ')+').'}
   {const live=[...A,...Mo].filter(x=>x.n>0),eng=live.filter(x=>x.cat=='Engineer').length,mon=live.filter(x=>x.p=='M'),army=live.filter(x=>x.p=='A'&&x.cat!='Engineer').length;
    const full=mon.filter(x=>!x.pt).length;    // full = the monster tiers that are used completely; partial = the tier where the Dominance runs out and whatever is left below it
    const pl=(n,w,m)=>n+' '+(n==1?w:m||w+'s');      // 1 monster, 2 monsters
@@ -2611,28 +2609,28 @@ function calcRun0(){
   const enTxt=P.one?'one flying enemy stack':P.ov?'12 enemy stacks (3 of each type)':P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks';
   const RZ=2.576,rg=(a,b)=>{const A=fmt(a).split(' '),B=fmt(b).split(' ');return A[1]==B[1]?A[0]+'\u2013'+B[0]+(B[1]?' '+B[1]:''):fmt(a)+' \u2013 '+fmt(b)};      // 19.0.16: a range, e.g. 4.90\u20135.30 T
   const dRange=sc.sd>0?[Math.max(0,sc.dmg-RZ*sc.sd),sc.dmg+RZ*sc.sd]:null,hRange=sc.hsd>0?[Math.max(0,sc.hits-RZ*sc.hsd),sc.hits+RZ*sc.hsd]:null;
-  const tile=(c,l,v,sub,tip)=>`<div class="stt ${c}"${tip?` title="${esc(tip)}"`:''}><div class="stl">${l}</div><div class="stv">${v}</div>${sub?`<div class="sts">${sub}</div>`:''}</div>`;
+  const tile=(c,l,v,sub)=>`<div class="stt ${c}"><div class="stl">${l}</div><div class="stv">${v}</div>${sub?`<div class="sts">${sub}</div>`:''}</div>`;
   const EP=ATK=='epics'&&!P.kill?epCur():null;      // 20.2.1: no epic scoring in the Killshot modes
   const sh=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return[(+v.toPrecision(3)).toString(),u[i]]};      // 118000000 -> ['118','M']
   const eoMany=false,eoAct=eoMany?'<div data-act="eopen" class="stt':'<div class="stt',eoCar=eoMany?'\u00a0\u25be':'';      // a mode with a single epic (Arachne in 6-8 stacks): nothing to choose, so the tile is no button
   let scoreTile='';
   const KEP=ATK=='epics'&&P.kill?epCur():null;
   if(KEP&&KEP.st&&KEP.score)scoreTile=KSLITE?'':ksTile(P,BRD.list,BRD.order);
-  else if(KEP&&!(KEP.st&&KEP.score))scoreTile=tile('std','<span class="eph">'+epImg(KEP,'epi')+'<span><b>'+esc(KEP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span>','\u2013',KEP.score?'stacks not set yet':'score not set yet','').replace('<div class="stt',eoAct);
-  if(EP&&!(EP.st&&EP.score))scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span>','\u2013',EP.score?'stacks not set yet':'score not set yet','').replace('<div class="stt',eoAct);
+  else if(KEP&&!(KEP.st&&KEP.score))scoreTile=tile('std','<span class="eph">'+epImg(KEP,'epi')+'<span><b>'+esc(KEP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span>','\u2013',KEP.score?'stacks not set yet':'score not set yet').replace('<div class="stt',eoAct);
+  if(EP&&!(EP.st&&EP.score))scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span>','\u2013',EP.score?'stacks not set yet':'score not set yet').replace('<div class="stt',eoAct);
   else if(EP){const th=EP.st.reduce((q,x)=>q+x[0]*x[1],0),f=d=>Math.min(1,d/th)*EP.score,ki=ksInfo(P,BRD.list,BRD.order,EP),kk=ki&&!ki.none?ki:null;
     let lo=f(dRange?dRange[0]:sc.dmg),hi=f(dRange?dRange[1]:sc.dmg);const avg=f(sc.dmg);
     if(kk){lo=Math.min(lo,kk.lo);hi=Math.max(hi,kk.hi)}      // the main number covers both: the hit on a healthy epic and the killshot with the same stacks
     const [a,ua]=sh(lo),[b,ub]=sh(hi),rngTxt=(a!=b||ua!=ub)&&(dRange||kk);
     const sub=(dRange||kk?'99 % score range<br>':'')+P.enemy+'-stack avg. '+sh(avg).join(' ')+(ki?' \u00b7 '+(kk?'killshot avg. '+sh(kk.av).join(' '):'Killshot: the army can not kill it'):'');
-    scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span>',rngTxt?(ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub):a+' '+ua,sub,'').replace('<div class="stt',eoAct)}
-  $('rsm').innerHTML=`<div class="stl stch">Summary</div><div class="stg">${scoreTile}${tile('','Revive cost',scost==rcost?kmb(scost):`${kmb(scost)} <span class="stu">/</span> ${kmb(rcost)}`,'',rtip+' ('+(scost==rcost?num(scost):num(scost)+' / '+num(rcost))+' gold)')}${tile(ATK=='epics'?'':'std','Estimated damage',dRange?rg(dRange[0],dRange[1]):fmt(sc.dmg),dRange?'99 % range \u00b7 average '+fmt(sc.dmg):tgt?`level ${lvN} ${sc.dmg>=tgt?'reached':'short by '+((1-sc.dmg/tgt)*100).toFixed(1)+' %'}`:'',dRange?'99 % of the battles end between these two numbers (every strike rolls its own Double strike / Double damage chance)':tgt?`Level ${lvN}: the stacks must reach ${tgt.toLocaleString('en-US')} damage.`:'')}${tile('','Strikes',hRange?Math.round(hRange[0])+'\u2013'+Math.round(hRange[1]):Math.round(sc.hits),hRange?'99 % range \u00b7 average '+Math.round(sc.hits):'','Strikes against '+enTxt+(hRange?' (99 % range)':''))}</div>${hitsRow?`<div class="stl stch">Hits per revive mode</div><div class="stc">${REVCASES.map(([k,l])=>`<div class="stt${k==REVM?' stm':''}"><div class="stv">${HIT[k].toFixed(2)}</div><div class="sts">${l}</div></div>`).join('')}</div>`:''}`;      // 19.0.2: the summary as tiles (damage, strikes, stacks, revive cost); the army / monster / engineer count is gone
+    scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span>',rngTxt?(ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub):a+' '+ua,sub).replace('<div class="stt',eoAct)}
+  $('rsm').innerHTML=`<div class="stl stch">Summary</div><div class="stg">${scoreTile}${tile('','Revive cost',scost==rcost?kmb(scost):`${kmb(scost)} <span class="stu">/</span> ${kmb(rcost)}`,'')}${tile(ATK=='epics'?'':'std','Estimated damage',dRange?rg(dRange[0],dRange[1]):fmt(sc.dmg),dRange?'99 % range \u00b7 average '+fmt(sc.dmg):tgt?`level ${lvN} ${sc.dmg>=tgt?'reached':'short by '+((1-sc.dmg/tgt)*100).toFixed(1)+' %'}`:'')}${tile('','Strikes',hRange?Math.round(hRange[0])+'\u2013'+Math.round(hRange[1]):Math.round(sc.hits),hRange?'99 % range \u00b7 average '+Math.round(sc.hits):'')}</div>${hitsRow?`<div class="stl stch">Hits per revive mode</div><div class="stc">${REVCASES.map(([k,l])=>`<div class="stt${k==REVM?' stm':''}"><div class="stv">${HIT[k].toFixed(2)}</div><div class="sts">${l}</div></div>`).join('')}</div>`:''}`;      // 19.0.2: the summary as tiles (damage, strikes, stacks, revive cost); the army / monster / engineer count is gone
   $('res').innerHTML=secs;
   cmpSet({P,Aall,Mall,mItems,ordp:[...st.so,...U.ord],O:O.slice(),sc,rcost,scost,EP});      // the Compare card under the Result
   {const tcb=document.querySelector('.tc');if(tcb)tcb.disabled=pvOff||!(P.capA>0||P.capM>0)}      // the Tier check button: nothing to check without a capacity
   {const a=$('tca');if(a&&a.dataset.open=='1')closeBubble()}      // any change makes an open check out of date
   theoSync(P,fx);      // the Win chances card of One v. One
-  {const bd=document.querySelector('.ob[data-o=die]');if(bd){bd.textContent='Target order';bd.title=P.pvp?'Show the order in which the enemy hits the stacks (against players a hit stack does not have to die)':'Show the target order: the order in which the enemy hits and kills our stacks'}}      // against players the order is the order of being hit, against epics it is the dying order
+  {const bd=document.querySelector('.ob[data-o=die]');if(bd){bd.textContent='Target order'}}      // against players the order is the order of being hit, against epics it is the dying order
   save();
 }
 // ---- Theoretical PvP stacks (One v. One, in progress): a Monte Carlo battle simulator + a stack optimizer that maximizes the NET REMAINING HEALTH ----
@@ -2828,7 +2826,7 @@ function theoReport(B){const c=B.fx,{P,E,L,log,r}=theoFightData(c),num=tnum;
   let rd=0,h=`<p class="bf">${r.win>0?'<b class="tw">We win</b> \u00b7 '+tpc(theoAvgLeft(c,r))+' health remaining':r.win<0?'<b class="tl">We lose</b> \u00b7 '+tpc(theoAvgLeft(c,r))+' health remaining':'<b>Draw</b>'}</p><div class="br">`;
   log.forEach(([rr,side,a,t,dmg,k,left,before,m1,m2])=>{
     if(rr!==rd){rd=rr;h+=`<div class="brh">Round ${rd}</div>`}
-    const op=side=='A'?'B':'A',au=st[side][a],we=side=='A',on=we?a:t,en=we?t:a,t1=TRN[on],tg=(m1>1?`<i title="This strike rolled double damage">double damage</i>`:'')+(m2>0?`<i title="Double strike: the strike hit twice">double strike</i>`:'');
+    const op=side=='A'?'B':'A',au=st[side][a],we=side=='A',on=we?a:t,en=we?t:a,t1=TRN[on],tg=(m1>1?`<i>double damage</i>`:'')+(m2>0?`<i>double strike</i>`:'');
     st[op][t]=left;
     // one line per strike, always the same way round: our stack at the start of the line, the enemy stack at the end; the arrow shows who strikes. The stack that was hit has the red cross when it is destroyed, else the units it lost
     const ourU=we?au:before,enU=we?before:au;
@@ -2891,7 +2889,7 @@ const tcBtn=set=>`<button type="button" class="tcap" data-set="${[...set].join('
 let TCUNDO=null,TCTO=0;
 const tierSel=()=>{const r=[];['E','S','G','M'].forEach(c=>{for(let i=1;i<=9;i++){const el=$('s'+c+i);if(el&&el.checked)r.push(c+i)}});return r};
 function tierSet(sel){let ch=null;['E','S','G','M'].forEach(c=>{for(let i=1;i<=9;i++){const el=$('s'+c+i);if(el){const on=sel.includes(c+i);if(el.checked!==on){el.checked=on;ch=el}}}});TCC=null;if(ch)ch.dispatchEvent(new Event('change',{bubbles:true}));return!!ch}
-function tcToast(msg,undo){const t=$('toast');if(!t)return;clearTimeout(TCTO);t.innerHTML='<span>'+msg+'</span>'+(undo?'<button type="button" class="tcun">Undo</button>':'')+'<button type="button" class="tcx2" aria-label="Close" title="Close">\u00d7</button>';t.hidden=false;TCTO=setTimeout(()=>{t.hidden=true},undo?20000:4000)}
+function tcToast(msg,undo){const t=$('toast');if(!t)return;clearTimeout(TCTO);t.innerHTML='<span>'+msg+'</span>'+(undo?'<button type="button" class="tcun">Undo</button>':'')+'<button type="button" class="tcx2" aria-label="Close">\u00d7</button>';t.hidden=false;TCTO=setTimeout(()=>{t.hidden=true},undo?20000:4000)}
 document.addEventListener('click',e=>{
   const b=e.target.closest&&e.target.closest('.tcap');
   if(b){const prev=tierSel();if(!tierSet(b.dataset.set.split(',').filter(Boolean)))return;TCUNDO={tab:active,sel:prev};if(!$('tcm').hidden)closeTierCheck();else closeBubble();0;return}
@@ -3031,7 +3029,7 @@ function helpHtml(h,pl){return(pl&&h.tp?h.tp:h.t).map(x=>'<p class="ht"><i class
 (function(){
   document.querySelectorAll('[data-help]').forEach(card=>{
     const k=card.dataset.help,h=HELP[k],head=[...card.children].find(x=>x.tagName=='H2'||x.tagName=='SUMMARY');if(!h||!head)return;
-    const id='hp-'+k,b=document.createElement('button');b.type='button';b.className='hq';b.setAttribute('aria-expanded','false');b.setAttribute('aria-controls',id);b.title='Show help';b.setAttribute('aria-label','Help');b.innerHTML='?';head.appendChild(b);
+    const id='hp-'+k,b=document.createElement('button');b.type='button';b.className='hq';b.setAttribute('aria-expanded','false');b.setAttribute('aria-controls',id);b.setAttribute('aria-label','Help');b.innerHTML='?';head.appendChild(b);
     const p=document.createElement('div');p.className='hp';p.id=id;p.hidden=true;
     p.innerHTML=helpHtml(h,(k=='bonx'||k=='rare')&&ATK=='players');
     head.after(p);
@@ -3040,12 +3038,12 @@ function helpHtml(h,pl){return(pl&&h.tp?h.tp:h.t).map(x=>'<p class="ht"><i class
     const b=e.target.closest('.hq');if(!b)return;
     e.preventDefault();                                   // a Help button inside a summary must not open / close the card
     const p=document.getElementById(b.getAttribute('aria-controls')),open=p.hidden;p.hidden=!open;if(open){const d=b.closest('details');if(d)d.open=true}      // showing the help of a closed (collapsible) card opens the card too
-    b.setAttribute('aria-expanded',String(open));b.title=open?'Hide help':'Show help';
+    b.setAttribute('aria-expanded',String(open));
     if(b.closest('[data-help=rare]')){try{localStorage.setItem('sc_rarehelp',open?'1':'0')}catch(x){}}      // 20.1.1: the Rare bonuses help remembers how the user left it
   });
   document.querySelectorAll('details[data-help]').forEach(d=>{const sync=()=>{const b=d.querySelector('.hq'),p=b&&document.getElementById(b.getAttribute('aria-controls'));if(b&&p)b.setAttribute('aria-expanded',String(d.open&&!p.hidden))};d.addEventListener('toggle',()=>setTimeout(sync,0))});      // 20.1.2: a closed section does not show its help button lit
   {const rc=document.querySelector('details[data-help=rare]');      // 20.1.1: opening the Rare bonuses card shows its help, unless the user closed it last time
-    if(rc)rc.addEventListener('toggle',()=>{if(!rc.open)return;let pr='1';try{pr=localStorage.getItem('sc_rarehelp')||'1'}catch(x){}const p=$('hp-rare'),b=rc.querySelector('.hq');if(pr=='1'&&p&&p.hidden){p.hidden=false;if(b){b.setAttribute('aria-expanded','true');b.title='Hide help'}}})}
+    if(rc)rc.addEventListener('toggle',()=>{if(!rc.open)return;let pr='1';try{pr=localStorage.getItem('sc_rarehelp')||'1'}catch(x){}const p=$('hp-rare'),b=rc.querySelector('.hq');if(pr=='1'&&p&&p.hidden){p.hidden=false;if(b){b.setAttribute('aria-expanded','true')}}})}
 })();
 document.addEventListener('input',e=>{const t=e.target;if(t.classList&&t.classList.contains('tabin'))return;if(!(t.matches&&t.matches(NUMBOX)))return;fmtBox(t);clearTimeout(CALCT);clearTimeout(SAVET);if(t.value.trim()===''){CALCT=0;SAVET=setTimeout(save,400);return}CALCT=setTimeout(calc,Math.min(1200,Math.max(500,4*CALCMS)))});      // ANY change of a number box (typing, Backspace, cut, paste, drop ...): the number is formatted at once, the calculation waits until the typing has stopped (0.5 s, longer on a slow device); an emptied box starts nothing (a new number is coming)
 // A number box that holds 0 empties when you click into it (a grey 0 stays as the hint), so only your own digits end up in it. Leave it without typing and the 0 comes back; the same when you type and then erase everything.
@@ -3079,7 +3077,3 @@ if(FB.key&&aSes())syncNow();      // signed in before: pick up the account's cha
 function themeBtn(){const lt=document.documentElement.dataset.theme=='light',b=document.querySelector('.thm .nvn');if(b){b.textContent=lt?"Dark theme":"Light theme";if(window.i18nCur&&i18nCur()!="en"&&window.i18nSet)i18nSet(i18nCur())}const m=document.querySelector('meta[name=theme-color]');if(m)m.content=lt?'#f3ecd9':'#0f0e0b'}
 themeBtn();
 
-// no hover tooltips: strip every title attribute (keep it as aria-label for screen readers on elements without text)
-(function(){let q=0;const strip=r=>{(r.querySelectorAll?r.querySelectorAll('[title]'):[]).forEach(fix);if(r.hasAttribute&&r.hasAttribute('title'))fix(r)};
-const fix=e=>{if(e.closest&&e.closest('svg')&&e.tagName!='svg')return;const t=e.getAttribute('title');if(t&&!e.hasAttribute('aria-label')&&!(e.textContent||'').trim())e.setAttribute('aria-label',t);e.removeAttribute('title')};
-strip(document);new MutationObserver(ms=>{if(q)return;q=1;requestAnimationFrame(()=>{q=0;strip(document)})}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['title']})})();
