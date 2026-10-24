@@ -190,3 +190,4 @@ html[dir=rtl] .bq .beg .bnm{text-align:left}
 html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--mu:#6a5836;--ac:#8a5a0b;--bd:#cdbb8f;color-scheme:light}
 @media(max-width:600px){.mbar .nvb,.mbar .don{height:54px;min-height:54px;padding-top:0;padding-bottom:0}.mbar .thm{border-top:1px solid var(--bd);border-radius:0}}
 .tab.add{width:34px;height:34px;border-color:var(--ac);background:rgba(217,164,65,.14);font-size:21px;line-height:1}.tab.add:hover{background:rgba(217,164,65,.26)}
+.tab.add{background:linear-gradient(rgba(217,164,65,.14),rgba(217,164,65,.14)),var(--bg);box-shadow:-10px 0 0 var(--bg),10px 0 0 var(--bg)}.tab.add:hover{background:linear-gradient(rgba(217,164,65,.26),rgba(217,164,65,.26)),var(--bg)}
