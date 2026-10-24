@@ -100,6 +100,7 @@ function init(){
   mo.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:ATT});
   setLang(l,false);
 }
+window.addEventListener('storage',e=>{if(e.key==='tb_lang'&&e.newValue&&(e.newValue==='en'||TR[e.newValue])&&e.newValue!==LANG)setLang(e.newValue,false)});      // the language is one setting for the whole app: a change in one open tab changes every other open tab too
 window.i18nMissing=()=>[...MISS];
 window.i18nSet=l=>setLang(l,true);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
