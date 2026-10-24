@@ -1,11 +1,11 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.14.1';
+const APP_VERSION='21.14.2';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
 // It runs only on the real site (not in a preview) and never for an admin account. A visit is counted by GoatCounter itself; on top of that every VISIT reports once which view, attack mode, epic and language it used (events "view/...", "mode/...", "epic/...", "lang/...").
 // Nothing you type, no export text and no account data is ever sent.
-const GC_CODE='';
+const GC_CODE='krappy';
 const gcOn=()=>!!GC_CODE&&location.hostname=='hracik.github.io';
 (function(){if(!gcOn())return;const s=document.createElement('script');s.async=true;s.dataset.goatcounter='https://'+GC_CODE+'.goatcounter.com/count';s.src='https://gc.zgo.at/count.js';document.head.appendChild(s)})();
 const GCSEEN=new Set();
