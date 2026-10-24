@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.16.39';
+const APP_VERSION='21.16.40';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1667,9 +1667,9 @@ function dominanceTail(P,st,A,Mo,U,light){      // light (the Tier check): only 
   // How the place of the partial stack is chosen: first the most Dominance spent (the partial stack as big as it can be), then the most damage (the Authority that is not spent is no goal). So neither side limits the other more than it has to;
   // a mercenary that is bigger than the partial stack stands in front of it, a smaller one behind it (the places among the mercenaries are all tried).
   const wkn=new Set(U.weak||[]);      // the weak-strength stacks (Ariel, Grace) do not limit each other
-  const dmg=(Us,so)=>score(P,[...A,...Mo,...Us.list],[...so,...Us.ord],true).dmg;
+  const dmg=(Us,so)=>score(P,[...A,...Mo,...Us.list.filter(s=>!wkn.has(s.name))],[...so,...Us.ord.filter(n=>!wkn.has(n))],true).dmg;      // 21.16.40: the place of the partial stack is judged by the damage WITHOUT Ariel / Grace: they only take what is left and never decide
   const b0={d:dmg(U,st.so),kind:0,dm:0,au:U.used||0};let best=b0;
-  const dom=ns=>ns.reduce((q,n,i)=>q+n*tail[i].cost,0),cand=(c,au)=>{c.dm=dom(c.ns);c.au=au;const e=1e-9,b=best;if(c.dm>b.dm*(1+e)||(c.dm>=b.dm*(1-e)&&c.d>b.d*(1+5e-4)))best=c};
+  const dom=ns=>ns.reduce((q,n,i)=>q+n*tail[i].cost,0),cand=(c,au)=>{c.dm=dom(c.ns);c.au=au;const e=1e-9,b=best;if(c.d>b.d*(1+e)||(c.d>=b.d*(1-e)&&c.dm>b.dm*(1+e)))best=c};      // the most damage first, then the most Dominance
   const ns1=sizeTail([...A,...Mo],st.so);
   if(ns1){set(ns1);const U1=allocMerc(P,[...A,...Mo],st.so,XS),d=dmg(U1,st.so);cand({d,kind:1,ns:ns1,U1},U1.used||U1.list.reduce((q,s)=>q+s.n*s.cost,0));set(null)}
   const ns2=sizeTail([...A,...Mo,...U.list],[...st.so,...U.ord]);
@@ -1691,7 +1691,7 @@ function dominanceTail(P,st,A,Mo,U,light){      // light (the Tier check): only 
       if(fr>=0){let left=cu-um(nr);for(let i=fr;i<rest.length;i++){const w=Math.max(0,Math.min(nr[i],Math.floor(left/rest[i].cost)));nr[i]=w;left-=w*rest[i].cost}}
       rest.forEach((s,i)=>{s.n=nr[i]});
       const lst=[...main,...rest.filter(s=>s.n>0)],so3=st.so.filter(n=>!tl.some(s=>s.name==n)),ord3=[...main.map(s=>s.name),...tl.map(s=>s.name),...rest.filter(s=>s.n>0).map(s=>s.name)];
-      const d=score(P,[...A,...Mo,...lst],[...so3,...ord3],true).dmg;
+      const d=score(P,[...A,...Mo,...lst.filter(s=>!wkn.has(s.name))],[...so3,...ord3.filter(n=>!wkn.has(n))],true).dmg;
       cand({d,kind:3,ns:ns3,so3,lst,ord3,used:lst.reduce((q,s)=>q+s.n*s.cost,0),pairs:rest.map((s,i)=>[s,nr[i]])},lst.reduce((q,s)=>q+s.n*s.cost,0));
       set(null)}
     rest.forEach((s,i)=>{s.n=svM[i]})});
