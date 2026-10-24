@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.18.4';
+const APP_VERSION='21.18.5';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -3078,3 +3078,8 @@ if(FB.key&&aSes())syncNow();      // signed in before: pick up the account's cha
 
 function themeBtn(){const lt=document.documentElement.dataset.theme=='light',b=document.querySelector('.thm .nvn');if(b){b.textContent=lt?"Dark theme":"Light theme";if(window.i18nCur&&i18nCur()!="en"&&window.i18nSet)i18nSet(i18nCur())}const m=document.querySelector('meta[name=theme-color]');if(m)m.content=lt?'#f3ecd9':'#0f0e0b'}
 themeBtn();
+
+// no hover tooltips: strip every title attribute (keep it as aria-label for screen readers on elements without text)
+(function(){let q=0;const strip=r=>{(r.querySelectorAll?r.querySelectorAll('[title]'):[]).forEach(fix);if(r.hasAttribute&&r.hasAttribute('title'))fix(r)};
+const fix=e=>{if(e.closest&&e.closest('svg')&&e.tagName!='svg')return;const t=e.getAttribute('title');if(t&&!e.hasAttribute('aria-label')&&!(e.textContent||'').trim())e.setAttribute('aria-label',t);e.removeAttribute('title')};
+strip(document);new MutationObserver(ms=>{if(q)return;q=1;requestAnimationFrame(()=>{q=0;strip(document)})}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['title']})})();
