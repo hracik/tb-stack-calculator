@@ -1582,6 +1582,28 @@ function allocRen(P,live){                 // Renegades (14.8, 14.14, 14.16): th
 
 // 21.7.23: the LAST step. The order, the stacks and the partial monster stack are final; only the weak-strength stacks (Ariel, Grace) are sized again, together, with the Authority that is left:
 // each between what the stack behind it needs (it may not rise above it) and the stack in front of it (it may not rise above that one), the damage decides how the Authority is shared. Never worse than what came in.
+// 21.16.40: the Authority that is left (the stacks behind the partial monster stack are capped by it) first lifts the mercenary stacks that have room - the ones in front of it, up to the stack in front of each (health and total strength) -
+// the order and the Dominance do not change. Ariel / Grace only get what is still left after that (polishWeak).
+function growMain(P,st,A,Mo,U){
+  if(!(P.capU>0)||P.ren||!U.list.length)return;
+  const wk=new Set(U.weak||[]),ord=[...st.so,...U.ord],lst=[...A,...Mo,...U.list];
+  const W=U.list.filter(s=>wk.has(s.name)),wn=W.map(s=>s.n);W.forEach(s=>{s.n=0});
+  const seq=ord.map(n=>lst.find(s=>s.name==n)).filter(s=>s&&s.n>0),gr=new Set(U.list.filter(s=>!wk.has(s.name)&&s.n>0));
+  const base=U.list.reduce((q,s)=>q+s.n*s.cost,0),L=P.capU-base,n0=new Map(seq.map(s=>[s,s.n]));
+  const at=X=>{let H=Infinity,T=Infinity;const ns=[];
+    seq.forEach((s,i)=>{const rs=kn1Stack(P,i,s);let n=n0.get(s);
+      if(gr.has(s)){let c=fitN(Math.floor(X),s.hp);if(isFinite(H))c=Math.min(c,fitN(H-1,s.hp));if(!HO&&strRuled(s)&&isFinite(T))c=Math.min(c,fitN(T-1,s.str));n=Math.max(n,c)}
+      ns.push(n);H=tot(n,s.hp);if(strRef(s,rs))T=tot(n,s.str)});
+    return ns};
+  const extra=ns=>ns.reduce((q,n,i)=>q+(gr.has(seq[i])?(n-n0.get(seq[i]))*seq[i].cost:0),0);
+  if(L>0&&gr.size){
+    let lo=0,hi=1e15;
+    if(extra(at(hi))<=L)lo=hi;else for(let k=0;k<70;k++){const mid=(lo+hi)/2;if(extra(at(mid))<=L)lo=mid;else hi=mid}
+    const ns=at(lo);seq.forEach((s,i)=>{if(gr.has(s))s.n=ns[i]});
+  }
+  let left=P.capU-U.list.reduce((q,s)=>q+s.n*s.cost,0);
+  W.forEach((s,i)=>{const k=Math.max(0,Math.min(wn[i],Math.floor(left/s.cost)));s.n=k;left-=k*s.cost});      // Ariel / Grace: what they had, as far as the rest of the Authority reaches
+  U.used=U.list.reduce((q,s)=>q+s.n*s.cost,0)}
 function polishWeak(P,st,A,Mo,U){
   const wk=new Set(U.weak||[]);if(!wk.size||!(P.capU>0))return;
   const ord=[...st.so,...U.ord],lst=[...A,...Mo,...U.list],W=U.list.filter(s=>wk.has(s.name)&&s.n>0);
@@ -1620,6 +1642,7 @@ function solve1(P,order,zeroPt,PS,stIn,light){const st=stIn?cloneSt(stIn):buildS
   if(zeroPt)Mo.forEach(s=>{if(s.pt)s.n=0});      // the partial tier (and the tiers below it) is taken out: the mercenaries are sized first, the stacks come back behind them (dominanceTail)
   const U=allocMerc(P,[...A,...Mo],st.so,XS);
   if(rgm(P))dominanceTail(P,st,A,Mo,U,light);
+  growMain(P,st,A,Mo,U);
   polishWeak(P,st,A,Mo,U);
   return{st,A,Mo,U}}
 let TCCACHE=null;      // the Tier check solves the same selection again and again (the damage, then the revive gold): while it runs, a selection is solved once (a Map: key -> solution); nothing else uses it
@@ -1667,9 +1690,9 @@ function dominanceTail(P,st,A,Mo,U,light){      // light (the Tier check): only 
   // How the place of the partial stack is chosen: first the most Dominance spent (the partial stack as big as it can be), then the most damage (the Authority that is not spent is no goal). So neither side limits the other more than it has to;
   // a mercenary that is bigger than the partial stack stands in front of it, a smaller one behind it (the places among the mercenaries are all tried).
   const wkn=new Set(U.weak||[]);      // the weak-strength stacks (Ariel, Grace) do not limit each other
-  const dmg=(Us,so)=>score(P,[...A,...Mo,...Us.list.filter(s=>!wkn.has(s.name))],[...so,...Us.ord.filter(n=>!wkn.has(n))],true).dmg;      // 21.16.40: the place of the partial stack is judged by the damage WITHOUT Ariel / Grace: they only take what is left and never decide
+  const dmg=(Us,so)=>score(P,[...A,...Mo,...Us.list],[...so,...Us.ord],true).dmg;
   const b0={d:dmg(U,st.so),kind:0,dm:0,au:U.used||0};let best=b0;
-  const dom=ns=>ns.reduce((q,n,i)=>q+n*tail[i].cost,0),cand=(c,au)=>{c.dm=dom(c.ns);c.au=au;const e=1e-9,b=best;if(c.d>b.d*(1+e)||(c.d>=b.d*(1-e)&&c.dm>b.dm*(1+e)))best=c};      // the most damage first, then the most Dominance
+  const dom=ns=>ns.reduce((q,n,i)=>q+n*tail[i].cost,0),cand=(c,au)=>{c.dm=dom(c.ns);c.au=au;const e=1e-9,b=best;if(c.dm>b.dm*(1+e)||(c.dm>=b.dm*(1-e)&&c.d>b.d*(1+5e-4)))best=c};
   const ns1=sizeTail([...A,...Mo],st.so);
   if(ns1){set(ns1);const U1=allocMerc(P,[...A,...Mo],st.so,XS),d=dmg(U1,st.so);cand({d,kind:1,ns:ns1,U1},U1.used||U1.list.reduce((q,s)=>q+s.n*s.cost,0));set(null)}
   const ns2=sizeTail([...A,...Mo,...U.list],[...st.so,...U.ord]);
@@ -1691,7 +1714,7 @@ function dominanceTail(P,st,A,Mo,U,light){      // light (the Tier check): only 
       if(fr>=0){let left=cu-um(nr);for(let i=fr;i<rest.length;i++){const w=Math.max(0,Math.min(nr[i],Math.floor(left/rest[i].cost)));nr[i]=w;left-=w*rest[i].cost}}
       rest.forEach((s,i)=>{s.n=nr[i]});
       const lst=[...main,...rest.filter(s=>s.n>0)],so3=st.so.filter(n=>!tl.some(s=>s.name==n)),ord3=[...main.map(s=>s.name),...tl.map(s=>s.name),...rest.filter(s=>s.n>0).map(s=>s.name)];
-      const d=score(P,[...A,...Mo,...lst.filter(s=>!wkn.has(s.name))],[...so3,...ord3.filter(n=>!wkn.has(n))],true).dmg;
+      const d=score(P,[...A,...Mo,...lst],[...so3,...ord3],true).dmg;
       cand({d,kind:3,ns:ns3,so3,lst,ord3,used:lst.reduce((q,s)=>q+s.n*s.cost,0),pairs:rest.map((s,i)=>[s,nr[i]])},lst.reduce((q,s)=>q+s.n*s.cost,0));
       set(null)}
     rest.forEach((s,i)=>{s.n=svM[i]})});
