@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.15.1';
+const APP_VERSION='21.15.2';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1172,23 +1172,21 @@ const MD={
 const modeOf=P=>rgm(P)?MD.epic:P.ov?MD.ovo:P.cp?MD.cp:P.kill?MD.kill:MD.ren;
 // SCOUTS: they are in the calculation only when a player attacks a player and they beat (on damage = strength per Leadership, your bonuses in) a troop of a ticked tier: every Scout of a ticked Specialists tier
 // that deals more per Leadership than the weakest ticked Guardsmen / Specialists troop. Otherwise they do not show up at all.
-let SCON=new Set(),SCMODE='auto';      // SCMODE 'none': the calculation without any Scouts (see solveSc)
+let SCON=new Set();
 const SCOUTS_ON=true;      // the Scouts: on, but only in Renegades for now (scoutSet); set to false to switch them off everywhere (the data, icons and rules stay)
 function scoutSet(P,order){
-  const s=new Set();if(!SCOUTS_ON||ATK!='players'||!P.ren)return s;      // Renegades only for now
+  const s=new Set();if(!SCOUTS_ON||ATK!='players'||!P.ren)return s;      // Renegades only for now (see solveSc)
   const nt=[];order.forEach(g=>{if(g[0]=='G'||g[0]=='S')(BYG[g]||[]).forEach(t=>{if(t.cat!='Scout')nt.push(t)})});
   if(!nt.length)return s;
   const tk=new Set(order.filter(g=>g[0]=='S').map(g=>+g.slice(1)));
   const per=t=>t.str*mults(t,P)[1]*(t.cls=='S'&&t.cat!='Scout'?2:1)/t.cost,low=Math.min(...nt.map(per));
   TR.forEach(t=>{if(t.cat=='Scout'&&t.cls=='S'&&tk.has(t.tier)&&per(t)>low)s.add(t.name)});
-  if(SCMODE=='none')[...s].forEach(n=>{if(!XS.has(n))s.delete(n)});      // the run without Scouts: the ones you clicked off stay in the list (off), so you can click them on again
   return s;
 }
 function buildStacks(P,order,X){
   const mk=(t,i)=>{const[mh,ms]=mults(t,P);
     return{r:t.cls+t.tier,p:t.pool,c:t.pool=='M'?t.type:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i,dh:dhf(t,P)}};
-  SCON=scoutSet(P,order);
-  const ts=[];order.forEach(g=>(BYG[g]||[]).forEach(t=>{if(t.cat!='Scout')ts.push(t)}));TR.forEach(t=>{if(SCON.has(t.name))ts.push(t)});      // one total order, troop by troop (the Scouts only when they are in: see scoutSet)
+  const ts=[];order.forEach(g=>(BYG[g]||[]).forEach(t=>{if(t.cat!='Scout')ts.push(t)}));      // one total order, troop by troop (the Scouts are added behind the army afterwards: see solveSc)
   const live=new Set(ts.filter(t=>!X.has(t.name)).map(t=>t.name));
   const mkOut=(so,c)=>{const o=so.map(n=>mk(TRN[n],0)),mt=monTiers(so.map(n=>TRN[n]));o.forEach(s=>{if(s.p=='M')s.pt=mt.indexOf(+s.r.slice(1))>=c});return o};   // pt: the stack belongs to the partial tier or below
   const nT=monTiers([...live].map(n=>TRN[n])).length;
@@ -1638,15 +1636,35 @@ function solveTC(P,order){
   const res=solve(P,order,true);TCCACHE.set(key,res);return res}
 // 21.5.9: ONE order search, the one WITHOUT the mercenaries (Authority 0): the Leadership and the monsters keep the layout they have with 0 Authority. The partial monster stacks are left to the Dominance tail (dominanceTail),
 // which puts them behind the mercenaries when the Authority allows it, before them when it does not. No variants are compared.
-// Scouts are in only when they really raise the damage: the army is solved with the Scouts that beat a ticked troop (scoutSet) and without any, and the one with the more damage is kept. (Damage per Leadership alone is not enough:
-// a Scout has little health for its Leadership, so it can die too soon and lower the total.) The Scouts you clicked off stay in the list, so you can click them on again.
+// SCOUTS (Renegades): a Scout is BONUS damage, it never takes a place in the order and never limits the stacks in front of it. The army is solved without the Scouts first (scoutSet = the Scouts that beat a troop on damage per Leadership);
+// then the Scout goes LAST (behind the army, before the monsters) and takes over the Leadership of the lowest Guardsmen tiers (the stacks that only soak up what is left): the Scout and the number of tiers it replaces
+// (1, 2, 3 ... from the lowest) that give the most damage are kept, and only when that is more than the army without it. The Scouts you clicked off stay in the list (off) so you can click them on again.
 function solveSc(P,order){
-  SCMODE='auto';const r=solve(P,order);
-  if(ATK!='players'||!SCON.size)return r;
-  const dm=x=>score(P,[...x.A,...x.Mo,...x.U.list],[...x.st.so,...x.U.ord]).dmg,w=dm(r);
-  SCMODE='none';const r0=solve(P,order);
-  if(dm(r0)>=w)return r0;
-  SCMODE='auto';return solve(P,order);
+  SCON=new Set();
+  const r=solve(P,order);
+  if(!SCOUTS_ON||ATK!='players'||!P.ren)return r;
+  const cand=[...scoutSet(P,order)];if(!cand.length)return r;
+  const gT=[...new Set(r.A.filter(s=>s.r[0]=='G'&&s.n>0).map(s=>+s.r.slice(1)))].sort((a,b)=>a-b);
+  const proto=r.A.filter(s=>s.p=='A'&&s.r[0]=='G'&&s.n>0).sort((a,b)=>+a.r.slice(1)-+b.r.slice(1))[0];
+  if(!proto||!gT.length)return r;
+  const mkS=n=>{const t=TRN[n],[mh,ms]=mults(t,P);return{...proto,r:t.cls+t.tier,name:n,cat:'Scout',c:'Scout',hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),dh:dhf(t,P),n:0,off:XS.has(n)}};
+  const place=(so,name)=>{const i=so.findIndex(n=>TRN[n]&&TRN[n].pool=='M'),o=so.slice();o.splice(i<0?o.length:i,0,name);return o};
+  const dm=(A,so)=>score(P,[...A,...r.Mo,...r.U.list],[...so,...r.U.ord]).dmg;
+  const base=dm(r.A,r.st.so),stacks=cand.map(mkS);let best=null;
+  stacks.filter(x=>!x.off).forEach(sc=>{
+    for(let k=1;k<=Math.min(6,gT.length);k++){
+      const vic=new Set(gT.slice(0,k));let freed=0;
+      const A2=r.A.map(s=>{const c={...s};if(c.r[0]=='G'&&vic.has(+c.r.slice(1))&&c.n>0){freed+=c.n*c.cost;c.n=0}return c});
+      const n=Math.floor(freed/sc.cost);if(n<1)continue;
+      let d=0;try{d=dm([...A2,{...sc,n}],place(r.st.so,sc.name))}catch(e){}
+      if(d>base*(1+1e-9)&&(!best||d>best.d))best={d,sc,n,vic};
+    }});
+  if(best){
+    r.A.forEach(s=>{if(s.r[0]=='G'&&best.vic.has(+s.r.slice(1))&&s.n>0)s.n=0});
+    best.sc.n=best.n;r.A.push(best.sc);r.st.push(best.sc);r.st.so=place(r.st.so,best.sc.name);SCON.add(best.sc.name);
+  }
+  stacks.forEach(x=>{if(x.off){r.st.push(x);SCON.add(x.name)}});      // the ones clicked off stay in the list
+  return r;
 }
 function solve(P,order,light){
   if(!rgm(P))return solve1(P,order);
