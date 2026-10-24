@@ -180,3 +180,4 @@ html[dir=rtl] .bq .bar{display:inline-block;transform:scaleX(-1)}      /* the ar
 html[dir=rtl] .bq .beg{margin-left:0;margin-right:auto}
 html[dir=rtl] .bq .bnm{text-align:right}
 html[dir=rtl] .bq .beg .bnm{text-align:left}
+*:not(#tabs):not(.gs){scrollbar-width:thin;scrollbar-color:#8a6a2c #14120d}      /* the scrollbars follow the dark and gold design (no white bar with arrows) */
