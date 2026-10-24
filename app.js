@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.20.0';
+const APP_VERSION='21.20.1';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -91,7 +91,8 @@ const EPICS=[      // the epic monsters, alphabetical: n = name, score = the tot
   {n:'Doomsday',ic:'doomsday',score:50e6,st:[[2985710,210000,0,70000],[3666665,171000,2,57000],[3375000,300000,3,100000],[289583335,2160,1,720]],en:[3,4],eb:0.5},
   {n:'Fenrir',ic:'fenrir',score:750e6,st:null,en:[3,4],eb:0.5},
   {n:'Hellforge',score:150e6,st:null,en:[3,4],eb:0.5},
-  {n:'J\u00f6rmungandr/Chimera',ic:'jormchimera',score:750e6,st:null,en:[3,4],raid:true,eb:0.5}];      // 19.0.19 the epic monsters
+  {n:'J\u00f6rmungandr/Chimera',ic:'jormchimera',score:750e6,st:null,en:[3,4],raid:true,eb:0.5},
+  {n:'Shadow City',score:null,st:null,en:[3,4],eb:0.5}];      // 21.20.1 Shadow Invasion epic, given by the user 2026-10-24: 4 stacks in this order: melee (health 29760), ranged (29760), mounted (59520), flying (297600); the units per stack and the score are still to come, then st becomes [[units,29760,0],[units,29760,1],[units,59520,2],[units,297600,3]]      // 19.0.19 the epic monsters
 EPICS.forEach(e=>{if(e.st)e.st.forEach(x=>{if(x[3]==null)x[3]=Math.round(x[1]/3)})});      // 21.9.2 an enemy stack without a given strength has 1/3 of its health per unit (the game's own numbers for Arachne and Doomsday are exactly that), so every epic wounds
 let K4OK=false,K4LO=3;      // 21.8.19: the army kills the chosen epic from a state that still has all 4 stacks: a 3-stack hit is of no use then (the 3-stack mode is switched off)
 let KSLITE=false,KAUTO4=false;      // 21.8.3: the ONE Killshot mode picks its rules by itself: the 4-stack rules when the army kills the epic from its 4-stack state, else the 3-stack rules (calcRun)
