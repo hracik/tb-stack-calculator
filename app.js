@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.18.2';
+const APP_VERSION='21.18.3';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2894,8 +2894,8 @@ function tierSet(sel){let ch=null;['E','S','G','M'].forEach(c=>{for(let i=1;i<=9
 function tcToast(msg,undo){const t=$('toast');if(!t)return;clearTimeout(TCTO);t.innerHTML='<span>'+msg+'</span>'+(undo?'<button type="button" class="tcun">Undo</button>':'')+'<button type="button" class="tcx2" aria-label="Close" title="Close">\u00d7</button>';t.hidden=false;TCTO=setTimeout(()=>{t.hidden=true},undo?20000:4000)}
 document.addEventListener('click',e=>{
   const b=e.target.closest&&e.target.closest('.tcap');
-  if(b){const prev=tierSel();if(!tierSet(b.dataset.set.split(',').filter(Boolean)))return;TCUNDO={tab:active,sel:prev};if(!$('tcm').hidden)closeTierCheck();else closeBubble();tcToast('Tiers applied.',true);return}
-  if(e.target.closest&&e.target.closest('.tcun')){if(TCUNDO&&TCUNDO.tab===active){tierSet(TCUNDO.sel);TCUNDO=null;tcToast('Tiers restored.',false)}else{$('toast').hidden=true}return}
+  if(b){const prev=tierSel();if(!tierSet(b.dataset.set.split(',').filter(Boolean)))return;TCUNDO={tab:active,sel:prev};if(!$('tcm').hidden)closeTierCheck();else closeBubble();tcToast('',true);return}
+  if(e.target.closest&&e.target.closest('.tcun')){if(TCUNDO&&TCUNDO.tab===active){tierSet(TCUNDO.sel);TCUNDO=null;$('toast').hidden=true}else{$('toast').hidden=true}return}
   if(e.target.closest&&e.target.closest('.tcx2'))$('toast').hidden=true});
 async function tierHint(gen,body0){TCCACHE=new Map();try{return await tierHintRun(gen,body0)}finally{TCCACHE=null}}
 async function tierHintRun(gen,body0){
