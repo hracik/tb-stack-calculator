@@ -194,3 +194,4 @@ html[dir=rtl] .bq .beg .bnm{text-align:left}
 
 /* LIGHT THEME (html[data-theme=light]): the same design on a warm paper colour, dark ink and a darker gold, for reading in daylight */
 html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--mu:#6a5836;--ac:#8a5a0b;--bd:#cdbb8f;color-scheme:light}
+@media(max-width:600px){.mbar .thm{border-top:1px solid var(--bd);border-radius:0}}
