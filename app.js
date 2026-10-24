@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.15.0';
+const APP_VERSION='21.15.1';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1072,7 +1072,7 @@ function killOrder(P,names,c){
 const RENHEAD=3;      // 14.24: the number of groups (a class and a tier, up to 4 stacks: G9, S9, G8 ...) that stand alone in front: 3 groups = 12 stacks (4 groups = 16 stacks until 14.23)
 function renOrder(P,names){
   const ts=TR.filter(t=>names.has(t.name)),ci=t=>DEFCAT.indexOf(t.cat),cat=(a,b)=>ci(a)-ci(b),{rank}=ranker(P);
-  const army=ts.filter(t=>t.pool=='A'&&t.cls!='E'),eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier);
+  const army=ts.filter(t=>t.pool=='A'&&t.cls!='E'&&t.cat!='Scout'),eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier),scouts=ts.filter(t=>t.cat=='Scout').sort((a,b)=>b.tier-a.tier);      // the Scouts stand behind everything else of the army (never in the head or the buffer zone)
   const tiers=[...new Set(army.map(t=>t.tier))].sort((a,b)=>b-a);
   const units=(tt,c)=>army.filter(t=>t.tier==tt&&t.cls==c).sort(cat);
   const groups=[];tiers.forEach(tt=>['G','S'].forEach(c=>{const g=units(tt,c);if(g.length)groups.push(g)}));      // G9, S9, G8, S8 ...
@@ -1082,7 +1082,7 @@ function renOrder(P,names){
   const nx=groups[RENHEAD],tb=nx?nx[0].tier:0,bufU=nx?nx.slice(0,4):[],bufE=tb?eng.filter(e=>e.tier>tb):eng.slice();
   const seq=[];for(let t=9;t>=1;t--){seq.push(...eng.filter(e=>e.tier==t));['G','S'].forEach(c=>seq.push(...units(t,c)))}
   const rest=seq.filter(t=>!head.includes(t)&&!bufU.includes(t)&&!bufE.includes(t));
-  const res=[...head,...bufE,...bufU,...rest,...ts.filter(t=>t.pool=='M').sort((a,b)=>b.tier-a.tier||cat(a,b))].map(t=>t.name);
+  const res=[...head,...bufE,...bufU,...rest,...scouts,...ts.filter(t=>t.pool=='M').sort((a,b)=>b.tier-a.tier||cat(a,b))].map(t=>t.name);
   res.head=new Set(head.map(t=>t.name));res.bufN=new Set([...bufE,...bufU].map(t=>t.name));      // the stacks that stand alone in front and the buffer zone: the Renegades grouping (MD.ren) reads them
   return res;
 }
@@ -1173,9 +1173,9 @@ const modeOf=P=>rgm(P)?MD.epic:P.ov?MD.ovo:P.cp?MD.cp:P.kill?MD.kill:MD.ren;
 // SCOUTS: they are in the calculation only when a player attacks a player and they beat (on damage = strength per Leadership, your bonuses in) a troop of a ticked tier: every Scout of a ticked Specialists tier
 // that deals more per Leadership than the weakest ticked Guardsmen / Specialists troop. Otherwise they do not show up at all.
 let SCON=new Set(),SCMODE='auto';      // SCMODE 'none': the calculation without any Scouts (see solveSc)
-const SCOUTS_ON=false;      // the Scouts are prepared but switched off for now: set to true to bring them back (the data, icons and rules stay)
+const SCOUTS_ON=true;      // the Scouts: on, but only in Renegades for now (scoutSet); set to false to switch them off everywhere (the data, icons and rules stay)
 function scoutSet(P,order){
-  const s=new Set();if(!SCOUTS_ON||ATK!='players')return s;
+  const s=new Set();if(!SCOUTS_ON||ATK!='players'||!P.ren)return s;      // Renegades only for now
   const nt=[];order.forEach(g=>{if(g[0]=='G'||g[0]=='S')(BYG[g]||[]).forEach(t=>{if(t.cat!='Scout')nt.push(t)})});
   if(!nt.length)return s;
   const tk=new Set(order.filter(g=>g[0]=='S').map(g=>+g.slice(1)));
