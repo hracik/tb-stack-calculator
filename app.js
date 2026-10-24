@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.15.3';
+const APP_VERSION='21.15.4';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1637,8 +1637,8 @@ function solveTC(P,order){
 // 21.5.9: ONE order search, the one WITHOUT the mercenaries (Authority 0): the Leadership and the monsters keep the layout they have with 0 Authority. The partial monster stacks are left to the Dominance tail (dominanceTail),
 // which puts them behind the mercenaries when the Authority allows it, before them when it does not. No variants are compared.
 // SCOUTS (Renegades): a Scout is BONUS damage, it never takes a place in the order and never limits the stacks in front of it. The army is solved without the Scouts first (scoutSet = the Scouts that beat a troop on damage per Leadership);
-// then the Scout goes LAST (behind the army, before the monsters) and takes over the Leadership of the lowest Guardsmen tiers (the stacks that only soak up what is left): the Scout and the number of tiers it replaces
-// (1, 2, 3 ... from the lowest) that give the most damage are kept, and only when that is more than the army without it. The Scouts you clicked off stay in the list (off) so you can click them on again.
+// then the Scouts go LAST (behind the army, before the monsters) and take over the Leadership of the lowest Guardsmen tiers (the stacks that only soak up what is left): the Scout and the number of tiers it replaces
+// (the weakest first) that give the most damage are kept, and only when that is more than the army without it. The Scouts you clicked off stay in the list (off) so you can click them on again.
 function solveSc(P,order){
   SCON=new Set();
   const r=solve(P,order);
@@ -1651,19 +1651,33 @@ function solveSc(P,order){
   const mkS=n=>{const t=TRN[n],[mh,ms]=mults(t,P);return{...proto,r:t.cls+t.tier,name:n,cat:'Scout',c:'Scout',hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),dh:dhf(t,P),n:0,off:XS.has(n)}};
   const place=(so,name)=>{const i=so.findIndex(n=>TRN[n]&&TRN[n].pool=='M'),o=so.slice();o.splice(i<0?o.length:i,0,name);return o};
   const dm=(A,so)=>score(P,[...A,...r.Mo,...r.U.list],[...so,...r.U.ord]).dmg;
-  const base=dm(r.A,r.st.so),stacks=cand.map(mkS);let best=null;
-  stacks.filter(x=>!x.off).forEach(sc=>{
-    const grp=[...new Set(army.filter(s=>pl(s)<pl(sc)).map(s=>s.r))].sort((a,b)=>pl(army.find(s=>s.r==a))-pl(army.find(s=>s.r==b)));      // the groups (G2, S1 ...) the Scout beats, the weakest per Leadership first
-    for(let k=1;k<=Math.min(8,grp.length);k++){
-      const vic=new Set(grp.slice(0,k));let freed=0;
-      const A2=r.A.map(s=>{const c={...s};if(vic.has(c.r)&&c.cat!='Scout'&&c.n>0&&c.p=='A'){freed+=c.n*c.cost;c.n=0}return c});
-      const n=Math.floor(freed/sc.cost);if(n<1)continue;
-      let d=0;try{d=dm([...A2,{...sc,n}],place(r.st.so,sc.name))}catch(e){}
-      if(d>base*(1+1e-9)&&(!best||d>best.d))best={d,sc,n,vic};
-    }});
+  const gl=g=>army.filter(s=>s.r==g).reduce((q,s)=>q+s.n*s.cost,0);      // the Leadership of a group
+  const base=dm(r.A,r.st.so),stacks=cand.map(mkS).sort((a,b)=>pl(a)-pl(b)),live=stacks.filter(x=>!x.off);let best=null;
+  // As many Scouts as still raise the damage. With a set of Scouts every Scout except the best takes over ONE group of troops (G2, S1 ...), the one with the least Leadership that it beats; the best Scout takes all the other replaced groups
+  // (it gets the most damage out of the Leadership). The number of groups replaced (the weakest first, at least one for every Scout of the set) with the most damage is kept. All the Scouts are tried first; if that does not
+  // beat the army without Scouts, the weakest Scout is dropped, and so on down to the best Scout alone. Of the sets that raise the damage the one with the MOST Scouts wins, as long as it is within 2 % of the best damage.
+  const sets=[];      // the best result of every set of Scouts (all of them, without the weakest, ... the best one alone)
+  for(let j=0;j<live.length;j++){
+    let bj=null;
+    const set=live.slice(j),bst=set[set.length-1],top=pl(bst);
+    const grp=[...new Set(army.filter(s=>pl(s)<top).map(s=>s.r))].sort((a,b)=>pl(army.find(s=>s.r==a))-pl(army.find(s=>s.r==b)));
+    for(let k=Math.max(1,set.length);k<=Math.min(10,grp.length);k++){
+      const vg=grp.slice(0,k),vic=new Set(vg),owner=new Map(),taken=new Set();
+      set.slice(0,-1).forEach(sc=>{const g=vg.filter(g=>!taken.has(g)&&pl(sc)>pl(army.find(s=>s.r==g))).sort((x,y)=>gl(x)-gl(y))[0];if(g){taken.add(g);owner.set(g,sc)}});      // the weaker Scouts get the groups with the least Leadership: the loss against the best Scout stays small
+      const fr=new Map();
+      const A2=r.A.map(s=>{const c={...s};if(vic.has(c.r)&&c.cat!='Scout'&&c.p=='A'&&c.n>0){const o=owner.get(c.r)||bst;fr.set(o.name,(fr.get(o.name)||0)+c.n*c.cost);c.n=0}return c});
+      const add=set.map(sc=>({...sc,n:Math.floor((fr.get(sc.name)||0)/sc.cost)})).filter(x=>x.n>0);
+      if(add.length<set.length)continue;      // every Scout of the set must get something
+      let so2=r.st.so;add.forEach(x=>{so2=place(so2,x.name)});
+      let d=0;try{d=dm([...A2,...add],so2)}catch(e){}
+      if(d>base*(1+1e-9)&&(!bj||d>bj.d))bj={d,add,vic,owner};
+    }
+    if(bj)sets.push(bj);
+  }
+  const dmax=Math.max(0,...sets.map(x=>x.d));best=sets.find(x=>x.d>=dmax*0.98)||null;      // the set with the most Scouts that is within 2 % of the most damage
   if(best){
     r.A.forEach(s=>{if(best.vic.has(s.r)&&s.cat!='Scout'&&s.p=='A'&&s.n>0)s.n=0});
-    best.sc.n=best.n;r.A.push(best.sc);r.st.push(best.sc);r.st.so=place(r.st.so,best.sc.name);SCON.add(best.sc.name);
+    best.add.forEach(x=>{r.A.push(x);r.st.push(x);r.st.so=place(r.st.so,x.name);SCON.add(x.name)});
   }
   stacks.forEach(x=>{if(x.off){r.st.push(x);SCON.add(x.name)}});      // the ones clicked off stay in the list
   return r;
