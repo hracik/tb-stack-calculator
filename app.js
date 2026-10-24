@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.18.15';
+const APP_VERSION='21.18.16';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -265,7 +265,7 @@ function drawTabs(){
   const tools=delPending
     ?`<span class="nb">Delete "${esc(tabs[active].name)}"?</span><button class="tl" data-act="yes">Yes, delete</button><button class="tl" data-act="no">Cancel</button>`
     :`<button class="tli" data-act="ren" aria-label="Rename">${ICOREN}</button><button class="tli" data-act="dup" aria-label="Duplicate">${ICODUP}</button>${tabs.length>1?`<button class="tli" data-act="del" aria-label="Delete">${ICODEL}</button>`:''}<button class="tli${XPM=='imp'?' on':''}" data-act="imp" aria-label="Import">${ICOIMP}</button><button class="tl${XPM=='exp'?' on':''}" data-act="exp">${ICOEXP}Export</button>`;
-  $('tabs').innerHTML='<div id="tabsin">'+tabs.map((t,i)=>`<button class="tab${i==active?' on':''}" data-t="${i}">${esc(t.name)}</button>`).join('')+'<button type="button" class="tab add" id="tabadd" data-add="1">+</button></div>';
+  $('tabs').innerHTML='<div id="tabsin">'+tabs.map((t,i)=>`<button class="tab${i==active?' on':''}" data-t="${i}">${esc(t.name)}</button>`).join('')+'</div>';
   $('tabtools').innerHTML=tools;tabVis(document.querySelector('#tabs .tab.on'));
 }
 function newName(){let n=tabs.length+1;while(tabs.some(t=>t.name==='Tab '+n))n++;return 'Tab '+n}
