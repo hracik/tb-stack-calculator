@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.15.4';
+const APP_VERSION='21.15.5';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1072,7 +1072,7 @@ function killOrder(P,names,c){
 const RENHEAD=3;      // 14.24: the number of groups (a class and a tier, up to 4 stacks: G9, S9, G8 ...) that stand alone in front: 3 groups = 12 stacks (4 groups = 16 stacks until 14.23)
 function renOrder(P,names){
   const ts=TR.filter(t=>names.has(t.name)),ci=t=>DEFCAT.indexOf(t.cat),cat=(a,b)=>ci(a)-ci(b),{rank}=ranker(P);
-  const army=ts.filter(t=>t.pool=='A'&&t.cls!='E'&&t.cat!='Scout'),eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier),scouts=ts.filter(t=>t.cat=='Scout').sort((a,b)=>b.tier-a.tier);      // the Scouts stand behind everything else of the army (never in the head or the buffer zone)
+  const army=ts.filter(t=>t.pool=='A'&&t.cls!='E'),eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier);
   const tiers=[...new Set(army.map(t=>t.tier))].sort((a,b)=>b-a);
   const units=(tt,c)=>army.filter(t=>t.tier==tt&&t.cls==c).sort(cat);
   const groups=[];tiers.forEach(tt=>['G','S'].forEach(c=>{const g=units(tt,c);if(g.length)groups.push(g)}));      // G9, S9, G8, S8 ...
@@ -1082,7 +1082,7 @@ function renOrder(P,names){
   const nx=groups[RENHEAD],tb=nx?nx[0].tier:0,bufU=nx?nx.slice(0,4):[],bufE=tb?eng.filter(e=>e.tier>tb):eng.slice();
   const seq=[];for(let t=9;t>=1;t--){seq.push(...eng.filter(e=>e.tier==t));['G','S'].forEach(c=>seq.push(...units(t,c)))}
   const rest=seq.filter(t=>!head.includes(t)&&!bufU.includes(t)&&!bufE.includes(t));
-  const res=[...head,...bufE,...bufU,...rest,...scouts,...ts.filter(t=>t.pool=='M').sort((a,b)=>b.tier-a.tier||cat(a,b))].map(t=>t.name);
+  const res=[...head,...bufE,...bufU,...rest,...ts.filter(t=>t.pool=='M').sort((a,b)=>b.tier-a.tier||cat(a,b))].map(t=>t.name);
   res.head=new Set(head.map(t=>t.name));res.bufN=new Set([...bufE,...bufU].map(t=>t.name));      // the stacks that stand alone in front and the buffer zone: the Renegades grouping (MD.ren) reads them
   return res;
 }
@@ -1097,21 +1097,13 @@ const cpSH=(t,P)=>Math.round(ratioOf(t,P)*1e9);       // strength per health wit
 // Group of equals = the troops with the same squad bonus AND the same SH ratio (strength per health): they get about the same health and share their places. The troops with a different
 // SH ratio are NOT forced to the same health - the SH ratio decides the order first (the smaller ratio first, see cpdOrder), only the troops with the same ratio form a group.
 // CP kill: class + tier + bonus + SH ratio. CP death: Guardsmen and monsters count as one kind, no tier: kind + bonus + SH ratio (G9 and G8 without a bonus: the same SH ratio, one group).
-// A Scout does not stand with the Specialists of its tier: it is placed by what it is worth, as a Guardsmen unit between the tiers its damage per Leadership lies between (SCR = the rank of every Scout in the order, set in scoutRanks).
-let SCR={};
-const ec=t=>t.cat=='Scout'?'G':t.cls,et=t=>t.cat=='Scout'&&SCR[t.name]!=null?SCR[t.name]:t.tier;
-function scoutRanks(P,names){
-  const per=x=>x.str*mults(x,P)[1]*(x.cls=='S'&&x.cat!='Scout'?2:1)/x.cost,ref=TR.filter(x=>names.has(x.name)&&x.cat!='Scout'&&x.pool=='A'&&x.cls!='E');
-  SCR={};TR.forEach(t=>{if(t.cat=='Scout'&&names.has(t.name)){let b=0;ref.forEach(x=>{if(per(x)<=per(t))b=Math.max(b,x.tier)});SCR[t.name]=b+0.5}});
-}
-const cpGroup=(t,P)=>{const b=Math.round(cpBonus(t,P)*1e6),h=cpSH(t,P);return P.cpd?(ec(t)=='G'||t.cls=='M'?'GM':ec(t))+'|'+b+'|'+h:ec(t)+'|'+b+'|'+et(t)+'|'+h};
+const cpGroup=(t,P)=>{const b=Math.round(cpBonus(t,P)*1e6),h=cpSH(t,P);return P.cpd?(t.cls=='G'||t.cls=='M'?'GM':t.cls)+'|'+b+'|'+h:t.cls+'|'+b+'|'+t.tier+'|'+h};
 function cpOrder(P,names){
-  scoutRanks(P,names);
   const ts=TR.filter(t=>names.has(t.name)),ci=t=>DEFCAT.indexOf(t.cat);
   const eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier),army=ts.filter(t=>t.pool=='A'&&t.cls!='E'),mon=ts.filter(t=>t.pool=='M');
-  const tiers=a=>[...new Set(a.map(et))].sort((x,y)=>y-x);
+  const tiers=a=>[...new Set(a.map(t=>t.tier))].sort((x,y)=>y-x);
   const grp=a=>a.slice().sort((x,y)=>cpBonus(x,P)-cpBonus(y,P)||cpSH(x,P)-cpSH(y,P)||ci(x)-ci(y)||x.name.localeCompare(y.name));      // smaller squad bonus first, then the rising SH ratio (the smaller ratio first); equal ones stay together
-  return[...eng,...tiers(army).flatMap(tt=>['G','S'].flatMap(c=>grp(army.filter(t=>et(t)==tt&&ec(t)==c)))),...tiers(mon).flatMap(tt=>grp(mon.filter(t=>t.tier==tt)))].map(t=>t.name);
+  return[...eng,...tiers(army).flatMap(tt=>['G','S'].flatMap(c=>grp(army.filter(t=>t.tier==tt&&t.cls==c)))),...tiers(mon).flatMap(tt=>grp(mon.filter(t=>t.tier==tt)))].map(t=>t.name);
 }
 // CP death (PvP, one flying enemy, the most damage): the troops that strike last strike the most, so the Specialists (double damage) stand near the end. The order:
 // all the engineers (higher tier first); the Guardsmen and the FULL monster tiers WITHOUT a squad bonus against flying, by the RISING SH ratio, the smaller ratio first (the troops with exactly the same ratio - G9, G8 ...
@@ -1120,15 +1112,14 @@ function cpOrder(P,names){
 // the same rules inside): it has the lowest health, so it stands last and cannot pull the Specialists down; it is what spends the Dominance that is left.
 // A troop "has a bonus" when it has a squad bonus against flying (the Double strike is unused). c = the number of full monster tiers (the top c tiers); the damage decides which c is used (see buildStacks).
 function cpdOrder(P,names,c){
-  scoutRanks(P,names);
   const ts=TR.filter(t=>names.has(t.name)),ci=t=>DEFCAT.indexOf(t.cat),bon=t=>cpBonus(t,P)>0,sp=monSplit(ts,c);
   const eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier),army=ts.filter(t=>t.pool=='A'&&t.cls!='E'),mon=ts.filter(t=>t.pool=='M');
-  const tie=(x,y)=>et(y)-et(x)||(x.cls=='M')-(y.cls=='M')||ci(x)-ci(y)||x.name.localeCompare(y.name);              // same ratio: the higher tier first, Guardsmen before monsters
+  const tie=(x,y)=>y.tier-x.tier||(x.cls=='M')-(y.cls=='M')||ci(x)-ci(y)||x.name.localeCompare(y.name);              // same ratio: the higher tier first, Guardsmen before monsters
   const noB=a=>a.filter(t=>!bon(t)).sort((x,y)=>cpSH(x,P)-cpSH(y,P)||tie(x,y));                                    // no bonus: the smaller SH ratio first
   const withB=a=>a.filter(bon).sort((x,y)=>cpBonus(x,P)-cpBonus(y,P)||cpSH(x,P)-cpSH(y,P)||tie(x,y));             // with a bonus: the lowest bonus first, then the smaller SH ratio first
   const both=a=>[...noB(a),...withB(a)];
-  if(P.ov){const by=(x,y)=>cpBonus(x,P)-cpBonus(y,P)||cpSH(x,P)-cpSH(y,P)||tie(x,y);return[...eng,...[...army.filter(t=>ec(t)=='G'),...mon.filter(t=>sp.full.has(t.tier))].sort(by),...army.filter(t=>ec(t)=='S').sort(by),...mon.filter(t=>!sp.full.has(t.tier)).sort(by)].map(t=>t.name)}      // One v. One (21.4.4): the Specialists die last by force, the lowest monster tier is the PARTIAL one as in the epic modes (it takes what the Dominance still allows) and stands behind the Specialists; inside the two blocks the lowest squad bonus dies first, the better bonuses die later (then the smaller SH ratio first); health AND strength fall along this order (MD.ovo)
-  return[...eng,...both([...army.filter(t=>ec(t)=='G'),...mon.filter(t=>sp.full.has(t.tier))]),...both(army.filter(t=>ec(t)=='S')),...both(mon.filter(t=>!sp.full.has(t.tier)))].map(t=>t.name);
+  if(P.ov){const by=(x,y)=>cpBonus(x,P)-cpBonus(y,P)||cpSH(x,P)-cpSH(y,P)||tie(x,y);return[...eng,...[...army.filter(t=>t.cls=='G'),...mon.filter(t=>sp.full.has(t.tier))].sort(by),...army.filter(t=>t.cls=='S').sort(by),...mon.filter(t=>!sp.full.has(t.tier)).sort(by)].map(t=>t.name)}      // One v. One (21.4.4): the Specialists die last by force, the lowest monster tier is the PARTIAL one as in the epic modes (it takes what the Dominance still allows) and stands behind the Specialists; inside the two blocks the lowest squad bonus dies first, the better bonuses die later (then the smaller SH ratio first); health AND strength fall along this order (MD.ovo)
+  return[...eng,...both([...army.filter(t=>t.cls=='G'),...mon.filter(t=>sp.full.has(t.tier))]),...both(army.filter(t=>t.cls=='S')),...both(mon.filter(t=>!sp.full.has(t.tier)))].map(t=>t.name);
 }
 // ---- THE MODES: ONE engine runs all of them. This table is the only place that says how they differ; everything else (the rules above, the sizing helpers, the score) is shared.
 //   kn1    the places Kn+1 are half exempt from the strength rule (3-, 4-, 6- and 8-stack and Killshot)
@@ -1170,23 +1161,10 @@ const MD={
       return{so,out};}}
 };
 const modeOf=P=>rgm(P)?MD.epic:P.ov?MD.ovo:P.cp?MD.cp:P.kill?MD.kill:MD.ren;
-// SCOUTS: they are in the calculation only when a player attacks a player and they beat (on damage = strength per Leadership, your bonuses in) a troop of a ticked tier: every Scout of a ticked Specialists tier
-// that deals more per Leadership than the weakest ticked Guardsmen / Specialists troop. Otherwise they do not show up at all.
-let SCON=new Set();
-const SCOUTS_ON=true;      // the Scouts: on, but only in Renegades for now (scoutSet); set to false to switch them off everywhere (the data, icons and rules stay)
-function scoutSet(P,order){
-  const s=new Set();if(!SCOUTS_ON||ATK!='players'||!P.ren)return s;      // Renegades only for now (see solveSc)
-  const nt=[];order.forEach(g=>{if(g[0]=='G'||g[0]=='S')(BYG[g]||[]).forEach(t=>{if(t.cat!='Scout')nt.push(t)})});
-  if(!nt.length)return s;
-  const tk=new Set(order.filter(g=>g[0]=='S').map(g=>+g.slice(1)));
-  const per=t=>t.str*mults(t,P)[1]*(t.cls=='S'&&t.cat!='Scout'?2:1)/t.cost,low=Math.min(...nt.map(per));
-  TR.forEach(t=>{if(t.cat=='Scout'&&t.cls=='S'&&tk.has(t.tier)&&per(t)>low)s.add(t.name)});
-  return s;
-}
 function buildStacks(P,order,X){
   const mk=(t,i)=>{const[mh,ms]=mults(t,P);
     return{r:t.cls+t.tier,p:t.pool,c:t.pool=='M'?t.type:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i,dh:dhf(t,P)}};
-  const ts=[];order.forEach(g=>(BYG[g]||[]).forEach(t=>{if(t.cat!='Scout')ts.push(t)}));      // one total order, troop by troop (the Scouts are added behind the army afterwards: see solveSc)
+  const ts=[];order.forEach(g=>(BYG[g]||[]).forEach(t=>{if(t.cat!='Scout')ts.push(t)}));      // one total order, troop by troop (the Scouts - data and icons only for now - are not used: no rule puts them in)
   const live=new Set(ts.filter(t=>!X.has(t.name)).map(t=>t.name));
   const mkOut=(so,c)=>{const o=so.map(n=>mk(TRN[n],0)),mt=monTiers(so.map(n=>TRN[n]));o.forEach(s=>{if(s.p=='M')s.pt=mt.indexOf(+s.r.slice(1))>=c});return o};   // pt: the stack belongs to the partial tier or below
   const nT=monTiers([...live].map(n=>TRN[n])).length;
@@ -1636,52 +1614,6 @@ function solveTC(P,order){
   const res=solve(P,order,true);TCCACHE.set(key,res);return res}
 // 21.5.9: ONE order search, the one WITHOUT the mercenaries (Authority 0): the Leadership and the monsters keep the layout they have with 0 Authority. The partial monster stacks are left to the Dominance tail (dominanceTail),
 // which puts them behind the mercenaries when the Authority allows it, before them when it does not. No variants are compared.
-// SCOUTS (Renegades): a Scout is BONUS damage, it never takes a place in the order and never limits the stacks in front of it. The army is solved without the Scouts first (scoutSet = the Scouts that beat a troop on damage per Leadership);
-// then the Scouts go LAST (behind the army, before the monsters) and take over the Leadership of the lowest Guardsmen tiers (the stacks that only soak up what is left): the Scout and the number of tiers it replaces
-// (the weakest first) that give the most damage are kept, and only when that is more than the army without it. The Scouts you clicked off stay in the list (off) so you can click them on again.
-function solveSc(P,order){
-  SCON=new Set();
-  const r=solve(P,order);
-  if(!SCOUTS_ON||ATK!='players'||!P.ren)return r;
-  const cand=[...scoutSet(P,order)];if(!cand.length)return r;
-  const pl=s=>s.str*(s.f||1)/s.cost;      // damage per Leadership of a stack
-  const army=r.A.filter(s=>s.p=='A'&&(s.r[0]=='G'||s.r[0]=='S')&&s.cat!='Scout'&&s.n>0);
-  const proto=army.slice().sort((a,b)=>pl(a)-pl(b))[0];
-  if(!proto)return r;
-  const mkS=n=>{const t=TRN[n],[mh,ms]=mults(t,P);return{...proto,r:t.cls+t.tier,name:n,cat:'Scout',c:'Scout',hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),dh:dhf(t,P),n:0,off:XS.has(n)}};
-  const place=(so,name)=>{const i=so.findIndex(n=>TRN[n]&&TRN[n].pool=='M'),o=so.slice();o.splice(i<0?o.length:i,0,name);return o};
-  const dm=(A,so)=>score(P,[...A,...r.Mo,...r.U.list],[...so,...r.U.ord]).dmg;
-  const gl=g=>army.filter(s=>s.r==g).reduce((q,s)=>q+s.n*s.cost,0);      // the Leadership of a group
-  const base=dm(r.A,r.st.so),stacks=cand.map(mkS).sort((a,b)=>pl(a)-pl(b)),live=stacks.filter(x=>!x.off);let best=null;
-  // As many Scouts as still raise the damage. With a set of Scouts every Scout except the best takes over ONE group of troops (G2, S1 ...), the one with the least Leadership that it beats; the best Scout takes all the other replaced groups
-  // (it gets the most damage out of the Leadership). The number of groups replaced (the weakest first, at least one for every Scout of the set) with the most damage is kept. All the Scouts are tried first; if that does not
-  // beat the army without Scouts, the weakest Scout is dropped, and so on down to the best Scout alone. Of the sets that raise the damage the one with the MOST Scouts wins, as long as it is within 2 % of the best damage.
-  const sets=[];      // the best result of every set of Scouts (all of them, without the weakest, ... the best one alone)
-  for(let j=0;j<live.length;j++){
-    let bj=null;
-    const set=live.slice(j),bst=set[set.length-1],top=pl(bst);
-    const grp=[...new Set(army.filter(s=>pl(s)<top).map(s=>s.r))].sort((a,b)=>pl(army.find(s=>s.r==a))-pl(army.find(s=>s.r==b)));
-    for(let k=Math.max(1,set.length);k<=Math.min(10,grp.length);k++){
-      const vg=grp.slice(0,k),vic=new Set(vg),owner=new Map(),taken=new Set();
-      set.slice(0,-1).forEach(sc=>{const g=vg.filter(g=>!taken.has(g)&&pl(sc)>pl(army.find(s=>s.r==g))).sort((x,y)=>gl(x)-gl(y))[0];if(g){taken.add(g);owner.set(g,sc)}});      // the weaker Scouts get the groups with the least Leadership: the loss against the best Scout stays small
-      const fr=new Map();
-      const A2=r.A.map(s=>{const c={...s};if(vic.has(c.r)&&c.cat!='Scout'&&c.p=='A'&&c.n>0){const o=owner.get(c.r)||bst;fr.set(o.name,(fr.get(o.name)||0)+c.n*c.cost);c.n=0}return c});
-      const add=set.map(sc=>({...sc,n:Math.floor((fr.get(sc.name)||0)/sc.cost)})).filter(x=>x.n>0);
-      if(add.length<set.length)continue;      // every Scout of the set must get something
-      let so2=r.st.so;add.forEach(x=>{so2=place(so2,x.name)});
-      let d=0;try{d=dm([...A2,...add],so2)}catch(e){}
-      if(d>base*(1+1e-9)&&(!bj||d>bj.d))bj={d,add,vic,owner};
-    }
-    if(bj)sets.push(bj);
-  }
-  const dmax=Math.max(0,...sets.map(x=>x.d));best=sets.find(x=>x.d>=dmax*0.98)||null;      // the set with the most Scouts that is within 2 % of the most damage
-  if(best){
-    r.A.forEach(s=>{if(best.vic.has(s.r)&&s.cat!='Scout'&&s.p=='A'&&s.n>0)s.n=0});
-    best.add.forEach(x=>{r.A.push(x);r.st.push(x);r.st.so=place(r.st.so,x.name);SCON.add(x.name)});
-  }
-  stacks.forEach(x=>{if(x.off){r.st.push(x);SCON.add(x.name)}});      // the ones clicked off stay in the list
-  return r;
-}
 function solve(P,order,light){
   if(!rgm(P))return solve1(P,order);
   return solve1(P,order,true,P.capU>0?{...P,capU:0}:P,null,light)}
@@ -2560,7 +2492,7 @@ function calcRun0(){
   //      // the Against box that does not count in the chosen view is hidden and its inputs are disabled
   if(!RENEGADES()&&$('mode').value=='ren'){$('mode').value='max';SO=[]}      // Renegades is off: a tab saved in it falls back to Max damage
   {const rb=document.querySelector('.cm[data-m=ren]');if(rb){rb.disabled=!RENEGADES();rb.title=RENEGADES()?'':'Switched off for now'}}
-  const P=getP(),{st,A,Mo,U}=solveSc(P,O);
+  const P=getP(),{st,A,Mo,U}=solve(P,O);
   const fx=P.ov?theoFix(P):null;if(fx)theoApply(fx,st,U);      // 21.6.2 One v. One: the stacks the simulator found go into the Result
   {const rl=$('renlv'),tg=P.ren?renTarget():0,nt=$('renlt');if(rl)rl.hidden=!P.ren;if(nt)nt.textContent=tg?'Damage to reach: '+tg.toLocaleString('en-US'):'No level: the Tier check looks for the most damage per gold of the full revive.'}      // 14.19: the Level box is shown in Renegades only
   SO=st.so;
