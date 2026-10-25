@@ -29,7 +29,7 @@ const HELP_RATE='\u20ac25 / hour',HELP_URL='';
   // Stale-page check: the live site publishes version.json. If it names a NEWER version than this page, the page is reloaded - once per live version, so a browser that keeps serving the old copy cannot loop. A page that is newer than the live site (a test copy) never reloads.
   if(!/^https?:$/.test(location.protocol)){setBadge(me,'unk');return}
   const LIVE='https://hracik.github.io/tb-stack-calculator/';
-  const base=/\.github\.io$/.test(location.hostname)?location.origin+'/'+location.pathname.split('/')[1]+'/':LIVE;      // the languages have their own folders (/de/ ...): version.json is always the one in the root
+  const base=/\.github\.io$/.test(location.hostname)?location.origin+location.pathname.replace(/[^\/]*$/,''):LIVE;      // the languages have their own folders (/de/ ...): version.json is always the one in the root
   const tried=()=>{let t=null;try{t=sessionStorage.getItem('sc_reload')}catch(e){}return t||(/^sc_reload=/.test(window.name)?window.name.slice(10):null)};
   const mark=n=>{try{sessionStorage.setItem('sc_reload',n)}catch(e){}window.name='sc_reload='+n};
   const vnum=x=>{const m=/^(\d+)\.(\d+)(?:\.(\d+))?$/.exec(String(x));return m?+m[1]*1e8+ +m[2]*1e4+ +(m[3]||0):0};      // 19.1.2 -> 1901000 + 2: the major counts first, then the minor, then the patch (a two-number version counts as .0)
