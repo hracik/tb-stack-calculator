@@ -32,7 +32,7 @@ def block(cur):
     for l in ['en']+list(L):r.append('<link rel="alternate" hreflang="%s" href="%s">'%(l,url(l)))
     r.append('<link rel="alternate" hreflang="x-default" href="%s">'%SITE)
     return '<!--hl-->'+''.join(r)+'<!--/hl-->'
-def intro(t):return '<!--intro--><section class="seo" data-notr><p>'+t+'</p></section><!--/intro-->'
+def intro(t):return '<!--intro--><!--/intro-->'      # the visible intro text was removed (user, 2026-10-25); the markers stay, the texts in EN / L are not used
 def esc(x):return x.replace('&','&amp;').replace('"','&quot;')
 def rep(h,a,b):
     assert a in h,a[:40];return h.replace(a,b)
