@@ -9,3 +9,4 @@ sub('app.js',r"const APP_VERSION='[^']*'","const APP_VERSION='"+v+"'")
 sub('index.html',r'(app\.css|app\.js|i18n\.js)\?v=[0-9.]+',r'\1?v='+v,3)
 open('version.json','w').write('{"version":"'+v+'"}')
 print('version',v)
+import subprocess;subprocess.run([sys.executable,'langpages.py'],check=True)      # the language pages (de/ ru/ ...) copy index.html, so they are rebuilt with every version

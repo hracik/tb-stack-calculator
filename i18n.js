@@ -104,9 +104,10 @@ function setLang(l,save){
 }
 function init(){
   const s=document.getElementById('lang');
-  if(s){s.innerHTML=LANGS.map(x=>'<option value="'+x[0]+'">'+x[0].toUpperCase()+' \u00b7 '+x[1]+'</option>').join('');s.addEventListener('change',()=>{setLang(s.value,true);s.blur()})}
+  if(s){s.innerHTML=LANGS.map(x=>'<option value="'+x[0]+'">'+x[0].toUpperCase()+' \u00b7 '+x[1]+'</option>').join('');s.addEventListener('change',()=>{setLang(s.value,true);s.blur();if(document.documentElement.dataset.pl)try{history.replaceState(null,'',new URL(s.value=='en'?'':s.value+'/',document.baseURI).href)}catch(e){}})}
   let l=null;try{l=localStorage.getItem('tb_lang')}catch(e){}
   if(!l||!(l=='en'||TR[l])){let b=(navigator.language||'en').slice(0,2).toLowerCase();if(b=='nb'||b=='nn')b='no';l=TR[b]?b:'en'}      // the browser's language when it is one of ours, else English; the choice is kept
+  if(document.documentElement.dataset.pl){const pl=document.documentElement.lang;if(TR[pl])l=pl}      // a language page (/de/ ...): its own language, whatever was chosen before
   s&&(s.value=l);      // the box is never empty: it holds English in the page itself until this runs
   mo.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:ATT});
   setLang(l,false);

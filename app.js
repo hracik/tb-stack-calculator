@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='21.21.3';
+const APP_VERSION='21.22.0';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -29,7 +29,7 @@ const HELP_RATE='\u20ac25 / hour',HELP_URL='';
   // Stale-page check: the live site publishes version.json. If it names a NEWER version than this page, the page is reloaded - once per live version, so a browser that keeps serving the old copy cannot loop. A page that is newer than the live site (a test copy) never reloads.
   if(!/^https?:$/.test(location.protocol)){setBadge(me,'unk');return}
   const LIVE='https://hracik.github.io/tb-stack-calculator/';
-  const base=/\.github\.io$/.test(location.hostname)?location.origin+location.pathname.replace(/[^\/]*$/,''):LIVE;
+  const base=/\.github\.io$/.test(location.hostname)?location.origin+'/'+location.pathname.split('/')[1]+'/':LIVE;      // the languages have their own folders (/de/ ...): version.json is always the one in the root
   const tried=()=>{let t=null;try{t=sessionStorage.getItem('sc_reload')}catch(e){}return t||(/^sc_reload=/.test(window.name)?window.name.slice(10):null)};
   const mark=n=>{try{sessionStorage.setItem('sc_reload',n)}catch(e){}window.name='sc_reload='+n};
   const vnum=x=>{const m=/^(\d+)\.(\d+)(?:\.(\d+))?$/.exec(String(x));return m?+m[1]*1e8+ +m[2]*1e4+ +(m[3]||0):0};      // 19.1.2 -> 1901000 + 2: the major counts first, then the minor, then the patch (a two-number version counts as .0)
