@@ -534,7 +534,6 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 .tg.on,.tt label input:checked+span{background:var(--af);border-color:var(--af);color:#000}
 .seo{max-width:760px;margin:26px auto 0;padding:0 16px;color:var(--mu);font-size:13px;line-height:1.55;text-align:center}
 .seo p{margin:0}
-.ast{display:flex;align-items:center;gap:8px;margin:10px 0 0;padding:8px 10px;border:1px solid var(--bd);border-radius:8px}
+.ast{display:flex;align-items:center;gap:8px;margin:10px 0 0}
 .ast svg{flex:0 0 auto}
 .ast.ok svg{color:var(--ac)}
-.ast.er{border-color:#e88a74}
