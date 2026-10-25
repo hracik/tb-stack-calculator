@@ -297,7 +297,9 @@ h1 .lg{height:104px;width:auto;display:block;-webkit-user-drag:none;user-select:
 .aul{display:flex;flex-direction:column;gap:6px;margin-top:8px;max-height:34vh;overflow:auto}
 .tl.urw{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;box-sizing:border-box;padding:7px 10px;text-align:left}
 .imp{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;margin:0 0 10px;padding:8px 12px;background:#3a2a0e;border:1px solid var(--ac);border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.55)}
-@media(max-width:560px){.imp .tl{width:100%;box-sizing:border-box;padding:9px 12px;text-align:center}.amo{padding:10px}#ap,#fmp,#epp{width:100%;padding:18px 16px}#ap .acs{grid-template-columns:1fr}#ap .xr .tl,#ap form .tl,#ap .acs .tl,#ap .nvr .tl{width:100%;box-sizing:border-box;justify-content:center;text-align:center;padding:10px 12px}}
+@media(max-width:560px){.imp .tl{width:100%;box-sizing:border-box;padding:9px 12px;text-align:center}.amo{padding:10px}#ap,#fmp,#epp{width:100%;padding:18px 16px}#ap .acs{grid-template-columns:1fr}}
+#ap .xr .tl,#ap form .tl,#ap .acs .tl,#ap .nvr .tl{width:100%;box-sizing:border-box;justify-content:center;text-align:center;padding:10px 12px}      /* every button of the account window is as wide as the window, on every screen */
+#ap input[name=aq]{margin-top:8px}
 .ic{display:block;width:56px;height:56px;margin:0 auto 4px;border-radius:6px}
 .ic.ph{background:rgba(42,32,18,.15)}
 .pw{max-width:400px;margin:10px 0 0}
