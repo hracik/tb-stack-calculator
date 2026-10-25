@@ -532,3 +532,5 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 .tg.on,.tt label input:checked+span{background:var(--af);border-color:var(--af);color:#000}
 {
 
+.seo{max-width:760px;margin:26px auto 0;padding:0 16px;color:var(--mu);font-size:13px;line-height:1.55;text-align:center}
+.seo p{margin:0}
