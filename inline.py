@@ -7,5 +7,10 @@ def sub(pat,fn):
 sub(r'<link rel="stylesheet" href="app\.css[^"]*">',lambda m:'<style>'+open('app.css').read()+'</style>')
 sub(r'<script src="app\.js[^"]*"></script>',lambda m:'<script>'+open('app.js').read().replace('</script','<\\/script')+'</script>')
 sub(r'<script src="i18n\.js[^"]*"></script>',lambda m:'<script>'+open('i18n.js').read().replace('</script','<\\/script')+'</script>')
+import base64
+def _d(m):
+    return 'src="data:image/webp;base64,'+base64.b64encode(open(m.group(1),'rb').read()).decode()+'"'
+import os
+h=re.sub(r'data-src="(howto/[^"]+)"',lambda m:'data-src="data:image/webp;base64,'+base64.b64encode(open(m.group(1),'rb').read()).decode()+'"' if os.path.exists(m.group(1)) else m.group(0),h)
 open('index.inline.html','w').write(h)
 print(len(h))
