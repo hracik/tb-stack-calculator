@@ -539,3 +539,4 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 .ast{display:flex;align-items:center;gap:8px;margin:10px 0 0}
 .ast svg{flex:0 0 auto}
 .ast.ok svg{color:var(--ac)}
+.std{margin-top:2px;font-size:12px;color:var(--mu)}.std.up{color:#5fae5f}.std.dn{color:#d9695f}

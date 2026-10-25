@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.5.0';
+const APP_VERSION='22.6.0';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -639,9 +639,10 @@ async function aUsers(){      // admin: the list of the users (name, e-mail, rol
 function drawSum(){      // admin: the summary of the accounts, from the same list (the creation time of an account = new, the time it was last saved = active)
   const b=$('asum');if(!b)return;
   if(!ADM.list){b.innerHTML=ADM.busy?'<div class="mu">Loading…</div>':ADM.err?'<div class="mu er">'+esc(ADM.err)+'</div>':'';return}
-  const now=Date.now(),W=h=>now-h*3600000,n=(k,h)=>ADM.list.filter(u=>u[k]&&Date.parse(u[k])>=W(h)).length;
-  const T=(l,v,x)=>'<div class="stt"'+(x?' style="'+x+'"':'')+'><div class="stl">'+l+'</div><div class="stv">'+v+'</div></div>';
-  b.innerHTML='<div class="stg" style="margin:0 0 8px">'+T('Users in total',ADM.list.length,'grid-column:1/-1')+T('New · 24 hours',n('c',24))+T('Active · 24 hours',n('t',24))+T('New · 7 days',n('c',168))+T('Active · 7 days',n('t',168))+'</div>'}
+  const now=Date.now(),W=h=>now-h*3600000,n=(k,h,p)=>ADM.list.filter(u=>{const d=u[k]&&Date.parse(u[k]);return d&&(p?d<W(h)&&d>=W(2*h):d>=W(h))}).length;
+  const D=(k,h)=>{const c=n(k,h),p=n(k,h,1),d=c-p;return '<div class="std'+(d>0?' up':d<0?' dn':'')+'">'+(d>0?'▲ +':d<0?'▼ −':'= ')+(d?Math.abs(d):'0')+' vs previous '+(h==24?'24 hours':'7 days')+' ('+p+')</div>'};
+  const T=(l,v,x,d)=>'<div class="stt"'+(x?' style="'+x+'"':'')+'><div class="stl">'+l+'</div><div class="stv">'+v+'</div>'+(d||'')+'</div>';
+  b.innerHTML='<div class="stg" style="margin:0 0 8px">'+T('Users in total',ADM.list.length,'grid-column:1/-1')+T('New · 24 hours',n('c',24),'',D('c',24))+T('Active · 24 hours',n('t',24),'',D('t',24))+T('New · 7 days',n('c',168),'',D('c',168))+T('Active · 7 days',n('t',168),'',D('t',168))+'</div>'}
 function drawUL(){
   const b=$('aul');if(!b)return;const s=aSes(),q=ADM.q.trim().toLowerCase();
   const L=(ADM.list||[]).filter(u=>(!s||u.uid!==s.uid)&&(!q||(u.name+' '+u.email+' '+u.uid).toLowerCase().includes(q)));
