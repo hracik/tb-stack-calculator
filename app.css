@@ -194,13 +194,6 @@ input:disabled{cursor:not-allowed}
 @media(max-width:340px){.vwl.c2{column-gap:5px}.vwl.c2 .vwr{gap:4px;padding:4px}.vwl.c2 .vwr .ic{width:32px;height:32px}.vwl.c2 .vwn{font-size:11px;padding-right:20px}.vwl.c2 .vwc{font-size:14px}.vwl.c2 .vwr .kp{right:3px;font-size:10px}}
 #tabrow{margin:12px 0 6px;display:flex;align-items:flex-end;gap:8px;position:relative}
 #tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1 1 auto;min-width:0;overscroll-behavior-x:contain;position:relative;z-index:1}
-#tabs{scrollbar-width:auto;scrollbar-color:auto}
-#tabs::-webkit-scrollbar{height:6px}
-#tabs::-webkit-scrollbar-track{background:transparent}
-#tabs::-webkit-scrollbar-button{display:none;width:0;height:0}
-#tabs::-webkit-scrollbar-thumb{background:transparent;border-radius:3px;transition:background .3s}
-#tabs.sc::-webkit-scrollbar-thumb,#tabs:hover::-webkit-scrollbar-thumb{background:var(--bd)}
-@supports (-moz-appearance:none){#tabs{scrollbar-width:thin;scrollbar-color:transparent transparent}#tabs.sc,#tabs:hover{scrollbar-color:var(--bd) transparent}}
 #tabsin{display:flex;flex-wrap:nowrap;align-items:flex-end;gap:10px;box-sizing:border-box;min-width:100%;width:max-content;border-bottom:1px solid var(--bd);border-bottom-color:transparent}
 #tabtools{display:flex;flex-wrap:nowrap;gap:8px;align-items:center;margin:0 0 6px;font-size:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;padding-bottom:2px}
 .tab.rdg{background:var(--bg);color:var(--ac);opacity:.85;position:relative;z-index:3;cursor:grabbing}
@@ -562,3 +555,8 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 @media(hover:hover){.hx:hover{color:#fff}.hxp:hover,.hxn:hover{background:rgba(0,0,0,.7)}}
 .std{margin-top:2px;font-size:12px;color:var(--mu)}.std.up{color:#5fae5f}.std.dn{color:#d9695f}
 
+
+#tabs{scrollbar-width:none}#tabs::-webkit-scrollbar{display:none}
+#tsb{position:absolute;left:0;bottom:2px;height:6px;z-index:2;opacity:0;transition:opacity .3s;pointer-events:none}
+#tsb i{position:absolute;top:0;height:100%;min-width:24px;border-radius:3px;background:var(--bd);pointer-events:auto;cursor:grab;touch-action:none}
+#tsb.on{opacity:1}
