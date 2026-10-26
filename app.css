@@ -560,3 +560,6 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 #tsb{position:absolute;left:0;bottom:0;height:7px;z-index:2;opacity:0;transition:opacity .3s;pointer-events:none}
 #tsb i{position:absolute;top:0;height:100%;min-width:24px;border-radius:3px;background:var(--bd);pointer-events:auto;cursor:grab;touch-action:none}
 #tsb.on{opacity:1}
+#howp .hn{margin:8px 0 14px;padding:10px 14px;border:1px solid var(--ac);border-left-width:4px;border-radius:8px;background:rgba(217,164,65,.1)}
+#howp .hn p{margin:0 0 8px;line-height:1.5}#howp .hn p:last-child{margin:0}
+#howp .hl li b{color:var(--ac)}
