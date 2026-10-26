@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.7.23';
+const APP_VERSION='22.7.24';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -704,7 +704,7 @@ function drawMenu(){      // the menu row above the tabs: one button (signed out
   const m=$('menu'),a=$('menuacct');if(!m||!a)return;const q=FB.key&&aSes();
   const USER=`<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
   a.innerHTML=!FB.key?'':q?`<button class="nvb" data-act="acct" aria-haspopup="dialog" aria-expanded="${AP}"><span class="nva">${esc(([...aName(q)][0]||'?').toUpperCase())}</span><span class="nvn">${esc(aShort(aName(q)))}</span><i class="nvd${SY.err?' err':SY.busy?' busy':''}"></i></button>`:`<button class="nvb" data-act="acct" aria-haspopup="dialog" aria-expanded="${AP}">${USER}<span class="nvn">Sign in</span></button>`;
-  const t=$('mnt');m.hidden=!(FB.key||m.querySelector('.don:not([hidden]),.hlp:not([hidden])'));m.classList.toggle('open',MM&&!m.hidden);if(t){t.hidden=m.hidden;t.setAttribute('aria-expanded',String(MM&&!m.hidden))}
+  const t=$('mnt');m.hidden=false;m.classList.toggle('open',MM&&!m.hidden);if(t){t.hidden=m.hidden;t.setAttribute('aria-expanded',String(MM&&!m.hidden))}
 }
 function drawAP(){      // the account window: a centred modal over the page (sign in / create account / the account / the choice when the account and this browser differ)
   if(syncDebug()||(OVOP!==ovoOn()&&(OVOP=ovoOn(),true)))setTimeout(calc,0);      // the account became (or stopped being) an admin: the details appear or go

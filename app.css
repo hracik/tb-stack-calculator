@@ -573,3 +573,8 @@ html.hw #howp{width:100%;margin:0}
 #howp .hwt{margin:14px 0 8px}
 .nvb.on{background:var(--af);border-color:var(--af);color:#000}
 #howp .hwb.on{background:var(--af);border-color:var(--af);color:#000}
+
+.mbar #menuacct{display:contents}
+@media(max-width:600px){.mbar #menuacct .nvb{border-top:1px solid var(--bd);border-radius:0}.mbar .mmore{display:block}.mbar .nvb:last-child{border-radius:0}}
+@media(min-width:601px){.mnt:not([hidden]){display:inline-flex}.menu{position:relative}.mbar .mmore{display:none;position:absolute;right:0;top:-44px;width:260px;z-index:30;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:4px;box-shadow:0 10px 30px rgba(0,0,0,.4)}.menu.open .mmore{display:block}.mbar .mmore .nvb,.mbar .mmore .don,.mbar .mmore .lgw{display:flex;width:100%;max-width:none;height:50px;min-height:0;box-sizing:border-box;border:0;border-radius:8px;background:transparent;justify-content:flex-start;gap:12px;padding:0 8px;box-shadow:none;color:var(--tx)}.mbar .mmore .don{color:var(--ac);font-size:13px}.mbar .mmore .lgw:after,.mbar .mmore .nvb:after{display:block;content:'\203A';margin-left:auto;color:var(--mu)}.mbar .mmore .don:after{content:'\2197';margin-left:auto}.mbar .mmore .lgw{position:relative}.mbar .mmore .hlp[hidden],.mbar .mmore .don[hidden]{display:none}}
+@media(min-width:601px){.mbar .mmore #lang{text-align:left;text-align-last:left;padding:0 34px 0 40px}}
