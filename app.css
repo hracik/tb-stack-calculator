@@ -567,6 +567,7 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 #howp .lb{margin:6px 0 4px;padding-left:20px;list-style:disc}#howp .lb li{margin:0 0 6px}
 #howp .lt{margin-top:6px}
 #howp .hs{margin:18px 0 4px;padding-top:12px;border-top:1px solid var(--bd);font-size:1.05em;color:var(--ac)}
-html.hw main>*:not(#how):not(#hgw){display:none!important}
+html.hw #tabrow,html.hw #tabtools,html.hw #xp,html.hw main>.card,html.hw main>details,html.hw #atk,html.hw .seo{display:none!important}
 html.hw #how{position:static;inset:auto;display:block;padding:16px;background:none;overflow:visible;z-index:auto}
 html.hw #howp{width:min(720px,100%);margin:0 auto}
+#howp .hwt{margin:14px 0 8px}
