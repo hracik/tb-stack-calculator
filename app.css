@@ -561,3 +561,4 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 .hxp{left:8px}.hxn{right:8px}
 @media(hover:hover){.hx:hover{color:#fff}.hxp:hover,.hxn:hover{background:rgba(0,0,0,.7)}}
 .std{margin-top:2px;font-size:12px;color:var(--mu)}.std.up{color:#5fae5f}.std.dn{color:#d9695f}
+
