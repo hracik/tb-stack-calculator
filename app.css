@@ -576,3 +576,5 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 .intro{margin:12px 0 4px;padding:10px 14px;border:1px solid var(--bd);border-left:4px solid var(--ac);border-radius:8px;background:rgba(217,164,65,.06);line-height:1.5}.intro p{margin:0 0 4px}.intro p:last-child{margin:0}.lnk{background:none;border:0;padding:0;margin:0;font:inherit;color:var(--ac);text-decoration:underline;cursor:pointer}html.hw #intro{display:none!important}
 .intro{margin:14px 0 6px;padding:14px 16px;border:1px solid var(--ac);border-left-width:5px;border-radius:10px;background:linear-gradient(90deg,rgba(217,164,65,.22),rgba(217,164,65,.08));box-shadow:0 0 14px rgba(217,164,65,.18);font-size:16px;line-height:1.5}.intro p{margin:0}.lnk{font-weight:700}
 #howp .hwb{box-sizing:border-box;min-width:0;margin:0}#howp .hwt{box-sizing:border-box}
+.hg{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:8px;padding-bottom:8px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:var(--bd) transparent}
+.hg .hgb{flex:0 0 150px;scroll-snap-align:start}
