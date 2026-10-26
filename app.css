@@ -581,3 +581,4 @@ html.hw #howp{width:100%;margin:0}
 #howp .hwt{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%}#howp .hwb{width:100%;min-height:50px;padding:8px 6px;font-size:16px;white-space:normal;overflow-wrap:anywhere;hyphens:auto;line-height:1.2}
 #howp .hwb{font-size:clamp(12px,3.5vw,16px);padding:8px 3px;overflow-wrap:break-word}
 #howp .hwb{overflow-wrap:normal}
+.intro{margin:12px 0 4px;padding:10px 14px;border:1px solid var(--bd);border-left:4px solid var(--ac);border-radius:8px;background:rgba(217,164,65,.06);line-height:1.5}.intro p{margin:0 0 4px}.intro p:last-child{margin:0}.lnk{background:none;border:0;padding:0;margin:0;font:inherit;color:var(--ac);text-decoration:underline;cursor:pointer}html.hw #intro{display:none!important}
