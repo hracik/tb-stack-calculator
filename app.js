@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.6.7';
+const APP_VERSION='22.6.8';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -261,11 +261,11 @@ $('tabs').addEventListener('wheel',e=>{const t=$('tabs');if(t.scrollWidth<=t.cli
 {const t=$('tabs'),row=$('tabrow');if(t&&row){const bar=document.createElement('div');bar.id='tsb';bar.innerHTML='<i></i>';row.appendChild(bar);const th=bar.firstChild;
   const upd=()=>{const w=t.clientWidth,sw=t.scrollWidth;if(sw<=w+1){bar.style.display='none';return}bar.style.display='';bar.style.left=t.offsetLeft+'px';bar.style.width=w+'px';const tw=Math.max(24,w*w/sw);th.style.width=tw+'px';th.style.left=(t.scrollLeft/(sw-w))*(w-tw)+'px'};
   try{const r=new ResizeObserver(upd);r.observe(t);const i=$('tabsin');if(i)r.observe(i);new MutationObserver(()=>{upd();const i=$('tabsin');if(i)r.observe(i)}).observe(t,{childList:true})}catch(e){}
-  t.addEventListener('scroll',upd,{passive:true});row.addEventListener('mouseenter',()=>bar.classList.add('on'));row.addEventListener('mouseleave',()=>{if(!th._d)bar.classList.remove('on')});
+  t.addEventListener('scroll',upd,{passive:true});
   let x0=0,s0=0;th.addEventListener('pointerdown',e=>{th._d=1;x0=e.clientX;s0=t.scrollLeft;th.setPointerCapture(e.pointerId);e.preventDefault()});
   th.addEventListener('pointermove',e=>{if(!th._d)return;const w=t.clientWidth,sw=t.scrollWidth,tw=th.offsetWidth;t.scrollLeft=s0+(e.clientX-x0)*(sw-w)/Math.max(1,w-tw)});
-  const up=()=>{th._d=0};th.addEventListener('pointerup',up);th.addEventListener('pointercancel',up);
-  t.addEventListener('scroll',()=>{bar.classList.add('on');clearTimeout(bar._t);bar._t=setTimeout(()=>{if(!row.matches(':hover'))bar.classList.remove('on')},900)},{passive:true});upd()}}      // the scrollbar of the tabs is our own thin line over the bottom of the tabs, just above the line (the same on every browser; the real one is hidden)
+  const up=()=>{th._d=0;clearTimeout(bar._t);bar._t=setTimeout(()=>bar.classList.remove('on'),900)};th.addEventListener('pointerup',up);th.addEventListener('pointercancel',up);
+  t.addEventListener('scroll',()=>{bar.classList.add('on');clearTimeout(bar._t);bar._t=setTimeout(()=>{if(!th._d)bar.classList.remove('on')},900)},{passive:true});upd()}}      // the scrollbar of the tabs is our own thin line over the bottom of the tabs, just above the line (the same on every browser; the real one is hidden)
 $('tabs').addEventListener('scroll',()=>{const t=$('tabs');t.classList.add('sc');clearTimeout(t._st);t._st=setTimeout(()=>t.classList.remove('sc'),900)},{passive:true});
 function tabVis(el){const s=$('tabs');if(!el||!s)return;const r=el.getBoundingClientRect(),q=s.getBoundingClientRect(),R=42;if(r.right>q.right-R)s.scrollLeft+=r.right-(q.right-R);else if(r.left<q.left)s.scrollLeft-=q.left-r.left}      // keeps a tab / the name box clear of the pinned + button
 function drawTabs(){
