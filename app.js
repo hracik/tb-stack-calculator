@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.7.10';
+const APP_VERSION='22.7.11';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2322,7 +2322,10 @@ function flatOrder(st){
   return keys.flatMap(k=>k=='E*'?st.filter(s=>s.cat=='Engineer').sort((a,b)=>+b.r.slice(1)-+a.r.slice(1)):st.filter(x=>x.r==k).sort((a,b)=>DISP_KEY(a)-DISP_KEY(b)));
 }
 // MOBILE view: one unit per line - the picture, to the right the name and below it the number of units (click = turn off / on, like a card)
-function mobList(items,heads,rowf){      // heads (Preparation, Mobile): a title before every tier block, like the Grouped view (Guardsmen 9, Specialists 8, Engineer Corps, Monsters 9)
+function offLast(items,heads){      // the units that are turned off go to the bottom of the list (of their tier block when the list has titles), the rest keeps its order
+  const lab=s=>heads?(s.r[0]=='E'?'E':s.r):'',out=[];let g=[],l=null;const fl=()=>{out.push(...g.filter(s=>!s.off),...g.filter(s=>s.off));g=[]};
+  items.forEach(s=>{if(g.length&&lab(s)!==l)fl();l=lab(s);g.push(s)});fl();return out}
+function mobList(items,heads,rowf){items=offLast(items,heads);      // heads (Preparation, Mobile): a title before every tier block, like the Grouped view (Guardsmen 9, Specialists 8, Engineer Corps, Monsters 9)
   let last='';const hd=s=>{if(!heads)return'';const l=s.r[0]=='E'?NM.E:NM[s.r[0]]+' '+s.r.slice(1);if(l==last)return'';last=l;return`<div class="vwh">${l}</div>`};
   return`<div class="vwl${VIEW=='computer'?' c2':''}">`+items.map(s=>hd(s)+(rowf?rowf(s):`<div class="vwr${s.off?' off':!(s.n>0)?' zero':''}" data-troop="${esc(s.name)}">${ICD[s.name]?`<img class="ic" src="${ICD[s.name]}" alt="">`:'<div class="ic ph"></div>'}<span class="kp">${KP[s.name]?'#'+KP[s.name]:''}</span><div class="vwt"><div class="vwn">${esc(s.name)}</div><div class="vwc">${shown(s,(s.n||0).toLocaleString())}</div></div></div>`)).join('')+'</div>';
 }
@@ -2333,7 +2336,7 @@ const mobOrder=list=>{const cr={G:0,S:1,E:2,M:3},mi=n=>{const i=MOBM.indexOf(n);
   return list.map((s,i)=>[s,i]).sort(([a,i],[b,j])=>TRN[b.name].hp-TRN[a.name].hp||mi(a.name)-mi(b.name)||+b.r.slice(1)-+a.r.slice(1)||cr[a.r[0]]-cr[b.r[0]]||(a.cat=='Scout'?99:DISP.indexOf(a.cat))-(b.cat=='Scout'?99:DISP.indexOf(b.cat))||i-j).map(x=>x[0])};
 // COMPUTER order: the Mobile order with a few units moved by hand (the Monsters stay as in Mobile). A unit that is not listed keeps its place; the listed ones that are present take the places they have in the
 // Mobile order, in the order of the list.
-const COMPM=['Wyvern','Warden','Eternal Cannoneer','Demonic Salamander','Warregal','Jago','Ariel','Superior Epic Monster Hunter','Quicksand','Galloper','Highlander','Scarface','Pounder','Slavic Warrior','Grace'];
+const COMPM=['Wyvern','Warden','Eternal Cannoneer','Demonic Salamander','Jago','Warregal','Ariel','Superior Epic Monster Hunter','Quicksand','Galloper','Highlander','Slavic Warrior','Scarface','Pounder','Grace'];
 const COMPA=['Royal Lion II','Corax II','Corax I','Royal Lion I','Josephine II','Josephine I','Smiter II','Whitemane II','Smiter I','Whitemane I','Purifier II','Punisher II','Legitimist II','Duelist II','Legitimist I','Punisher I','Duelist I','Purifier I'];
 // 16.1 Preparation in the Mobile and Grouped views: the Monsters section stands first, inside a tier the monsters stand in this order; the tiers: the top one first, then the others from the lowest up
 const MOBP=['Trickster II','Kraken II','Devastator II','Fire Phoenix II','Trickster I','Kraken I','Devastator I','Fire Phoenix I','Destructive Colossus','Wind Lord','Ancient Terror','Black Dragon','Crystal Dragon','Jungle Destroyer','Ruby Golem','Troll Rider','Ettin','Desert Vanquisher','Flaming Centaur','Fearsome Manticore','Magic Dragon','Gorgon Medusa','Many-Armed Guardian','Ice Phoenix','Water Elemental','Battle Boar','Emerald Dragon','Stone Gargoyle'];
