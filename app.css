@@ -524,7 +524,7 @@ html[dir=rtl] .bq .beg .bnm{text-align:left}
 .epl button:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
 .amx:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
 html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--mu:#6a5836;--ac:#8a5a0b;--bd:#cdbb8f;color-scheme:light}
-@media(max-width:600px){.mbar .nvb,.mbar .don{height:54px;min-height:54px;padding-top:0;padding-bottom:0}.mbar .thm,.mbar .how{border-top:1px solid var(--bd);border-radius:0}}
+@media(max-width:600px){.mbar .nvb,.mbar .don{height:54px;min-height:54px;padding-top:0;padding-bottom:0}.mbar .thm{border-top:1px solid var(--bd);border-radius:0}}
 .tab.add:hover{background:linear-gradient(rgba(217,164,65,.26),rgba(217,164,65,.26)),var(--bg)}
 #tabrow:after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--bd);z-index:0}
 .tg,.tt label span{background:transparent;border:1px solid var(--ac);color:var(--ac);box-shadow:none;font-weight:400;transition:none}
