@@ -564,3 +564,4 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 #howp .hn p{margin:0 0 8px;line-height:1.5}#howp .hn p:last-child{margin:0}
 #howp .hl li b{color:var(--ac)}
 #howp .la{margin:6px 0 4px;padding-left:22px}#howp .la li{margin:0 0 6px}
+#howp .hn .hfb{display:block;width:100%;margin:8px 0 0}#howp .hn .hfb img{height:auto;max-height:none;background:transparent}

@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.7.8';
+const APP_VERSION='22.7.9';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -3091,8 +3091,8 @@ if(FB.key&&aSes())syncNow();      // signed in before: pick up the account's cha
 
 
 // ---- How to use (v22.6): a card above the tabs, open until the visitor closes it (kept in the browser); the pictures of the gallery are loaded when it is open (data-src); a tap on one opens it large with Previous / Next
-{const pics=()=>[...document.querySelectorAll('#hg .hgb')];let cur=0;
-  const load=()=>document.querySelectorAll('#hg img[data-src]').forEach(i=>{i.src=i.dataset.src;i.removeAttribute('data-src')});
+{const pics=()=>[...document.querySelectorAll('#howp .hgb')];let cur=0;
+  const load=()=>document.querySelectorAll('#howp img[data-src]').forEach(i=>{i.src=i.dataset.src;i.removeAttribute('data-src')});
   window.howOpen=o=>{const w=$('how');if(!w)return;if(o){load();w.hidden=false;const c=$('howp');if(c)c.scrollTop=0}else w.hidden=true};
   const show=n=>{const b=pics(),k=(n+b.length)%b.length,i=b[k].querySelector('img');cur=k;$('hgi').src=i.currentSrc||i.src||i.dataset.src;$('hgc').textContent=b[k].querySelector('span').textContent;$('hgn').textContent=(k+1)+' / '+b.length;const w=$('hgw'),p=$('hgp');w.hidden=false;p.hidden=false};
   const shut=()=>{$('hgw').hidden=true;$('hgp').hidden=true;$('hgi').removeAttribute('src')};
