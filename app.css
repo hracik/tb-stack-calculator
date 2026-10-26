@@ -567,19 +567,12 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 #howp .lb{margin:6px 0 4px;padding-left:20px;list-style:disc}#howp .lb li{margin:0 0 6px}
 #howp .lt{margin-top:6px}
 #howp .hs{margin:18px 0 4px;padding-top:12px;border-top:1px solid var(--bd);font-size:1.05em;color:var(--ac)}
-html.hw #tabrow,html.hw #tabtools,html.hw #xp,html.hw main>.card,html.hw main>details,html.hw #atk,html.hw .seo{display:none!important}
-html.hw #how{position:static;inset:auto;display:block;padding:0;background:none;overflow:visible;z-index:auto}
-html.hw #howp{width:100%;margin:0}
 #howp .hwt{margin:14px 0 8px}
-.nvb.on{background:var(--af);border-color:var(--af);color:#000}
 #howp .hwb.on{background:var(--af);border-color:var(--af);color:#000}
 
-.mbar #menuacct{display:contents}
-@media(max-width:600px){.mbar #menuacct .nvb{border-top:1px solid var(--bd);border-radius:0}.mbar .mmore{display:block}.mbar .nvb:last-child{border-radius:0}}
-@media(min-width:601px){.mnt:not([hidden]){display:inline-flex}.menu{position:relative}.mbar .mmore{display:none;position:absolute;right:0;top:-44px;width:260px;z-index:30;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:4px;box-shadow:0 10px 30px rgba(0,0,0,.4)}.menu.open .mmore{display:block}.mbar .mmore .nvb,.mbar .mmore .don,.mbar .mmore .lgw{display:flex;width:100%;max-width:none;height:50px;min-height:0;box-sizing:border-box;border:0;border-radius:8px;background:transparent;justify-content:flex-start;gap:12px;padding:0 8px;box-shadow:none;color:var(--tx)}.mbar .mmore .don{color:var(--ac);font-size:13px}.mbar .mmore .lgw:after,.mbar .mmore .nvb:after{display:block;content:'\203A';margin-left:auto;color:var(--mu)}.mbar .mmore .don:after{content:'\2197';margin-left:auto}.mbar .mmore .lgw{position:relative}.mbar .mmore .hlp[hidden],.mbar .mmore .don[hidden]{display:none}}
-@media(min-width:601px){.mbar .mmore #lang{text-align:left;text-align-last:left;padding:0 34px 0 40px}}
 #howp .hwt{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%}#howp .hwb{width:100%;min-height:50px;padding:8px 6px;font-size:16px;white-space:normal;overflow-wrap:anywhere;hyphens:auto;line-height:1.2}
 #howp .hwb{font-size:clamp(12px,3.5vw,16px);padding:8px 3px;overflow-wrap:break-word}
 #howp .hwb{overflow-wrap:normal}
 .intro{margin:12px 0 4px;padding:10px 14px;border:1px solid var(--bd);border-left:4px solid var(--ac);border-radius:8px;background:rgba(217,164,65,.06);line-height:1.5}.intro p{margin:0 0 4px}.intro p:last-child{margin:0}.lnk{background:none;border:0;padding:0;margin:0;font:inherit;color:var(--ac);text-decoration:underline;cursor:pointer}html.hw #intro{display:none!important}
 .intro{margin:14px 0 6px;padding:14px 16px;border:1px solid var(--ac);border-left-width:5px;border-radius:10px;background:linear-gradient(90deg,rgba(217,164,65,.22),rgba(217,164,65,.08));box-shadow:0 0 14px rgba(217,164,65,.18);font-size:16px;line-height:1.5}.intro p{margin:0}.lnk{font-weight:700}
+#howp .hwb{box-sizing:border-box;min-width:0;margin:0}#howp .hwt{box-sizing:border-box}

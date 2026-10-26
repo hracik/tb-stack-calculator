@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.7.28';
+const APP_VERSION='22.7.29';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -307,7 +307,7 @@ function tabClick(e){
     else if(k=='exp'||k=='imp'){XPM=XPM==k?null:k;XTAB=tabs[active];drawXP();drawTabs()}
     else if(k=='xcopy')xCopy();
     else if(k=='how'){mmShut();howOpen(true)}
-    else if(k=='howx'||k=='calc'){mmShut();howOpen(false)}
+    else if(k=='howx')howOpen(false);
     else if(k=='astat')window.open('https://'+GC_CODE+'.goatcounter.com/','_blank','noopener');      // the visit statistics (GoatCounter) of the live site, for the admin
     else if(k=='xread')xRead();
     else if(k=='xshot'){const f=$('xfile');if(f)f.click()}
@@ -704,7 +704,7 @@ function drawMenu(){      // the menu row above the tabs: one button (signed out
   const m=$('menu'),a=$('menuacct');if(!m||!a)return;const q=FB.key&&aSes();
   const USER=`<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
   a.innerHTML=!FB.key?'':q?`<button class="nvb" data-act="acct" aria-haspopup="dialog" aria-expanded="${AP}"><span class="nva">${esc(([...aName(q)][0]||'?').toUpperCase())}</span><span class="nvn">${esc(aShort(aName(q)))}</span><i class="nvd${SY.err?' err':SY.busy?' busy':''}"></i></button>`:`<button class="nvb" data-act="acct" aria-haspopup="dialog" aria-expanded="${AP}">${USER}<span class="nvn">Sign in</span></button>`;
-  const t=$('mnt');m.hidden=false;m.classList.toggle('open',MM&&!m.hidden);if(t){t.hidden=m.hidden;t.setAttribute('aria-expanded',String(MM&&!m.hidden))}
+  const t=$('mnt');m.hidden=!(FB.key||m.querySelector('.don:not([hidden]),.hlp:not([hidden])'));m.classList.toggle('open',MM&&!m.hidden);if(t){t.hidden=m.hidden;t.setAttribute('aria-expanded',String(MM&&!m.hidden))}
 }
 function drawAP(){      // the account window: a centred modal over the page (sign in / create account / the account / the choice when the account and this browser differ)
   if(syncDebug()||(OVOP!==ovoOn()&&(OVOP=ovoOn(),true)))setTimeout(calc,0);      // the account became (or stopped being) an admin: the details appear or go
@@ -3096,13 +3096,13 @@ if(FB.key&&aSes())syncNow();      // signed in before: pick up the account's cha
 // ---- How to use (v22.6): a card above the tabs, open until the visitor closes it (kept in the browser); the pictures of the gallery are loaded when it is open (data-src); a tap on one opens it large with Previous / Next
 {let gl=null;const pics=()=>gl?[...gl.querySelectorAll('.hgb')]:[];let cur=0;
   const load=()=>document.querySelectorAll('#howp img[data-src]').forEach(i=>{i.src=i.dataset.src;i.removeAttribute('data-src')});
-  const navOn=h=>{const c=document.querySelector('.nvb.cal'),w=document.querySelector('.nvb.how');if(c)c.classList.toggle('on',!h);if(w)w.classList.toggle('on',!!h)};let hsy=0;window.howOpen=(o,pop)=>{const w=$('how');if(!w)return;const on=!w.hidden;if(o){if(!on){hsy=window.scrollY;try{history.pushState({how:1},'')}catch(e){}}load();w.hidden=false;document.documentElement.classList.add('hw');navOn(1);window.scrollTo(0,0)}else{w.hidden=true;document.documentElement.classList.remove('hw');navOn(0);if(on){window.scrollTo(0,hsy);if(!pop&&history.state&&history.state.how){try{history.back()}catch(e){}}}}};window.addEventListener('popstate',()=>{const w=$('how');if(w&&!w.hidden)howOpen(false,1)});
+  window.howOpen=o=>{const w=$('how');if(!w)return;if(o){load();w.hidden=false;const c=$('howp');if(c)c.scrollTop=0}else w.hidden=true};
   const show=n=>{const b=pics(),k=(n+b.length)%b.length,i=b[k].querySelector('img');cur=k;$('hgi').src=i.currentSrc||i.src||i.dataset.src;$('hgc').textContent=b[k].querySelector('span').textContent;$('hgn').textContent=(k+1)+' / '+b.length;const w=$('hgw'),p=$('hgp');w.hidden=false;p.hidden=false};
   const shut=()=>{$('hgw').hidden=true;$('hgp').hidden=true;$('hgi').removeAttribute('src')};
   document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.hgb');if(b){gl=b.parentNode;load();show(pics().indexOf(b));return}
     const hp=e.target.closest&&e.target.closest('[data-hp]');if(hp&&hp.tagName=='BUTTON'){document.querySelectorAll('#howp .hwb').forEach(x=>x.classList.toggle('on',x===hp));document.querySelectorAll('#howp .hpn').forEach(x=>x.hidden=x.dataset.hp!=hp.dataset.hp);load();return}
     const g=e.target.closest&&e.target.closest('[data-hg]');if(g){const k=g.dataset.hg;if(k=='prev')show(cur-1);else if(k=='next')show(cur+1);else shut();return}
-    if(e.target.id=='hgw'||e.target.id=='hgp')shut();});
+    if(e.target.id=='hgw'||e.target.id=='hgp')shut();else if(e.target.id=='how')howOpen(false)});
   {let x0=null;const p=$('hgp');if(p){p.addEventListener('touchstart',e=>{x0=e.touches[0].clientX},{passive:true});p.addEventListener('touchend',e=>{if(x0==null)return;const d=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(d)>40)show(cur+(d<0?1:-1))},{passive:true})}}
   document.addEventListener('keydown',e=>{if(e.key=='Escape'&&$('how')&&!$('how').hidden&&$('hgw').hidden)howOpen(false);if($('hgw')&&!$('hgw').hidden){if(e.key=='Escape')shut();else if(e.key=='ArrowRight')show(cur+1);else if(e.key=='ArrowLeft')show(cur-1)}});
 }
