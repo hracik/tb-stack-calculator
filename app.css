@@ -264,7 +264,7 @@ h1 .lg{height:104px;width:auto;display:block;-webkit-user-drag:none;user-select:
 #hmsg{margin:8px 0 0;min-height:1.3em}
 .amo{position:fixed;inset:0;z-index:100;display:flex;padding:16px;background:rgba(8,7,5,.82);overflow:auto;-webkit-overflow-scrolling:touch}
 .mlock{overflow:hidden}
-#ap,#hp,#fmp,#epp,#lgp{position:relative;box-sizing:border-box;width:min(480px,100%);margin:auto;padding:22px 26px;border:1px solid var(--ac);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.75),0 0 0 1px rgba(217,164,65,.15)}
+#ap,#hp,#fmp,#epp,#lgp,#howp{position:relative;box-sizing:border-box;width:min(480px,100%);margin:auto;padding:22px 26px;border:1px solid var(--ac);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.75),0 0 0 1px rgba(217,164,65,.15)}
 #ap.wide{width:min(640px,100%)}
 .amh{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px}
 .amt{font:600 21px/1.2 'Cinzel',Georgia,serif;letter-spacing:.07em;text-transform:uppercase;color:var(--ac)}
