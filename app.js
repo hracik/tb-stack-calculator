@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.5';
+const APP_VERSION='22.9.6';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2724,13 +2724,17 @@ function pickTarget(a,D){let b=null,bs=-1,bh=Infinity;
 // one battle. A = our stacks, B = the enemy. The strongest (units x strength, no squad bonus, no Specialists doubling) of the stacks that have not struck in this round strikes next; the sides alternate; round 1 is opened by `first`, every later round by the side that ran out of stacks first. o.log / o.snap record the report
 function battle(A0,B0,rng,o){o=o||{};const A=clone(A0),B=clone(B0),first=o.first||'A';
   const alive=L=>L.some(s=>s.n>0);let rd=0,nextStart=first=='A'?'B':'A';      // the engineers strike the wall first and then fight in the battle like the other stacks (real report)
-  // walls (fortifications): while a side has a wall the fight does not start. The engineers of the attacker all strike the wall first, then the wall strikes (no engineers: the wall strikes first), then the rest of the army strikes the wall, and again (wall, then the army) until the wall is down. Then the usual battle starts with what is left
-  const siege=(X,Y,sideX)=>{const sideY=sideX=='A'?'B':'A',walls=()=>X.filter(s=>s.wall&&s.n>0),stk=(a,d,side)=>{const dm=hitDmg(a,d,rng,o.expect),k=Math.min(d.n,Math.floor(dm/d.hp));if(o.log)o.log.push([0,side,a.name,d.name,dm,k,d.n-k,d.n,LK[0],0]);d.n-=k},byStr=L=>L.slice().sort((x,y)=>y.n*y.str-x.n*x.str);
+  // walls (fortifications): while a side has a wall the fight does not start. It is the usual battle (same strike order, same targets), only the walls are the enemy and all engineers of the attacker strike first in every round, the strongest first; then the wall side and the army alternate. When the wall is down the usual battle starts with the units that are left
+  const siege=(X,Y,sideX)=>{const sideY=sideX=='A'?'B':'A',walls=()=>X.filter(s=>s.wall&&s.n>0),stk=(a,d,side)=>{const dm=hitDmg(a,d,rng,o.expect),k=Math.min(d.n,Math.floor(dm/d.hp));if(o.log)o.log.push([0,side,a.name,d.name,dm,k,d.n-k,d.n,LK[0],0]);d.n-=k},top=L=>L.reduce((m,s)=>!m||s.n*s.str>m.n*m.str?s:m,null);
     if(!walls().length)return;
-    byStr(Y.filter(s=>s.eng&&s.n>0)).forEach(e=>{const w=pickTarget(e,walls());if(w)stk(e,w,sideY)});
-    for(let c=0;c<400&&walls().length&&Y.some(s=>s.n>0);c++){
-      byStr(walls()).forEach(w=>{const d=pickTarget(w,Y);if(d)stk(w,d,sideX)});
-      byStr(Y.filter(s=>s.n>0&&(c>0||!s.eng))).forEach(a=>{const w=pickTarget(a,walls());if(w&&a.n>0)stk(a,w,sideY)})}};
+    for(let r=0;r<400&&walls().length&&Y.some(s=>s.n>0);r++){
+      const E=Y.filter(s=>s.eng&&s.n>0).sort((x,y)=>y.n*y.str-x.n*x.str);E.forEach(e=>{const w=pickTarget(e,walls());if(w)stk(e,w,sideY)});
+      const dX=new Set(),dY=new Set();let tX=true;
+      while(walls().length&&Y.some(s=>s.n>0)){
+        const cX=walls().filter(s=>!dX.has(s)),cY=Y.filter(s=>s.n>0&&!s.eng&&!dY.has(s));if(!cX.length&&!cY.length)break;
+        const useX=tX?cX.length>0:cY.length==0;
+        if(useX){const a=top(cX),d=pickTarget(a,Y);dX.add(a);if(d)stk(a,d,sideX)}else{const a=top(cY),d=pickTarget(a,walls());dY.add(a);if(d)stk(a,d,sideY)}
+        tX=!tX}}};
   siege(B,A,'B');siege(A,B,'A');
   for(;rd<400&&alive(A)&&alive(B);rd++){
     const done=new Set();let turn=rd==0?first:nextStart,exh=null;
@@ -2750,8 +2754,7 @@ function battle(A0,B0,rng,o){o=o||{};const A=clone(A0),B=clone(B0),first=o.first
   }
   const hA=A.reduce((q,s)=>q+s.n*s.hp,0),hB=B.reduce((q,s)=>q+s.n*s.hp,0),h0A=A0.reduce((q,s)=>q+s.n*s.hp,0),h0B=B0.reduce((q,s)=>q+s.n*s.hp,0);
   const lostG=A0.reduce((q,s,i)=>q+(s.n-A[i].n)*(s.gold||0),0),lostN=A0.reduce((q,s,i)=>q+(s.n-A[i].n),0);
-  const lostW=A0.reduce((q,s,i)=>q+(s.n-A[i].n)*(s.gold||0)*(s.cls=='M'?4:1),0);      // the same, a lost monster counts four times (only the top-tier army units should die, no monsters)
-  return{win:alive(A)&&!alive(B)?1:(!alive(A)&&alive(B)?-1:0),rd,remA:hA/h0A,remB:hB/h0B,lostG,lostN,lostW}}
+  return{win:alive(A)&&!alive(B)?1:(!alive(A)&&alive(B)?-1:0),rd,remA:hA/h0A,remB:hB/h0B,lostG,lostN}}
 // N battles: the win and loss chance, the average health left on both sides and the net margin (ours left - the enemy's left, each as a share of its own start)
 function mc(A,B,N,seed,first){const rng=rngMk(seed||1);let w=0,l=0,ra=0,rb=0,rd=0;
   for(let i=0;i<N;i++){const r=battle(A,B,rng,{first});if(r.win>0)w++;else if(r.win<0)l++;ra+=r.remA;rb+=r.remB;rd+=r.rd}
@@ -2833,11 +2836,11 @@ async function quick(P,names,Es,iters,seed,stop,prog,warm){
 
 // 22.9 against a monster: the search works on the exact UNIT COUNTS of every stack (not on shares) and minimises the revive gold lost, fight by fight (no random effect, the average strikes). The strike order is the real one (the most total strength first, the sides alternate), so
 // it finds the armies that kill the stacks that are about to strike before they strike, and the small stacks that a strike overshoots. At most MONMAXST stacks. Returns the weights array with .cnt
-const MONMAXST=16,STPEN=8e-5;      // no limit on stacks in the game; fewer is better in practice: every stack costs a little (STPEN of the whole capacity's revive gold)
+const MONMAXST=99;      // no limit on the stacks (the game has none)
 function monCounts(P,names,Es,w0,iters,seed,stop){const E=Es[0],ref=Es.ref||1,nm=names.length,cost=names.map(n=>TRN[n].cost),isM=names.map(n=>TRN[n].cls=='M');
   const mk=c=>{const L=[];for(let i=0;i<nm;i++)if(c[i]>0)L.push(mkStack(names[i],c[i],P));return L};
   const ok=c=>{let a=0,m=0,k=0;for(let i=0;i<nm;i++)if(c[i]>0){k++;if(isM[i])m+=c[i]*cost[i];else a+=c[i]*cost[i]}return k<=MONMAXST&&a<=P.capA*1.0000001&&m<=P.capM*1.0000001};
-  const f=c=>{const r=battle(mk(c),E,null,{first:'B',mon:true,expect:true});let k=0;for(let i=0;i<nm;i++)if(c[i]>0)k++;return (r.win>0?r.lostW:ref*(1+r.remB))+k*STPEN*ref};
+  const f=c=>{const r=battle(mk(c),E,null,{first:'B',mon:true,expect:true});return r.win>0?r.lostG:ref*(1+r.remB)};
   const rng=rngMk(seed),L0=layout(P,names,w0);let cur=names.map(n=>{const s=L0.find(x=>x.name==n);return s?s.n:0});
   if(!ok(cur)){const keep=cur.map((v,i)=>[v*cost[i],i]).sort((x,y)=>y[0]-x[0]).slice(0,MONMAXST).map(x=>x[1]);cur=cur.map((v,i)=>keep.includes(i)?v:0)}
   let cv=f(cur),best=cur.slice(),bv=cv;
@@ -2852,7 +2855,7 @@ function monCounts(P,names,Es,w0,iters,seed,stop){const E=Es[0],ref=Es.ref||1,nm
     if(!ok(c))continue;const v=f(c);
     if(v<=cv||rng()<Math.exp(-(v-cv)/(Math.max(1,bv)*0.02*T+1e-9))){cur=c;cv=v;if(v<bv){bv=v;best=c.slice()}}}
   for(let pass=0;pass<2;pass++)for(let i=0;i<nm;i++){if(!(best[i]>0))continue;      // a last tidy-up: stacks that do not help go, the others are trimmed
-    const c=best.slice();c[i]=0;let v=f(c);if(v<=bv*1.0005){best=c;bv=Math.min(bv,v);continue}
+    const c=best.slice();c[i]=0;let v=f(c);if(v<=bv){best=c;bv=v;continue}
     for(const k of [0.8,0.9,0.95,0.98,1.02,1.05,1.1,1.25]){const d=best.slice();d[i]=Math.round(d[i]*k);if(!ok(d))continue;v=f(d);if(v<bv){best=d;bv=v}}}
   const w=names.map((n,i)=>best[i]>0?best[i]*cost[i]:0);w.cnt=best;w.v=bv;return w}
 return{monCounts,MONMAXST,quick,template,search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone,monScore}})();
