@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.8';
+const APP_VERSION='22.9.9';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -64,10 +64,10 @@ const ARMY=[["G",1,"Spearman I","Melee",150,50,1,[0,0,0.39,0],0,5,4],["G",1,"Rid
 const MONS=[[3,"Stone Gargoyle","Giant","Flying",15600,5200,8,[1.85,0,0,0],160,128],[3,"Water Elemental","Elemental","Ranged",5700,1900,3,[1.13,0,0,1.44],60,48],[3,"Emerald Dragon","Dragon","Flying",13500,4500,7,[0,0,1.85,0],140,112],[3,"Battle Boar","Beast","Mounted",11700,3900,6,[0,1.13,1.44,0],120,96],[4,"Many-Armed Guardian","Giant","Melee",39000,13000,11,[0,0,1.15,0],220,176],[4,"Ice Phoenix","Elemental","Flying",51000,17000,15,[0,0,0,2.23],300,240],[4,"Magic Dragon","Dragon","Ranged",45000,15000,13,[1.69,2.16,0,0],260,208],[4,"Gorgon Medusa","Beast","Ranged",36000,12000,10,[2.77,0,0,1.08],200,160],[5,"Ettin","Giant","Melee",144000,48000,23,[0,0,3.34,0],460,368],[5,"Flaming Centaur","Elemental","Mounted",132000,44000,21,[0,4.15,0,0],420,336],[5,"Desert Vanquisher","Dragon","Mounted",126000,42000,20,[0,2.53,0,0],400,320],[5,"Fearsome Manticore","Beast","Flying",138000,46000,22,[0,0,0,2.53],440,352],[6,"Troll Rider","Giant","Mounted",330000,110000,30,[0,3.8,0,0],600,480],[6,"Ruby Golem","Elemental","Melee",390000,130000,35,[4.86,0,3.8,0],700,560],[6,"Crystal Dragon","Dragon","Melee",360000,120000,33,[0,0,2.58,0],660,528],[6,"Jungle Destroyer","Beast","Melee",390000,130000,34,[0,0,6.23,0],680,544],[7,"Destructive Colossus","Giant","Ranged",870000,290000,43,[7.52,0,0,5.47],860,688],[7,"Wind Lord","Elemental","Melee",930000,310000,45,[0,0,3.87,0],900,720],[7,"Black Dragon","Dragon","Flying",900000,300000,44,[5.7,0,0,0],880,704],[7,"Ancient Terror","Beast","Mounted",840000,280000,41,[0,7.52,0,0],820,656],[8,"Kraken I","Giant","Melee",2010000,670000,55,[0,0,9.91,0],1100,880],[8,"Fire Phoenix I","Elemental","Flying",1980000,660000,54,[7.01,0,0,0],1080,864],[8,"Devastator I","Dragon","Mounted",1950000,650000,53,[0,12.81,0,0],1060,848],[8,"Trickster I","Beast","Ranged",1920000,640000,52,[0,0,0,9.4],1040,832],[9,"Kraken II","Giant","Melee",3630000,1210000,55,[0,0,14.87,0],1100,880],[9,"Fire Phoenix II","Elemental","Flying",3570000,1190000,54,[10.52,0,0,0],1080,864],[9,"Devastator II","Dragon","Mounted",3510000,1170000,53,[0,19.22,0,0],1060,848],[9,"Trickster II","Beast","Ranged",3450000,1150000,52,[0,0,0,14.1],1040,832]];
 const ENGN=["Catapult I","Catapult II","Catapult III","Catapult IV","Catapult V","Siege Ballistae VI","Siege Ballistae VII","Josephine I","Josephine II"],ENGH=[1500,2700,4860,8750,15800,28400,51000,91800,165300],ENGS=[250,450,810,1460,2630,4730,8500,15310,27550],ENGF=[50,50,50,50,50,50,50,50,50],ENGG=[40,40,40,40,40,40,40,40,40];
 const TR=[];
-ARMY.forEach(r=>TR.push({cls:r[0],tier:r[1],name:r[2],cat:r[3],hp:r[4],str:r[5],cost:r[6],vs:r[7],beast:!!r[8],food:r[9],gold:r[10],pool:'A'}));
-const ENGW=[0.65,0.98,1.46,2.19,3.29,4.94,7.40,11.11,16.67];      // the engineers' bonus against fortifications E1-E9 (the user, 2026-10-27; Ariel the same as E9: 16.67)
-ENGN.forEach((n,i)=>TR.push({cls:'E',tier:i+1,name:n,cat:'Engineer',hp:ENGH[i],str:ENGS[i],cost:10,vs:[0,0,0,0],vsw:ENGW[i],beast:false,food:ENGF[i],gold:ENGG[i],pool:'A'}));
-MONS.forEach(r=>TR.push({cls:'M',tier:r[0],name:r[1],type:r[2],cat:r[3],hp:r[4],str:r[5],cost:r[6],vs:r[7],beast:false,food:r[8],gold:r[9],pool:'M'}));
+ARMY.forEach(r=>TR.push({cls:r[0],tier:r[1],name:r[2],cat:r[3],hp:r[4],str:r[5],cost:r[6],vs:r[7].concat(0),beast:!!r[8],food:r[9],gold:r[10],pool:'A'}));
+const ENGW=[0.65,0.98,1.46,2.19,3.29,4.94,7.40,11.11,16.67];      // the bonus against fortifications (the 5th number of vs) E1-E9 (the user, 2026-10-27; Ariel 16.67); every other troop has 0
+ENGN.forEach((n,i)=>TR.push({cls:'E',tier:i+1,name:n,cat:'Engineer',hp:ENGH[i],str:ENGS[i],cost:10,vs:[0,0,0,0,ENGW[i]],beast:false,food:ENGF[i],gold:ENGG[i],pool:'A'}));
+MONS.forEach(r=>TR.push({cls:'M',tier:r[0],name:r[1],type:r[2],cat:r[3],hp:r[4],str:r[5],cost:r[6],vs:r[7].concat(0),beast:false,food:r[8],gold:r[9],pool:'M'}));
 const BYG={},N2G={};
 TR.forEach(t=>{const g=t.cls+t.tier;(BYG[g]=BYG[g]||[]).push(t);N2G[t.name]=g});
 Object.keys(BYG).forEach(g=>{if(g[0]=='M')BYG[g].sort((a,b)=>CO.indexOf(a.cat)-CO.indexOf(b.cat))});
@@ -2363,7 +2363,7 @@ const PCG=['Purifier II','Punisher II','Purifier I','Punisher I','Smiter II','Co
 // MERCENARIES: hired troops, they use Authority only (not Leadership / Dominance) and every one of them lasts 7 days. [class, tier, name, category, health, strength, Authority per unit, vs melee/ranged/mounted/flying, jungle guardian 1/0, type, bonus vs epic, revival cost in gold (attack)] - straight from the troop JSON; the swarm bonus of a jungle guardian sits in the same vs column as a regular bonus.
 // The last two columns: the type (Beast / Giant / Demon ...) and the bonus against epic enemies (a ratio: 10.0 = +1000 %).
 // MERC = the mercenaries in the page (all have a picture). MERC_LATER = the others, kept below and not used by anything.
-const MERC=[["E",9,"Ariel","Engineer",330000,55000,10,[0,0,0,0],0,"",0,80],
+const MERC=[["E",9,"Ariel","Engineer",330000,55000,10,[0,0,0,0,16.67],0,"",0,80],
   ["G",9,"Chitinous Defender Leader","Melee",33600,11200,1,[40.0,0,0,0],1,"",0,8],
   ["G",9,"Combat Anteater Leader","Mounted",34200,11400,1,[0,0,40.0,0],1,"",0,8],
   ["G",9,"Grim Stalker Leader","Ranged",31800,10600,1,[0,40.0,0,0],1,"",0,8],
@@ -2690,7 +2690,7 @@ const monCur=P=>MONSTERS.find(m=>m.n==(P&&P.monN))||MONSTERS[0];
 const MICN={};MONSTERS.forEach(m=>m.st.forEach(x=>{MICN[x.n]=MIC[x.ic]}));
 // the bonus of a monster stack against one of our stacks (added up: the category and the type of the target both count)
 const evBonus=(b,d)=>{let x=b[d.cat=='Engineer'?'Siege':d.cat]||0;if(d.ty)x+=b[d.ty]||0;if(d.bs)x+=b.Beast||0;return x};
-function monEnemy(P){return monCur(P).st.map(x=>({name:x.n,mon:1,wall:!!x.wall,cls:'X',cat:x.c||'',ci:x.c?DEFCAT.indexOf(x.c):-1,n:x.u,hp:x.hp,str:x.hp/3,ms:1,vs:[],evs:x.b,spec:1,pc:0,pa:0,pt:0,ef:1,cost:0,gold:0}))}
+function monEnemy(P){return monCur(P).st.map(x=>({name:x.n,mon:1,wall:!!x.wall,cls:'X',cat:x.c||'',ci:x.wall?4:x.c?DEFCAT.indexOf(x.c):-1,n:x.u,hp:x.hp,str:x.hp/3,ms:1,vs:[],evs:x.b,spec:1,pc:0,pa:0,pt:0,ef:1,cost:0,gold:0}))}
 
 // 22.8 the Monster card of Attack monsters: the icon and name of the monster and its stacks (units, health, its bonuses against our troops)
 let MONDRAWN='';
@@ -2701,7 +2701,7 @@ const THEO=(function(){
 const ENA=['Punisher II','Smiter II','Purifier II','Corax II','Duelist II','Whitemane II','Legitimist II','Royal Lion II'],ENM=['Kraken II','Fire Phoenix II','Devastator II','Trickster II'];
 function rngMk(seed){let a=seed>>>0;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 function mkStack(name,n,P){const t=TRN[name],m=mults(t,P);
-  return{fw:t.vsw||0,name,cls:t.cls,cat:t.cat,ty:t.type,bs:!!t.beast,eng:t.cls=='E',gold:t.gold||0,ci:DEFCAT.indexOf(t.cat),n,hp:t.hp*m[0],str:t.str*m[1],ms:m[1],vs:t.vs,
+  return{sw:t.cls=='E'?20:1,name,cls:t.cls,cat:t.cat,ty:t.type,bs:!!t.beast,eng:t.cls=='E',gold:t.gold||0,ci:DEFCAT.indexOf(t.cat),n,hp:t.hp*m[0],str:t.str*m[1],ms:m[1],vs:t.vs,
     spec:(P.pvp&&t.cls=='S'&&t.cat!='Scout')?2:1,pc:ddc(t,P)/100,pa:(P.ddA||0)/100,pt:dst(t,P),cost:t.cost,ef:(1+ddc(t,P)/100)*(1+(P.ddA||0)/100)*(1+dst(t,P))}}
 // the enemy: the army splits the Leadership in equal parts (equal health), the monsters fill the Dominance with equal health (eq=1) or equal cost (eq=0); scale = more / less Leadership and Dominance
 function mkEnemy(P,eq,scale){if(P.mon)return monEnemy(P);const out=[],A=ENA.filter(n=>TRN[n]),M=ENM.filter(n=>TRN[n]),sc=scale||1;
@@ -2712,15 +2712,15 @@ function mkEnemy(P,eq,scale){if(P.mon)return monEnemy(P);const out=[],A=ENA.filt
 const clone=L=>L.map(s=>({...s}));
 let LK=[1,0];
 function hitDmg(a,d,rng,expect){
-  const f=a.evs?1+evBonus(a.evs,d):(a.eng&&d.wall?20*(1+a.fw/a.ms):a.spec+(a.vs[d.ci]||0)/a.ms);let m=1;if(expect){LK=[1,0];return a.n*a.str*f*a.ef}      // no random effect: every strike deals its average (the chances of double damage and double strike are worked in)
+  const f=a.evs?1+evBonus(a.evs,d):((d.wall?a.sw:a.spec)+(a.vs[d.ci]||0)/a.ms);let m=1;if(expect){LK=[1,0];return a.n*a.str*f*a.ef}      // no random effect: every strike deals its average (the chances of double damage and double strike are worked in)
   
   if(a.pc&&rng()<a.pc)m*=2;if(a.pa&&rng()<a.pa)m*=2;
   LK=[m,0];return a.n*a.str*f*m}      // one strike (a double strike is a second strike of the stack: see battle)
 // the target: where the strike does the most real damage (its squad bonus against that stack, no more than the stack has left); a tie: the stack with less health
-// engineers against a wall (fortification): their strength (with the bonus against fortifications, t.vsw) x20 - a real report fits: 202 Josephine II = 202 x 27,550 x 19.96 x 20 x (1 + 16.67 / 19.96) = 4.08 B, the wall has 4.05 B
+// against a wall (fortification) the engineers deal x20 their strength (sw), coded like the Specialists' x2 against players (spec): damage = base x (20 x multiplier + the bonus against fortifications, vs[4])
 function pickTarget(a,D){let b=null,bs=-1,bb=0,bh=0;
   const bon=(d)=>d.evs?1+evBonus(d.evs,a):d.spec+((d.vs&&d.vs[a.ci])||0)/d.ms,eq=(x,y)=>Math.abs(x-y)<=Math.max(Math.abs(x),Math.abs(y))*1e-12;
-  for(const d of D){if(d.n<=0)continue;const h=d.n*d.hp,e=Math.min(a.n*a.str*(a.evs?1+evBonus(a.evs,d):(a.eng&&d.wall?20*(1+a.fw/a.ms):a.spec+(a.vs[d.ci]||0)/a.ms))*a.ef,h);
+  for(const d of D){if(d.n<=0)continue;const h=d.n*d.hp,e=Math.min(a.n*a.str*(a.evs?1+evBonus(a.evs,d):((d.wall?a.sw:a.spec)+(a.vs[d.ci]||0)/a.ms))*a.ef,h);
     let take=false;
     if(!b||e>bs&&!eq(e,bs))take=true;
     else if(eq(e,bs)){const k=bon(d);      // a tie in damage: the enemy with the bigger bonus against the attacker; the same: the healthier stack; the same: more units (the last one is not confirmed yet)
