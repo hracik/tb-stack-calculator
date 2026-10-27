@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.4';
+const APP_VERSION='22.9.5';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -65,7 +65,8 @@ const MONS=[[3,"Stone Gargoyle","Giant","Flying",15600,5200,8,[1.85,0,0,0],160,1
 const ENGN=["Catapult I","Catapult II","Catapult III","Catapult IV","Catapult V","Siege Ballistae VI","Siege Ballistae VII","Josephine I","Josephine II"],ENGH=[1500,2700,4860,8750,15800,28400,51000,91800,165300],ENGS=[250,450,810,1460,2630,4730,8500,15310,27550],ENGF=[50,50,50,50,50,50,50,50,50],ENGG=[40,40,40,40,40,40,40,40,40];
 const TR=[];
 ARMY.forEach(r=>TR.push({cls:r[0],tier:r[1],name:r[2],cat:r[3],hp:r[4],str:r[5],cost:r[6],vs:r[7],beast:!!r[8],food:r[9],gold:r[10],pool:'A'}));
-ENGN.forEach((n,i)=>TR.push({cls:'E',tier:i+1,name:n,cat:'Engineer',hp:ENGH[i],str:ENGS[i],cost:10,vs:[0,0,0,0],beast:false,food:ENGF[i],gold:ENGG[i],pool:'A'}));
+const ENGW=[0.65,0.98,1.46,2.19,3.29,4.94,7.40,11.11,16.67];      // the engineers' bonus against fortifications E1-E9 (the user, 2026-10-27; Ariel the same as E9: 16.67)
+ENGN.forEach((n,i)=>TR.push({cls:'E',tier:i+1,name:n,cat:'Engineer',hp:ENGH[i],str:ENGS[i],cost:10,vs:[0,0,0,0],vsw:ENGW[i],beast:false,food:ENGF[i],gold:ENGG[i],pool:'A'}));
 MONS.forEach(r=>TR.push({cls:'M',tier:r[0],name:r[1],type:r[2],cat:r[3],hp:r[4],str:r[5],cost:r[6],vs:r[7],beast:false,food:r[8],gold:r[9],pool:'M'}));
 const BYG={},N2G={};
 TR.forEach(t=>{const g=t.cls+t.tier;(BYG[g]=BYG[g]||[]).push(t);N2G[t.name]=g});
@@ -2699,7 +2700,7 @@ const THEO=(function(){
 const ENA=['Punisher II','Smiter II','Purifier II','Corax II','Duelist II','Whitemane II','Legitimist II','Royal Lion II'],ENM=['Kraken II','Fire Phoenix II','Devastator II','Trickster II'];
 function rngMk(seed){let a=seed>>>0;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 function mkStack(name,n,P){const t=TRN[name],m=mults(t,P);
-  return{name,cls:t.cls,cat:t.cat,ty:t.type,bs:!!t.beast,eng:t.cls=='E',gold:t.gold||0,ci:DEFCAT.indexOf(t.cat),n,hp:t.hp*m[0],str:t.str*m[1],ms:m[1],vs:t.vs,
+  return{fw:t.vsw||0,name,cls:t.cls,cat:t.cat,ty:t.type,bs:!!t.beast,eng:t.cls=='E',gold:t.gold||0,ci:DEFCAT.indexOf(t.cat),n,hp:t.hp*m[0],str:t.str*m[1],ms:m[1],vs:t.vs,
     spec:(P.pvp&&t.cls=='S'&&t.cat!='Scout')?2:1,pc:(P['dd'+t.cls]||0)/100,pa:(P.ddA||0)/100,pt:dst(t,P),cost:t.cost,ef:(1+(P['dd'+t.cls]||0)/100)*(1+(P.ddA||0)/100)*(1+dst(t,P))}}
 // the enemy: the army splits the Leadership in equal parts (equal health), the monsters fill the Dominance with equal health (eq=1) or equal cost (eq=0); scale = more / less Leadership and Dominance
 function mkEnemy(P,eq,scale){if(P.mon)return monEnemy(P);const out=[],A=ENA.filter(n=>TRN[n]),M=ENM.filter(n=>TRN[n]),sc=scale||1;
@@ -2710,15 +2711,14 @@ function mkEnemy(P,eq,scale){if(P.mon)return monEnemy(P);const out=[],A=ENA.filt
 const clone=L=>L.map(s=>({...s}));
 let LK=[1,0];
 function hitDmg(a,d,rng,expect){
-  const f=a.evs?1+evBonus(a.evs,d):(a.eng&&d.wall?20:a.spec)+((a.vs[d.ci]||0)+(a.eng&&d.wall?ENGWALL:0))/a.ms;let m=1;if(expect){LK=[1,0];return a.n*a.str*f*a.ef}      // no random effect: every strike deals its average (the chances of double damage and double strike are worked in)
+  const f=a.evs?1+evBonus(a.evs,d):(a.eng&&d.wall?20*(1+a.fw/a.ms):a.spec+(a.vs[d.ci]||0)/a.ms);let m=1;if(expect){LK=[1,0];return a.n*a.str*f*a.ef}      // no random effect: every strike deals its average (the chances of double damage and double strike are worked in)
   
   if(a.pc&&rng()<a.pc)m*=2;if(a.pa&&rng()<a.pa)m*=2;
   LK=[m,0];return a.n*a.str*f*m}      // one strike (a double strike is a second strike of the stack: see battle)
 // the target: where the strike does the most real damage (its squad bonus against that stack, no more than the stack has left); a tie: the stack with less health
-// engineers against a wall: their strength x20 (like the Specialists' x2 against players) and on top of it their regular bonus against fortifications, +33,000 % of the base strength (fitted: a real report, 202 Josephine II took the wall of 4.05 B health, 201 would not; the real value is not known)
-const ENGWALL=330;
+// engineers against a wall (fortification): their strength (with the bonus against fortifications, t.vsw) x20 - a real report fits: 202 Josephine II = 202 x 27,550 x 19.96 x 20 x (1 + 16.67 / 19.96) = 4.08 B, the wall has 4.05 B
 function pickTarget(a,D){let b=null,bs=-1,bh=Infinity;
-  for(const d of D){if(d.n<=0)continue;const h=d.n*d.hp,e=Math.min(a.n*a.str*(a.evs?1+evBonus(a.evs,d):(a.eng&&d.wall?20:a.spec)+((a.vs[d.ci]||0)+(a.eng&&d.wall?ENGWALL:0))/a.ms)*a.ef,h);
+  for(const d of D){if(d.n<=0)continue;const h=d.n*d.hp,e=Math.min(a.n*a.str*(a.evs?1+evBonus(a.evs,d):(a.eng&&d.wall?20*(1+a.fw/a.ms):a.spec+(a.vs[d.ci]||0)/a.ms))*a.ef,h);
     if(e>bs*(1+1e-12)||(Math.abs(e-bs)<=bs*1e-12&&(d.n>b.n||(d.n==b.n&&h<bh)))){b=d;bs=e;bh=h}}      // a tie in damage: the stack with MORE UNITS, then the one with less health (a real report: the Dragon, Treant and Pegasus hit the big Corax II stack, our Phoenix hit the Bear (12,000 units) and not the Treant (4,300)) in a real battle report: the Bear before the Treant)
   return b}
 // one battle. A = our stacks, B = the enemy. The strongest (units x strength, no squad bonus, no Specialists doubling) of the stacks that have not struck in this round strikes next; the sides alternate; round 1 is opened by `first`, every later round by the side that ran out of stacks first. o.log / o.snap record the report
