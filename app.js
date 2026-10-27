@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.11';
+const APP_VERSION='22.9.12';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1823,32 +1823,6 @@ function score(P,list,order,eng){      // eng: kept for the callers (the healthi
     dmg+=M*hit[i];vr+=M*M*rv*hit[i];H+=hit[i]*(1+pt);hv+=hit[i]*pt*(1-pt)});
   return{dmg,hits:H,stacks:L.length,sd:Math.sqrt(vr),hsd:Math.sqrt(hv)};
 }
-// NOT SHOWN on the page (only a discussion for now, 19.0.124): the whole epic battle, hit by hit (4 enemy stacks, an epic with known stacks and types: [units, health, type index of DEFCAT]) ----
-// Every hit is a fresh army in the same order (the 4-stack order stays the whole way). The strikes of one hit come from strikes() with K = the living enemy stacks.
-// A strike goes to the living enemy type the troop has the biggest bonus against; the 2nd hit of a Double strike (no squad bonus) and a troop without a bonus hit the healthiest living stack. Damage past a stack's health is lost.
-function epicKill(P,L,EP){
-  const tot=EP.st.reduce((q,x)=>q+x[0]*x[1],0),hpL=L.map(s=>s.n*s.hp),heal=hpL.indexOf(Math.max(...hpL)),N=L.length,units=L.reduce((q,s)=>q+s.n,0),mx=EP.st.map(x=>x[0]*x[1]);
-  const info=L.map(s=>{const t=TRN[s.name],vs=t.vs.slice();if(veOf(t,P)>0)for(let i=0;i<4;i++)vs[i]=(vs[i]||0)+veOf(t,P);return{n:s.n,str:s.str,vs,ms:mults(t,P)[2],p:dst(t,P),d:ddf(t,P)}});
-  const by=L.map((_,i)=>i).sort((a,b)=>L[b].n*L[b].str-L[a].n*L[a].str||a-b);
-  // ONE hit on an epic whose stacks have the health hv. The epic's stacks die DURING the hit: at the start of every round the enemy kills as many of our stacks as it has living stacks (strikes(): round 1 we strike first, later rounds the enemy kills first)
-  const runHit=(hv,seq)=>{const e2=EP.st.map((x,i)=>({ty:x[2],hp:hv[i]})),alive=()=>e2.filter(e=>e.hp>0).length,K0=alive(),dead=new Set();let d=0,head=0;
-    if(!K0)return{dmg:0,killed:true,K0,dead,hp:hv.slice()};
-    const ap=(amt,ty)=>{let e=ty==null?null:e2.find(x=>x.ty==ty&&x.hp>0);if(!e)e=e2.filter(x=>x.hp>0).sort((a,b)=>b.hp-a.hp)[0];if(!e)return;const a=Math.min(amt,e.hp);e.hp-=a;d+=a;if(e.hp<=0&&seq&&!seq.includes(e2.indexOf(e)))seq.push(e2.indexOf(e))};
-    const strike=i=>{const q=info[i];let bt=null,bb=0;e2.forEach(e=>{if(e.hp>0&&q.vs[e.ty]>bb){bb=q.vs[e.ty];bt=e.ty}});const base=q.n*q.str*q.d*(i==heal?HALFHEALTHY:1);ap(base*(1+bb/q.ms),bt);if(q.p)ap(base*q.p,null)};
-    for(let rd=0;head<N&&alive()&&rd<400;rd++){const K=alive();let pos=0;const nx=()=>{while(pos<N&&by[pos]<head)pos++;return pos<N?by[pos++]:-1};
-      for(let j=0;j<K&&head<N&&alive();j++){
-        if(rd===0){const x=nx();if(x>=0)strike(x);if(!alive())break;dead.add(head++)}
-        else{dead.add(head++);const x=nx();if(x>=0)strike(x)}}
-      for(let x=nx();x>=0&&alive();x=nx())strike(x)}
-    return{dmg:d,killed:!alive(),K0,dead,hp:e2.map(e=>Math.max(0,e.hp))}};
-  const rows=[],seq=[],endHp=[];let hv=mx.slice(),h=0;
-  while(h<60&&hv.some(x=>x>0)){h++;const r=runHit(hv,seq);hv=r.hp;endHp.push(hv.slice());
-    rows.push({h,K:r.K0,dmg:r.dmg,left:hv.reduce((q,x)=>q+x,0),killed:r.killed,alive:r.killed?N-r.dead.size:0,aliveUnits:r.killed?L.reduce((q,x,i)=>q+(r.dead.has(i)?0:x.n),0):0,n:N,units,dying:hv.map((x,i)=>x<=0&&(h==1?mx[i]>0:endHp.length<2||endHp[endHp.length-2][i]>0)?i:-1).filter(x=>x>=0)})}
-  // one hit at every epic health level (the stack healths between two hit boundaries of the battle above are interpolated)
-  const bnd=[mx,...endHp],tt=a=>a.reduce((q,x)=>q+x,0),curve=[];
-  for(let f=1;f>0.004;f-=0.01){const hl=f*tot;let k=0;while(k<bnd.length-2&&tt(bnd[k+1])>hl)k++;const A0=tt(bnd[k]),B0=tt(bnd[k+1]),w=A0>B0?Math.min(1,Math.max(0,(A0-hl)/(A0-B0))):0,v=bnd[k].map((x,i)=>x+(bnd[k+1][i]-x)*w),r=runHit(v);curve.push({f,dmg:r.dmg,killed:r.killed,K:r.K0})}
-  return{hits:h,rows,tot,curve,alive:hv.some(x=>x>0)};
-}
 // ---- Battle report (v298): the same battle as the damage estimate (strikes(): K trades per round), told event by event until no unit is left ----
 // ---- the rows of every battle report (epics, CP, Max damage, Renegades, One v. One): our stack at the start, an arrow that shows who strikes, the other side at the end with its icon, the damage on the second line ----
 const BRXP='M4.1 5.9C6.9 6.9 9.5 8.6 11.7 11.5C14 14.4 17.2 17.4 20.3 18.9M4.7 4.8C7.6 7.3 10.2 9.4 12.4 12.1C14.6 14.8 17.3 17.9 19.4 20.2M19.5 4.3C16.9 6.7 13.9 9.6 11.2 12.9C8.8 15.8 6.6 18.4 4.3 19.9M20.2 5.2C17.3 8.1 14.4 11.4 12 14.2C10 16.5 7.6 19.2 5.2 20.7',BRX='<svg class="bx" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="'+BRXP+'" stroke="rgba(0,0,0,.5)" stroke-width="3.6"/><path d="'+BRXP+'" stroke="#e5402a" stroke-width="1.7"/></g></svg>';      // a hand-drawn red X: four uneven pen strokes
@@ -1871,7 +1845,7 @@ function brRow(o){if(o.enIc&&o.enIc.indexOf('id="mo1"')>=0){const u=++BRU;o={...
   const en=!(o.enIc||o.enName||eu)?'':`<span class="beg"><span class="bar" aria-hidden="true">${o.we?'\u2192':'\u2190'}</span>${(o.enName||eu)?`<span class="bnm ben">${o.enName?`<b class="bnn">${o.enName}</b>`:''}${eu?`<span class="bun">${eu} units</span>`:''}</span>`:''}<span class="bic${o.enDead?' dd':''}">${o.enIc}${o.enDead?BRX:''}</span></span>`;
   return`<div class="bl bq ${o.we?'bo':'ba'}"><div class="bl1"><span class="bog"><span class="bic${o.ourDead?' dd':''}">${o.ourIc}${o.ourDead?BRX:''}</span><span class="bnm"><b class="bnn">${o.ourName||''}</b>${o.tg||o.ourSub?`<span class="bmt">${o.tg?`<span class="btg">${o.tg}</span>`:''}${o.ourSub?`<span class="bun">${o.ourSub} units</span>`:''}</span>`:''}<span class="bl2">${o.l2}</span>${o.sq?`<span class="bl3 sqb devo">${o.sq}</span>`:''}${o.l3?`<span class="bl3 devo">${o.l3}</span>`:''}</span></span>${en}</div></div>`}
 let BRD=null,BRFXH='';
-// The whole hit on an epic whose stacks are known (4 stacks: [units, health, type]), event by event; the same rules as epicKill: the epic starts at full health, a strike goes to the stack where it does the most real damage (Battle rules: bonus included, capped by the health left; tie: bigger bonus against the attacker, healthier, more units),
+// The whole hit on an epic whose stacks are known (4 stacks: [units, health, type]), event by event; the epic starts at full health, a strike goes to the stack where it does the most real damage (Battle rules: bonus included, capped by the health left; tie: bigger bonus against the attacker, healthier, more units),
 // the 2nd strike of a Double strike (no squad bonus) goes by the same rule, the damage past the health of a stack is lost. The enemy kills as many of our stacks per round as it has living stacks. dice: roll the Double damage and the Double strike, else the averages.
 const ARB={1:3,3:0,0:2,2:1},ARCAT={Melee:0,Ranged:1,Mounted:2,Flying:3};      // the +50 % of an Arachne stack: its type -> the troop type it has the bonus against (enemy type 0 melee, 1 ranged, 2 mounted, 3 flying)
 function epicSim(P,L,EP,dice,rng,trace){
@@ -3127,7 +3101,6 @@ async function tierHintRun(gen,body0){
   body.innerHTML=`<p>Current tiers: <b>${fmt(base)}</b>, full revive <b>${kg(g0)}</b> gold</p>${bestH('&#128165; Best damage',dBest,'No other choice of tiers gives more damage.')}${bestH('&#128176; Best efficiency',effBest?[effBest]:[],'No other choice of tiers gives more damage per gold.',1)}<p class="mu tcalt0">Next best alternatives</p><div class="pbrow tctab"><button type="button" class="tg vb" data-t="d">&#128165; Max. damage</button><button type="button" class="tg vb" data-t="e">&#128176; Max. efficiency</button></div><div class="tcpd" hidden>${alt(dAlts,'No more alternatives.')}</div><div class="tcpe" hidden>${alt(eAlts,'No more alternatives.',1)}</div>`;
   body.querySelectorAll('.tctab .vb').forEach(b=>b.addEventListener('click',()=>{const on=!b.classList.contains('on');body.querySelectorAll('.tctab .vb').forEach(x=>x.classList.toggle('on',on&&x===b));body.querySelector('.tcpd').hidden=!(on&&b.dataset.t=='d');body.querySelector('.tcpe').hidden=!(on&&b.dataset.t=='e')}));
 }
-function openTierCheck(){HINTGEN++;$('tcm').hidden=false;$('tcb').innerHTML='<p data-w=1>Checking the tiers...</p>';$('tcx').focus();tierHint(HINTGEN)}
 function closeTierCheck(){HINTGEN++;$('tcm').hidden=true}
 let TCC=null;      // 20.4.2: the last finished Tier check {sig, node}: with the same inputs and tiers the button only shows / hides it again, no new run
 const tcSig=()=>{const d=snap();return JSON.stringify([d.vals,d.chk,d.atk,d.mode,d.enemy])};
