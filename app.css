@@ -585,3 +585,4 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 #mdet .mst b{display:block}
 #mdet .mst .mu{font-size:.9em}
 #mdet .mhd{display:flex;align-items:center;gap:12px;margin:0 0 6px}#mdet .mhd img{width:56px;height:56px;border-radius:8px}
+.trow[hidden],#ttc[hidden],.tcw[hidden]{display:none!important}

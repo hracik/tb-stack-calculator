@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.8.3';
+const APP_VERSION='22.8.4';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -318,6 +318,8 @@ function tabClick(e){
     else if(k=='help'){HP=true;drawHP();drawMenu()}      // the 1-on-1 help window
     else if(k=='hclose')hpShut();
     else if(k=='eopen'){EPM=true;drawEP()}
+    else if(k=='mopen'){MOM=true;drawEP()}
+    else if(k=='mpick'){$('monster').value=a.dataset.m||MONSTERS[0].n;SO=[];epShut();$('monster').dispatchEvent(new Event('change',{bubbles:true}))}
     else if(k=='eclose')epShut();
     else if(k=='lopen'){LGM=true;drawLG()}
     else if(k=='lclose')lgShut();
@@ -742,13 +744,16 @@ async function hCopy(){      // the inputs of the open tab as the Export text, s
   const m=$('hmsg');if(m)m.textContent=ok?'Copied. Paste it into your message.':'Copying did not work here: use Export under the tabs and copy the text from there.';
 }
 const hpShut=()=>{if(HP){HP=false;drawHP()}};
-let EPM=false;      // 19.0.36: the epic chooser (opened by the score tile)
+let EPM=false,MOM=false;      // 19.0.36: the epic chooser (opened by the score tile)
 let MFOCUS=null;      // the button that opened a choice window: the focus goes back to it when the window closes
 const mIn=(sel,was)=>{if(!was)MFOCUS=document.activeElement;const b=document.querySelector(sel+' .epl button.on')||document.querySelector(sel+' .epl button');if(b&&!was)b.focus()};
 const mBack=fb=>{const o=MFOCUS;MFOCUS=null;const t=o&&o!==document.body&&document.contains(o)?o:$(fb);if(t)t.focus()};
 function drawEP(){
-  const p=$('epp'),w=$('epw');if(!p)return;const was=!p.hidden;p.hidden=!EPM;if(w)w.hidden=!EPM;document.documentElement.classList.toggle('mlock',EPM||FMP||HP||!!(AP&&FB.key));
-  if(!EPM){p.innerHTML='';if(was)mBack('ebtn');return}
+  const p=$('epp'),w=$('epw');if(!p)return;const was=!p.hidden,on=EPM||MOM;p.hidden=!on;if(w)w.hidden=!on;document.documentElement.classList.toggle('mlock',on||FMP||HP||!!(AP&&FB.key));
+  if(!on){p.innerHTML='';if(was)mBack('ebtn');return}
+  if(MOM){const cur=$('monster').value||MONSTERS[0].n;      // 22.8 the monster chooser: the same window as the epic chooser
+    p.innerHTML='<div class="amh"><div class="amt">Choose the monster</div><button class="amx" data-act="eclose" aria-label="Close">\u00d7</button></div><div class="epl">'+MONSTERS.map(m=>'<button type="button" data-act="mpick" data-m="'+esc(m.n)+'"'+(m.n==cur?' class="on"':'')+'><img class="epi" src="'+MIC[m.ic]+'" alt=""><span class="epn" data-notr>'+esc(m.n)+'</span><small><span>Level</span> <span data-notr>'+m.lv+'</span></small></button>').join('')+'</div>';
+    mIn('#epp',was);return}
   const cur=$('epic').value;
   const none='<button type="button" data-act="epick" data-e=""'+(cur?'':' class="on"')+'><span>None</span><small>no score estimate</small></button>';      // "None" (no epic) stands first in the list
   p.innerHTML='<div class="amh"><div class="amt">Choose the epic monster</div><button class="amx" data-act="eclose" aria-label="Close">\u00d7</button></div>'
@@ -757,7 +762,7 @@ function drawEP(){
 }
 const epImg=(e,c)=>e&&e.ic&&EPIC_IC[e.ic]?'<img class="'+c+'" src="'+EPIC_IC[e.ic]+'" alt="">':'';
 const sh0=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3)).toString()+' '+u[i]};
-const epShut=()=>{if(EPM){EPM=false;drawEP()}};
+const epShut=()=>{if(EPM||MOM){EPM=false;MOM=false;drawEP()}};
 let LGM=false;      // the language chooser (opened by the language row of the menu), a window like the epic chooser
 function drawLG(){
   const p=$('lgp'),w=$('lgw2');if(!p)return;const was=!p.hidden;p.hidden=!LGM;if(w)w.hidden=!LGM;document.documentElement.classList.toggle('mlock',LGM||EPM||FMP||HP||!!(AP&&FB.key));
@@ -815,7 +820,7 @@ function getP(){
   const p={d:0,kill:$('mode').value=='kill'||$('mode').value=='kill4',kill4:$('mode').value=='kill4'||($('mode').value=='kill'&&KAUTO4),raid:!!(epCur()||{}).raid,ren:$('mode').value=='ren',capA:v('capA'),capM:v('capM'),capU:v('capU'),enemy:enemyNow(),cat:DEFCAT.slice()};
   ['G','S','M','E','Epic','Players','Giant','Elemental','Dragon','Beast','Melee','Mounted','Ranged','Flying','Scout','EMH'].forEach(k=>{p['h'+k]=$('bh_'+k)?v('bh_'+k):0;p['s'+k]=$('bs_'+k)?v('bs_'+k):0});
   ['Giant','Elemental','Dragon','Beast'].forEach(k=>{p['dh'+k]=$('dh_'+k)?snapDH($('dh_'+k).value):0});
-  p.mon=$('mode').value=='mon';p.monN=MONSTERS[0].n;      // 22.8 Attack monsters: the plain monster (Elven Citadel ...): no bonus against epics, none against players
+  p.mon=$('mode').value=='mon';p.monN=$('monster')?$('monster').value:MONSTERS[0].n;      // 22.8 Attack monsters: the plain monster (Elven Citadel ...): no bonus against epics, none against players
   p.ov=$('mode').value=='ovo';      // 21.5.0 One v. One: Max damage against 12 enemy stacks (3 of each type), the Specialists die last by force
   p.pm=$('mode').value=='pvpmax'||p.ov;                // PvP Max damage: a fully equipped enemy (4 stacks, every kind of troop), all bonuses and the Double strike count, no Epic strength
   p.cpd=$('mode').value=='cpd'||p.pm;            // CP death: the order that gives the most damage (PvP Max damage uses the same rules)
@@ -2597,7 +2602,7 @@ function calcRun0(){
   BRD={P,list:[...A,...Mo,...U.list],order:[...st.so,...U.ord],sc,fx};
   K4OK=false;K4LO=3;{const e=ATK=='epics'&&!P.ren&&!P.cp&&!P.one&&!P.pm?EPICS.find(x=>x.n==$('epic').value):null;
     if(e&&e.st&&e.score&&e.en.length==2){K4LO=e.en[0];const k=killState({...P,kill:true,kill4:true},ordL(BRD.list,BRD.order),e);K4OK=!!(k&&k.alive==e.st.length)}}
-  {const mcd=$('mcard');if(mcd){mcd.hidden=ATK!='monsters';if(ATK=='monsters')drawMon(P)}}
+  {const mcd=$('mcard');if(mcd){mcd.hidden=ATK!='monsters';if(ATK=='monsters')drawMon(P)}const am=document.querySelector('.card[data-help=mode]');if(am)am.hidden=ATK=='monsters'}
   {const ce=ATK=='epics'?EPICS.find(x=>x.n==$('epic').value):null,ec=$('ecard');if(ec)ec.hidden=ATK!='epics';
     {const eb=$('ebtn');if(eb){const k=ce?ce.n:'';if(eb.dataset.k!==k){eb.dataset.k=k;eb.innerHTML=ce?epImg(ce,'epi')+'<span class="epn">'+esc(ce.n)+'</span><span class="epc">\u25be</span>':'<span class="epn">Choose epic</span><span class="epc">\u25be</span>'}}}
     document.querySelectorAll('.eb').forEach(b=>{b.hidden=!!ce&&!ce.en.includes(+b.dataset.e)});
@@ -2689,7 +2694,8 @@ function monEnemy(P){return monCur(P).st.map(x=>({name:x.n,mon:1,wall:!!x.wall,c
 let MONDRAWN='';
 function drawMon(P){const el=$('mdet');if(!el)return;const m=monCur(P),k=m.n+'|'+(window.i18nCur?i18nCur():'');if(MONDRAWN===k)return;MONDRAWN=k;
   const bn={Siege:'Siege engines'},fm=x=>Math.round(x).toLocaleString('en-US'),nb=(b)=>Object.entries(b).map(([c,v])=>`<span data-notr>+${Math.round(v*100)} %</span> <span>${bn[c]||c}</span>`).join(', ');
-  el.innerHTML=`<div class="mhd"><img src="${MIC[m.ic]}" alt=""><div><b data-notr>${esc(m.n)}</b><div class="mu"><span>Level</span> <span data-notr>${m.lv}</span></div></div></div>`+m.st.map(x=>`<div class="mst"><img src="${MIC[x.ic]}" alt=""><div><b data-notr>${esc(x.n)}</b><div class="mu"><span data-notr>${fm(x.u)}</span> <span>Units</span> · <span>Health</span> <span data-notr>${fm(x.hp)}</span></div><div class="mu"><span>Bonuses</span>: ${nb(x.b)}</div></div></div>`).join('')}
+  {const mb=$('mbtn');if(mb)mb.innerHTML=`<img class="epi" src="${MIC[m.ic]}" alt=""><span class="epn"><span data-notr>${esc(m.n)}</span> \u00b7 <span>Level</span> <span data-notr>${m.lv}</span></span><span class="epc">\u25be</span>`}
+  el.innerHTML=m.st.map(x=>`<div class="mst"><img src="${MIC[x.ic]}" alt=""><div><b data-notr>${esc(x.n)}</b><div class="mu"><span data-notr>${fm(x.u)}</span> <span>Units</span> · <span>Health</span> <span data-notr>${fm(x.hp)}</span></div><div class="mu"><span>Bonuses</span>: ${nb(x.b)}</div></div></div>`).join('')}
 // ---- Theoretical PvP stacks (One v. One, in progress): a Monte Carlo battle simulator + a stack optimizer that maximizes the NET REMAINING HEALTH ----
 const THEO=(function(){
 const ENA=['Punisher II','Smiter II','Purifier II','Corax II','Duelist II','Whitemane II','Legitimist II','Royal Lion II'],ENM=['Kraken II','Fire Phoenix II','Devastator II','Trickster II'];
@@ -2744,10 +2750,11 @@ function mc(A,B,N,seed,first){const rng=rngMk(seed||1);let w=0,l=0,ra=0,rb=0,rd=
   for(let i=0;i<N;i++){const r=battle(A,B,rng,{first});if(r.win>0)w++;else if(r.win<0)l++;ra+=r.remA;rb+=r.remB;rd+=r.rd}
   return{win:w/N,loss:l/N,ra:ra/N,rb:rb/N,margin:(ra-rb)/N,rd:rd/N}}
 // weights -> stacks: the army weights share the Leadership, the monster weights share the Dominance (by cost)
-function layout(P,names,w){const armyI=[],monI=[];names.forEach((nm,i)=>{if(w[i]>1e-9)(TRN[nm].cls=='M'?monI:armyI).push(i)});
+function layout(P,names,w){const sz=w.length>names.length?Math.min(1,Math.max(0.005,w[names.length])):1,armyI=[],monI=[];      // against a monster the weights carry one more number: the share of the Leadership and Dominance that is used (a smaller army loses less)
+  names.forEach((nm,i)=>{if(w[i]>1e-9)(TRN[nm].cls=='M'?monI:armyI).push(i)});
   const out=[],wa=armyI.reduce((q,i)=>q+w[i],0),wm=monI.reduce((q,i)=>q+w[i],0);
-  armyI.forEach(i=>{const t=TRN[names[i]],n=Math.floor(P.capA*w[i]/wa/t.cost);if(n>0)out.push(mkStack(names[i],n,P))});
-  monI.forEach(i=>{const t=TRN[names[i]],n=Math.floor(P.capM*w[i]/wm/t.cost);if(n>0)out.push(mkStack(names[i],n,P))});
+  armyI.forEach(i=>{const t=TRN[names[i]],n=Math.floor(P.capA*sz*w[i]/wa/t.cost);if(n>0)out.push(mkStack(names[i],n,P))});
+  monI.forEach(i=>{const t=TRN[names[i]],n=Math.floor(P.capM*sz*w[i]/wm/t.cost);if(n>0)out.push(mkStack(names[i],n,P))});
   return out}
 // the score of a layout against the enemy builds, both orders of striking: the average net margin (the two fights are added up: +18 % and -6 % is +12 %), a quarter of the weight on the weaker of the two fights
 // against a monster: a win with the fewest losses is the best (1 - the revive gold lost, as a share of Es.ref); a loss is -(the share of the monster left), so every win beats every loss. The monster strikes first in the battle (after the siege)
@@ -2766,6 +2773,7 @@ async function optimize(P,names,Es,w0,iters,N,seed,stop,prog){const rng=rngMk(se
     if(performance.now()-LY>30){if(prog)prog(it/iters);await tick();LY=performance.now();if(stop&&stop())return null}
     const sg=0.5*(1-it/iters)+0.04,w2=w.slice(),m=1+Math.floor(rng()*3);
     for(let q=0;q<m;q++){const i=Math.floor(rng()*w2.length),u=rng();
+      if(i>=names.length){w2[i]=Math.min(1,Math.max(0.005,rng()<0.3?w2[i]*(0.5+rng()*0.7):w2[i]*Math.exp(sg*(rng()+rng()+rng()-1.5)*2)));continue}      // the army size
       if(u<0.22&&w2[i]>1e-9){      // a transfer: the weight (all or half) of a stack goes to another stack of the same tier and kind (the army or the monsters): Guardsmen <-> Specialists and so on
         const k=TI[i],j=k[Math.floor(rng()*k.length)],fr=rng()<0.5?1:0.5;if(j!==i){w2[j]+=w2[i]*fr;w2[i]*=1-fr}}
       else if(u<0.32)w2[i]=0;else if(w2[i]<1e-9)w2[i]=0.01+rng()*0.2;else w2[i]*=Math.exp(sg*(rng()+rng()+rng()-1.5)*2)}
@@ -2787,7 +2795,8 @@ async function search(P,names,Es,budget,seed,stop,prog,warm){
   const tiers=[...new Set(names.map(n=>TRN[n].tier))].sort((a,b)=>b-a),sec=tiers[1];
   const ks=[(n=>isTop(n)?1:0.05),(n=>isTop(n)?1:0.25),(n=>isTop(n)?1:0)];if(sec)ks.push(n=>isTop(n)?1:TRN[n].tier==sec?0.2:0);      // the top tier alone, with the others small, and the top two tiers only
   const starts=ks.map(fn=>names.map(fn));
-  if(warm){const w=names.map(n=>warm[n]||0);if(w.some(x=>x>0))starts.unshift(w)}
+  if(warm){const w=names.map(n=>warm[n]||0);if(w.some(x=>x>0)){if(Es.mon)w.push(warm._s||1);starts.unshift(w)}}
+  if(Es.mon){starts.forEach(w=>{if(w.length==names.length)w.push(1)});const b=starts[starts.length-1];[0.35,0.12].forEach(z=>starts.push(b.slice(0,names.length).concat([z])))}      // against a monster the size of the army is searched too: from the whole capacity, a third of it and a tenth of it
   const i1=Math.round(450*budget),i2=Math.round(600*budget),tot=starts.length*i1+2*i2;let done=0;
   const pg=(a,b)=>prog&&prog((done+a*b)/tot);
   const cand=[];
@@ -2808,6 +2817,7 @@ function template(names){const tiers=[...new Set(names.map(n=>TRN[n].tier))].sor
 async function quick(P,names,Es,iters,seed,stop,prog,warm){
   if(new Set(names.map(n=>TRN[n].tier)).size==1)return search(P,names,Es,0.6,seed,stop,prog,warm);      // one tier only: the strategy has nothing to say about a second tier, and with 12 stacks the full search is quick
   const starts=[template(names),template2(names)];if(warm){const w=names.map(n=>warm[n]||0);if(w.some(v=>v>0))starts.push(w)}
+  if(Es.mon){starts.forEach(w=>{w.push(1)});[0.35,0.12].forEach(z=>starts.push(starts[0].slice(0,names.length).concat([z])))}
   const cand=[];for(let k=0;k<starts.length;k++){const r=await optimize(P,names,Es,starts[k],Math.round(iters/starts.length),32,seed+k,stop,x=>prog&&prog((k+x)/starts.length));if(!r)return null;cand.push(r)}
   let best=null,bs=-9;cand.concat([{w:starts[0]}]).forEach(r=>{const L=layout(P,names,r.w),o=score(L,Es,200,777),v=o.mean*0.75+o.worst*0.25-PEN*L.length;if(v>bs){bs=v;best={w:r.w,f:v}}});
   if(best){best.w=await twins(P,names,Es,best.w,stop)}
@@ -2845,15 +2855,25 @@ function theoApply(fx,st,U){const m={};fx.res.stacks.forEach(s=>m[s.name]=s.n); 
 function theoBusy(on,txt){const b=$('tgo'),d=$('tdp'),c=$('ttc');b.textContent=on=='go'?'Stop':($('tres').innerHTML?'Find stacks again':'Find stacks');d.textContent=on=='deep'?'Stop':'Search deeper';c.textContent=on=='tc'?'Stop':'Rank tier choices';b.disabled=on=='tc'||on=='deep';d.disabled=on=='tc'||on=='go';c.disabled=on=='go'||on=='deep';$('tpr').hidden=!on;if(on){$('tpi').style.width='0%';$('tps').textContent=txt||''}}
 function theoProg(x,txt){$('tpi').style.width=Math.min(100,Math.round(x*100))+'%';if(txt)$('tps').textContent=txt}
 const theoTierTxt=names=>[...new Set(names.map(n=>TRN[n].tier))].sort((a,b)=>b-a).map(x=>'T'+x).join(' + ');
+let THEOAT=0;
+function theoAuto(){clearTimeout(THEOAT);THEOAT=setTimeout(function f(){const P=getP();if(!P.mon||theoFix(P))return;if(THEORUN){THEOAT=setTimeout(f,150);return}theoRun(false)},350)}
+// 22.8 after the quick result a deeper search runs quietly behind it; it replaces the result only when it finds an army with fewer losses; any change of the inputs cancels it
+async function theoDeepBg(P,names,Es,cur){const g=++THEOGEN;THEORUN=g;
+  try{const warm=Object.assign(Object.fromEntries(cur.names.map((n,i)=>[n,cur.w[i]])),{_s:cur.w[names.length]}),r=await THEO.search(P,names,Es,0.6,5,()=>g!==THEOGEN,null,warm);
+    if(!r||g!==THEOGEN)return;
+    const sc=w=>THEO.monScore(THEO.layout(P,names,w),Es[0],400,555,Es.ref).mean;
+    if(sc(r.w)>sc(cur.w)+0.0005){const res=theoStatsMon(P,names,r.w,400);res.deep=true;THEOC.set(theoKey(P,names),{P,res});calc()}
+  }finally{if(THEORUN===g)THEORUN=0}}
 async function theoRun(deep){
   if(THEORUN){THEOGEN++;return}      // the button is Stop while it runs
   const P=getP(),sel=theoSel(),tiers=theoTiers(sel).slice(0,3),names=theoNames(sel,tiers);
-  if(!names.length){$('tout').innerHTML='<p class="mu">Tick some tiers first.</p>';return}
+  if(!names.length){$('tres').innerHTML='<p class="mu">Tick some tiers first.</p>';return}
   const g=++THEOGEN;THEORUN=g;theoBusy(deep?'deep':'go',deep?'Searching from scratch...':'Polishing the strategy for your bonuses...');
-  try{const Es=theoEs(P,names),stop=()=>g!==THEOGEN,r=deep?await THEO.search(P,names,Es,1,5,stop,x=>theoProg(x),null):await THEO.quick(P,names,Es,900,5,stop,x=>theoProg(x),null);      // never from an earlier result: the same inputs give the same stacks, whatever was done before
+  try{const Es=theoEs(P,names),stop=()=>g!==THEOGEN,r=deep?await THEO.search(P,names,Es,1,5,stop,x=>theoProg(x),null):await THEO.quick(P,names,Es,P.mon?1500:900,5,stop,x=>theoProg(x),null);      // never from an earlier result: the same inputs give the same stacks, whatever was done before
     if(!r||g!==THEOGEN)return;
     const res=P.mon?theoStatsMon(P,names,r.w,400):theoStats(P,names,r.w,500);res.deep=!!deep;THEOC.set(theoKey(P,names),{P,res});
     THEORUN=0;theoBusy(0);calc();      // the Result comes back with the found stacks
+    if(P.mon&&!deep)theoDeepBg(P,names,Es,res);
   }finally{if(THEORUN===g){THEORUN=0;theoBusy(0)}}}
 function theoShow(){const c=THEOCUR,out=$('tres');$('tintro').hidden=!!c;
   if(!c){out.innerHTML='';theoBusy(0);return}
@@ -2923,9 +2943,10 @@ function theoTab(rows){const el=$('ttab');if(!rows||!rows.length){el.innerHTML='
   const rk=rows.slice().sort((a,b)=>b.res.net-a.res.net);
   el.innerHTML=`<h3 class="tth">Tier choices, best first</h3><div class="tsc"><table><tr><th>Tiers</th><th>Stacks</th><th>Win 1st</th><th>Win 2nd</th><th>Net</th></tr>${rk.map((x,i)=>`<tr${i==0?' class="tbest"':''}><td>${x.set.map(t=>'T'+t).join(' + ')}</td><td class="tn">${x.res.stacks.length}</td><td class="tn">${tpc(x.res.winA)}</td><td class="tn">${tpc(x.res.winB)}</td><td class="tn"><b>${tsg(x.res.net)}</b></td></tr>`).join('')}</table></div><p class="mu">Ranked by the net health left in the two fights together, averaged over enemies with 100%, 105%, 110% and 120% of your Leadership and Dominance. Quick search, so the numbers can move a few points; Find stacks gives the precise ones for the tiers you ticked. Only the top tier plus up to two more are tried (the game allows 3).</p>`}
 function theoSync(P,fx){const c=$('theo');if(!c)return;
-  {const ti=$('tintro');if(ti&&ti.dataset.m!==String(!!P.mon)){ti.dataset.m=String(!!P.mon);ti.innerHTML=P.mon?'<p class="mu">Find the army that kills the monster with the fewest losses.</p>':''}const tb=$('ttc');if(tb)tb.hidden=!!P.mon;const tw=document.querySelector('.tcw');if(tw)tw.hidden=!!P.mon;const cb=$('cmpbtn');if(cb)cb.hidden=!!P.mon;if(P.mon&&SHOWCMP){SHOWCMP=false}}const on=(P.ov||P.mon)&&(P.capA>0||P.capM>0);c.hidden=!on;if(!on){THEOGEN++;return}
+  {const ti=$('tintro');if(ti&&ti.dataset.m!==String(!!P.mon)){ti.dataset.m=String(!!P.mon);ti.innerHTML=P.mon?'<p class="mu">Find the army that kills the monster with the fewest losses.</p>':''}const tb=$('ttc');if(tb)tb.hidden=!!P.mon;{const tr=document.querySelector('#theo .trow');if(tr)tr.hidden=!!P.mon}const tw=document.querySelector('.tcw');if(tw)tw.hidden=!!P.mon;const cb=$('cmpbtn');if(cb)cb.hidden=!!P.mon;if(P.mon&&SHOWCMP){SHOWCMP=false}}const on=(P.ov||P.mon)&&(P.capA>0||P.capM>0);c.hidden=!on;if(!on){THEOGEN++;return}
   const sel=theoSel(),key=theoKey(P,theoNames(sel,theoTiers(sel).slice(0,3)));
   if(c.dataset.last!==key){if(THEORUN)THEOGEN++;c.dataset.last=key;THEOTC=THEOT.get(JSON.stringify([P,sel]))||null;theoTab(THEOTC)}      // the inputs changed: a running search is out of date
+  if(P.mon&&!fx)theoAuto();      // 22.8 against a monster there are no buttons: the army is searched as soon as the inputs are there
   if(THEOCUR!==fx){THEOCUR=fx;theoShow()}}
 [$('br'),$('rsm')].forEach(el=>el.addEventListener('click',e=>{const b=e.target.closest('[data-ta]'),a=b&&b.dataset.ta;if(a=='expect'){THEOEXP=true;drawBR()}else if(a=='dice'){THEOEXP=false;THEOSEED=Math.floor(Math.random()*2e9)+1;drawBR()}}));
 [$('br'),$('rsm')].forEach(el=>el.addEventListener('change',e=>{if(e.target.id=='tfirst'){THEOFIRST=e.target.value;drawBR()}}));
