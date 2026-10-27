@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.12';
+const APP_VERSION='22.9.13';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1770,8 +1770,8 @@ function dominanceTail(P,st,A,Mo,U,light){      // light (the Tier check): only 
 
 // ---- total damage from the dying order alone (the same calculation in every mode) ----
 // The enemy has K stacks, so every round has K trades: my strongest living stack (total strength n x str - no squad bonus, no Double strike: the Double strike only adds damage, it does not decide who strikes first) strikes and the
-// enemy hits - it kills ONE of my stacks, always the first one still alive in the dying order. Round 1 starts with my strike (strike, kill, strike, kill ...);
-// every later round starts with the enemy (kill, strike, kill, strike ...), so the stack killed there does not strike in that round. After the K trades the
+// enemy hits - it kills ONE of my stacks, always the first one still alive in the dying order. Round 1 starts with a coin toss (Battle rules): my strike (strike, kill, strike, kill ...) or the enemy's (kill, strike ...); the estimate is the average of both.
+// The side whose strike finishes a round does not start the next one, the other side does; the stack killed by a kill that comes first does not strike in that round. After the K trades the
 // other living stacks strike. A stack killed before its turn never strikes (an early, weak stack - Engineers - can die without ever hitting).
 // The rounds repeat while anybody is alive. SEQ=false switches back to the old simple count: the stack in place p of the dying order strikes ceil(p/K) times.
 // The damage is sum(strikes x damage per strike).
@@ -1779,18 +1779,21 @@ function dominanceTail(P,st,A,Mo,U,light){      // light (the Tier check): only 
 // Renegades: the block after the ordered head and the buffer zone has a random order - every stack in it gets the average strikes of the block's places.
 let SEQ=true;
 let HALFHEALTHY=0.5;      // 8.4 rule: only this share (50 %) of the damage of the healthiest stack counts (it matters when that stack strikes at all); since 19.1 the same in the estimate the person sees, not only in the order ranking
-function strikes(L,K,log,maxRd=Infinity){                                     // strikes of every stack; L is in the dying order. log (optional): the events of the battle in their order, [round, 'o' (our hit) | 'e' (the enemy kills the stack), index in L]
+function strikes(L,K,log,maxRd=Infinity,first){      // first: who starts round 1, 'o' (us) or 'e' (the enemy): a coin toss (Battle rules), so without a log the result is the average of both; with a log (a battle told event by event) 'o' unless given. From round 2 the side that did NOT finish the previous round starts.                                     // strikes of every stack; L is in the dying order. log (optional): the events of the battle in their order, [round, 'o' (our hit) | 'e' (the enemy kills the stack), index in L]
   const N=L.length;
   if(!SEQ)return L.map((_,i)=>Math.ceil((i+1)/K));
+  if(first===undefined&&!log){const a=strikes(L,K,undefined,maxRd,'o'),b=strikes(L,K,undefined,maxRd,'e');return a.map((x,i)=>(x+b[i])/2)}
+  first=first||'o';
   const T=L.map(s=>s.n*s.str),by=L.map((_,i)=>i).sort((a,b)=>T[b]-T[a]||a-b),cnt=new Array(N).fill(0);
-  K=Math.max(1,K|0);let head=0;                                // head = the first stack still alive in the dying order
+  K=Math.max(1,K|0);let head=0,last='e';                                // head = the first stack still alive in the dying order
   for(let rd=0;head<N&&rd<maxRd;rd++){      // maxRd: Renegades (14.10) - the battle ends after round 1, the enemy is defeated by then
     let pos=0;const nx=()=>{while(pos<N&&by[pos]<head)pos++;return pos<N?by[pos++]:-1};   // the strongest living stack that has not struck in this round
+    const st=rd===0?first:(last==='o'?'e':'o');      // the side that finished the previous round does not start this one
     for(let j=0;j<K&&head<N;j++){                              // the K trades of the round
-      if(rd===0){const s=nx();if(s>=0){cnt[s]++;if(log)log.push([rd,'o',s])}if(log)log.push([rd,'e',head]);head++}         // round 1: we strike first, then the enemy kills
-      else{if(log)log.push([rd,'e',head]);head++;const s=nx();if(s>=0){cnt[s]++;if(log)log.push([rd,'o',s])}}              // later rounds: the enemy kills first (the victim does not strike), then we strike
+      if(st==='o'){const s=nx();if(s>=0){cnt[s]++;if(log)log.push([rd,'o',s])}if(log)log.push([rd,'e',head]);head++;last='e'}         // we strike first, then the enemy kills
+      else{if(log)log.push([rd,'e',head]);head++;last='e';const s=nx();if(s>=0){cnt[s]++;last='o';if(log)log.push([rd,'o',s])}}              // the enemy kills first (the victim does not strike), then we strike
     }
-    for(let s=nx();s>=0;s=nx()){cnt[s]++;if(log)log.push([rd,'o',s])}                       // the extra living stacks strike after the trades
+    for(let s=nx();s>=0;s=nx()){cnt[s]++;last='o';if(log)log.push([rd,'o',s])}                       // the extra living stacks strike after the trades
   }
   return cnt;
 }
@@ -1848,7 +1851,11 @@ let BRD=null,BRFXH='';
 // The whole hit on an epic whose stacks are known (4 stacks: [units, health, type]), event by event; the epic starts at full health, a strike goes to the stack where it does the most real damage (Battle rules: bonus included, capped by the health left; tie: bigger bonus against the attacker, healthier, more units),
 // the 2nd strike of a Double strike (no squad bonus) goes by the same rule, the damage past the health of a stack is lost. The enemy kills as many of our stacks per round as it has living stacks. dice: roll the Double damage and the Double strike, else the averages.
 const ARB={1:3,3:0,0:2,2:1},ARCAT={Melee:0,Ranged:1,Mounted:2,Flying:3};      // the +50 % of an Arachne stack: its type -> the troop type it has the bonus against (enemy type 0 melee, 1 ranged, 2 mounted, 3 flying)
-function epicSim(P,L,EP,dice,rng,trace){
+function epicSim(P,L,EP,dice,rng,trace,first){      // first: who starts round 1 ('o' us, 'e' the enemy): a coin toss (Battle rules): with dice it is rolled from rng, without dice the numbers are the average of both starts
+  if(first)return epicSimS(P,L,EP,dice,rng,trace,first);
+  if(dice)return epicSimS(P,L,EP,dice,rng,trace,rng()<0.5?'o':'e');
+  const a=epicSimS(P,L,EP,dice,rng,trace,'o'),b=epicSimS(P,L,EP,dice,rng,trace,'e'),r={...a};['td','nd','ns','ed','es','pot','pex','pvar'].forEach(k=>{r[k]=(a[k]+b[k])/2});return r}
+function epicSimS(P,L,EP,dice,rng,trace,first){
   const N=L.length,e2=EP.st.map(x=>({ty:x[2],hpu:x[1],hp:x[0]*x[1],sp:x[3]||0})),alive=()=>e2.filter(e=>e.hp>0).length,ev=[],dead=new Set();
   let heal=0,hb=-1;L.forEach((s,i)=>{const v=s.n*s.hp;if(v>hb){hb=v;heal=i}});
   const fr=L.map(()=>1);      // the health left of each of our stacks (1 = untouched): a small enemy stack only wounds
@@ -1874,6 +1881,7 @@ function epicSim(P,L,EP,dice,rng,trace){
     const F=()=>(1+(rng()<q.pc?1:0))*(1+(rng()<q.pa?1:0)),m1=F();if(m1>1)nd++;
     hit(i,b0*m1*k,bt,rd,m1>1?'<i>double damage</i>':'',b0*m1*(k-1),false,tk);
     if(rng()<q.p){const m2=F();ns++;if(m2>1)nd++;hit(i,b0*m2*(full?k:1),full?bt:null,rd,'<i>double strike</i>'+(m2>1?'<i>double damage</i>':''),0,false,full?tk:pickT(i,()=>b0*q.d*m2))}};
+  let last='e';
   for(let rd=0;dead.size<N&&alive();rd++){const K=alive();const ord=e2.filter(e=>e.hp>0).sort((p,q)=>q.sp*q.hp/q.hpu-p.sp*p.hp/p.hpu),used=new Set(),struck=new Set();const nx=()=>{let bi=-1,bv=-1;for(const i of by){if(dead.has(i)||struck.has(i))continue;const v=L[i].n*fr[i]*L[i].str;if(v>bv*(1+1e-9)){bv=v;bi=i}}if(bi>=0)struck.add(bi);return bi};      // the strongest living stack that has not struck in this round, by its strength NOW (a wounded stack has fewer units, so it strikes later)
     
     const kill=j=>{const a=e2.filter(e=>e.hp>0&&!used.has(e)).sort((p,q)=>q.sp*q.hp/q.hpu-p.sp*p.hp/p.hpu)[0]||ord[0]||e2[0];used.add(a);
@@ -1886,10 +1894,11 @@ function epicSim(P,L,EP,dice,rng,trace){
       const Dm=Dm0*(1+tbn),Hf=L[t].n*L[t].hp*fr[t];
       if(Dm<Hf*(1-1e-9)){fr[t]-=Dm/(L[t].n*L[t].hp);ev.push({r:rd,t:'w',i:t,ty:a.ty,u:Math.ceil(a.hp/a.hpu-1e-9),dmg:Dm,un:Math.round(L[t].n*fr[t]),hl:Hf});return}
       ev.push({r:rd,t:'e',i:t,ty:a.ty,u:Math.ceil(a.hp/a.hpu-1e-9),un:Math.round(L[t].n*fr[t]),hl:Hf});dead.add(t)};
+    const st=rd===0?first:(last==='o'?'e':'o');      // the side that finished the previous round does not start this one
     for(let j=0;j<K&&dead.size<N&&alive();j++){
-      if(rd===0){const x=nx();if(x>=0)strike(x,rd);if(!alive())break;kill(j)}
-      else{kill(j);const x=nx();if(x>=0)strike(x,rd)}}
-    for(let x=nx();x>=0&&alive();x=nx())strike(x,rd)}
+      if(st==='o'){const x=nx();if(x>=0)strike(x,rd);if(!alive())break;kill(j);last='e'}
+      else{kill(j);last='e';const x=nx();if(x>=0){strike(x,rd);last='o'}}}
+    for(let x=nx();x>=0&&alive();x=nx()){strike(x,rd);last='o'}}
   return{ev,td,nd,ns,ed,es,pot,pex,pvar}}
 // 21.8.1: THE KILLSHOT MODES against an epic with known stacks. The army does not hit a healthy epic: it finishes one that earlier hits have worn down. How the epic was worn down has nothing to do with our army (its size, its
 // Leadership, its bonuses): it is the same for every mode, the way a small balanced army with good stacking wears it down. Such an army never runs out of units, so only WHICH troop types we field matters, not how many: every troop
@@ -2004,7 +2013,7 @@ function battleHtml(P,list,order,sc){
     KSAVGF=P.kill?(ksAvg(P,L,EPK)||{f:0}).f:null;      // the score of the average fight: what a rolled Killshot is compared with
     const ks=P.kill?killState(P,L,EPK,ex?0:THEOSEED):null,EPS=ks?(ks.EPSR||(ks.avg?ks.avg.EPS:ks.EPS)):(P.enemy==3||P.enemy==6)?{...EPK,st:EPK.st.filter(x=>x[2]!=2)}:EPK;      // the 3-stack mode has no mounted enemy stack; the Killshot starts at the biggest state the army kills (killState)
     KSROLLF=ks?ks.f:null;      // the score of the rolled fight (the Random effects points)
-    const sim=epicSim(P,L,EPS,!ex,ks&&ks.seed?THEO.rngMk(ks.seed):rng),avg=ex?sim:epicSim(P,L,EPS,false,null);td=sim.td;ad=avg.td;nd=sim.nd;ns=sim.ns;ed=sim.ed;es=sim.es;
+    const sim=epicSim(P,L,EPS,!ex,ks&&ks.seed?THEO.rngMk(ks.seed):rng,undefined,ex?'o':undefined),avg=epicSim(P,L,EPS,false,null);td=sim.td;ad=avg.td;nd=sim.nd;ns=sim.ns;ed=sim.ed;es=sim.es;
     sim.ev.forEach(x=>{
       if(x.r!==rd){rd=x.r;h+=`<div class="brh">Round ${x.r+1}</div>`}
       const s=L[x.i];
