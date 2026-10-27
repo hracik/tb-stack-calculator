@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.8.6';
+const APP_VERSION='22.9.0';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2748,7 +2748,8 @@ function mc(A,B,N,seed,first){const rng=rngMk(seed||1);let w=0,l=0,ra=0,rb=0,rd=
   for(let i=0;i<N;i++){const r=battle(A,B,rng,{first});if(r.win>0)w++;else if(r.win<0)l++;ra+=r.remA;rb+=r.remB;rd+=r.rd}
   return{win:w/N,loss:l/N,ra:ra/N,rb:rb/N,margin:(ra-rb)/N,rd:rd/N}}
 // weights -> stacks: the army weights share the Leadership, the monster weights share the Dominance (by cost)
-function layout(P,names,w){const sz=w.length>names.length?Math.min(1,Math.max(0.005,w[names.length])):1,armyI=[],monI=[];      // against a monster the weights carry one more number: the share of the Leadership and Dominance that is used (a smaller army loses less)
+function layout(P,names,w){if(w.cnt){const o=[];names.forEach((nm,i)=>{if(w.cnt[i]>0)o.push(mkStack(nm,w.cnt[i],P))});return o}      // exact unit counts (the monster search): the stacks as they are
+  const sz=w.length>names.length?Math.min(1,Math.max(0.005,w[names.length])):1,armyI=[],monI=[];      // against a monster the weights carry one more number: the share of the Leadership and Dominance that is used (a smaller army loses less)
   names.forEach((nm,i)=>{if(w[i]>1e-9)(TRN[nm].cls=='M'?monI:armyI).push(i)});
   const out=[],wa=armyI.reduce((q,i)=>q+w[i],0),wm=monI.reduce((q,i)=>q+w[i],0);
   armyI.forEach(i=>{const t=TRN[names[i]],n=Math.floor(P.capA*sz*w[i]/wa/t.cost);if(n>0)out.push(mkStack(names[i],n,P))});
@@ -2820,7 +2821,32 @@ async function quick(P,names,Es,iters,seed,stop,prog,warm){
   let best=null,bs=-9;cand.concat([{w:starts[0]}]).forEach(r=>{const L=layout(P,names,r.w),o=score(L,Es,200,777),v=o.mean*0.75+o.worst*0.25-PEN*L.length;if(v>bs){bs=v;best={w:r.w,f:v}}});
   if(best){best.w=await twins(P,names,Es,best.w,stop)}
   return best}
-return{quick,template,search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone,monScore}})();
+
+// 22.9 against a monster: the search works on the exact UNIT COUNTS of every stack (not on shares) and minimises the revive gold lost, fight by fight (no random effect, the average strikes). The strike order is the real one (the most total strength first, the sides alternate), so
+// it finds the armies that kill the stacks that are about to strike before they strike, and the small stacks that a strike overshoots. At most MONMAXST stacks. Returns the weights array with .cnt
+const MONMAXST=8;
+function monCounts(P,names,Es,w0,iters,seed,stop){const E=Es[0],ref=Es.ref||1,nm=names.length,cost=names.map(n=>TRN[n].cost),isM=names.map(n=>TRN[n].cls=='M');
+  const mk=c=>{const L=[];for(let i=0;i<nm;i++)if(c[i]>0)L.push(mkStack(names[i],c[i],P));return L};
+  const ok=c=>{let a=0,m=0,k=0;for(let i=0;i<nm;i++)if(c[i]>0){k++;if(isM[i])m+=c[i]*cost[i];else a+=c[i]*cost[i]}return k<=MONMAXST&&a<=P.capA*1.0000001&&m<=P.capM*1.0000001};
+  const f=c=>{const r=battle(mk(c),E,null,{first:'B',mon:true,expect:true});return r.win>0?r.lostG:ref*(1+r.remB)};
+  const rng=rngMk(seed),L0=layout(P,names,w0);let cur=names.map(n=>{const s=L0.find(x=>x.name==n);return s?s.n:0});
+  if(!ok(cur)){const keep=cur.map((v,i)=>[v*cost[i],i]).sort((x,y)=>y[0]-x[0]).slice(0,MONMAXST).map(x=>x[1]);cur=cur.map((v,i)=>keep.includes(i)?v:0)}
+  let cv=f(cur),best=cur.slice(),bv=cv;
+  for(let it=0;it<iters;it++){
+    if(stop&&(it&2047)==0&&stop())return null;
+    const c=cur.slice(),T=1-it/iters,m=1+Math.floor(rng()*2);
+    for(let q=0;q<m;q++){const i=Math.floor(rng()*nm),u=rng();
+      if(c[i]==0){if(u<0.3){const j=Math.floor(rng()*nm);c[i]=Math.max(1,Math.floor((c[j]||50)*rng()*0.3*cost[j]/cost[i]))}}
+      else if(u<0.08)c[i]=0;
+      else if(u<0.2){const j=Math.floor(rng()*nm);if(j!==i&&isM[j]==isM[i]){const fr=rng()<0.5?1:rng();c[j]+=Math.floor(c[i]*fr*cost[i]/cost[j]);c[i]-=Math.floor(c[i]*fr)}}      // the money of a stack goes to another stack of the same kind
+      else c[i]=Math.max(0,Math.round(c[i]*Math.exp((rng()+rng()+rng()-1.5)*(0.02+0.6*T))))}
+    if(!ok(c))continue;const v=f(c);
+    if(v<=cv||rng()<Math.exp(-(v-cv)/(Math.max(1,bv)*0.02*T+1e-9))){cur=c;cv=v;if(v<bv){bv=v;best=c.slice()}}}
+  for(let pass=0;pass<2;pass++)for(let i=0;i<nm;i++){if(!(best[i]>0))continue;      // a last tidy-up: stacks that do not help go, the others are trimmed
+    const c=best.slice();c[i]=0;let v=f(c);if(v<=bv*1.0005){best=c;bv=Math.min(bv,v);continue}
+    for(const k of [0.8,0.9,0.95,0.98,1.02,1.05,1.1,1.25]){const d=best.slice();d[i]=Math.round(d[i]*k);if(!ok(d))continue;v=f(d);if(v<bv){best=d;bv=v}}}
+  const w=names.map((n,i)=>best[i]>0?best[i]*cost[i]:0);w.cnt=best;w.v=bv;return w}
+return{monCounts,MONMAXST,quick,template,search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone,monScore}})();
 // ---- the screen of the theoretical stacks (One v. One): Find stacks, Rank tier choices, a fight with re-roll. Until stacks are found the Result is replaced by the card; once found the Result is live with them ----
 let THEOWAIT=false,THEOGEN=0,THEORUN=0,THEOCUR=null,THEOTC=null,THEOW={sig:'',m:new Map()};const THEOC=new Map(),THEOT=new Map();      // THEOGEN: a newer run / a change cancels the one that runs; THEOC / THEOT: finished searches and tier checks by input
 const tfm=x=>Math.round(x).toLocaleString('en-US'),tpc=x=>Math.round(x*100)+'%',tsg=x=>(x>=0?'+':'−')+Math.abs(Math.round(x*100))+'%';
@@ -2856,11 +2882,13 @@ const theoTierTxt=names=>[...new Set(names.map(n=>TRN[n].tier))].sort((a,b)=>b-a
 let THEOAT=0;
 function theoAuto(){clearTimeout(THEOAT);THEOAT=setTimeout(function f(){const P=getP();if(!P.mon||theoFix(P))return;if(THEORUN){THEOAT=setTimeout(f,150);return}theoRun(false)},350)}
 // 22.8 after the quick result a deeper search runs quietly behind it; it replaces the result only when it finds an army with fewer losses; any change of the inputs cancels it
+async function theoCounts(P,names,Es,w0,g,rounds,seed0){let best=w0,alt=w0;      // the exact-count search, in rounds (the page is given back between them); every round starts from the best so far, every third from the quick result
+  for(let k=0;k<rounds;k++){const r=THEO.monCounts(P,names,Es,k%3==2?alt:best,15000,seed0+k,null);await new Promise(q=>setTimeout(q,0));if(g!==THEOGEN)return null;if(!best.v||r.v<best.v)best=r}
+  return best}
 async function theoDeepBg(P,names,Es,cur){const g=++THEOGEN;THEORUN=g;
-  try{const warm=Object.assign(Object.fromEntries(cur.names.map((n,i)=>[n,cur.w[i]])),{_s:cur.w[names.length]}),r=await THEO.search(P,names,Es,0.6,5,()=>g!==THEOGEN,null,warm);
+  try{const r=await theoCounts(P,names,Es,cur.w,g,9,100);
     if(!r||g!==THEOGEN)return;
-    const sc=w=>THEO.monScore(THEO.layout(P,names,w),Es[0],400,555,Es.ref).mean;
-    if(sc(r.w)>sc(cur.w)+0.0005){const res=theoStatsMon(P,names,r.w,400);res.deep=true;THEOC.set(theoKey(P,names),{P,res});calc()}
+    if(r.v<cur.w.v*0.995){const res=theoStatsMon(P,names,r,400);res.deep=true;THEOC.set(theoKey(P,names),{P,res});calc()}
   }finally{if(THEORUN===g)THEORUN=0}}
 async function theoRun(deep){
   if(THEORUN){THEOGEN++;return}      // the button is Stop while it runs
@@ -2869,6 +2897,7 @@ async function theoRun(deep){
   const g=++THEOGEN;THEORUN=g;theoBusy(deep?'deep':'go',deep?'Searching from scratch...':'Polishing the strategy for your bonuses...');
   try{const Es=theoEs(P,names),stop=()=>g!==THEOGEN,r=deep?await THEO.search(P,names,Es,1,5,stop,x=>theoProg(x),null):await THEO.quick(P,names,Es,P.mon?1500:900,5,stop,x=>theoProg(x),null);      // never from an earlier result: the same inputs give the same stacks, whatever was done before
     if(!r||g!==THEOGEN)return;
+    if(P.mon){r.w=await theoCounts(P,names,Es,r.w,g,6,1);if(!r.w||g!==THEOGEN)return}
     const res=P.mon?theoStatsMon(P,names,r.w,400):theoStats(P,names,r.w,500);res.deep=!!deep;THEOC.set(theoKey(P,names),{P,res});
     THEORUN=0;theoBusy(0);calc();      // the Result comes back with the found stacks
     if(P.mon&&!deep)theoDeepBg(P,names,Es,res);
