@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.8.4';
+const APP_VERSION='22.8.5';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2695,7 +2695,7 @@ let MONDRAWN='';
 function drawMon(P){const el=$('mdet');if(!el)return;const m=monCur(P),k=m.n+'|'+(window.i18nCur?i18nCur():'');if(MONDRAWN===k)return;MONDRAWN=k;
   const bn={Siege:'Siege engines'},fm=x=>Math.round(x).toLocaleString('en-US'),nb=(b)=>Object.entries(b).map(([c,v])=>`<span data-notr>+${Math.round(v*100)} %</span> <span>${bn[c]||c}</span>`).join(', ');
   {const mb=$('mbtn');if(mb)mb.innerHTML=`<img class="epi" src="${MIC[m.ic]}" alt=""><span class="epn"><span data-notr>${esc(m.n)}</span> \u00b7 <span>Level</span> <span data-notr>${m.lv}</span></span><span class="epc">\u25be</span>`}
-  el.innerHTML=m.st.map(x=>`<div class="mst"><img src="${MIC[x.ic]}" alt=""><div><b data-notr>${esc(x.n)}</b><div class="mu"><span data-notr>${fm(x.u)}</span> <span>Units</span> · <span>Health</span> <span data-notr>${fm(x.hp)}</span></div><div class="mu"><span>Bonuses</span>: ${nb(x.b)}</div></div></div>`).join('')}
+  el.innerHTML=m.st.map(x=>`<div class="mst"><div><b data-notr>${esc(x.n)}</b><div class="mu"><span data-notr>${fm(x.u)}</span> <span>Units</span> · <span>Health</span> <span data-notr>${fm(x.hp)}</span></div><div class="mu"><span>Bonuses</span>: ${nb(x.b)}</div></div></div>`).join('')}
 // ---- Theoretical PvP stacks (One v. One, in progress): a Monte Carlo battle simulator + a stack optimizer that maximizes the NET REMAINING HEALTH ----
 const THEO=(function(){
 const ENA=['Punisher II','Smiter II','Purifier II','Corax II','Duelist II','Whitemane II','Legitimist II','Royal Lion II'],ENM=['Kraken II','Fire Phoenix II','Devastator II','Trickster II'];
