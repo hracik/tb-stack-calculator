@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.0';
+const APP_VERSION='22.9.1';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2717,19 +2717,19 @@ function hitDmg(a,d,rng,expect){
 // the target: where the strike does the most real damage (its squad bonus against that stack, no more than the stack has left); a tie: the healthier stack
 function pickTarget(a,D){let b=null,bs=-1,bh=-1;
   for(const d of D){if(d.n<=0)continue;const h=d.n*d.hp,e=Math.min(a.n*a.str*(a.evs?1+evBonus(a.evs,d):a.spec+(a.vs[d.ci]||0)/a.ms)*a.ef,h);
-    if(e>bs*(1+1e-12)||(Math.abs(e-bs)<=bs*1e-12&&h>bh)){b=d;bs=e;bh=h}}
+    if(e>bs*(1+1e-12)||(Math.abs(e-bs)<=bs*1e-12&&(d.mon&&!a.evs?h<bh:h>bh))){b=d;bs=e;bh=h}}      // a tie: the healthier stack; against a monster the one with less health (seen in a real battle report: the Bear before the Treant)
   return b}
 // one battle. A = our stacks, B = the enemy. The strongest (units x strength, no squad bonus, no Specialists doubling) of the stacks that have not struck in this round strikes next; the sides alternate; round 1 is opened by `first`, every later round by the side that ran out of stacks first. o.log / o.snap record the report
 function battle(A0,B0,rng,o){o=o||{};const A=clone(A0),B=clone(B0),first=o.first||'A';
-  const alive=L=>L.some(s=>s.n>0&&!(o.mon&&s.eng));let rd=0,nextStart=first=='A'?'B':'A';      // against a monster the engineers do not fight in the battle (they only strike the wall first), so an army of engineers alone is a dead army
+  const alive=L=>L.some(s=>s.n>0);let rd=0,nextStart=first=='A'?'B':'A';      // the engineers strike the wall first and then fight in the battle like the other stacks (real report)
   if(o.mon){const W=B.find(s=>s.wall&&s.n>0),sg=(a,d,side)=>{const dm=hitDmg(a,d,rng,o.expect),k=Math.min(d.n,Math.floor(dm/d.hp));if(o.log)o.log.push([0,side,a.name,d.name,dm,k,d.n-k,d.n,LK[0],0]);d.n-=k};      // the siege: our engineers strike the wall; a wall that stands strikes back (no engineers: the wall strikes first)
     if(W){A.filter(s=>s.eng&&s.n>0).sort((x,y)=>y.n*y.str-x.n*x.str).forEach(e=>{if(W.n>0)sg(e,W,'A')});if(W.n>0){const d=pickTarget(W,A);if(d)sg(W,d,'B')}}}
   for(;rd<400&&alive(A)&&alive(B);rd++){
     const done=new Set();let turn=rd==0?first:nextStart,exh=null;
     while(alive(A)&&alive(B)){
       const me=turn=='A'?A:B,op=turn=='A'?B:A;
-      let cand=me.filter(s=>s.n>0&&!done.has(s)&&!(o.mon&&s.eng)),side=turn;
-      if(!cand.length){const o2=op.filter(s=>s.n>0&&!done.has(s)&&!(o.mon&&s.eng));if(!o2.length)break;if(!exh)exh=turn;cand=o2;side=turn=='A'?'B':'A'}
+      let cand=me.filter(s=>s.n>0&&!done.has(s)),side=turn;
+      if(!cand.length){const o2=op.filter(s=>s.n>0&&!done.has(s));if(!o2.length)break;if(!exh)exh=turn;cand=o2;side=turn=='A'?'B':'A'}
       const tgt=side=='A'?B:A;let a=cand[0],best=-1;
       for(const s of cand){const v=s.n*s.str;if(v>best){best=v;a=s}}
       done.add(a);let d=pickTarget(a,tgt);if(!d)break;
