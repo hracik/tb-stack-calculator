@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.10';
+const APP_VERSION='22.9.11';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1871,8 +1871,8 @@ function brRow(o){if(o.enIc&&o.enIc.indexOf('id="mo1"')>=0){const u=++BRU;o={...
   const en=!(o.enIc||o.enName||eu)?'':`<span class="beg"><span class="bar" aria-hidden="true">${o.we?'\u2192':'\u2190'}</span>${(o.enName||eu)?`<span class="bnm ben">${o.enName?`<b class="bnn">${o.enName}</b>`:''}${eu?`<span class="bun">${eu} units</span>`:''}</span>`:''}<span class="bic${o.enDead?' dd':''}">${o.enIc}${o.enDead?BRX:''}</span></span>`;
   return`<div class="bl bq ${o.we?'bo':'ba'}"><div class="bl1"><span class="bog"><span class="bic${o.ourDead?' dd':''}">${o.ourIc}${o.ourDead?BRX:''}</span><span class="bnm"><b class="bnn">${o.ourName||''}</b>${o.tg||o.ourSub?`<span class="bmt">${o.tg?`<span class="btg">${o.tg}</span>`:''}${o.ourSub?`<span class="bun">${o.ourSub} units</span>`:''}</span>`:''}<span class="bl2">${o.l2}</span>${o.sq?`<span class="bl3 sqb devo">${o.sq}</span>`:''}${o.l3?`<span class="bl3 devo">${o.l3}</span>`:''}</span></span>${en}</div></div>`}
 let BRD=null,BRFXH='';
-// The whole hit on an epic whose stacks are known (4 stacks: [units, health, type]), event by event; the same rules as epicKill: the epic starts at full health, a strike goes to the living stack the troop has the biggest bonus against (no bonus: the healthiest stack),
-// the 2nd strike of a Double strike (no squad bonus) goes to the healthiest living stack, the damage past the health of a stack is lost. The enemy kills as many of our stacks per round as it has living stacks. dice: roll the Double damage and the Double strike, else the averages.
+// The whole hit on an epic whose stacks are known (4 stacks: [units, health, type]), event by event; the same rules as epicKill: the epic starts at full health, a strike goes to the stack where it does the most real damage (Battle rules: bonus included, capped by the health left; tie: bigger bonus against the attacker, healthier, more units),
+// the 2nd strike of a Double strike (no squad bonus) goes by the same rule, the damage past the health of a stack is lost. The enemy kills as many of our stacks per round as it has living stacks. dice: roll the Double damage and the Double strike, else the averages.
 const ARB={1:3,3:0,0:2,2:1},ARCAT={Melee:0,Ranged:1,Mounted:2,Flying:3};      // the +50 % of an Arachne stack: its type -> the troop type it has the bonus against (enemy type 0 melee, 1 ranged, 2 mounted, 3 flying)
 function epicSim(P,L,EP,dice,rng,trace){
   const N=L.length,e2=EP.st.map(x=>({ty:x[2],hpu:x[1],hp:x[0]*x[1],sp:x[3]||0})),alive=()=>e2.filter(e=>e.hp>0).length,ev=[],dead=new Set();
@@ -1885,27 +1885,30 @@ function epicSim(P,L,EP,dice,rng,trace){
   const hit=(i,amt,ty,rd,tg,bonus,silent,stk)=>{pot+=amt;let e=stk&&stk.hp>0?stk:ty==null?null:e2.find(x=>x.ty==ty&&x.hp>0);if(!e)e=e2.filter(x=>x.hp>0).sort((a,b)=>b.hp-a.hp)[0];if(!e)return;
     const before=Math.ceil(e.hp/e.hpu-1e-9),a=Math.min(amt,e.hp);e.hp-=a;td+=a;if(trace)trace.push([e.ty,a]);if(silent)return;
     const after=Math.ceil(e.hp/e.hpu-1e-9);ev.push({r:rd,t:'o',i,ty:e.ty,dmg:a,before,killed:before-after,dead:e.hp<=0,tg,sq:amt>0?bonus*a/amt:0,un:Math.round(L[i].n*fr[i])})};
-  const full=P.enemy>4&&!P.raid;      // 6 and 8 enemy stacks: the 2nd strike of a Double strike is the whole strike again (the same bonus, the same target); 3 and 4: the base strength only, to the healthiest stack
+  const full=P.enemy>4&&!P.raid;      // 6 and 8 enemy stacks: the 2nd strike of a Double strike is the whole strike again (the same bonus, the same target); 3 and 4: the base strength only (no squad bonus), to the stack where it does the most real damage
+  // THE TARGET RULE (Battle rules): the most real damage (bonus included, capped by the health the target has left); tie: 1) the stack with the bigger bonus against the attacker, 2) the healthier stack, 3) the stack with more units (OPEN / unconfirmed)
+  const pickT=(i,dmgOf)=>{let tk=null,bv=-1,tb=-1;e2.forEach(e=>{if(e.hp<=0)return;const v=Math.min(dmgOf(e),e.hp),eb=EP.eb&&ARCAT[L[i].cat]===ARB[e.ty]?EP.eb:0;
+    if(!tk||v>bv+1e-9||(Math.abs(v-bv)<=1e-9&&(eb>tb||(eb==tb&&(e.hp>tk.hp+1e-9||(Math.abs(e.hp-tk.hp)<=1e-9&&e.hp/e.hpu>tk.hp/tk.hpu)))))){tk=e;bv=v;tb=eb}});return tk};
   const strike=(i,rd)=>{const q=info[i],s=L[i];let bt=null,bb=0,tk=null;
     const b0=DS*s.n*fr[i]*s.str*(i==heal?HALFHEALTHY:1);
-    // no damage spill: a strike deals at most what the stack it hits has left. The troop hits the stack where the strike (with its bonus) does the most damage: usually the stack it has the biggest bonus against, but when that one has little health left the healthiest stack takes the strike instead
-    let bv=-1;e2.forEach(e=>{if(e.hp<=0)return;const bn=q.vs[e.ty]||0,v=Math.min(b0*q.d*(1+bn/q.ms),e.hp);if(v>bv+1e-9||(Math.abs(v-bv)<=1e-9&&(bn>bb||(bn==bb&&tk&&e.hp>tk.hp)))){bv=v;tk=e;bt=e.ty;bb=bn}});
+    // no damage spill: a strike deals at most what the stack it hits has left; the target is the stack where the strike (with its bonus) does the most real damage (pickT, Battle rules)
+    tk=pickT(i,e=>b0*q.d*(1+(q.vs[e.ty]||0)/q.ms));if(!tk)return;bt=tk.ty;bb=q.vs[bt]||0;
     const k=1+bb/q.ms;
     {const mF=(1+q.pc)*(1+q.pa),e2F=(1+3*q.pc)*(1+3*q.pa),v=b0*k,w=b0*(full?k:1);pvar+=(v*v+q.p*w*w)*e2F+2*v*w*q.p*mF*mF-Math.pow((v+q.p*w)*mF,2)}      // the spread of what the dice add to this strike (double damage and double strike chances): the fight's luck is judged from the sum of these
     pex+=b0*k*q.d*(1+q.p*(full?1:1/k));ed+=(1-(1-q.pc)*(1-q.pa))*(1+q.p);es+=q.p;
-    if(!dice){const base=b0*q.d;hit(i,base*k,bt,rd,'',base*(k-1),false,tk);if(q.p)hit(i,full?base*q.p*k:base*q.p,full?bt:null,rd,'',0,true,full?tk:null);return}
+    if(!dice){const base=b0*q.d;hit(i,base*k,bt,rd,'',base*(k-1),false,tk);if(q.p)hit(i,full?base*q.p*k:base*q.p,full?bt:null,rd,'',0,true,full?tk:pickT(i,()=>base));return}
     const F=()=>(1+(rng()<q.pc?1:0))*(1+(rng()<q.pa?1:0)),m1=F();if(m1>1)nd++;
     hit(i,b0*m1*k,bt,rd,m1>1?'<i>double damage</i>':'',b0*m1*(k-1),false,tk);
-    if(rng()<q.p){const m2=F();ns++;if(m2>1)nd++;hit(i,b0*m2*(full?k:1),full?bt:null,rd,'<i>double strike</i>'+(m2>1?'<i>double damage</i>':''),0,false,full?tk:null)}};
+    if(rng()<q.p){const m2=F();ns++;if(m2>1)nd++;hit(i,b0*m2*(full?k:1),full?bt:null,rd,'<i>double strike</i>'+(m2>1?'<i>double damage</i>':''),0,false,full?tk:pickT(i,()=>b0*q.d*m2))}};
   for(let rd=0;dead.size<N&&alive();rd++){const K=alive();const ord=e2.filter(e=>e.hp>0).sort((p,q)=>q.sp*q.hp/q.hpu-p.sp*p.hp/p.hpu),used=new Set(),struck=new Set();const nx=()=>{let bi=-1,bv=-1;for(const i of by){if(dead.has(i)||struck.has(i))continue;const v=L[i].n*fr[i]*L[i].str;if(v>bv*(1+1e-9)){bv=v;bi=i}}if(bi>=0)struck.add(bi);return bi};      // the strongest living stack that has not struck in this round, by its strength NOW (a wounded stack has fewer units, so it strikes later)
     
     const kill=j=>{const a=e2.filter(e=>e.hp>0&&!used.has(e)).sort((p,q)=>q.sp*q.hp/q.hpu-p.sp*p.hp/p.hpu)[0]||ord[0]||e2[0];used.add(a);
       // an enemy stack deals (its living units x its strength): the front stack of ours dies only when that is at least its health; a small stack only wounds it
-      // the enemy stack goes for the healthiest stack of ours that is still alive (a wounded stack is no longer the healthiest, so it dies later; ties: the earlier in the order)
-      // an enemy stack with a bonus (every epic: +50 % against one troop type: ranged against flying, flying against melee, melee against mounted, mounted against ranged) picks the stack where its damage with the bonus does the most, like our troops do; no bonus: the healthiest stack
-      const Dm0=a.sp>0?a.hp/a.hpu*a.sp:Infinity,bt=EP.eb?ARB[a.ty]:-1;let t=-1,tv=-1,tbn=-1,th=-1;
+      // the enemy stack picks the stack of ours where its strike does the most real damage (the bonus included - every epic has +50 % against one troop type: ranged against flying, flying against melee, melee against mounted, mounted against ranged - capped by the health the stack has left); tie: the stack with the bigger bonus against it, then the healthier, then more units (Battle rules)
+      const Dm0=a.sp>0?a.hp/a.hpu*a.sp:Infinity,bt=EP.eb?ARB[a.ty]:-1;let t=-1,tv=-1,tbn=-1,th=-1,tob=-1,tu=-1;
       for(let q=0;q<N;q++){if(dead.has(q))continue;const hq=L[q].n*L[q].hp*fr[q],bn=EP.eb&&ARCAT[L[q].cat]===bt?EP.eb:0,v=Math.min(Dm0*(1+bn),hq);
-        if(v>tv*(1+1e-9)||(v>=tv*(1-1e-9)&&(bn>tbn||(bn==tbn&&hq>th*(1+1e-9))))){tv=v;t=q;tbn=bn;th=hq}}
+        const ob=info[q].vs[a.ty]||0,uq=L[q].n*fr[q];      // tie: 1) the stack with the bigger bonus against the attacker, 2) the healthier, 3) more units (Battle rules)
+        if(v>tv*(1+1e-9)||(v>=tv*(1-1e-9)&&(ob>tob||(ob==tob&&(hq>th*(1+1e-9)||(hq>=th*(1-1e-9)&&uq>tu)))))){tv=v;t=q;tbn=bn;th=hq;tob=ob;tu=uq}}
       const Dm=Dm0*(1+tbn),Hf=L[t].n*L[t].hp*fr[t];
       if(Dm<Hf*(1-1e-9)){fr[t]-=Dm/(L[t].n*L[t].hp);ev.push({r:rd,t:'w',i:t,ty:a.ty,u:Math.ceil(a.hp/a.hpu-1e-9),dmg:Dm,un:Math.round(L[t].n*fr[t]),hl:Hf});return}
       ev.push({r:rd,t:'e',i:t,ty:a.ty,u:Math.ceil(a.hp/a.hpu-1e-9),un:Math.round(L[t].n*fr[t]),hl:Hf});dead.add(t)};
@@ -1916,7 +1919,7 @@ function epicSim(P,L,EP,dice,rng,trace){
   return{ev,td,nd,ns,ed,es,pot,pex,pvar}}
 // 21.8.1: THE KILLSHOT MODES against an epic with known stacks. The army does not hit a healthy epic: it finishes one that earlier hits have worn down. How the epic was worn down has nothing to do with our army (its size, its
 // Leadership, its bonuses): it is the same for every mode, the way a small balanced army with good stacking wears it down. Such an army never runs out of units, so only WHICH troop types we field matters, not how many: every troop
-// strikes the living stack it has the biggest bonus against (the Double strike part goes to the healthiest living stack), and the strikes are taken in equal shares (the sizes of our stacks are not used). The mounted stack, which
+// strikes the stack where it does the most damage (Battle rules; the Double strike part by the same rule), and the strikes are taken in equal shares (the sizes of our stacks are not used). The mounted stack, which
 // most troops have a bonus against, dies first; then the epic is a 3-stack. The killshot starts at the biggest state on that way that has the right number of living stacks (4: the 4-stack rules, 3: the 3-stack rules)
 // and that the army still kills in one hit (killState).
 function epicPath(P,L,EP){
@@ -1926,8 +1929,10 @@ function epicPath(P,L,EP){
   const cps=[{left:tot,hp:hp.slice()}],full=P.enemy>4&&!P.raid;
   for(let it=0;it<4000&&hp.some(x=>x>1e-6);it++){
     const dv=hp.map(()=>0);let hi=-1;hp.forEach((x,i)=>{if(x>1e-6&&(hi<0||x>hp[hi]))hi=i});
-    info.forEach((q,j)=>{let bt=-1,bb=0;EP.st.forEach((x,i)=>{if(hp[i]<=1e-6)return;const v=q.vs[x[2]]||0;if(v>bb||(v==bb&&bt>=0&&hp[i]>hp[bt])){bb=v;bt=i}});
-      const base=q.d/N;if(bt<0)dv[hi]+=base;else dv[bt]+=base*(1+bb/q.ms);if(q.p){if(full&&bt>=0)dv[bt]+=base*q.p*(1+bb/q.ms);else dv[hi]+=base*q.p}});
+    info.forEach((q,j)=>{const eb=i=>EP.eb&&ARCAT[L[j].cat]===ARB[EP.st[i][2]]?EP.eb:0;      // Battle rules target: the most damage (the flow has no health cap), tie: the stack with the bigger bonus against the attacker, then the healthier
+      const pk=(dm)=>{let bt=-1,bv=-1;EP.st.forEach((x,i)=>{if(hp[i]<=1e-6)return;const v=dm(x);if(bt<0||v>bv+1e-9||(Math.abs(v-bv)<=1e-9&&(eb(i)>eb(bt)||(eb(i)==eb(bt)&&hp[i]>hp[bt])))){bv=v;bt=i}});return bt};
+      const bt=pk(x=>1+(q.vs[x[2]]||0)/q.ms),bb=bt>=0?(q.vs[EP.st[bt][2]]||0):0,b2=pk(()=>1);
+      const base=q.d/N;if(bt<0)dv[hi]+=base;else dv[bt]+=base*(1+bb/q.ms);if(q.p){if(full&&bt>=0)dv[bt]+=base*q.p*(1+bb/q.ms);else dv[b2>=0?b2:hi]+=base*q.p}});
     const R=dv.reduce((a,b)=>a+b,0);if(!(R>0))break;
     let dt=0.0025*tot/R;hp.forEach((x,i)=>{if(x>1e-6&&dv[i]>0&&x/dv[i]<dt)dt=x/dv[i]});
     hp.forEach((x,i)=>{hp[i]=Math.max(0,x-dv[i]*dt);if(hp[i]<tot*1e-9)hp[i]=0});
