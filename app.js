@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.7';
+const APP_VERSION='22.9.8';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -174,7 +174,7 @@ const pct=m=>Math.round(m*100).toLocaleString('en-US')+'%';   // bonus ratio -> 
 const num=x=>Math.round(x).toLocaleString('en-US');                // whole number with thousands separators
 let SOPOS={},BUFN={};      // BUFN: the stacks of the Renegades buffer zone (name -> 1)
 // the bonus text of an order row: "+333% vs. mounted" = the troop's best bonus against a class of the enemy (the best one that counts in this mode; when none counts, its best one anyway)
-function vsText(t,P){return vsText0(t,P)+(P.pm&&t.cls=='S'&&t.cat!='Scout'?' · double damage':'')}      // PvP Max damage: the Specialists deal double damage, too
+function vsText(t,P){return vsText0(t,P)+(P.pm&&t.cls=='S'&&t.cat!='Scout'?' · double damage':'')+(t.cls=='G'&&t.cat=='Mounted'?' · +5 % double damage':'')}      // PvP Max damage: the Specialists deal double damage, too
 function vsText0(t,P){
   if(P.one)return(t.vs[3]>0?'+'+pct(t.vs[3])+' vs. flying':'no bonus')+(t.cls=='S'&&t.cat!='Scout'?' · double damage':'');
   const CL=['melee','ranged','mounted','flying'],use=NOMT(P)?[0,1,3]:[0,1,2,3],ve=veOf(t,P);
@@ -860,7 +860,8 @@ const TRN={};TR.forEach(t=>TRN[t.name]=t);
 // Strength per health is the strength multiplier divided by the health multiplier (Beast army units carry +Beast health, so they hit a little
 // less per health). The modes only differ in the BLOCKS they cut the army into; inside a block the weakest value dies first, strictly.
 // Only troops with exactly the same value are ordered by: smaller unused bonus, then Melee -> Ranged -> Mounted -> Flying, then the lower tier.
-const ddf=(t,P)=>(1+(P['dd'+t.cls]||0)/100)*(1+(P.ddA||0)/100);      // 19.0.9: double damage chance of the class and of the whole army, on average
+const ddc=(t,P)=>(P['dd'+t.cls]||0)+(t.cls=='G'&&t.cat=='Mounted'?5:0);      // the Double damage chance of the class; all Guardsmen mounted units have +5 % on top, all the time (the user, 2026-10-27)
+const ddf=(t,P)=>(1+ddc(t,P)/100)*(1+(P.ddA||0)/100);      // 19.0.9: double damage chance of the class and of the whole army, on average
 const dsp=(t,P)=>P.one?0:t.cls=='M'?(P['dh'+t.type]||0)/100:t.beast?(P.dhBeast||0)/100:0;      // 19.0.17: the Double strike chance of a monster / Beast unit
 const dsc=(t,P)=>P.enemy<=4&&!P.raid?(P.pvp&&t.cls=='S'&&t.cat!='Scout'?2:1)/vsFactor(t,P):1;      // the share of the first hit that the 2nd hit of the Double strike deals: 3 and 4 enemy stacks: the 2nd hit has NO squad bonus (base strength only); 6 and 8 stacks (2 mounted stacks and so on): it can still use its bonus, so the whole first hit again (1)
 const dst=(t,P)=>P.one?0:Math.min(1,dsp(t,P)+(P.dsA||0)/100);      // 19.0.26: the whole Double strike chance of a unit = its own (monster / Beast) + the army's, in ONE roll
@@ -1816,7 +1817,7 @@ function score(P,list,order,eng){      // eng: kept for the callers (the healthi
   // Army Double strike (a chance in %): a strike is repeated. On 3 and 4 enemy stacks the 2nd strike does NOT apply the squad bonus (the bonus against the enemy): it deals the base strength only = c x the first strike, c = base / (base + squad bonus) = 1/f (the Specialists' PvP double damage is part of base); on 6 and 8 stacks c = 1 (the whole strike again).
   // 19.0.20: the spread: every strike of a stack is its own roll (the class Double damage, the army Double damage, the monsters' Double strike and the army Double strike are independent): the damage of a strike is its average x F/mean(F), F = the product of (1 + a 0/1 roll) per source. The strikes are independent: the variances add up.
   const pa=(P.ddA||0)/100,ps=(P.dsA||0)/100,E1=(c,p)=>1+c*p,E2=(c,p)=>1+(2*c+c*c)*p;let vr=0,dmg=0,H=0,hv=0;
-  L.forEach((s,i)=>{const t0=TRN[s.name],pm=t0?dsp(t0,P):0,pc=(P['dd'+s.r[0]]||0)/100,cs=P.enemy<=4&&!P.raid?(P.pvp&&s.r[0]=='S'?2:1)/(s.f||1):1,
+  L.forEach((s,i)=>{const t0=TRN[s.name],pm=t0?dsp(t0,P):0,pc=(t0?ddc(t0,P):(P['dd'+s.r[0]]||0))/100,cs=P.enemy<=4&&!P.raid?(P.pvp&&s.r[0]=='S'?2:1)/(s.f||1):1,
       pt=P.one?0:Math.min(1,pm+ps),      // 19.0.21: a monster / Beast unit has ONE Double strike chance: its own group chance and the army chance ADDED together (one roll); dm already holds the monster's own part (dhf)
       rv=(E2(1,pc)*E2(1,pa)/Math.pow(E1(1,pc)*E1(1,pa),2)*(1+cs*cs*pt)+2*pt*cs)/Math.pow(1+cs*pt,2)-1,M=dm[i]*E1(cs,pt)/E1(cs,t0?pt:0);
     dmg+=M*hit[i];vr+=M*M*rv*hit[i];H+=hit[i]*(1+pt);hv+=hit[i]*pt*(1-pt)});
@@ -1877,7 +1878,7 @@ function epicSim(P,L,EP,dice,rng,trace){
   const N=L.length,e2=EP.st.map(x=>({ty:x[2],hpu:x[1],hp:x[0]*x[1],sp:x[3]||0})),alive=()=>e2.filter(e=>e.hp>0).length,ev=[],dead=new Set();
   let heal=0,hb=-1;L.forEach((s,i)=>{const v=s.n*s.hp;if(v>hb){hb=v;heal=i}});
   const fr=L.map(()=>1);      // the health left of each of our stacks (1 = untouched): a small enemy stack only wounds
-  const info=L.map(s=>{const t=TRN[s.name],vs=t.vs.slice();if(veOf(t,P)>0)for(let i=0;i<4;i++)vs[i]=(vs[i]||0)+veOf(t,P);return{vs,ms:mults(t,P)[2],p:dst(t,P),d:ddf(t,P),pc:(P['dd'+t.cls]||0)/100,pa:(P.ddA||0)/100}});
+  const info=L.map(s=>{const t=TRN[s.name],vs=t.vs.slice();if(veOf(t,P)>0)for(let i=0;i<4;i++)vs[i]=(vs[i]||0)+veOf(t,P);return{vs,ms:mults(t,P)[2],p:dst(t,P),d:ddf(t,P),pc:ddc(t,P)/100,pa:(P.ddA||0)/100}});
   const by=L.map((_,i)=>i).sort((a,b)=>L[b].n*L[b].str-L[a].n*L[a].str||a-b);
   let td=0,nd=0,ns=0,ed=0,es=0,pot=0,pex=0,pvar=0;      // pot: the damage all the strikes were worth before the health of the stacks cut it off (the luck of the fight, whether the epic dies or not)
   const DS=P.dmgScale||1;
@@ -2038,7 +2039,7 @@ function battleHtml(P,list,order,sc){
     if(t=='o'){                                              // one strike: the damage of the whole stack WITHOUT the Double strike, and the part of it that comes from the squad bonus (always counted; no mounted enemy in the 3-stack and Killshot modes, see vsRatio)
       const t0=TRN[s.name],base=(P.pvp&&s.r&&s.r[0]=='S')?2:1,d0=tot(s.n,s.str*(s.f||1)),bn0=tot(s.n,s.str*Math.max(0,(s.f||1)-base));
       let d=d0,bn=bn0,tg='',x2=null;
-      const pc=(P['dd'+(t0?t0.cls:'')]||0)/100,pa=(P.ddA||0)/100,pt=P.one?0:Math.min(1,(t0?dsp(t0,P):0)+(P.dsA||0)/100),cs=P.enemy<=4&&!P.raid?base/(s.f||1):1;
+      const pc=(t0?ddc(t0,P):0)/100,pa=(P.ddA||0)/100,pt=P.one?0:Math.min(1,(t0?dsp(t0,P):0)+(P.dsA||0)/100),cs=P.enemy<=4&&!P.raid?base/(s.f||1):1;
       ed+=(1-(1-pc)*(1-pa))*(1+pt);es+=pt;ad+=d0*(1+pc)*(1+pa)*(1+cs*pt);      // the average number of double damage strikes and double strikes
       if(!ex){      // dice: the class and army Double damage (each +100 %); the Double strike is a 2nd strike of the same stack, its own row (on 3 and 4 enemy stacks without the squad bonus, as in the estimate)
         const F=()=>(1+(rng()<pc?1:0))*(1+(rng()<pa?1:0)),m1=F(),sd=rng()<pt,m2=sd?F():0;
@@ -2701,7 +2702,7 @@ const ENA=['Punisher II','Smiter II','Purifier II','Corax II','Duelist II','Whit
 function rngMk(seed){let a=seed>>>0;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 function mkStack(name,n,P){const t=TRN[name],m=mults(t,P);
   return{fw:t.vsw||0,name,cls:t.cls,cat:t.cat,ty:t.type,bs:!!t.beast,eng:t.cls=='E',gold:t.gold||0,ci:DEFCAT.indexOf(t.cat),n,hp:t.hp*m[0],str:t.str*m[1],ms:m[1],vs:t.vs,
-    spec:(P.pvp&&t.cls=='S'&&t.cat!='Scout')?2:1,pc:(P['dd'+t.cls]||0)/100,pa:(P.ddA||0)/100,pt:dst(t,P),cost:t.cost,ef:(1+(P['dd'+t.cls]||0)/100)*(1+(P.ddA||0)/100)*(1+dst(t,P))}}
+    spec:(P.pvp&&t.cls=='S'&&t.cat!='Scout')?2:1,pc:ddc(t,P)/100,pa:(P.ddA||0)/100,pt:dst(t,P),cost:t.cost,ef:(1+ddc(t,P)/100)*(1+(P.ddA||0)/100)*(1+dst(t,P))}}
 // the enemy: the army splits the Leadership in equal parts (equal health), the monsters fill the Dominance with equal health (eq=1) or equal cost (eq=0); scale = more / less Leadership and Dominance
 function mkEnemy(P,eq,scale){if(P.mon)return monEnemy(P);const out=[],A=ENA.filter(n=>TRN[n]),M=ENM.filter(n=>TRN[n]),sc=scale||1;
   A.forEach(nm=>{const t=TRN[nm],n=Math.floor(P.capA*sc/A.length/t.cost);if(n>0)out.push(mkStack(nm,n,P))});
