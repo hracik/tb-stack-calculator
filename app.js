@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.14';
+const APP_VERSION='22.9.15';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -97,7 +97,7 @@ const EPICS=[      // the epic monsters, alphabetical: n = name, score = the tot
 EPICS.forEach(e=>{if(e.st)e.st.forEach(x=>{if(x[3]==null)x[3]=Math.round(x[1]/3)})});      // 21.9.2 an enemy stack without a given strength has 1/3 of its health per unit (the game's own numbers for Arachne and Doomsday are exactly that), so every epic wounds
 let K4OK=false,K4LO=3;      // 21.8.19: the army kills the chosen epic from a state that still has all 4 stacks: a 3-stack hit is of no use then (the 3-stack mode is switched off)
 let KSLITE=false,KAUTO4=false;      // 21.8.3: the ONE Killshot mode picks its rules by itself: the 4-stack rules when the army kills the epic from its 4-stack state, else the 3-stack rules (calcRun)
-const enemyNow=()=>{const m=$('mode').value;return m=='kill'?(((EPICS.find(x=>x.n==$('epic').value)||{}).st||[]).length>4?(KAUTO4?8:6):(KAUTO4?4:3)):m=='kill4'?4:m=='ren'?8:m=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4},      // the number of enemy stacks of the chosen attack mode
+const enemyNow=()=>{const m=$('mode').value;return m=='kill'?(((EPICS.find(x=>x.n==$('epic').value)||{}).st||[]).length>4?(KAUTO4?8:6):(KAUTO4?4:3)):m=='kill4'?4:m=='ren'?8:m=='ovo'?12:m=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4},      // the number of enemy stacks of the chosen attack mode
   epOk=e=>$('mode').value=='kill'?(e.ks||e.en.includes(3)||e.en.includes(4)):e.en.includes(enemyNow()),epCur=()=>EPICS.find(x=>x.n==$('epic').value)||null;      // an epic counts only in the modes it can be hit in
 $('epic').innerHTML='<option value="">None</option>'+EPICS.map(e=>`<option value="${e.n}">${e.n}</option>`).join('');
 const DHV=Array.from({length:11},(_,i)=>i/2);                // Double strike: 0 - 5 % in steps of 0.5
