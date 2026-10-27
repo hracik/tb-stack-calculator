@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.3';
+const APP_VERSION='22.9.4';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2710,15 +2710,15 @@ function mkEnemy(P,eq,scale){if(P.mon)return monEnemy(P);const out=[],A=ENA.filt
 const clone=L=>L.map(s=>({...s}));
 let LK=[1,0];
 function hitDmg(a,d,rng,expect){
-  const f=a.evs?1+evBonus(a.evs,d):a.spec+((a.vs[d.ci]||0)+(a.eng&&d.wall?ENGWALL:0))/a.ms;let m=1;if(expect){LK=[1,0];return a.n*a.str*f*a.ef}      // no random effect: every strike deals its average (the chances of double damage and double strike are worked in)
+  const f=a.evs?1+evBonus(a.evs,d):(a.eng&&d.wall?20:a.spec)+((a.vs[d.ci]||0)+(a.eng&&d.wall?ENGWALL:0))/a.ms;let m=1;if(expect){LK=[1,0];return a.n*a.str*f*a.ef}      // no random effect: every strike deals its average (the chances of double damage and double strike are worked in)
   
   if(a.pc&&rng()<a.pc)m*=2;if(a.pa&&rng()<a.pa)m*=2;
   LK=[m,0];return a.n*a.str*f*m}      // one strike (a double strike is a second strike of the stack: see battle)
 // the target: where the strike does the most real damage (its squad bonus against that stack, no more than the stack has left); a tie: the stack with less health
-// engineers against a wall: +70,800 % of the base strength (a real report: 202 Josephine II took the wall of 4.05 B health; 201 would not)
-const ENGWALL=708;
+// engineers against a wall: their strength x20 (like the Specialists' x2 against players) and on top of it their regular bonus against fortifications, +33,000 % of the base strength (fitted: a real report, 202 Josephine II took the wall of 4.05 B health, 201 would not; the real value is not known)
+const ENGWALL=330;
 function pickTarget(a,D){let b=null,bs=-1,bh=Infinity;
-  for(const d of D){if(d.n<=0)continue;const h=d.n*d.hp,e=Math.min(a.n*a.str*(a.evs?1+evBonus(a.evs,d):a.spec+((a.vs[d.ci]||0)+(a.eng&&d.wall?ENGWALL:0))/a.ms)*a.ef,h);
+  for(const d of D){if(d.n<=0)continue;const h=d.n*d.hp,e=Math.min(a.n*a.str*(a.evs?1+evBonus(a.evs,d):(a.eng&&d.wall?20:a.spec)+((a.vs[d.ci]||0)+(a.eng&&d.wall?ENGWALL:0))/a.ms)*a.ef,h);
     if(e>bs*(1+1e-12)||(Math.abs(e-bs)<=bs*1e-12&&(d.n>b.n||(d.n==b.n&&h<bh)))){b=d;bs=e;bh=h}}      // a tie in damage: the stack with MORE UNITS, then the one with less health (a real report: the Dragon, Treant and Pegasus hit the big Corax II stack, our Phoenix hit the Bear (12,000 units) and not the Treant (4,300)) in a real battle report: the Bear before the Treant)
   return b}
 // one battle. A = our stacks, B = the enemy. The strongest (units x strength, no squad bonus, no Specialists doubling) of the stacks that have not struck in this round strikes next; the sides alternate; round 1 is opened by `first`, every later round by the side that ran out of stacks first. o.log / o.snap record the report
