@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.9';
+const APP_VERSION='22.9.10';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -853,7 +853,7 @@ function vsRatio(t,P){if(P.one)return t.vs[3]||0;      // CP kill: the only enem
   let m=0;(NOMT(P)?[0,1,3]:[0,1,2,3]).forEach(i=>{if(t.vs[i]>m)m=t.vs[i]});return m+(veOf(t,P))}      // + the bonus against epic enemies (it counts against every enemy stack, so it adds to the class bonus)
 // The troop's own bonus is ADDED to your strength bonuses in one pool: damage = base x (1 + (your bonuses + its bonus, in %)/100).
 // Compared with the same stack without its bonus that is a factor of 1 + bonus / (your strength multiplier), e.g. 1 + 6.67/101.51 = 1.0657.
-function vsFactor(t,P){return (P.pvp&&t.cls=='S'&&t.cat!='Scout'?2:1)+vsRatio(t,P)/mults(t,P)[2]}      // PvP: a Specialist deals DOUBLE its strength (all your bonuses in), the squad bonus is added to that and is not doubled: damage = base x (2 x multiplier + squad bonus)
+function vsFactor(t,P){return (P.pvp&&t.cls=='S'&&t.cat!='Scout'?2:1)*(1+vsRatio(t,P)/mults(t,P)[2])}      // PvP: a Specialist deals DOUBLE: damage = base x 2 x (multiplier + squad bonus), the squad bonus is doubled too (the user, 2026-10-27; was: not doubled)
 const TRN={};TR.forEach(t=>TRN[t.name]=t);
 // DYING ORDER. ONE ranking value for every mode: the damage a stack of EQUAL health deals per strike
 //   = (strength per health) x (1 + your bonus against this enemy, added into the strength pool) x (1 + Double strike).
@@ -2712,15 +2712,15 @@ function mkEnemy(P,eq,scale){if(P.mon)return monEnemy(P);const out=[],A=ENA.filt
 const clone=L=>L.map(s=>({...s}));
 let LK=[1,0];
 function hitDmg(a,d,rng,expect){
-  const f=a.evs?1+evBonus(a.evs,d):((d.wall?a.sw:a.spec)+(a.vs[d.ci]||0)/a.ms);let m=1;if(expect){LK=[1,0];return a.n*a.str*f*a.ef}      // no random effect: every strike deals its average (the chances of double damage and double strike are worked in)
+  const f=a.evs?1+evBonus(a.evs,d):((d.wall?a.sw:a.spec)*(1+(a.vs[d.ci]||0)/a.ms));let m=1;if(expect){LK=[1,0];return a.n*a.str*f*a.ef}      // no random effect: every strike deals its average (the chances of double damage and double strike are worked in)
   
   if(a.pc&&rng()<a.pc)m*=2;if(a.pa&&rng()<a.pa)m*=2;
   LK=[m,0];return a.n*a.str*f*m}      // one strike (a double strike is a second strike of the stack: see battle)
 // the target: where the strike does the most real damage (its squad bonus against that stack, no more than the stack has left); a tie: the stack with less health
-// against a wall (fortification) the engineers deal x20 their strength (sw), coded like the Specialists' x2 against players (spec): damage = base x (20 x multiplier + the bonus against fortifications, vs[4])
+// the Specialists' x2 against players (spec) and the engineers' x20 against fortifications (sw) are coded the same way: damage = base x spec x (multiplier + the squad bonus), the squad bonus is doubled / x20 too (the user, 2026-10-27: it fits a real report)
 function pickTarget(a,D){let b=null,bs=-1,bb=0,bh=0;
-  const bon=(d)=>d.evs?1+evBonus(d.evs,a):d.spec+((d.vs&&d.vs[a.ci])||0)/d.ms,eq=(x,y)=>Math.abs(x-y)<=Math.max(Math.abs(x),Math.abs(y))*1e-12;
-  for(const d of D){if(d.n<=0)continue;const h=d.n*d.hp,e=Math.min(a.n*a.str*(a.evs?1+evBonus(a.evs,d):((d.wall?a.sw:a.spec)+(a.vs[d.ci]||0)/a.ms))*a.ef,h);
+  const bon=(d)=>d.evs?1+evBonus(d.evs,a):d.spec*(1+((d.vs&&d.vs[a.ci])||0)/d.ms),eq=(x,y)=>Math.abs(x-y)<=Math.max(Math.abs(x),Math.abs(y))*1e-12;
+  for(const d of D){if(d.n<=0)continue;const h=d.n*d.hp,e=Math.min(a.n*a.str*(a.evs?1+evBonus(a.evs,d):((d.wall?a.sw:a.spec)*(1+(a.vs[d.ci]||0)/a.ms)))*a.ef,h);
     let take=false;
     if(!b||e>bs&&!eq(e,bs))take=true;
     else if(eq(e,bs)){const k=bon(d);      // a tie in damage: the enemy with the bigger bonus against the attacker; the same: the healthier stack; the same: more units (the last one is not confirmed yet)
