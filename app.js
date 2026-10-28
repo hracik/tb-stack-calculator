@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.26';
+const APP_VERSION='22.9.27';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -87,9 +87,9 @@ const EPICS=[      // the epic monsters, alphabetical: n = name, score = the tot
   {n:'Arachne',wd:[0.165,0.40],ic:'arachne',score:300e6,st:[[16e6,150000,1,50000],[73e6,33000,0,11000],[73e6,33000,2,11000],[73e6,33000,3,11000],[16e6,150000,1,50000],[73e6,33000,0,11000],[73e6,33000,2,11000],[73e6,33000,3,11000]],en:[6,8],ks:true,eb:0.5},      // 8 stacks: ranged, melee, mounted, flying, twice (given by the user 2026-10-21: ranged 16 M units, health 150000, strength 50000; the others 73 M units, health 33000, strength 11000)
   {n:'Arcanomancer',wd:[0.165,0.40],ic:'arcanomancer',score:800e6,st:[[47771360,210000,0,70000],[58666640,171000,2,57000],[54000000,300000,3,100000],[4133333360,2160,1,720]],en:[3,4],eb:0.5},
   {n:'Armageddon/Basilisk',wd:[0.165,0.40],ic:'armbas',score:750e6,st:[[12150000,300000,0,100000],[24100000,150000,2,50000],[27500000,132000,3,44000],[185375000,19500,1,6500]],en:[3,4],eb:0.5},
-  {n:'Baron Candlemourn',ic:'candle',pk:true,score:50e6,st:[[16289000,38400,1,12800],[2635500,237900,0,79300],[2506000,250200,3,83400],[2250000,450000,2,150000]],en:[3,4],eb:0.5},      // 21.9.1 Pumpkin epic (Halloween): all four stacks are Pumpkin monsters; given by the user 2026-10-22: ranged 16,289,000 x 38,400, melee 2,635,500 x 237,900, flying 2,506,000 x 250,200, mounted 2,250,000 x 450,000 (no enemy strength known, so it does not wound)
+  {n:'Baron Candlemourn',wd:[0.075,0.20],ic:'candle',pk:true,score:50e6,st:[[16289000,38400,1,12800],[2635500,237900,0,79300],[2506000,250200,3,83400],[2250000,450000,2,150000]],en:[3,4],eb:0.5},      // 21.9.1 Pumpkin epic (Halloween): all four stacks are Pumpkin monsters; given by the user 2026-10-22: ranged 16,289,000 x 38,400, melee 2,635,500 x 237,900, flying 2,506,000 x 250,200, mounted 2,250,000 x 450,000 (no enemy strength known, so it does not wound)
   {n:'Briareus',wd:[0.165,0.40],ic:'briareus',score:null,st:null,en:[3,4],eb:0.5},
-  {n:'Doomsday',ic:'doomsday',score:50e6,st:[[2985710,210000,0,70000],[3666665,171000,2,57000],[3375000,300000,3,100000],[289583335,2160,1,720]],en:[3,4],eb:0.5},
+  {n:'Doomsday',wd:[0.075,0.20],ic:'doomsday',score:50e6,st:[[2985710,210000,0,70000],[3666665,171000,2,57000],[3375000,300000,3,100000],[289583335,2160,1,720]],en:[3,4],eb:0.5},
   {n:'Fenrir',ic:'fenrir',score:750e6,st:null,en:[3,4],eb:0.5},
   {n:'Hellforge',score:150e6,st:null,en:[3,4],eb:0.5},
   {n:'J\u00f6rmungandr/Chimera',ic:'jormchimera',score:750e6,st:null,en:[3,4],raid:true,eb:0.5},
