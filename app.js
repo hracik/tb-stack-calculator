@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.22';
+const APP_VERSION='22.9.23';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -98,7 +98,7 @@ EPICS.forEach(e=>{if(e.st)e.st.forEach(x=>{if(x[3]==null)x[3]=Math.round(x[1]/3)
 let K4OK=false,K4LO=3;      // 21.8.19: the army kills the chosen epic from a state that still has all 4 stacks: a 3-stack hit is of no use then (the 3-stack mode is switched off)
 let KSLITE=false,KAUTO4=false;      // 21.8.3: the ONE Killshot mode picks its rules by itself: the 4-stack rules when the army kills the epic from its 4-stack state, else the 3-stack rules (calcRun)
 const enemyNow=()=>{const m=$('mode').value;return m=='kill'?(((EPICS.find(x=>x.n==$('epic').value)||{}).st||[]).length>4?(KAUTO4?8:6):(KAUTO4?4:3)):m=='kill4'?4:m=='ren'?8:m=='ovo'?12:m=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4},      // the number of enemy stacks of the chosen attack mode
-  epOk=e=>$('mode').value=='kill'?(e.ks||e.en.includes(3)||e.en.includes(4)):e.en.includes(enemyNow()),epCur=()=>EPICS.find(x=>x.n==$('epic').value)||null;      // an epic counts only in the modes it can be hit in
+  epOk=e=>$('mode').value=='kill'?(!!e.wd&&(e.ks||e.en.includes(3)||e.en.includes(4))):e.en.includes(enemyNow()),epCur=()=>EPICS.find(x=>x.n==$('epic').value)||null;      // an epic counts only in the modes it can be hit in
 $('epic').innerHTML='<option value="">None</option>'+EPICS.map(e=>`<option value="${e.n}">${e.n}</option>`).join('');
 const DHV=Array.from({length:11},(_,i)=>i/2);                // Double strike: 0 - 5 % in steps of 0.5
 const snapDH=x=>{x=parseFloat(String(x).replace(',','.'));if(!isFinite(x))x=0;return Math.min(5,Math.max(0,Math.round(x*2)/2))};
@@ -134,7 +134,7 @@ document.addEventListener('click',e=>{
   if(e.target.closest('.tc')){if(!e.target.closest('.tc').disabled){tierBubble();e.target.closest('.tc').blur()}return}      // the Tier check button
   const vb=e.target.closest('.vb');if(vb&&vb.id=='cmpbtn'){SHOWCMP=true;try{localStorage.setItem('sc_cmp',SHOWCMP?'1':'0')}catch(x){}calc();return}
   if(vb){if(!vb.disabled&&vb.dataset.v!=VIEW){VIEW=vb.dataset.v;try{localStorage.setItem('sc_view',VIEW)}catch(x){}calc()}return}
-  const cm=e.target.closest('.cm');if(cm){if(!cm.disabled){if(cm.dataset.m=='kill')runKill();else if(cm.dataset.m=='kill4')runKill4();else if(cm.dataset.m=='ren')runRen();else if(cm.dataset.m=='cp')runCP();else if(cm.dataset.m=='cpd')runCPD();else if(cm.dataset.m=='pvpmax')runPM();else if(cm.dataset.m=='ovo')runOVO()}return}
+  const cm=e.target.closest('.cm');if(cm){if(!cm.disabled){if(cm.dataset.m=='kill')runKill();else if(cm.dataset.m=='ren')runRen();else if(cm.dataset.m=='cp')runCP();else if(cm.dataset.m=='cpd')runCPD();else if(cm.dataset.m=='pvpmax')runPM();else if(cm.dataset.m=='ovo')runOVO()}return}
   const eb=e.target.closest('.eb');if(eb){runBest(+eb.dataset.e);return}
   const tc=e.target.closest('[data-troop]');if(tc){const nm=tc.dataset.troop;if(XS.has(nm))XS.delete(nm);else XS.add(nm);calc();return}
   const pb=e.target.closest('.pb');
@@ -1903,7 +1903,7 @@ function epicSimS(P,L,EP,dice,rng,trace,first){
 // most troops have a bonus against, dies first; then the epic is a 3-stack. The killshot starts at the biggest state on that way that has the right number of living stacks (4: the 4-stack rules, 3: the 3-stack rules)
 // and that the army still kills in one hit (killState).
 function epicPath(P,L,EP){
-  const WD=EP.wd||[0.075,0.20];      // the army that wears the epic down: its double strike and double damage chances, per epic (wd in the EPICS list: [double strike, double damage]; the stronger epics are worn down by stronger armies; 7.5 % / 20 % when an epic has none). Shadow City: 30 % / 44 %, given by the user 2026-10-25
+  const WD=EP.wd;      // the army that wears the epic down: its double strike and double damage chances, per epic (wd in the EPICS list: [double strike, double damage]); an epic without wd has no Killshot (ksOK), so there is no default
   const N=L.length,H=EP.st.map(x=>x[0]*x[1]),tot=H.reduce((a,b)=>a+b,0),hp=H.slice(),tyIx={};EP.st.forEach((x,i)=>tyIx[x[2]]=i);
   const info=L.map(s=>{const t=TRN[s.name],vs=t.vs.slice();if(veOf(t,P)>0)for(let i=0;i<4;i++)vs[i]=(vs[i]||0)+veOf(t,P);return{vs,ms:mults(t,P)[2],p:P.one?0:WD[0],d:1+WD[1]}});      // the wear-down army has a double strike / double damage chance of its own per epic (WD), whatever our own bonuses are
   const cps=[{left:tot,hp:hp.slice()}],full=P.enemy>4&&!P.raid;
@@ -1932,6 +1932,8 @@ function ksF(P,L,EP,lam){
 function ksCps(P,L,EP){const key=EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA,P.enemy>4]);if(KSC.k!=key)KSC={k:key,cps:epicPath(P,L,EP)};return KSC.cps}
 let KSM=new Map();
 function killState(P,L,EP,dice,fast){
+  if(!EP||!EP.wd)return null;      // no wear-down army given for this epic: no Killshot, no score
+
   if(dice)return killState0(P,L,EP,dice,fast);
   const key=EP.n+'|'+(fast?1:0)+'|'+L.map(x=>x.name+':'+x.n+':'+x.hp+':'+x.str).join(',')+'|'+JSON.stringify(P);      // the same army, bonuses and rules give the same answer: asked many times in one calculation (tile, report, range, the Killshot check), computed once
   if(KSM.has(key))return KSM.get(key);
@@ -1987,7 +1989,7 @@ function ksTile(P,list,order){
   return'<div data-kt="1"'+(eoMany?' data-act="eopen"':'')+' class="stt std"><div class="stl"><span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span></div><div class="stv">'+v+'</div><div class="sts">'+sub+'</div></div>'}
 // the same army as a killshot: in the 3- and 4-stack modes the score tile also tells what a killshot hit with these stacks scores (average, 99 % range, the state it kills from)
 function ksInfo(P,list,order,EP){
-  if(P.kill||P.ren||P.cp||P.one||P.pm||P.pvp||!(P.enemy==3||P.enemy==4||P.enemy==6||P.enemy==8)||!EP||!EP.st||!EP.score)return null;
+  if(P.kill||P.ren||P.cp||P.one||P.pm||P.pvp||!(P.enemy==3||P.enemy==4||P.enemy==6||P.enemy==8)||!EP||!EP.st||!EP.score||!EP.wd)return null;
   const L=ordL(list,order),Pk={...P,kill:true,kill4:P.enemy==4||P.enemy==8},av=ksAvg(Pk,L,EP);
   if(!av)return{none:true};
   const r=ksRange(Pk,L,EP);return{av:av.f*EP.score,lo:r.lo*EP.score,hi:r.hi*EP.score,left:av.f,K:av.K}}
@@ -2100,8 +2102,6 @@ function runCP(){ if(!PV1)return;                           // CP kill (PvP): th
   $('mode').value='cp';SO=[];
   refresh();
 }
-const KS4=true;      // Killshot v. 4 (the Killshot order against a full enemy stack, mounted enemy included): switched off for now. Set true to switch it on.
-function runKill4(){if(!KS4)return;$('mode').value='kill4';SO=[];refresh()}
 function runKill(){                                      // Killshot: the rule decides the order, nothing is refined
   $('mode').value='kill';SO=[];
   refresh();
@@ -2552,8 +2552,6 @@ function calcRun(){
 function calcRun0(){
   epAuto();
   const pvOK=m=>m=='cp'||m=='cpd'?PV1:m=='pvpmax'?PVM():m=='ovo'?ovoOn():m=='ren'?RENEGADES():false,okP=PVMODES.filter(pvOK);      // okP = the PvP modes that are switched on
-  if($('mode').value=='kill4'&&!KS4){$('mode').value='max';SO=[]}      // Killshot v. 4 is off: a tab left in it falls back to the 4-stack mode
-  document.querySelectorAll('.cm[data-m=kill4]').forEach(b=>{b.disabled=!KS4});
   if(PVMODES.includes($('mode').value)&&!pvOK($('mode').value)){$('mode').value='max';SO=[]}      // a mode that is off: a tab left in it falls back to the 4-stack mode
   document.querySelectorAll('.cm[data-m=cp],.cm[data-m=cpd]').forEach(b=>{b.disabled=!PV1});
   document.querySelectorAll('.cm[data-m=pvpmax]').forEach(b=>{b.disabled=!PVM()});
@@ -2593,7 +2591,7 @@ function calcRun0(){
   {const ce=ATK=='epics'?EPICS.find(x=>x.n==$('epic').value):null,ec=$('ecard');if(ec)ec.hidden=ATK!='epics';
     {const eb=$('ebtn');if(eb){const k=ce?ce.n:'';if(eb.dataset.k!==k){eb.dataset.k=k;eb.innerHTML=ce?epImg(ce,'epi')+'<span class="epn">'+esc(ce.n)+'</span><span class="epc">\u25be</span>':'<span class="epn">Choose epic</span><span class="epc">\u25be</span>'}}}
     document.querySelectorAll('.eb').forEach(b=>{b.hidden=!!ce&&!ce.en.includes(+b.dataset.e)});
-    document.querySelectorAll('.cm[data-m=kill]').forEach(b=>{b.hidden=!ce||!(ce.ks||ce.en.includes(3)||ce.en.includes(4))})}
+    document.querySelectorAll('.cm[data-m=kill]').forEach(b=>{b.hidden=!ce||!ce.wd||!(ce.ks||ce.en.includes(3)||ce.en.includes(4))})}
   document.querySelectorAll('.eb').forEach(b=>{if(+b.dataset.e==K4LO&&K4OK)b.hidden=true;b.disabled=false});      // the army kills this epic while it still has all its stacks: the 3-stack button is not shown at all (it is there or it is not)
   drawBR();      // the battle report (drawn only while it is open)
   const food=[...A,...Mo,...U.list].reduce((q,s)=>q+(s.n||0)*foodOf(s.name),0);      // total food consumption of all the units, 25 % less than the plain values (mercenaries use none)
