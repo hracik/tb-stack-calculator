@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.1.1';
+const APP_VERSION='23.1.2';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -928,7 +928,7 @@ function placeOutliers(P,rsv,rest,slots){
 // (exempt from the strength rule) at the place that suits its squad bonus, is the one that gives the most damage.
 // An order only wins over an earlier one when it is clearly better (0.05 %).
 const GTOL=1e-9;       // the same ratio = one group: equal up to floating-point noise (v286: there is no 1.5 % band any more - a different ratio is a different place in the order)
-let DEADLY=true;       // a tie in damage goes to the DEADLIEST stack (the bigger bonus against the attacker), in every fight and for the 2nd hit of a Double strike too; then the healthier, then more units. false: epic fights and the 2nd hit take the healthiest stack on a tie (bonus ignored)
+let DEADLY=true;       // a tie in damage goes to the DEADLIEST stack: the one whose total damage against the attacker (units x strength, with its bonus against the attacker if any) is the biggest, in every fight and for the 2nd hit of a Double strike too; then the healthier, then more units. false: epic fights and the 2nd hit take the healthiest stack on a tie (bonus ignored)
 let MONLAST=true;       // (the mixed layout is NOT tried at the moment - it costs twice the search time for about 0.1 % damage at most) true: the full monster tiers stand BEHIND the whole army in every mode (the army is ordered alone; the monsters follow by SH ratio, then the partial tier). false: army and monsters in one list by SH ratio (the army is ordered alone, weakest on the places Kn+1; the monsters follow by SH ratio, then the partial tier). false: army and monsters are one list by SH ratio
 let QNARROW=true;       // v317: the quick order that ranks the numbers of full monster tiers uses the army-block weak order only (as before v317): the wide order is judged in the whole search of the chosen number (in 320 random runs it never lost more than 0.6 %, ranking with it lost up to 1.5 %)
 let WEAKMON=true;       // v317: the places Kn+1 beyond the army block (inside the full monster tiers) are free for the weak troops too: the rule Kn+1 comes BEFORE 'monsters last'
@@ -1863,7 +1863,7 @@ function epicSimS(P,L,EP,dice,rng,trace,first){
     const after=Math.ceil(e.hp/e.hpu-1e-9);ev.push({r:rd,t:'o',i,ty:e.ty,dmg:a,before,killed:before-after,dead:e.hp<=0,tg,sq:amt>0?bonus*a/amt:0,un:Math.round(L[i].n*fr[i])})};
   const full=P.enemy>4&&!P.raid;      // 6 and 8 enemy stacks: the 2nd strike of a Double strike is the whole strike again (the same bonus, the same target); 3 and 4: the base strength only (no squad bonus), to the stack where it does the most real damage
   // THE TARGET RULE (Battle rules): the most real damage (bonus included, capped by the health the target has left); tie in an epic fight: 1) the healthier stack, 2) the stack with more units (OPEN / unconfirmed). The bigger-bonus-against-the-attacker tie is for PvP and monsters only
-  const pickT=(i,dmgOf,ex)=>{let tk=null,bv=-1,tb=-1;e2.forEach(e=>{if(e.hp<=0||e===ex)return;const v=Math.min(dmgOf(e),e.hp),eb=DEADLY&&EP.eb&&ARCAT[L[i].cat]===ARB[e.ty]?EP.eb:0;      // epic fights: a tie in damage goes to the healthiest stack (the "more dangerous stack" tie is for PvP and monsters only); the 2nd hit of a Double strike (ex) the same
+  const pickT=(i,dmgOf,ex)=>{let tk=null,bv=-1,tb=-1;e2.forEach(e=>{if(e.hp<=0||e===ex)return;const v=Math.min(dmgOf(e),e.hp),eb=DEADLY&&e.sp>0?e.hp/e.hpu*e.sp*(1+(EP.eb&&ARCAT[L[i].cat]===ARB[e.ty]?EP.eb:0)):0;      // the deadliest: the total damage of the target against the attacker (its units x strength, the bonus if any)      // epic fights: a tie in damage goes to the healthiest stack (the "more dangerous stack" tie is for PvP and monsters only); the 2nd hit of a Double strike (ex) the same
     
     if(!tk||v>bv+1e-9||(Math.abs(v-bv)<=1e-9&&(eb>tb||(eb==tb&&(e.hp>tk.hp+1e-9||(Math.abs(e.hp-tk.hp)<=1e-9&&e.hp/e.hpu>tk.hp/tk.hpu)))))){tk=e;bv=v;tb=eb}});return tk};
   const strike=(i,rd)=>{const q=info[i],s=L[i];let bt=null,bb=0,tk=null;
@@ -1885,7 +1885,7 @@ function epicSimS(P,L,EP,dice,rng,trace,first){
       // the enemy stack picks the stack of ours where its strike does the most real damage (the bonus included - every epic has +50 % against one troop type: ranged against flying, flying against melee, melee against mounted, mounted against ranged - capped by the health the stack has left); tie: the healthier, then more units (epic fights; the bigger-bonus tie is for PvP and monsters only)
       const Dm0=a.sp>0?a.hp/a.hpu*a.sp:Infinity,bt=EP.eb?ARB[a.ty]:-1;let t=-1,tv=-1,tbn=-1,th=-1,tob=-1,tu=-1;
       for(let q=0;q<N;q++){if(dead.has(q))continue;const hq=L[q].n*L[q].hp*fr[q],bn=EP.eb&&ARCAT[L[q].cat]===bt?EP.eb:0,v=Math.min(Dm0*(1+bn),hq);
-        const ob=DEADLY?(info[q].vs[a.ty]||0):0,uq=L[q].n*fr[q];      // tie: 1) the stack with the bigger bonus against the attacker, 2) the healthier, 3) more units (Battle rules)
+        const ob=DEADLY?L[q].n*fr[q]*L[q].str*(1+(info[q].vs[a.ty]||0)/info[q].ms):0,uq=L[q].n*fr[q];      // tie: 1) the stack with the bigger bonus against the attacker, 2) the healthier, 3) more units (Battle rules)
         if(v>tv*(1+1e-9)||(v>=tv*(1-1e-9)&&(ob>tob||(ob==tob&&(hq>th*(1+1e-9)||(hq>=th*(1-1e-9)&&uq>tu)))))){tv=v;t=q;tbn=bn;th=hq;tob=ob;tu=uq}}
       const Dm=Dm0*(1+tbn),Hf=L[t].n*L[t].hp*fr[t];
       if(Dm<Hf*(1-1e-9)){fr[t]-=Dm/(L[t].n*L[t].hp);ev.push({r:rd,t:'w',i:t,ty:a.ty,u:Math.ceil(a.hp/a.hpu-1e-9),dmg:Dm,un:Math.round(L[t].n*fr[t]),hl:Hf});return}
@@ -1908,7 +1908,7 @@ function epicPath(P,L,EP){
   const cps=[{left:tot,hp:hp.slice()}],full=P.enemy>4&&!P.raid;
   for(let it=0;it<4000&&hp.some(x=>x>1e-6);it++){
     const dv=hp.map(()=>0);let hi=-1;hp.forEach((x,i)=>{if(x>1e-6&&(hi<0||x>hp[hi]))hi=i});
-    info.forEach((q,j)=>{const eb=(i,sec)=>DEADLY&&EP.eb&&ARCAT[L[j].cat]===ARB[EP.st[i][2]]?EP.eb:0;      // Battle rules target: the most damage (the flow has no health cap), tie: the stack with the bigger bonus against the attacker, then the healthier
+    info.forEach((q,j)=>{const eb=(i,sec)=>DEADLY&&EP.st[i][3]>0?hp[i]/EP.st[i][1]*EP.st[i][3]*(1+(EP.eb&&ARCAT[L[j].cat]===ARB[EP.st[i][2]]?EP.eb:0)):0;      // Battle rules target: the most damage (the flow has no health cap), tie: the stack with the bigger bonus against the attacker, then the healthier
       const pk=(dm,ex)=>{let bt=-1,bv=-1;EP.st.forEach((x,i)=>{if(hp[i]<=1e-6||i===ex)return;const v=dm(x);if(bt<0||v>bv+1e-9||(Math.abs(v-bv)<=1e-9&&(eb(i,ex!==undefined)>eb(bt,ex!==undefined)||(eb(i,ex!==undefined)==eb(bt,ex!==undefined)&&hp[i]>hp[bt])))){bv=v;bt=i}});return bt};
       const bt=pk(x=>1+(q.vs[x[2]]||0)/q.ms),bb=bt>=0?(q.vs[EP.st[bt][2]]||0):0,b2=pk(()=>1,bt),bf=full?pk(x=>1+(q.vs[x[2]]||0)/q.ms,bt):-1;      // the 2nd hit never strikes the stack of the 1st hit
       const base=q.d/N;if(bt<0)dv[hi]+=base;else dv[bt]+=base*(1+bb/q.ms);if(q.p){if(full){if(bf>=0)dv[bf]+=base*q.p*(1+(q.vs[EP.st[bf][2]]||0)/q.ms)}else if(b2>=0)dv[b2]+=base*q.p}});
@@ -2705,9 +2705,9 @@ function pickTarget(a,D,ex){let b=null,bs=-1,bb=0,bh=0;
   for(const d of D){if(d.n<=0||d===ex)continue;const h=d.n*d.hp,e=Math.min(a.n*a.str*(a.evs?1+evBonus(a.evs,d):((d.wall?a.sw:a.spec)*(1+(a.vs[d.ci]||0)/a.ms)))*a.ef,h);
     let take=false;
     if(!b||e>bs&&!eq(e,bs))take=true;
-    else if(eq(e,bs)){const k=ex&&!DEADLY?0:bon(d);      // a tie in damage: the enemy with the bigger bonus against the attacker; the same: the healthier stack; the same: more units (the last one is not confirmed yet)
+    else if(eq(e,bs)){const k=DEADLY?d.n*d.str*bon(d):ex?0:bon(d);      // a tie in damage: the enemy with the bigger bonus against the attacker; the same: the healthier stack; the same: more units (the last one is not confirmed yet)
       if(!eq(k,bb))take=k>bb;else if(!eq(h,bh))take=h>bh;else take=d.n>b.n}
-    if(take){b=d;bs=e;bb=ex&&!DEADLY?0:bon(d);bh=h}}
+    if(take){b=d;bs=e;bb=DEADLY?d.n*d.str*bon(d):ex?0:bon(d);bh=h}}
   return b}
 // one battle. A = our stacks, B = the enemy. The strongest (units x strength, no squad bonus, no Specialists doubling) of the stacks that have not struck in this round strikes next; the sides alternate; round 1 is opened by `first`, every later round by the side that ran out of stacks first. o.log / o.snap record the report
 function battle(A0,B0,rng,o){o=o||{};const A=clone(A0),B=clone(B0),first=o.first||(rng?(rng()<0.5?'A':'B'):'A');      // round 1: a coin toss (Battle rules) unless the caller names the side; from round 2 the side that did NOT make the last strike of the previous round starts
