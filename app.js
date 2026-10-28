@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.35';
+const APP_VERSION='22.9.36';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1151,16 +1151,17 @@ function renOrder(P,names){
 // The squad bonus is the bonus against flying ONLY. The Double strike is unused in the CP modes (one enemy stack, no second enemy to hit - see dhf), so the Beast units
 // (Royal Lion, Battle Griffin) and the monsters count as troops without a bonus when they have none against flying.
 const cpBonus=(t,P)=>P.pm?sqb(t,P).tot:vsRatio(t,P);      // PvP Max damage: the features against the enemy AND the random effects (Double damage, Double strike) = the damage side of the DH ratio (the user, 2026-10-28: damage is counted with features and random effects); CP kill / CP death: the bonus against flying
+const cpBonusX=(t,P)=>cpBonus(t,P)+(!P.pm&&t.cls=='G'&&t.cat=='Mounted'?(mults(t,P)[2]+vsRatio(t,P))*0.05*(1+(P.ddA||0)/100):0);      // the order ranks the features by size: the +5 % Double damage chance of the Guardsmen mounted units counts as a feature (CP kill, CP death); whether a troop HAS a bonus against flying (bon) is still cpBonus
 const cpSH=(t,P)=>Math.round(ratioOf(t,P)*1e9);       // strength per health with your multipliers only (no squad bonus, no Double strike)
 // Group of equals = the troops with the same squad bonus AND the same SH ratio (strength per health): they get about the same health and share their places. The troops with a different
 // SH ratio are NOT forced to the same health - the SH ratio decides the order first (the smaller ratio first, see cpdOrder), only the troops with the same ratio form a group.
 // CP kill: class + tier + bonus + SH ratio. CP death: Guardsmen and monsters count as one kind, no tier: kind + bonus + SH ratio (G9 and G8 without a bonus: the same SH ratio, one group).
-const cpGroup=(t,P)=>{const b=Math.round(cpBonus(t,P)*1e6),h=cpSH(t,P);return P.cpd?(t.cls=='G'||t.cls=='M'?'GM':t.cls)+'|'+b+'|'+h:t.cls+'|'+b+'|'+t.tier+'|'+h};
+const cpGroup=(t,P)=>{const b=Math.round(cpBonusX(t,P)*1e6),h=cpSH(t,P);return P.cpd?(t.cls=='G'||t.cls=='M'?'GM':t.cls)+'|'+b+'|'+h:t.cls+'|'+b+'|'+t.tier+'|'+h};
 function cpOrder(P,names){
   const ts=TR.filter(t=>names.has(t.name)),ci=t=>DEFCAT.indexOf(t.cat);
   const eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier),army=ts.filter(t=>t.pool=='A'&&t.cls!='E'),mon=ts.filter(t=>t.pool=='M');
   const tiers=a=>[...new Set(a.map(t=>t.tier))].sort((x,y)=>y-x);
-  const grp=a=>a.slice().sort((x,y)=>cpBonus(x,P)-cpBonus(y,P)||cpSH(x,P)-cpSH(y,P)||ci(x)-ci(y)||x.name.localeCompare(y.name));      // smaller squad bonus first, then the rising SH ratio (the smaller ratio first); equal ones stay together
+  const grp=a=>a.slice().sort((x,y)=>cpBonusX(x,P)-cpBonusX(y,P)||cpSH(x,P)-cpSH(y,P)||ci(x)-ci(y)||x.name.localeCompare(y.name));      // smaller squad bonus first, then the rising SH ratio (the smaller ratio first); equal ones stay together
   return[...eng,...tiers(army).flatMap(tt=>['G','S'].flatMap(c=>grp(army.filter(t=>t.tier==tt&&t.cls==c)))),...tiers(mon).flatMap(tt=>grp(mon.filter(t=>t.tier==tt)))].map(t=>t.name);
 }
 // CP death (PvP, one flying enemy, the most damage): the troops that strike last strike the most, so the Specialists (double damage) stand near the end. The order:
@@ -1173,10 +1174,10 @@ function cpdOrder(P,names,c){
   const ts=TR.filter(t=>names.has(t.name)),ci=t=>DEFCAT.indexOf(t.cat),bon=t=>cpBonus(t,P)>0,sp=monSplit(ts,c);
   const eng=ts.filter(t=>t.cls=='E').sort((a,b)=>b.tier-a.tier),army=ts.filter(t=>t.pool=='A'&&t.cls!='E'),mon=ts.filter(t=>t.pool=='M');
   const tie=(x,y)=>y.tier-x.tier||(x.cls=='M')-(y.cls=='M')||ci(x)-ci(y)||x.name.localeCompare(y.name);              // same ratio: the higher tier first, Guardsmen before monsters
-  const noB=a=>a.filter(t=>!bon(t)).sort((x,y)=>cpSH(x,P)-cpSH(y,P)||tie(x,y));                                    // no bonus: the smaller SH ratio first
-  const withB=a=>a.filter(bon).sort((x,y)=>cpBonus(x,P)-cpBonus(y,P)||cpSH(x,P)-cpSH(y,P)||tie(x,y));             // with a bonus: the lowest bonus first, then the smaller SH ratio first
+  const noB=a=>a.filter(t=>!bon(t)).sort((x,y)=>cpSH(x,P)-cpSH(y,P)||cpBonusX(x,P)-cpBonusX(y,P)||tie(x,y));                                    // no bonus: the smaller SH ratio first
+  const withB=a=>a.filter(bon).sort((x,y)=>cpBonusX(x,P)-cpBonusX(y,P)||cpSH(x,P)-cpSH(y,P)||tie(x,y));             // with a bonus: the lowest bonus first, then the smaller SH ratio first
   const both=a=>[...noB(a),...withB(a)];
-  if(P.ov){const by=(x,y)=>cpBonus(x,P)-cpBonus(y,P)||cpSH(x,P)-cpSH(y,P)||tie(x,y);return[...eng,...[...army.filter(t=>t.cls=='G'),...mon.filter(t=>sp.full.has(t.tier))].sort(by),...army.filter(t=>t.cls=='S').sort(by),...mon.filter(t=>!sp.full.has(t.tier)).sort(by)].map(t=>t.name)}      // One v. One (21.4.4): the Specialists die last by force, the lowest monster tier is the PARTIAL one as in the epic modes (it takes what the Dominance still allows) and stands behind the Specialists; inside the two blocks the lowest squad bonus dies first, the better bonuses die later (then the smaller SH ratio first); health AND strength fall along this order (MD.ovo)
+  if(P.ov){const by=(x,y)=>cpBonusX(x,P)-cpBonusX(y,P)||cpSH(x,P)-cpSH(y,P)||tie(x,y);return[...eng,...[...army.filter(t=>t.cls=='G'),...mon.filter(t=>sp.full.has(t.tier))].sort(by),...army.filter(t=>t.cls=='S').sort(by),...mon.filter(t=>!sp.full.has(t.tier)).sort(by)].map(t=>t.name)}      // One v. One (21.4.4): the Specialists die last by force, the lowest monster tier is the PARTIAL one as in the epic modes (it takes what the Dominance still allows) and stands behind the Specialists; inside the two blocks the lowest squad bonus dies first, the better bonuses die later (then the smaller SH ratio first); health AND strength fall along this order (MD.ovo)
   return[...eng,...both([...army.filter(t=>t.cls=='G'),...mon.filter(t=>sp.full.has(t.tier))]),...both(army.filter(t=>t.cls=='S')),...both(mon.filter(t=>!sp.full.has(t.tier)))].map(t=>t.name);
 }
 // ---- THE MODES: ONE engine runs all of them. This table is the only place that says how they differ; everything else (the rules above, the sizing helpers, the score) is shared.
