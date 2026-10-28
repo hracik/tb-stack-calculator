@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.12';
+const APP_VERSION='23.2.13';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2833,12 +2833,17 @@ async function quick(P,names,Es,iters,seed,stop,prog,warm){
 const MONMAXST=99;      // no limit on the stacks (the game has none)
 let MONOBJ='N';      // what the search of the Attack monsters minimizes: G = revive gold lost, N = units lost, H = health lost
 // the value of one fight for the search of the Attack monsters (smaller is better): a win = the damage the enemy did to us (our health lost; the revive gold only breaks a tie); a loss is worse than every win
-const monF=(r,ref)=>r.win>0?(MONOBJ=='N'?r.lostN+r.lostG*1e-6:MONOBJ=='H'?r.lostH+r.lostG*1e-3:r.lostG):(MONOBJ=='G'?ref:1e30)*(1+r.remB)
+let MONRDP=0,MONSTP=0,MONMP=0,MONSAFE=1;      // the search settings of one candidate (see monBest): the price of an extra round, of a stack, of the Dominance spent on monsters (in units lost), and the margin on our damage
+const monSafe=s=>{s.ef=(s.ef||1)*MONSAFE;return s};
+const monX=(c,cost,isM)=>{let n=0,m=0;for(let i=0;i<c.length;i++)if(c[i]>0){n++;if(isM[i])m+=c[i]*cost[i]}return n*MONSTP+m*MONMP};
+const monF=(r,ref)=>r.win>0?(MONOBJ=='N'?r.lostN+r.lostG*1e-6+(r.rd>1?(r.rd-1)*MONRDP:0):MONOBJ=='H'?r.lostH+r.lostG*1e-3:r.lostG):(MONOBJ=='G'?ref:1e30)*(1+r.remB)
 // tie-break, done once on the FINAL result of the search (not inside it: it would steer the search): the same result with the higher tier of the same troop is better (Josephine II over I, Corax II over I) - a stack moves to the next tier of the same troop when the fight is not worse
+// monsters are strikers, not the stack that takes the hits (that is the army's job: the Leadership is where the health is): a monster stack is no bigger than it takes to kill the biggest enemy stack (and a half more)
+function monCaps(P,names,E){return names.map(n=>{if(TRN[n].cls!='M')return Infinity;const a=mkStack(n,1,P);let m=1;E.forEach(e=>{const d=hitDmg(a,e,null,true);if(d>0)m=Math.max(m,e.n*e.hp/d)});return Math.ceil(m*1.5)})}
 function monUp(P,names,Es,w){if(!w||!w.cnt)return w;const E=Es[0],ref=Es.ref||1,nm=names.length,cost=names.map(n=>TRN[n].cost),isM=names.map(n=>TRN[n].cls=='M');
-  const mk=c=>{const L=[];for(let i=0;i<nm;i++)if(c[i]>0)L.push(mkStack(names[i],c[i],P));return L};
-  const ok=c=>{let a=0,m=0,k=0;for(let i=0;i<nm;i++)if(c[i]>0){k++;if(isM[i])m+=c[i]*cost[i];else a+=c[i]*cost[i]}return k<=MONMAXST&&a<=P.capA*1.0000001&&m<=P.capM*1.0000001};
-  const f=c=>{const L=mk(c);return (['A','B'].reduce((q,s)=>{const r=battle(L,E,null,{first:s,mon:true,expect:true});return q+(monF(r,ref))},0))/2};
+  const mk=c=>{const L=[];for(let i=0;i<nm;i++)if(c[i]>0)L.push(monSafe(mkStack(names[i],c[i],P)));return L};
+  const mcap=monCaps(P,names,E),ok=c=>{let a=0,m=0,k=0;for(let i=0;i<nm;i++)if(c[i]>0){if(c[i]>mcap[i])return false;k++;if(isM[i])m+=c[i]*cost[i];else a+=c[i]*cost[i]}return k<=MONMAXST&&a<=P.capA*1.0000001&&m<=P.capM*1.0000001};
+  const f=c=>{const L=mk(c);return (['A','B'].reduce((q,s)=>{const r=battle(L,E,null,{first:s,mon:true,expect:true});return q+(monF(r,ref))},0))/2+monX(c,cost,isM)};
   const base=n=>n.replace(/ I{1,2}$/,''),st1=names.map(n=>mkStack(n,1,P));let best=w.cnt.slice(),bv=w.v;
   for(let i=0;i<nm;i++){if(!(best[i]>0))continue;
     const j=names.findIndex((n,q)=>q!==i&&base(n)===base(names[i])&&(TRN[n].tier||0)>(TRN[names[i]].tier||0));if(j<0)continue;
@@ -2846,9 +2851,9 @@ function monUp(P,names,Es,w){if(!w||!w.cnt)return w;const E=Es[0],ref=Es.ref||1,
   const o=names.map((n,i)=>best[i]>0?best[i]*cost[i]:0);o.cnt=best;o.v=bv;return o}
 // THE PLAN of the Attack monsters. The enemy never changes, so its weak spots are read from it: how many units of each of our troops kill (or cripple) each enemy stack. Your numbers only decide what that costs. Then, stack by stack, the plan adds the troop and the count that lowers the damage the enemy does to us the most (the fight is played by the battle rules, so who strikes whom comes out by itself: a stack of ours kills the enemy stack that has not struck yet, the enemy hits the stacks that take it best)
 function monPlan(P,names,Es,stop){const E=Es[0],ref=Es.ref||1,nm=names.length,cost=names.map(n=>TRN[n].cost),isM=names.map(n=>TRN[n].cls=='M');
-  const mk=c=>{const L=[];for(let i=0;i<nm;i++)if(c[i]>0)L.push(mkStack(names[i],c[i],P));return L};
-  const ok=c=>{let a=0,m=0,k=0;for(let i=0;i<nm;i++)if(c[i]>0){k++;if(isM[i])m+=c[i]*cost[i];else a+=c[i]*cost[i]}return k>0&&k<=MONMAXST&&a<=P.capA*1.0000001&&m<=P.capM*1.0000001};
-  const f=c=>{const L=mk(c);return (['A','B'].reduce((q,s)=>q+monF(battle(L,E,null,{first:s,mon:true,expect:true}),ref),0))/2};
+  const mk=c=>{const L=[];for(let i=0;i<nm;i++)if(c[i]>0)L.push(monSafe(mkStack(names[i],c[i],P)));return L};
+  const mcap=monCaps(P,names,E),ok=c=>{let a=0,m=0,k=0;for(let i=0;i<nm;i++)if(c[i]>0){if(c[i]>mcap[i])return false;k++;if(isM[i])m+=c[i]*cost[i];else a+=c[i]*cost[i]}return k>0&&k<=MONMAXST&&a<=P.capA*1.0000001&&m<=P.capM*1.0000001};
+  const f=c=>{const L=mk(c);return (['A','B'].reduce((q,s)=>q+monF(battle(L,E,null,{first:s,mon:true,expect:true}),ref),0))/2+monX(c,cost,isM)};
   const st1=names.map(n=>mkStack(n,1,P)),need=st1.map(a=>{const o=[];E.forEach(e=>{const d=hitDmg(a,e,null,true);if(d>0)o.push(e.n*e.hp/d)});return o});      // units of this troop that take one enemy stack down
   const FK=[0.35,0.5,0.7,0.85,1,1.15,1.4],FC=[0.5,0.8,0.9,1.1,1.25,2];
   let cur=names.map(()=>0),cv=Infinity;
@@ -2860,10 +2865,28 @@ function monPlan(P,names,Es,stop){const E=Es[0],ref=Es.ref||1,nm=names.length,co
     const gain=cv===Infinity?1:(cv-bv)/cv;cur[bi]=bc;cv=bv;if(gain<1e-4&&cv<1e29)break}
   if(!(cv<1e29))return null;
   const w=names.map((n,i)=>cur[i]>0?cur[i]*cost[i]:0);w.cnt=cur;w.v=cv;return w}
+// SIMPLIFY (the last step, played with the dice): a stack that does not pay for itself goes. The fights are rolled with the same dice for every try (60 per start), a stack is dropped when the fights are not worse (units lost + the rounds), the monsters first (a plain army that does the same job is better), then the smallest army stacks; the rounds count: every extra round costs 3 units
+function monDice(P,names,Es,cnt){const E=Es[0],nm=names.length,L=[];let ns=0,mu=0;for(let i=0;i<nm;i++)if(cnt[i]>0){L.push(mkStack(names[i],cnt[i],P));ns++;if(TRN[names[i]].cls=='M')mu+=cnt[i]*TRN[names[i]].cost}
+  let t=0,n=0;for(const f of ['A','B']){const rng=rngMk(77);for(let k=0;k<60;k++){const r=battle(L,E,rng,{first:f,mon:true});t+=r.win>0?r.lostN+6*(r.rd-1):1e6;n++}}
+  return t/n+0.6*ns+4e-5*mu}      // the value of a layout played with the dice (smaller is better): the units lost, 6 for every extra round, 0.6 for every stack and a little for the Dominance spent on monsters (a plain army of a few stacks is better)
+function monSimplify(P,names,Es,w,stop){if(!w||!w.cnt)return w;const nm=names.length,cost=names.map(n=>TRN[n].cost),isM=names.map(n=>TRN[n].cls=='M');
+  const ok=c=>{let a=0,m=0;for(let i=0;i<nm;i++)if(c[i]>0){if(isM[i])m+=c[i]*cost[i];else a+=c[i]*cost[i]}return a<=P.capA*1.0000001&&m<=P.capM*1.0000001};
+  let cnt=w.cnt.slice(),m0=monDice(P,names,Es,cnt);
+  for(let pass=0;pass<12;pass++){if(stop&&stop())return w;
+    const idx=cnt.map((c,i)=>i).filter(i=>cnt[i]>0).sort((a,b)=>(isM[b]-isM[a])||(cnt[a]*cost[a]-cnt[b]*cost[b]));
+    let done=false;
+    const base=n=>n.replace(/ I{1,2}$/,'');      // the same troop in two tiers is one stack of the higher tier (the same strength)
+    for(const i of idx){const j=names.findIndex((n,q)=>q!==i&&cnt[q]>0&&base(n)===base(names[i])&&(TRN[n].tier||0)>(TRN[names[i]].tier||0));if(j<0)continue;
+      for(const k of [1,1.05,1.1]){const d=cnt.slice();d[j]=cnt[j]+Math.ceil(cnt[i]*mkStack(names[i],1,P).str/mkStack(names[j],1,P).str*k);d[i]=0;if(!ok(d))continue;const v=monDice(P,names,Es,d);if(v<=m0){cnt=d;m0=v;done=true;break}}
+      if(done)break}
+    if(done)continue;
+    for(const i of idx){const d=cnt.slice();d[i]=0;if(!ok(d))continue;const v=monDice(P,names,Es,d);if(v<=m0){cnt=d;m0=v;done=true;break}}
+    if(!done)break}
+  const o=names.map((n,i)=>cnt[i]>0?cnt[i]*cost[i]:0);o.cnt=cnt;o.v=w.v;return o}
 function monCounts(P,names,Es,w0,iters,seed,stop){const E=Es[0],ref=Es.ref||1,nm=names.length,cost=names.map(n=>TRN[n].cost),isM=names.map(n=>TRN[n].cls=='M');
-  const mk=c=>{const L=[];for(let i=0;i<nm;i++)if(c[i]>0)L.push(mkStack(names[i],c[i],P));return L};
-  const ok=c=>{let a=0,m=0,k=0;for(let i=0;i<nm;i++)if(c[i]>0){k++;if(isM[i])m+=c[i]*cost[i];else a+=c[i]*cost[i]}return k<=MONMAXST&&a<=P.capA*1.0000001&&m<=P.capM*1.0000001};
-  const f=c=>{const L=mk(c);return (['A','B'].reduce((q,s)=>{const r=battle(L,E,null,{first:s,mon:true,expect:true});return q+(monF(r,ref))},0))/2};      // the average of both starts of round 1 (the coin toss)
+  const mk=c=>{const L=[];for(let i=0;i<nm;i++)if(c[i]>0)L.push(monSafe(mkStack(names[i],c[i],P)));return L};
+  const mcap=monCaps(P,names,E),ok=c=>{let a=0,m=0,k=0;for(let i=0;i<nm;i++)if(c[i]>0){if(c[i]>mcap[i])return false;k++;if(isM[i])m+=c[i]*cost[i];else a+=c[i]*cost[i]}return k<=MONMAXST&&a<=P.capA*1.0000001&&m<=P.capM*1.0000001};
+  const f=c=>{const L=mk(c);return (['A','B'].reduce((q,s)=>{const r=battle(L,E,null,{first:s,mon:true,expect:true});return q+(monF(r,ref))},0))/2+monX(c,cost,isM)};      // the average of both starts of round 1 (the coin toss)
   const rng=rngMk(seed),L0=layout(P,names,w0);let cur=names.map(n=>{const s=L0.find(x=>x.name==n);return s?s.n:0});
   if(!ok(cur)){const keep=cur.map((v,i)=>[v*cost[i],i]).sort((x,y)=>y[0]-x[0]).slice(0,MONMAXST).map(x=>x[1]);cur=cur.map((v,i)=>keep.includes(i)?v:0)}
   let cv=f(cur),best=cur.slice(),bv=cv;
@@ -2881,7 +2904,7 @@ function monCounts(P,names,Es,w0,iters,seed,stop){const E=Es[0],ref=Es.ref||1,nm
     const c=best.slice();c[i]=0;let v=f(c);if(v<=bv){best=c;bv=v;continue}
     for(const k of [0.8,0.9,0.95,0.98,1.02,1.05,1.1,1.25]){const d=best.slice();d[i]=Math.round(d[i]*k);if(!ok(d))continue;v=f(d);if(v<bv){best=d;bv=v}}}
   const w=names.map((n,i)=>best[i]>0?best[i]*cost[i]:0);w.cnt=best;w.v=bv;return w}
-return{monCounts,monPlan,monUp,setObj:v=>{MONOBJ=v},MONMAXST,quick,template,search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone,monScore}})();
+return{monCounts,monPlan,monUp,monSimplify,monDice,setCfg:(a,b,c,d)=>{MONSTP=a;MONMP=b;MONRDP=c;MONSAFE=d},setObj:v=>{MONOBJ=v},MONMAXST,quick,template,search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone,monScore}})();
 // ---- the screen of the theoretical stacks (One v. One): Find stacks, Rank tier choices, a fight with re-roll. Until stacks are found the Result is replaced by the card; once found the Result is live with them ----
 let THEOWAIT=false,THEOGEN=0,THEORUN=0,THEOCUR=null,THEOTC=null,THEOW={sig:'',m:new Map()};const THEOC=new Map(),THEOT=new Map();      // THEOGEN: a newer run / a change cancels the one that runs; THEOC / THEOT: finished searches and tier checks by input
 const tfm=x=>Math.round(x).toLocaleString('en-US'),tpc=x=>Math.round(x*100)+'%',tsg=x=>(x>=0?'+':'−')+Math.abs(Math.round(x*100))+'%';
@@ -2919,7 +2942,18 @@ function theoAuto(){clearTimeout(THEOAT);THEOAT=setTimeout(function f(){const P=
 // 22.8 after the quick result a deeper search runs quietly behind it; it replaces the result only when it finds an army with fewer losses; any change of the inputs cancels it
 async function theoCounts(P,names,Es,w0,g,rounds,seed0){let best=w0,alt=w0;      // the exact-count search, in rounds (the page is given back between them); every round starts from the best so far, every third from the quick result
   for(let k=0;k<rounds;k++){const r=THEO.monCounts(P,names,Es,k%3==2?alt:best,15000,seed0+k,null);await new Promise(q=>setTimeout(q,0));if(g!==THEOGEN)return null;if(!best.v||r.v<best.v)best=r}
-  return THEO.monUp(P,names,Es,best)}
+  return best}
+// the army of the Leadership does the job when it can: the plan and the search are run on the army alone and on the army with the monsters, and the monsters stay only when they lower the losses clearly (by 2 units or by a fifth)
+async function monBest(P,names,g,stop){
+  const cands=[{nn:names,st:0.3,mp:4e-5,rd:5,sf:0.7},{nn:names,st:0.6,mp:4e-5,rd:6,sf:0.6},{nn:names,st:0.3,mp:4e-5,rd:8,sf:0.75},{nn:names,st:0,mp:0,rd:0,sf:1}];      // the search with a price on the stacks, on the monsters and on the rounds and a margin on our damage (how much: two tries), and as it is; the one that does best with the dice is kept
+  const full=theoEs(P,names);let best=null;
+  try{for(const c of cands){THEO.setCfg(c.st,c.mp,c.rd,c.sf);
+      const Es=theoEs(P,c.nn),pw=THEO.monPlan(P,c.nn,Es,stop);if(!pw)continue;
+      const w0=await theoCounts(P,c.nn,Es,pw,g,4,1);if(!w0||g!==THEOGEN)return null;
+      const w=THEO.monSimplify(P,c.nn,Es,THEO.monUp(P,c.nn,Es,w0),stop),cnt=names.map(n=>{const i=c.nn.indexOf(n);return i>=0?w.cnt[i]:0}),m=THEO.monDice(P,names,full,cnt);
+      if(!best||m<best.m){const o=names.map((n,i)=>cnt[i]>0?cnt[i]*TRN[n].cost:0);o.cnt=cnt;o.v=w.v;best={w:o,m}}}
+  }finally{THEO.setCfg(0,0,0,1)}
+  return best&&best.w}
 async function theoDeepBg(P,names,Es,cur){const g=++THEOGEN;THEORUN=g;
   try{const r=await theoCounts(P,names,Es,cur.w,g,9,100);
     if(!r||g!==THEOGEN)return;
@@ -2930,12 +2964,11 @@ async function theoRun(deep){
   const P=getP(),sel=theoSel(),tiers=theoTiers(sel).slice(0,3),names=theoNames(sel,tiers);
   if(!names.length){$('tres').innerHTML='<p class="mu">Tick some tiers first.</p>';return}
   const g=++THEOGEN;THEORUN=g;theoBusy(deep?'deep':'go',deep?'Searching from scratch...':'Polishing the strategy for your bonuses...');
-  try{const Es=theoEs(P,names),stop=()=>g!==THEOGEN,pw=P.mon?THEO.monPlan(P,names,Es,stop):null,r=pw?{w:pw}:deep?await THEO.search(P,names,Es,1,5,stop,x=>theoProg(x),null):await THEO.quick(P,names,Es,P.mon?1500:900,5,stop,x=>theoProg(x),null);      // never from an earlier result: the same inputs give the same stacks, whatever was done before
+  try{const Es=theoEs(P,names),stop=()=>g!==THEOGEN,pw=null,r=P.mon?{w:await monBest(P,names,g,stop)}:deep?await THEO.search(P,names,Es,1,5,stop,x=>theoProg(x),null):await THEO.quick(P,names,Es,P.mon?1500:900,5,stop,x=>theoProg(x),null);      // never from an earlier result: the same inputs give the same stacks, whatever was done before
     if(!r||g!==THEOGEN)return;
-    if(P.mon){r.w=await theoCounts(P,names,Es,r.w,g,6,1);if(!r.w||g!==THEOGEN)return}
+    if(P.mon&&!r.w)return;
     const res=P.mon?theoStatsMon(P,names,r.w,400):theoStats(P,names,r.w,500);res.deep=!!deep;THEOC.set(theoKey(P,names),{P,res});
     THEORUN=0;theoBusy(0);calc();      // the Result comes back with the found stacks
-    if(P.mon&&!deep)theoDeepBg(P,names,Es,res);
   }finally{if(THEORUN===g){THEORUN=0;theoBusy(0)}}}
 function theoShow(){const c=THEOCUR,out=$('tres');$('tintro').hidden=!!c;
   if(!c){out.innerHTML='';theoBusy(0);return}
