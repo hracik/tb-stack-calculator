@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.8';
+const APP_VERSION='23.2.9';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1213,9 +1213,9 @@ const MD={
   kill:{kn1:true,ho:false,size:allocWhole,      // Killshot: weakest on the places Kn+1, then the 9s, the 8s ..., the monsters (killOrder); it is a 3-stack mode, so it has the places Kn+1 (1, 4, 7, 10 ...)
     order:(P,{live,mkOut,nT})=>byTiers(nT,c=>tierTry(P,killOrder(P,live,c),mkOut,c),mkOut)},
   cp:{kn1:false,ho:true,size:allocTight,        // CP kill / CP death / Max damage: the order is fixed, the troops of the same class and bonus are one group of equals
-    order:(P,{live,mkOut,nT})=>{const mkCP=(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)+(s.pt?'|p':'')});return o};return byTiers(nT,c=>tierTry(P,P.cpd?cpdOrder(P,live,c):cpOrder(P,live),mkCP,c),mkCP)}},
+    order:(P,{live,mkOut,nT})=>{const mkCP=(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)+(s.pt?'|p':'')+'|'+s.name});return o};return byTiers(nT,c=>tierTry(P,P.cpd?cpdOrder(P,live,c):cpOrder(P,live),mkCP,c),mkCP)}},
   ovo:{kn1:false,ho:false,size:allocTight,      // One v. One: the order of CP death by the squad bonus only; health AND total strength fall along it, no exceptions
-    order:(P,{live,mkOut,nT})=>{const mkCP=(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)+(s.pt?'|p':'')});return o};const c=Math.max(1,nT-1),so=cpdOrder(P,live,c);return{so,out:mkCP(so,c)}}},      // 21.4.4: the lowest monster tier is ALWAYS the partial one (it takes what the Dominance still allows), the tiers above it are full
+    order:(P,{live,mkOut,nT})=>{const mkCP=(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)+(s.pt?'|p':'')+'|'+s.name});return o};const c=Math.max(1,nT-1),so=cpdOrder(P,live,c);return{so,out:mkCP(so,c)}}},      // 21.4.4: the lowest monster tier is ALWAYS the partial one (it takes what the Dominance still allows), the tiers above it are full
   ren:{kn1:false,ho:false,size:allocRen,        // Renegades: fixed rule, nothing is refined; the lowest tier is the partial one when 3 or more tiers are chosen
     order:(P,{live,mkOut,nT})=>{
       const so=renOrder(P,live),out=mkOut(so,nT>=3?nT-1:nT);
