@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.14';
+const APP_VERSION='23.2.15';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -61,7 +61,7 @@ const CO=['Melee','Mounted','Ranged','Flying','Scout'],TY=['Giant','Elemental','
 const NM={G:'Guardsmen',S:'Specialists',E:'Engineer Corps',M:'Monsters'};
 // ---------- troop catalog (straight from the troop JSON): army [class, tier, name, category, health, strength, cost, vs melee/ranged/mounted/flying, beast, food consumption, revival cost in gold (attack)]; monsters [tier, name, type, category, health, strength, cost, vs melee/ranged/mounted/flying, food, gold]; engineers ENGN/ENGH/ENGS/ENGF/ENGG = name/health/strength/food/gold ----------
 const ARMY=[["G",1,"Spearman I","Melee",150,50,1,[0,0,0.39,0],0,5,4],["G",1,"Rider I","Mounted",300,100,2,[0,0.65,0,0],0,10,8],["G",1,"Archer I","Ranged",150,50,1,[0.52,0,0,0.67],0,5,4],["G",2,"Spearman II","Melee",270,90,1,[0,0,0.59,0],0,5,4],["G",2,"Rider II","Mounted",540,180,2,[0,0.98,0,0],0,10,8],["G",2,"Archer II","Ranged",270,90,1,[0.78,0,0,1.01],0,5,4],["G",3,"Spearman III","Melee",480,160,1,[0,0,0.88,0],0,5,4],["G",3,"Rider III","Mounted",960,320,2,[0,1.46,0,0],0,10,8],["G",3,"Archer III","Ranged",480,160,1,[1.17,0,0,1.51],0,5,4],["G",4,"Spearman IV","Melee",870,290,1,[0,0,1.32,0],0,5,4],["G",4,"Rider IV","Mounted",1740,580,2,[0,2.19,0,0],0,10,8],["G",4,"Archer IV","Ranged",870,290,1,[1.76,0,0,2.26],0,5,4],["G",5,"Spearman V","Melee",1560,520,1,[0,0,1.97,0],0,5,4],["G",5,"Rider V","Mounted",3150,1050,2,[0,3.29,0,0],0,10,8],["G",5,"Archer V","Ranged",1560,520,1,[2.63,0,0,3.39],0,5,4],["G",5,"Battle Griffin V","Flying",30000,10000,20,[0,0,3.95,0],1,100,80],["G",6,"Heavy Halberdier VI","Melee",2820,940,1,[0,0,2.96,0],0,5,4],["G",6,"Mounted Knight VI","Mounted",5700,1900,2,[0,4.94,0,0],0,10,8],["G",6,"Heavy Arbalester VI","Ranged",2820,940,1,[3.95,0,0,5.09],0,5,4],["G",6,"Battle Griffin VI","Flying",57000,19000,20,[0,0,5.92,0],1,100,80],["G",7,"Heavy Halberdier VII","Melee",5100,1700,1,[0,0,4.44,0],0,5,4],["G",7,"Mounted Knight VII","Mounted",10200,3400,2,[0,7.4,0,0],0,10,8],["G",7,"Heavy Arbalester VII","Ranged",5100,1700,1,[5.92,0,0,7.63],0,5,4],["G",7,"Battle Griffin VII","Flying",102000,34000,20,[0,0,8.88,0],1,100,80],["G",8,"Punisher I","Melee",9180,3060,1,[0,0,6.67,0],0,5,4],["G",8,"Smiter I","Mounted",18360,6120,2,[0,11.11,0,0],0,10,8],["G",8,"Purifier I","Ranged",9180,3060,1,[8.88,0,0,11.45],0,5,4],["G",8,"Corax I","Flying",183600,61200,20,[0,0,13.33,0],0,100,80],["G",9,"Punisher II","Melee",16530,5510,1,[0,0,10.0,0],0,5,4],["G",9,"Smiter II","Mounted",33060,11020,2,[0,16.67,0,0],0,10,8],["G",9,"Purifier II","Ranged",16530,5510,1,[13.33,0,0,17.17],0,5,4],["G",9,"Corax II","Flying",330600,110200,20,[0,0,19.99,0],0,100,80],["S",1,"Swordsman I","Melee",150,50,1,[0,0,0.2,0],0,5,4],["S",2,"Swordsman II","Melee",270,90,1,[0,0,0.29,0],0,5,4],["S",3,"Swordsman III","Melee",480,160,1,[0,0,0.44,0],0,5,4],["S",4,"Swordsman IV","Melee",870,290,1,[0,0,0.66,0],0,5,4],["S",5,"Swordsman V","Melee",1560,520,1,[0,0,0.99,0],0,5,4],["S",5,"Lion Rider V","Mounted",3150,1050,2,[0,1.65,0,0],0,10,8],["S",5,"Deadshot V","Ranged",1560,520,1,[1.32,0,0,1.7],0,5,4],["S",5,"Vulture V","Flying",1560,520,1,[0,0,1.97,0],0,5,4],["S",6,"Heavy Knight VI","Melee",2820,940,1,[0,0,1.48,0],0,5,4],["S",6,"Lion Rider VI","Mounted",5700,1900,2,[0,2.47,0,0],0,10,8],["S",6,"Deadshot VI","Ranged",2820,940,1,[1.97,0,0,2.54],0,5,4],["S",6,"Vulture VI","Flying",2820,940,1,[0,0,2.96,0],0,5,4],["S",7,"Heavy Knight VII","Melee",5100,1700,1,[0,0,2.22,0],0,5,4],["S",7,"Lion Rider VII","Mounted",10200,3400,2,[0,3.7,0,0],0,10,8],["S",7,"Deadshot VII","Ranged",5100,1700,1,[2.96,0,0,3.82],0,5,4],["S",7,"Vulture VII","Flying",5100,1700,1,[0,0,4.44,0],0,5,4],["S",8,"Duelist I","Melee",9180,3060,1,[0,0,3.33,0],0,5,4],["S",8,"Whitemane I","Mounted",18360,6120,2,[0,5.55,0,0],0,10,8],["S",8,"Legitimist I","Ranged",9180,3060,1,[4.44,0,0,5.72],0,5,4],["S",8,"Royal Lion I","Flying",183600,61200,20,[0,0,6.67,0],1,100,80],["S",9,"Duelist II","Melee",16530,5510,1,[0,0,5.0,0],0,5,4],["S",9,"Whitemane II","Mounted",33060,11020,2,[0,8.33,0,0],0,10,8],["S",9,"Legitimist II","Ranged",16530,5510,1,[6.67,0,0,8.59],0,5,4],["S",9,"Royal Lion II","Flying",330600,110200,20,[0,0,10.0,0],1,100,80],["S",1,"Spy I","Scout",75,25,5,[0,0,0,0],0,25,20],["S",2,"Spy II","Scout",135,45,5,[0,0,0,0],0,25,20],["S",3,"Spy III","Scout",240,80,5,[0,0,0,0],0,25,20],["S",4,"Spy IV","Scout",435,145,5,[0,0,0,0],0,25,20],["S",5,"Spy V","Scout",780,260,5,[0,0,0,0],0,25,20],["S",6,"Swift Jaeger VI","Scout",1410,470,5,[0,0,0,0],0,25,20],["S",7,"Swift Jaeger VII","Scout",2550,850,5,[0,0,0,0],0,25,20],["S",8,"Panoptic I","Scout",4590,1530,5,[0,0,0,0],0,25,20],["S",9,"Panoptic II","Scout",8265,2755,5,[0,0,0,0],0,25,20]];
-const MONS=[[3,"Stone Gargoyle","Giant","Flying",15600,5200,8,[1.85,0,0,0],160,128],[3,"Water Elemental","Elemental","Ranged",5700,1900,3,[1.13,0,0,1.44],60,48],[3,"Emerald Dragon","Dragon","Flying",13500,4500,7,[0,0,1.85,0],140,112],[3,"Battle Boar","Beast","Mounted",11700,3900,6,[0,1.13,1.44,0],120,96],[4,"Many-Armed Guardian","Giant","Melee",39000,13000,11,[0,0,1.15,0],220,176],[4,"Ice Phoenix","Elemental","Flying",51000,17000,15,[0,0,0,2.23],300,240],[4,"Magic Dragon","Dragon","Ranged",45000,15000,13,[1.69,2.16,0,0],260,208],[4,"Gorgon Medusa","Beast","Ranged",36000,12000,10,[2.77,0,0,1.08],200,160],[5,"Ettin","Giant","Melee",144000,48000,23,[0,0,3.34,0],460,368],[5,"Flaming Centaur","Elemental","Mounted",132000,44000,21,[0,4.15,0,0],420,336],[5,"Desert Vanquisher","Dragon","Mounted",126000,42000,20,[0,2.53,0,0],400,320],[5,"Fearsome Manticore","Beast","Flying",138000,46000,22,[0,0,0,2.53],440,352],[6,"Troll Rider","Giant","Mounted",330000,110000,30,[0,3.8,0,0],600,480],[6,"Ruby Golem","Elemental","Melee",390000,130000,35,[4.86,0,3.8,0],700,560],[6,"Crystal Dragon","Dragon","Melee",360000,120000,33,[0,0,2.58,0],660,528],[6,"Jungle Destroyer","Beast","Melee",390000,130000,34,[0,0,6.23,0],680,544],[7,"Destructive Colossus","Giant","Ranged",870000,290000,43,[7.52,0,0,5.47],860,688],[7,"Wind Lord","Elemental","Melee",930000,310000,45,[0,0,3.87,0],900,720],[7,"Black Dragon","Dragon","Flying",900000,300000,44,[5.7,0,0,0],880,704],[7,"Ancient Terror","Beast","Mounted",840000,280000,41,[0,7.52,0,0],820,656],[8,"Kraken I","Giant","Melee",2010000,670000,55,[0,0,9.91,0],1100,880],[8,"Fire Phoenix I","Elemental","Flying",1980000,660000,54,[7.01,0,0,0],1080,864],[8,"Devastator I","Dragon","Mounted",1950000,650000,53,[0,12.81,0,0],1060,848],[8,"Trickster I","Beast","Ranged",1920000,640000,52,[0,0,0,9.4],1040,832],[9,"Kraken II","Giant","Melee",3630000,1210000,55,[0,0,14.86,0],1100,880],[9,"Fire Phoenix II","Elemental","Flying",3570000,1190000,54,[10.52,0,0,0],1080,864],[9,"Devastator II","Dragon","Mounted",3510000,1170000,53,[0,19.22,0,0],1060,848],[9,"Trickster II","Beast","Ranged",3450000,1150000,52,[0,0,0,14.1],1040,832]];
+const MONS=[[3,"Stone Gargoyle","Giant","Flying",15600,5200,8,[1.85,0,0,0],160,128],[3,"Water Elemental","Elemental","Ranged",5700,1900,3,[1.13,0,0,1.44],60,48],[3,"Emerald Dragon","Dragon","Flying",13500,4500,7,[0,0,1.85,0],140,112],[3,"Battle Boar","Beast","Mounted",11700,3900,6,[0,1.13,1.44,0],120,96],[4,"Many-Armed Guardian","Giant","Melee",39000,13000,11,[0,0,1.15,0],220,176],[4,"Ice Phoenix","Elemental","Flying",51000,17000,15,[0,0,0,2.23],300,240],[4,"Magic Dragon","Dragon","Ranged",45000,15000,13,[1.69,2.16,0,0],260,208],[4,"Gorgon Medusa","Beast","Ranged",36000,12000,10,[2.77,0,0,1.08],200,160],[5,"Ettin","Giant","Melee",144000,48000,23,[0,0,3.34,0],460,368],[5,"Flaming Centaur","Elemental","Mounted",132000,44000,21,[0,4.15,0,0],420,336],[5,"Desert Vanquisher","Dragon","Mounted",126000,42000,20,[0,2.53,0,0],400,320],[5,"Fearsome Manticore","Beast","Flying",138000,46000,22,[0,0,0,2.53],440,352],[6,"Troll Rider","Giant","Mounted",330000,110000,30,[0,3.8,0,0],600,480],[6,"Ruby Golem","Elemental","Melee",390000,130000,35,[4.86,0,3.8,0],700,560],[6,"Crystal Dragon","Dragon","Melee",360000,120000,33,[0,0,2.58,0],660,528],[6,"Jungle Destroyer","Beast","Melee",390000,130000,34,[0,0,6.23,0],680,544],[7,"Destructive Colossus","Giant","Ranged",870000,290000,43,[7.52,0,0,5.47],860,688],[7,"Wind Lord","Elemental","Melee",930000,310000,45,[0,0,3.87,0],900,720],[7,"Black Dragon","Dragon","Flying",900000,300000,44,[5.7,0,0,0],880,704],[7,"Ancient Terror","Beast","Mounted",840000,280000,41,[0,7.52,0,0],820,656],[8,"Kraken I","Giant","Melee",2010000,670000,55,[0,0,9.91,0],1100,880],[8,"Fire Phoenix I","Elemental","Flying",1980000,660000,54,[7.01,0,0,0],1080,864],[8,"Devastator I","Dragon","Mounted",1950000,650000,53,[0,12.81,0,0],1060,848],[8,"Trickster I","Beast","Ranged",1920000,640000,52,[0,0,0,9.4],1040,832],[9,"Kraken II","Giant","Melee",3630000,1210000,55,[0,0,14.86,0],1100,880],[9,"Fire Phoenix II","Elemental","Flying",3570000,1190000,54,[10.51,0,0,0],1080,864],[9,"Devastator II","Dragon","Mounted",3510000,1170000,53,[0,19.22,0,0],1060,848],[9,"Trickster II","Beast","Ranged",3450000,1150000,52,[0,0,0,14.1],1040,832]];
 const ENGN=["Catapult I","Catapult II","Catapult III","Catapult IV","Catapult V","Siege Ballistae VI","Siege Ballistae VII","Josephine I","Josephine II"],ENGH=[1500,2700,4860,8750,15800,28400,51000,91800,165300],ENGS=[250,450,810,1460,2630,4730,8500,15310,27550],ENGF=[50,50,50,50,50,50,50,50,50],ENGG=[40,40,40,40,40,40,40,40,40];
 const TR=[];
 ARMY.forEach(r=>TR.push({cls:r[0],tier:r[1],name:r[2],cat:r[3],hp:r[4],str:r[5],cost:r[6],vs:r[7].concat(0),type:r[8]?'Beast':'Human',beast:!!r[8],food:r[9],gold:r[10],pool:'A'}));      // type: the troop's kind - Human, or Beast for the Beast units (the monsters: Giant / Elemental / Dragon / Beast); the beast flag follows the type
@@ -2765,9 +2765,7 @@ function layout(P,names,w){if(w.cnt){const o=[];names.forEach((nm,i)=>{if(w.cnt[
   monI.forEach(i=>{const t=TRN[names[i]],n=Math.floor(P.capM*sz*w[i]/wm/t.cost);if(n>0)out.push(mkStack(names[i],n,P))});
   return out}
 // the score of a layout against the enemy builds, both orders of striking: the average net margin (the two fights are added up: +18 % and -6 % is +12 %), a quarter of the weight on the weaker of the two fights
-// against a monster: a win with the fewest losses is the best (1 - the revive gold lost, as a share of Es.ref); a loss is -(the share of the monster left), so every win beats every loss. Round 1 is a coin toss (both starts are averaged), after the siege
-function monScore(L,E,N,seed,ref){const rng=rngMk(seed||1);let tot=0,worst=9;for(let i=0;i<N;i++)['A','B'].forEach(f=>{const r=battle(L,E,rng,{first:f,mon:true}),v=r.win>0?1-(MONOBJ=='N'?r.lostN/r.u0:MONOBJ=='H'?r.lostH/r.h0A:r.lostG/ref):-r.remB;tot+=v;if(v<worst)worst=v});return{mean:tot/(2*N),worst}}      // both starts of round 1 (the coin toss)
-function score(L,Es,N,seed){if(Es.mon)return monScore(L,Es[0],N,seed,Es.ref||1);let tot=0,c=0,worst=9;
+function score(L,Es,N,seed){let tot=0,c=0,worst=9;
   Es.forEach((E,j)=>['A','B'].forEach((f,k)=>{const r=mc(L,E,N,seed+k*101+j*7,f);tot+=r.margin;c++;if(r.margin<worst)worst=r.margin}));
   return{mean:tot/c,worst}}
 const PEN=0.004;      // a small price per stack: a stack must earn it
@@ -2803,8 +2801,7 @@ async function search(P,names,Es,budget,seed,stop,prog,warm){
   const tiers=[...new Set(names.map(n=>TRN[n].tier))].sort((a,b)=>b-a),sec=tiers[1];
   const ks=[(n=>isTop(n)?1:0.05),(n=>isTop(n)?1:0.25),(n=>isTop(n)?1:0)];if(sec)ks.push(n=>isTop(n)?1:TRN[n].tier==sec?0.2:0);      // the top tier alone, with the others small, and the top two tiers only
   const starts=ks.map(fn=>names.map(fn));
-  if(warm){const w=names.map(n=>warm[n]||0);if(w.some(x=>x>0)){if(Es.mon)w.push(warm._s||1);starts.unshift(w)}}
-  if(Es.mon){starts.forEach(w=>{if(w.length==names.length)w.push(1)});const b=starts[starts.length-1];[0.35,0.12].forEach(z=>starts.push(b.slice(0,names.length).concat([z])))}      // against a monster the size of the army is searched too: from the whole capacity, a third of it and a tenth of it
+  if(warm){const w=names.map(n=>warm[n]||0);if(w.some(x=>x>0))starts.unshift(w)}
   const i1=Math.round(450*budget),i2=Math.round(600*budget),tot=starts.length*i1+2*i2;let done=0;
   const pg=(a,b)=>prog&&prog((done+a*b)/tot);
   const cand=[];
@@ -2825,94 +2822,20 @@ function template(names){const tiers=[...new Set(names.map(n=>TRN[n].tier))].sor
 async function quick(P,names,Es,iters,seed,stop,prog,warm){
   if(new Set(names.map(n=>TRN[n].tier)).size==1)return search(P,names,Es,0.6,seed,stop,prog,warm);      // one tier only: the strategy has nothing to say about a second tier, and with 12 stacks the full search is quick
   const starts=[template(names),template2(names)];if(warm){const w=names.map(n=>warm[n]||0);if(w.some(v=>v>0))starts.push(w)}
-  if(Es.mon){starts.forEach(w=>{w.push(1)});[0.35,0.12].forEach(z=>starts.push(starts[0].slice(0,names.length).concat([z])))}
   const cand=[];for(let k=0;k<starts.length;k++){const r=await optimize(P,names,Es,starts[k],Math.round(iters/starts.length),32,seed+k,stop,x=>prog&&prog((k+x)/starts.length));if(!r)return null;cand.push(r)}
   let best=null,bs=-9;cand.concat([{w:starts[0]}]).forEach(r=>{const L=layout(P,names,r.w),o=score(L,Es,200,777),v=o.mean*0.75+o.worst*0.25-PEN*L.length;if(v>bs){bs=v;best={w:r.w,f:v}}});
   if(best){best.w=await twins(P,names,Es,best.w,stop)}
   return best}
 
-// 22.9 against a monster: the search works on the exact UNIT COUNTS of every stack (not on shares) and minimises the revive gold lost, fight by fight (no random effect, the average strikes). The strike order is the real one (the most total strength first, the sides alternate), so
-// it finds the armies that kill the stacks that are about to strike before they strike, and the small stacks that a strike overshoots. At most MONMAXST stacks. Returns the weights array with .cnt
-const MONMAXST=99;      // no limit on the stacks (the game has none)
-let MONOBJ='N';      // what the search of the Attack monsters minimizes: G = revive gold lost, N = units lost, H = health lost
-// the value of one fight for the search of the Attack monsters (smaller is better): a win = the damage the enemy did to us (our health lost; the revive gold only breaks a tie); a loss is worse than every win
-let MONRDP=0,MONSTP=0,MONMP=0,MONSAFE=1;      // the search settings of one candidate (see monBest): the price of an extra round, of a stack, of the Dominance spent on monsters (in units lost), and the margin on our damage
-const monSafe=s=>{s.ef=(s.ef||1)*MONSAFE;return s};
-const monX=(c,cost,isM)=>{let n=0,m=0;for(let i=0;i<c.length;i++)if(c[i]>0){n++;if(isM[i])m+=c[i]*cost[i]}return n*MONSTP+m*MONMP};
-const monF=(r,ref)=>r.win>0?(MONOBJ=='N'?r.lostN+r.lostG*1e-6+(r.rd>1?(r.rd-1)*MONRDP:0):MONOBJ=='H'?r.lostH+r.lostG*1e-3:r.lostG):(MONOBJ=='G'?ref:1e30)*(1+r.remB)
-// tie-break, done once on the FINAL result of the search (not inside it: it would steer the search): the same result with the higher tier of the same troop is better (Josephine II over I, Corax II over I) - a stack moves to the next tier of the same troop when the fight is not worse
-// monsters are strikers, not the stack that takes the hits (that is the army's job: the Leadership is where the health is): a monster stack is no bigger than it takes to kill the biggest enemy stack (and a half more)
-function monCaps(P,names,E){return names.map(n=>{if(TRN[n].cls!='M')return Infinity;const a=mkStack(n,1,P);let m=1;E.forEach(e=>{const d=hitDmg(a,e,null,true);if(d>0)m=Math.max(m,e.n*e.hp/d)});return Math.ceil(m*1.5)})}
-function monUp(P,names,Es,w){if(!w||!w.cnt)return w;const E=Es[0],ref=Es.ref||1,nm=names.length,cost=names.map(n=>TRN[n].cost),isM=names.map(n=>TRN[n].cls=='M');
-  const mk=c=>{const L=[];for(let i=0;i<nm;i++)if(c[i]>0)L.push(monSafe(mkStack(names[i],c[i],P)));return L};
-  const mcap=monCaps(P,names,E),ok=c=>{let a=0,m=0,k=0;for(let i=0;i<nm;i++)if(c[i]>0){if(c[i]>mcap[i])return false;k++;if(isM[i])m+=c[i]*cost[i];else a+=c[i]*cost[i]}return k<=MONMAXST&&a<=P.capA*1.0000001&&m<=P.capM*1.0000001};
-  const f=c=>{const L=mk(c);return (['A','B'].reduce((q,s)=>{const r=battle(L,E,null,{first:s,mon:true,expect:true});return q+(monF(r,ref))},0))/2+monX(c,cost,isM)};
-  const base=n=>n.replace(/ I{1,2}$/,''),st1=names.map(n=>mkStack(n,1,P));let best=w.cnt.slice(),bv=w.v;
-  for(let i=0;i<nm;i++){if(!(best[i]>0))continue;
-    const j=names.findIndex((n,q)=>q!==i&&base(n)===base(names[i])&&(TRN[n].tier||0)>(TRN[names[i]].tier||0));if(j<0)continue;
-    for(const k of [1,0.98,0.95,0.9,0.8,1.05,1.1]){const d=best.slice();d[j]=Math.max(1,Math.ceil(best[i]*st1[i].str/st1[j].str*k))+(d[j]||0);d[i]=0;if(!ok(d))continue;const v=f(d);if(v<=bv+1e-9){best=d;bv=Math.min(bv,v);break}}}
-  const o=names.map((n,i)=>best[i]>0?best[i]*cost[i]:0);o.cnt=best;o.v=bv;return o}
-// THE PLAN of the Attack monsters. The enemy never changes, so its weak spots are read from it: how many units of each of our troops kill (or cripple) each enemy stack. Your numbers only decide what that costs. Then, stack by stack, the plan adds the troop and the count that lowers the damage the enemy does to us the most (the fight is played by the battle rules, so who strikes whom comes out by itself: a stack of ours kills the enemy stack that has not struck yet, the enemy hits the stacks that take it best)
-function monPlan(P,names,Es,stop){const E=Es[0],ref=Es.ref||1,nm=names.length,cost=names.map(n=>TRN[n].cost),isM=names.map(n=>TRN[n].cls=='M');
-  const mk=c=>{const L=[];for(let i=0;i<nm;i++)if(c[i]>0)L.push(monSafe(mkStack(names[i],c[i],P)));return L};
-  const mcap=monCaps(P,names,E),ok=c=>{let a=0,m=0,k=0;for(let i=0;i<nm;i++)if(c[i]>0){if(c[i]>mcap[i])return false;k++;if(isM[i])m+=c[i]*cost[i];else a+=c[i]*cost[i]}return k>0&&k<=MONMAXST&&a<=P.capA*1.0000001&&m<=P.capM*1.0000001};
-  const f=c=>{const L=mk(c);return (['A','B'].reduce((q,s)=>q+monF(battle(L,E,null,{first:s,mon:true,expect:true}),ref),0))/2+monX(c,cost,isM)};
-  const st1=names.map(n=>mkStack(n,1,P)),need=st1.map(a=>{const o=[];E.forEach(e=>{const d=hitDmg(a,e,null,true);if(d>0)o.push(e.n*e.hp/d)});return o});      // units of this troop that take one enemy stack down
-  const FK=[0.35,0.5,0.7,0.85,1,1.15,1.4],FC=[0.5,0.8,0.9,1.1,1.25,2];
-  let cur=names.map(()=>0),cv=Infinity;
-  for(let it=0;it<30;it++){if(stop&&stop())return null;
-    let bi=-1,bc=0,bv=cv;
-    for(let i=0;i<nm;i++){const g=new Set([0,1,2,3,5]);need[i].forEach(x=>FK.forEach(k=>g.add(Math.max(1,Math.ceil(x*k)))));if(cur[i]>0)FC.forEach(k=>g.add(Math.max(1,Math.round(cur[i]*k))));
-      for(const c of g){if(c===cur[i])continue;const d=cur.slice();d[i]=c;if(!ok(d))continue;const v=f(d);if(v<bv*(1-1e-9)){bv=v;bi=i;bc=c}}}
-    if(bi<0)break;
-    const gain=cv===Infinity?1:(cv-bv)/cv;cur[bi]=bc;cv=bv;if(gain<1e-4&&cv<1e29)break}
-  if(!(cv<1e29))return null;
-  const w=names.map((n,i)=>cur[i]>0?cur[i]*cost[i]:0);w.cnt=cur;w.v=cv;return w}
-// SIMPLIFY (the last step, played with the dice): a stack that does not pay for itself goes. The fights are rolled with the same dice for every try (60 per start), a stack is dropped when the fights are not worse (units lost + the rounds), the monsters first (a plain army that does the same job is better), then the smallest army stacks; the rounds count: every extra round costs 3 units
 function monDice(P,names,Es,cnt){const E=Es[0],nm=names.length,L=[];let ns=0,mu=0;for(let i=0;i<nm;i++)if(cnt[i]>0){L.push(mkStack(names[i],cnt[i],P));ns++;if(TRN[names[i]].pool=='M')mu+=cnt[i]*TRN[names[i]].cost}
   let t=0,n=0;for(const f of ['A','B']){const rng=rngMk(77);for(let k=0;k<60;k++){const r=battle(L,E,rng,{first:f,mon:true});t+=r.win>0?r.lostN+6*(r.rd-1):1e6;n++}}
   return t/n+0.6*ns+4e-5*mu}      // the value of a layout played with the dice (smaller is better): the units lost, 6 for every extra round, 0.6 for every stack and a little for the Dominance spent on monsters (a plain army of a few stacks is better)
-function monSimplify(P,names,Es,w,stop){if(!w||!w.cnt)return w;const nm=names.length,cost=names.map(n=>TRN[n].cost),isM=names.map(n=>TRN[n].cls=='M');
-  const ok=c=>{let a=0,m=0;for(let i=0;i<nm;i++)if(c[i]>0){if(isM[i])m+=c[i]*cost[i];else a+=c[i]*cost[i]}return a<=P.capA*1.0000001&&m<=P.capM*1.0000001};
-  let cnt=w.cnt.slice(),m0=monDice(P,names,Es,cnt);
-  for(let pass=0;pass<12;pass++){if(stop&&stop())return w;
-    const idx=cnt.map((c,i)=>i).filter(i=>cnt[i]>0).sort((a,b)=>(isM[b]-isM[a])||(cnt[a]*cost[a]-cnt[b]*cost[b]));
-    let done=false;
-    const base=n=>n.replace(/ I{1,2}$/,'');      // the same troop in two tiers is one stack of the higher tier (the same strength)
-    for(const i of idx){const j=names.findIndex((n,q)=>q!==i&&cnt[q]>0&&base(n)===base(names[i])&&(TRN[n].tier||0)>(TRN[names[i]].tier||0));if(j<0)continue;
-      for(const k of [1,1.05,1.1]){const d=cnt.slice();d[j]=cnt[j]+Math.ceil(cnt[i]*mkStack(names[i],1,P).str/mkStack(names[j],1,P).str*k);d[i]=0;if(!ok(d))continue;const v=monDice(P,names,Es,d);if(v<=m0){cnt=d;m0=v;done=true;break}}
-      if(done)break}
-    if(done)continue;
-    for(const i of idx){const d=cnt.slice();d[i]=0;if(!ok(d))continue;const v=monDice(P,names,Es,d);if(v<=m0){cnt=d;m0=v;done=true;break}}
-    if(!done)break}
-  const o=names.map((n,i)=>cnt[i]>0?cnt[i]*cost[i]:0);o.cnt=cnt;o.v=w.v;return o}
-function monCounts(P,names,Es,w0,iters,seed,stop){const E=Es[0],ref=Es.ref||1,nm=names.length,cost=names.map(n=>TRN[n].cost),isM=names.map(n=>TRN[n].cls=='M');
-  const mk=c=>{const L=[];for(let i=0;i<nm;i++)if(c[i]>0)L.push(monSafe(mkStack(names[i],c[i],P)));return L};
-  const mcap=monCaps(P,names,E),ok=c=>{let a=0,m=0,k=0;for(let i=0;i<nm;i++)if(c[i]>0){if(c[i]>mcap[i])return false;k++;if(isM[i])m+=c[i]*cost[i];else a+=c[i]*cost[i]}return k<=MONMAXST&&a<=P.capA*1.0000001&&m<=P.capM*1.0000001};
-  const f=c=>{const L=mk(c);return (['A','B'].reduce((q,s)=>{const r=battle(L,E,null,{first:s,mon:true,expect:true});return q+(monF(r,ref))},0))/2+monX(c,cost,isM)};      // the average of both starts of round 1 (the coin toss)
-  const rng=rngMk(seed),L0=layout(P,names,w0);let cur=names.map(n=>{const s=L0.find(x=>x.name==n);return s?s.n:0});
-  if(!ok(cur)){const keep=cur.map((v,i)=>[v*cost[i],i]).sort((x,y)=>y[0]-x[0]).slice(0,MONMAXST).map(x=>x[1]);cur=cur.map((v,i)=>keep.includes(i)?v:0)}
-  let cv=f(cur),best=cur.slice(),bv=cv;
-  for(let it=0;it<iters;it++){
-    if(stop&&(it&2047)==0&&stop())return null;
-    const c=cur.slice(),T=1-it/iters,m=1+Math.floor(rng()*2);
-    for(let q=0;q<m;q++){const i=Math.floor(rng()*nm),u=rng();
-      if(c[i]==0){if(u<0.3){const j=Math.floor(rng()*nm);c[i]=Math.max(1,Math.floor((c[j]||50)*rng()*0.3*cost[j]/cost[i]))}}
-      else if(u<0.08)c[i]=0;
-      else if(u<0.2){const j=Math.floor(rng()*nm);if(j!==i&&isM[j]==isM[i]){const fr=rng()<0.5?1:rng();c[j]+=Math.floor(c[i]*fr*cost[i]/cost[j]);c[i]-=Math.floor(c[i]*fr)}}      // the money of a stack goes to another stack of the same kind
-      else c[i]=Math.max(0,Math.round(c[i]*Math.exp((rng()+rng()+rng()-1.5)*(0.02+0.6*T))))}
-    if(!ok(c))continue;const v=f(c);
-    if(v<=cv||rng()<Math.exp(-(v-cv)/(Math.max(1,bv)*0.02*T+1e-9))){cur=c;cv=v;if(v<bv){bv=v;best=c.slice()}}}
-  for(let pass=0;pass<2;pass++)for(let i=0;i<nm;i++){if(!(best[i]>0))continue;      // a last tidy-up: stacks that do not help go, the others are trimmed
-    const c=best.slice();c[i]=0;let v=f(c);if(v<=bv){best=c;bv=v;continue}
-    for(const k of [0.8,0.9,0.95,0.98,1.02,1.05,1.1,1.25]){const d=best.slice();d[i]=Math.round(d[i]*k);if(!ok(d))continue;v=f(d);if(v<bv){best=d;bv=v}}}
-  const w=names.map((n,i)=>best[i]>0?best[i]*cost[i]:0);w.cnt=best;w.v=bv;return w}
 // THE RECIPE of the Attack monsters (learned from a real report of the Elven Citadel, 41 units lost when we strike first and 89 when the enemy does, and from the Citadel Calculator of Game01Master, tb-citadel-calculator; the battle engine above plays that report strike by strike). The enemy is read ONCE (monRead): who strikes when and which of its stacks can still be stopped before they strike. Your bonuses only decide the unit counts - divisions, no search:
 //  1. the engineers kill the wall: the wall health / the damage of one unit, + 2
 //  2. the first striker, the biggest stack of the Leadership, kills the enemy stack that hits hardest before it strikes, and takes the hits that cannot be stopped (the enemy hits where it does the most damage, on a tie the deadliest stack: the one with the most strength)
 //  3. one small stack for every other enemy stack that can still be stopped before it strikes: the troop with the most damage per unit against it, with as many units as still send the strike to THAT stack (a strike goes where it does the most damage, no more than the target has left: one unit more and it goes to a bigger stack)
 //  4. the cleaners finish the rest in the same round: each is just below the stack before it in strength (so it strikes after the stopping strikes), as many units as that allows, added until the enemy is dead in one round
-//  5. a stack that does not pay for itself goes (played with the dice by monBest)
+//  5. a stack that does not pay for itself goes (played with the dice, monBest)
 const MONREAD=new Map();
 function monRead(E){const key=E.map(s=>[s.name,s.n,s.hp,s.str,s.wall?1:0,s.cat,JSON.stringify(s.evs)].join(':')).join('|');let r=MONREAD.get(key);if(r)return r;
   const army=E.filter(s=>!s.wall&&s.n>0).sort((a,b)=>b.n*b.str-a.n*a.str),U=army.slice(),K=[],H=[];let t=0;while(U.length){(t==0?K:H).push(U.shift());t^=1}      // we strike, it strikes ...: of the stacks that have not struck, we stop the strongest, then the strongest left strikes
@@ -2973,7 +2896,7 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
   if(opt.mode=='strict')return build(true);if(opt.mode=='loose')return build(false);
   const a=build(true);if(a&&a.one)return a;      // troops the enemy has no bonus against first; when they cannot do it in one round, all troops
   const b=build(false);return b&&(!a||b.v<a.v)?b:a}
-return{monRecipe,monCounts,monPlan,monUp,monSimplify,monDice,setCfg:(a,b,c,d)=>{MONSTP=a;MONMP=b;MONRDP=c;MONSAFE=d},setObj:v=>{MONOBJ=v},MONMAXST,quick,template,search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone,monScore}})();
+return{monRecipe,monDice,quick,template,search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone}})();
 // ---- the screen of the theoretical stacks (One v. One): Find stacks, Rank tier choices, a fight with re-roll. Until stacks are found the Result is replaced by the card; once found the Result is live with them ----
 let THEOWAIT=false,THEOGEN=0,THEORUN=0,THEOCUR=null,THEOTC=null,THEOW={sig:'',m:new Map()};const THEOC=new Map(),THEOT=new Map();      // THEOGEN: a newer run / a change cancels the one that runs; THEOC / THEOT: finished searches and tier checks by input
 const tfm=x=>Math.round(x).toLocaleString('en-US'),tpc=x=>Math.round(x*100)+'%',tsg=x=>(x>=0?'+':'−')+Math.abs(Math.round(x*100))+'%';
@@ -2982,8 +2905,7 @@ function theoSel(){const s=[];(ATK=='monsters'?['E','S','G','M']:['S','G','M']).
 const theoTiers=sel=>[...new Set(sel.map(x=>+x.slice(1)))].sort((a,b)=>b-a);      // the ticked tier numbers, the highest first
 const theoMerc=()=>{if(ATK!='monsters'||!(v('capU')>0))return[];mercSync();return MT.filter(t=>!XS.has(t.name)&&t.cat!='Scout'&&t.cat!='Epic Monster Hunter').map(t=>t.name)};      // 23.2.14 Attack monsters: the mercenaries that are on (as many as the Authority pays for) are troops of the recipe too
 const theoNames=(sel,tiers)=>TR.filter(t=>(ATK=='monsters'?'GSME':'GSM').includes(t.cls)&&t.cat!='Scout'&&sel.includes(t.cls+t.tier)&&tiers.includes(t.tier)&&!XS.has(t.name)).map(t=>t.name).concat(theoMerc());
-const monRef=(P,names)=>{let a=0,m=0,u=0;names.forEach(n=>{const t=TRN[n],g=(t.gold||0)/t.cost;if(t.pool=='U')u=Math.max(u,g);else if(t.cls=='M')m=Math.max(m,g);else a=Math.max(a,g)});return Math.max(1,P.capA*a+P.capM*m+(P.capU||0)*u)};      // the most revive gold the whole capacity can lose: the scale of the losses
-const theoEs=(P,names)=>P.mon?Object.assign([THEO.mkEnemy(P)],{mon:true,ref:monRef(P,names)}):[[1,1],[1,0],[1.1,1],[1.1,0]].map(([sc,eq])=>THEO.mkEnemy(P,eq,sc));      // the search: equal health / equal cost monsters, at 100 % and 110 %
+const theoEs=(P,names)=>P.mon?[THEO.mkEnemy(P)]:[[1,1],[1,0],[1.1,1],[1.1,0]].map(([sc,eq])=>THEO.mkEnemy(P,eq,sc));      // the search: equal health / equal cost monsters, at 100 % and 110 %
 // 22.8 against a monster: N fights with the dice rolled, the start of round 1 tossed (after the siege); the win chance, the units and the revive gold lost (on average and when we win), the rounds
 function theoStatsMon(P,names,w,N){const L=THEO.layout(P,names,w),E=THEO.mkEnemy(P),rng=THEO.rngMk(4242);let win=0,lg=0,ln=0,wlg=0,wln=0,rd=0,rb=0;
   for(let i=0;i<N;i++){const r=THEO.battle(L,E,rng,{mon:true});if(r.win>0){win++;wlg+=r.lostG;wln+=r.lostN}lg+=r.lostG;ln+=r.lostN;rd+=r.rd;rb+=r.remB}
@@ -3010,41 +2932,20 @@ function theoProg(x,txt){$('tpi').style.width=Math.min(100,Math.round(x*100))+'%
 const theoTierTxt=names=>[...new Set(names.map(n=>TRN[n].tier))].sort((a,b)=>b-a).map(x=>'T'+x).join(' + ');
 let THEOAT=0;
 function theoAuto(){clearTimeout(THEOAT);THEOAT=setTimeout(function f(){const P=getP();if(!P.mon||theoFix(P))return;if(THEORUN){THEOAT=setTimeout(f,150);return}theoRun(false)},350)}
-// 22.8 after the quick result a deeper search runs quietly behind it; it replaces the result only when it finds an army with fewer losses; any change of the inputs cancels it
-async function theoCounts(P,names,Es,w0,g,rounds,seed0){let best=w0,alt=w0;      // the exact-count search, in rounds (the page is given back between them); every round starts from the best so far, every third from the quick result
-  for(let k=0;k<rounds;k++){const r=THEO.monCounts(P,names,Es,k%3==2?alt:best,15000,seed0+k,null);await new Promise(q=>setTimeout(q,0));if(g!==THEOGEN)return null;if(!best.v||r.v<best.v)best=r}
-  return best}
-// the army of the Leadership does the job when it can: the plan and the search are run on the army alone and on the army with the monsters, and the monsters stay only when they lower the losses clearly (by 2 units or by a fifth)
 const MONVAR=[{},{s1:1},{s2:1},{s3:1},{s2:1,s3:1}];      // the recipe and its variants (the next best first striker / stopping strike); the one that does best with the dice wins
-async function monBest(P,names,g,stop){
+// the Attack monsters layout: THE RECIPE (about 20 ms): the enemy is read once, the bonuses only decide the unit counts; a layout that finishes the enemy in one round is better than any other
+function monBest(P,names){
   const full=theoEs(P,names);let rb=null;
-  // 23.2.14 THE RECIPE first (about 20 ms): the enemy is read once, the bonuses only decide the unit counts
-  try{for(const o of MONVAR){const w=THEO.monRecipe(P,names,full,o);if(!w)continue;const m=THEO.monDice(P,names,full,w.cnt)-(w.one?1e5:0);if(!rb||m<rb.m)rb={w,m}}}catch(e){rb=null}
-  if(rb&&rb.w.one)return rb.w;
-  // the old way (a long search, no mercenaries) only when the recipe does not finish the fight in one round
-  const base=names.filter(n=>TRN[n].pool!='U'),fb=theoEs(P,base),cands=[{nn:base,st:0.3,mp:4e-5,rd:5,sf:0.7},{nn:base,st:0.6,mp:4e-5,rd:6,sf:0.6},{nn:base,st:0.3,mp:4e-5,rd:8,sf:0.75},{nn:base,st:0,mp:0,rd:0,sf:1}];      // the search with a price on the stacks, on the monsters and on the rounds and a margin on our damage (how much: two tries), and as it is; the one that does best with the dice is kept
-  let best=null;
-  try{for(const c of cands){THEO.setCfg(c.st,c.mp,c.rd,c.sf);
-      const Es=theoEs(P,c.nn),pw=THEO.monPlan(P,c.nn,Es,stop);if(!pw)continue;
-      const w0=await theoCounts(P,c.nn,Es,pw,g,4,1);if(!w0||g!==THEOGEN)return null;
-      const w=THEO.monSimplify(P,c.nn,Es,THEO.monUp(P,c.nn,Es,w0),stop),cnt=names.map(n=>{const i=c.nn.indexOf(n);return i>=0?w.cnt[i]:0}),m=THEO.monDice(P,names,full,cnt);
-      if(!best||m<best.m){const o=names.map((n,i)=>cnt[i]>0?cnt[i]*TRN[n].cost:0);o.cnt=cnt;o.v=w.v;best={w:o,m}}}
-  }finally{THEO.setCfg(0,0,0,1)}
-  if(rb&&(!best||rb.m<=best.m))return rb.w;
-  return best&&best.w}
-async function theoDeepBg(P,names,Es,cur){const g=++THEOGEN;THEORUN=g;
-  try{const r=await theoCounts(P,names,Es,cur.w,g,9,100);
-    if(!r||g!==THEOGEN)return;
-    if(r.v<cur.w.v*0.995){const res=theoStatsMon(P,names,r,400);res.deep=true;THEOC.set(theoKey(P,names),{P,res});calc()}
-  }finally{if(THEORUN===g)THEORUN=0}}
+  for(const o of MONVAR){const w=THEO.monRecipe(P,names,full,o);if(!w)continue;const m=THEO.monDice(P,names,full,w.cnt)-(w.one?1e5:0);if(!rb||m<rb.m)rb={w,m}}
+  return rb&&rb.w}
 async function theoRun(deep){
   if(THEORUN){THEOGEN++;return}      // the button is Stop while it runs
   const P=getP(),sel=theoSel(),tiers=theoTiers(sel).slice(0,3),names=theoNames(sel,tiers);
   if(!names.length){$('tres').innerHTML='<p class="mu">Tick some tiers first.</p>';return}
   const g=++THEOGEN;THEORUN=g;theoBusy(deep?'deep':'go',deep?'Searching from scratch...':'Polishing the strategy for your bonuses...');
-  try{const Es=theoEs(P,names),stop=()=>g!==THEOGEN,pw=null,r=P.mon?{w:await monBest(P,names,g,stop)}:deep?await THEO.search(P,names,Es,1,5,stop,x=>theoProg(x),null):await THEO.quick(P,names,Es,P.mon?1500:900,5,stop,x=>theoProg(x),null);      // never from an earlier result: the same inputs give the same stacks, whatever was done before
+  try{const Es=theoEs(P,names),stop=()=>g!==THEOGEN,pw=null,r=P.mon?{w:monBest(P,names)}:deep?await THEO.search(P,names,Es,1,5,stop,x=>theoProg(x),null):await THEO.quick(P,names,Es,P.mon?1500:900,5,stop,x=>theoProg(x),null);      // never from an earlier result: the same inputs give the same stacks, whatever was done before
     if(!r||g!==THEOGEN)return;
-    if(P.mon&&!r.w)return;
+    if(P.mon&&!r.w){THEORUN=0;theoBusy(0);$('tres').innerHTML='<p class="mu">No army found for this monster: tick more tiers (engineers and an army troop are needed).</p>';return}
     const res=P.mon?theoStatsMon(P,names,r.w,400):theoStats(P,names,r.w,500);res.deep=!!deep;THEOC.set(theoKey(P,names),{P,res});
     THEORUN=0;theoBusy(0);calc();      // the Result comes back with the found stacks
   }finally{if(THEORUN===g){THEORUN=0;theoBusy(0)}}}
