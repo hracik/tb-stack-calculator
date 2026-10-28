@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.34';
+const APP_VERSION='22.9.35';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -242,7 +242,7 @@ function load(d){
   Object.entries(chk).forEach(([id,c])=>{const el=$(id);if(el)el.checked=c});
   fmtAll();
   O=(d.O||[]).slice();XS=new Set(d.X||[]);SO=(d.S||[]).slice();
-  ATK=d.atk=='players'||d.atk=='monsters'?d.atk:'epics';      // tabs saved before this existed open in Attack epics, in the 4-stack mode
+  ATK=d.atk=='players'?d.atk:'epics';      // tabs saved before this existed open in Attack epics, in the 4-stack mode
   $('mode').value=d.mode||'max';$('enemy').value=d.enemy||'4';LASTE=d.le?{...d.le}:{mode:'max',enemy:'4'};LASTP=d.lp||'cp';
   CMPV=d.cmp&&typeof d.cmp=='object'?{...d.cmp}:{};CMPK='';      // the units typed in Compare belong to the tab
 }
@@ -394,7 +394,7 @@ function parseKrappy(txt){      // the short text -> the same object the first (
     if(k=='n')r.name=w.replace(/_/g,' ');
     else if(k=='T'){const on=new Set();for(const g of w.matchAll(/([ESGM])(\d+)/g))for(const c of g[2])on.add('s'+g[1]+c);Object.keys(BLANK.chk).forEach(id=>{if(/^s[ESGM]\d$/.test(id))r.chk[id]=on.has(id)})}
     else if(k=='x')r.X=w=='-'?[]:/^[0-9a-z]+$/.test(w)?(w.match(/.{3}/g)||[]).map(c=>xmap()[c]).filter(Boolean):w.split(',').filter(Boolean).map(q=>q.replace(/_/g,' '));      // codes (lower case and digits only) or, as before, names
-    else if(k=='at')r.atk=w=='p'?'players':w=='m'?'monsters':'epics';
+    else if(k=='at')r.atk=w=='p'?'players':'epics';
     else if(k=='mo')r.mode=w;
     else if(k=='en')r.enemy=w;
     else if(k=='lp')r.lp=w;
@@ -429,7 +429,7 @@ function importText(txt){
   if(r.chk&&typeof r.chk=='object')for(const [id,c] of Object.entries(r.chk))if(own(BLANK.chk,id)&&typeof c=='boolean')d.chk[id]=c;
   d.O=[];for(const c of 'ESGM')for(let i=1;i<=9;i++)if(d.chk['s'+c+i])d.O.push(c+i);      // the kill order of the ticked tiers (the same as sync() builds it)
   if(Array.isArray(r.X))d.X=list(r.X);d.S=[];
-  d.atk=r.atk=='players'||r.atk=='monsters'?r.atk:'epics';
+  d.atk=r.atk=='players'?r.atk:'epics';
   d.mode=XMODES.includes(r.mode)?r.mode:'max';d.enemy=XENEMY.includes(String(r.enemy))?String(r.enemy):'4';
   d.le=r.le&&typeof r.le=='object'&&XMODES.includes(r.le.mode)&&XENEMY.includes(String(r.le.enemy))?{mode:r.le.mode,enemy:String(r.le.enemy)}:{mode:'max',enemy:'4'};
   d.lp=['cp','cpd','ovo','pvpmax','ren'].includes(r.lp)?r.lp:'cp';
