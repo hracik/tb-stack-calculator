@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.30';
+const APP_VERSION='22.9.31';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -954,9 +954,9 @@ const BANDMAX=0.03;
 const BANDCAP=8;
 function bandGroupings(P,arr){
   const sig=gs=>gs.map(g=>g.u.map(t=>t.name).join(',')).join('|');
-  const base=ratioGroups(P,arr,true),out=[base],seen=new Set([sig(base)]),ds=new Set(),los=base.map(g=>g.lo);
+  const base=ratioGroups(P,arr,false),out=[base],seen=new Set([sig(base)]),ds=new Set(),los=base.map(g=>g.lo);
   for(let i=0;i<los.length;i++)for(let j=i+1;j<los.length;j++){const d=los[j]/los[i]-1;if(d>BANDMAX)break;ds.add(d)}
-  [...ds].sort((a,b)=>a-b).forEach(d=>{if(out.length>=BANDCAP)return;const gs=ratioGroups(P,arr,true,d*(1+1e-9)+1e-12),k=sig(gs);if(!seen.has(k)){seen.add(k);out.push(gs)}});
+  [...ds].sort((a,b)=>a-b).forEach(d=>{if(out.length>=BANDCAP)return;const gs=ratioGroups(P,arr,false,d*(1+1e-9)+1e-12),k=sig(gs);if(!seen.has(k)){seen.add(k);out.push(gs)}});
   return out;
 }
 // The weakest groups (the lowest ratio first) stand on the places Kn+1 of the first F places, one troop on each place, the weakest first: as many groups as fit there, never all of them.
@@ -1111,9 +1111,7 @@ function fourSearch(P,live,mkOut,CC,quick){     // CC = the number of full monst
     };
     rec(m-1,0);
   };
-  const gM=ratioGroups(P,ordF,false);
   groupings.forEach(gs=>search(gs));                                                                        // army groups and monster groups apart
-  if(gM.some(g=>g.u.some(t=>t.pool=='M')&&g.u.some(t=>t.pool!='M')))search(gM);      // army and monsters of the same ratio in one group, by squad bonus (only when such a group exists)
   return best;
 }
 // Killshot (v287, monsters tier by tier v288): the same rule as the 3-stack mode for the places Kn+1 - the WEAKEST troops (the lowest SH, engineers, Beast units ... one troop per place, the weakest first, weakSplit) stand on them.
