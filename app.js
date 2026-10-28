@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.10';
+const APP_VERSION='23.2.11';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2929,9 +2929,9 @@ function theoShow(){const c=THEOCUR,out=$('tres');$('tintro').hidden=!!c;
 <p class="mu">${r.stacks.length} stacks, tiers ${theoTierTxt(r.names)}, ${r.deep?'deep search':'quick search (the strategy, polished)'}; the stacks are in the Result below, and its Battle report shows a fight. Net = the health we keep minus the health the enemy keeps, going first and going second added together (in % of each army's own health; a win with 18% left and a loss that leaves the enemy 6% is +12%). The enemy: a full city of the top tier (8 army stacks, 4 monster stacks), equal health in every stack, the monsters split by health or by cost. Every case is 500 simulated fights; double damage and double strike are rolled. The mercenaries are not used.</p>
 `;theoBusy(0)}
 // the Battle report of One v. One: a fight of the found stacks against the 100 % enemy, in the design of the usual report: our strikes are the tan lines (+ damage), the enemy strikes are the red lines, a destroyed stack gets the red cross
-let THEOSEED=Math.floor(Math.random()*2e9)+1,THEOFIRST='A',THEOEXP=true;      // THEOEXP: no random effect (the average strikes) or the dice are rolled
+let THEOSEED=Math.floor(Math.random()*2e9)+1,THEOFIRST='T',THEOEXP=true;      // THEOEXP: no random effect (the average strikes) or the dice are rolled
 // the one fight the report, the target order and the hitting order all show (the settings of the report: no random effect / dice, who strikes first)
-function theoFightData(c){const P=c.P,E=THEO.mkEnemy(P,1,1),L=THEO.layout(P,c.res.names,c.res.w),log=[],r=THEO.battle(L,E,THEO.rngMk(THEOSEED),{first:THEOFIRST,log,expect:THEOEXP,mon:P.mon});return{P,E,L,log,r}}
+function theoFightData(c){const P=c.P,E=THEO.mkEnemy(P,1,1),L=THEO.layout(P,c.res.names,c.res.w),log=[],r=THEO.battle(L,E,THEO.rngMk(THEOSEED),{first:THEOFIRST=='T'?undefined:THEOFIRST,log,expect:THEOEXP,mon:P.mon});return{P,E,L,log,r}}
 const tnum=v=>Math.round(v).toLocaleString('en-US'),tic=n=>ICD[n]?`<img class="ic2" src="${ICD[n]}" alt="">`:'';
 // the hitting order: our stacks in the order they strike in round 1 (the most total strength first: units x strength with your bonuses)
 function theoHits(c){const d=theoFightData(c),L=d.L.slice().sort((a,b)=>b.n*b.str-a.n*a.str);
@@ -2954,8 +2954,8 @@ function theoReport(B){const c=B.fx,{P,E,L,log,r}=theoFightData(c),num=tnum;
   const sm={A:{},B:{}};L.forEach(s=>sm.A[s.name]=s);E.forEach(s=>sm.B[s.name]=s);
   const fxv={A:[0,0],B:[0,0]},fxa={A:[0,0],B:[0,0]};      // rolled and average double damage / double strikes per side, counted over the strikes of this fight
   log.forEach(x=>{const q=sm[x[1]][x[2]];if(q&&!(x[9]>0)){fxa[x[1]][0]+=(1-(1-q.pc)*(1-q.pa))*(1+q.pt);fxa[x[1]][1]+=q.pt}if(!THEOEXP){if(x[8]>1)fxv[x[1]][0]++;if(x[9]>0)fxv[x[1]][1]++}});
-  const fxo=(k,n)=>` (ours ${brA(THEOEXP?fxa.A[k]:fxv.A[k])})`,sel=`<label>Round 1 <select id="tfirst"><option value="A"${THEOFIRST=='A'?' selected':''}>we strike first</option><option value="B"${THEOFIRST=='B'?' selected':''}>the enemy strikes first</option></select></label>`;
-  BRFXH=brFxBox(THEOEXP,[[fxv.A[0]+fxv.B[0],fxa.A[0]+fxa.B[0],'double damage',fxo(0)],[fxv.A[1]+fxv.B[1],fxa.A[1]+fxa.B[1],'double strikes',fxo(1)]],'',P.mon?'':sel);
+  const fxo=(k,n)=>` (ours ${brA(THEOEXP?fxa.A[k]:fxv.A[k])})`,sel=`<label>Round 1 <select id="tfirst"><option value="T"${THEOFIRST=='T'?' selected':''}>coin toss</option><option value="A"${THEOFIRST=='A'?' selected':''}>we strike first</option><option value="B"${THEOFIRST=='B'?' selected':''}>the enemy strikes first</option></select></label>`;
+  BRFXH=brFxBox(THEOEXP,[[fxv.A[0]+fxv.B[0],fxa.A[0]+fxa.B[0],'double damage',fxo(0)],[fxv.A[1]+fxv.B[1],fxa.A[1]+fxa.B[1],'double strikes',fxo(1)]],'',sel);
   let rd=-1,h=`<p class="bf">${r.win>0?'<b class="tw">We win</b> \u00b7 '+tpc(theoAvgLeft(c,r))+' health remaining':r.win<0?'<b class="tl">We lose</b> \u00b7 '+tpc(theoAvgLeft(c,r))+' health remaining':'<b>Draw</b>'}</p><div class="br">`;
   log.forEach(([rr,side,a,t,dmg,k,left,before,m1,m2])=>{
     if(rr!==rd){rd=rr;h+=rd==0?`<div class="brh">Siege</div>`:`<div class="brh">Round ${rd}</div>`}
