@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.20';
+const APP_VERSION='22.9.21';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2373,9 +2373,9 @@ const MERC=[["E",9,"Ariel","Engineer",330000,55000,10,[0,0,0,0,16.67],0,"",0,80]
   ["G",6,"Chariot VI","Mounted",11400,3800,2,[0,5.93,0,0],0,"",0,16],
   ["G",6,"Legionary VI","Melee",5700,1900,1,[0,0,3.95,0],0,"",0,8],
   ["G",6,"Sphynx VI","Flying",56700,18900,10,[0,0,6.92,0],0,"Beast",0,80],
-  ["S",7,"Knight","Melee",10200,3400,1,[0,0,1.94,0],0,"",0,8],
-  ["S",7,"Rhino Rider","Mounted",20400,6800,2,[0,3.77,0,0],0,"",0,16],
-  ["S",7,"Shedu","Flying",408000,136000,40,[0,0,4.67,0],0,"Beast",0,320],
+  ["S",6,"Knight","Melee",10200,3400,1,[0,0,1.94,0],0,"",0,8],
+  ["S",6,"Rhino Rider","Mounted",20400,6800,2,[0,3.77,0,0],0,"",0,16],
+  ["S",6,"Shedu","Flying",408000,136000,40,[0,0,4.67,0],0,"Beast",0,320],
   ["M",7,"Cursed Dragon","Flying",960000,320000,93,[0,0,0.5,0],0,"Cursed",0,740],
   ["M",7,"Fire Lord","Ranged",1680000,560000,164,[0.8,0,0,0],0,"Demon",0,1310],
   ["M",7,"Golden Dragon","Flying",510000,170000,40,[0,0,9.34,0],0,"Dragon",0,400],
