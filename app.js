@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.18';
+const APP_VERSION='22.9.19';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -875,7 +875,8 @@ const dIdx=(t,P)=>{const[mh,ms]=mults(t,P);return ms/mh*dmgFactor(t,P)};   // da
 // RANKING VALUE, every mode: damage per health WITH the squad bonus = strength per health with all your inputs, the troop's own bonus against
 // this enemy (added into the strength pool) and the Double strike. (The squad bonus is left out only in the strike order of Max damage, see allocWhole.)
 const rgm=P=>P.max4;    // 3-, 4-, 6- and 8-stack: ONE engine (ratio groups, damage search, tight stacks). Only K = the number of enemy stacks differs: the outliers stand on the places Kn+1; the squad bonus counts no mounted enemy for K = 3 and 6
-// Max damage ONLY: the ranking value is the troop's features against the enemy alone (no health, no cost) - the smaller the features, the earlier the troop dies. The random effects (Double damage, Double strike) are NOT part of it (the user, 2026-10-28; sqb still adds them for the other modes' tie rules).
+// Max damage ONLY: the ranking value is the DAMAGE side of the DH ratio (damage to health) alone, no health, no cost: the troop's features against the enemy plus the random effects. For a troop with Double strike the
+// Double strike is turned into the same kind of bonus: it multiplies the exact strength total (your multiplier + the troop's own bonus), so the extra it adds, (multiplier + own bonus) x Double strike, is a "squad double strike bonus" in the same % as the own bonus. Own bonus + squad double strike bonus are counted together. The smaller it is, the earlier the troop dies.
 // All other modes keep the damage per health.
 const sqb=(t,P)=>{const vs=vsRatio(t,P),dd=(mults(t,P)[2]+vs)*(dhf(t,P)-1);return{vs,dd,tot:vs+dd}};
 function ranker(P){
@@ -1153,7 +1154,7 @@ function renOrder(P,names){
 // so they get the same health and share the places of the group (see cpGroup, allocTight and score).
 // The squad bonus is the bonus against flying ONLY. The Double strike is unused in the CP modes (one enemy stack, no second enemy to hit - see dhf), so the Beast units
 // (Royal Lion, Battle Griffin) and the monsters count as troops without a bonus when they have none against flying.
-const cpBonus=(t,P)=>vsRatio(t,P);      // the features against the enemy only (CP kill / CP death: the bonus against flying; Max damage: the biggest bonus against any enemy type present). The random effects (Double damage, Double strike) never count in a target order (the user, 2026-10-28)
+const cpBonus=(t,P)=>P.pm?sqb(t,P).tot:vsRatio(t,P);      // PvP Max damage: the features against the enemy AND the random effects (Double damage, Double strike) = the damage side of the DH ratio (the user, 2026-10-28: damage is counted with features and random effects); CP kill / CP death: the bonus against flying
 const cpSH=(t,P)=>Math.round(ratioOf(t,P)*1e9);       // strength per health with your multipliers only (no squad bonus, no Double strike)
 // Group of equals = the troops with the same squad bonus AND the same SH ratio (strength per health): they get about the same health and share their places. The troops with a different
 // SH ratio are NOT forced to the same health - the SH ratio decides the order first (the smaller ratio first, see cpdOrder), only the troops with the same ratio form a group.
@@ -1777,7 +1778,6 @@ function dominanceTail(P,st,A,Mo,U,light){      // light (the Tier check): only 
 // Renegades (14.10): the battle ends after round 1 (maxRd=1) - the enemy is defeated by then, every stack strikes once.
 // Renegades: the block after the ordered head and the buffer zone has a random order - every stack in it gets the average strikes of the block's places.
 let SEQ=true;
-let HALFHEALTHY=0.5;      // 8.4 rule: only this share (50 %) of the damage of the healthiest stack counts (it matters when that stack strikes at all); since 19.1 the same in the estimate the person sees, not only in the order ranking
 function strikes(L,K,log,maxRd=Infinity,first){      // first: who starts round 1, 'o' (us) or 'e' (the enemy): a coin toss (Battle rules), so without a log the result is the average of both; with a log (a battle told event by event) 'o' unless given. From round 2 the side that did NOT finish the previous round starts.                                     // strikes of every stack; L is in the target order. log (optional): the events of the battle in their order, [round, 'o' (our hit) | 'e' (the enemy kills the stack), index in L]
   const N=L.length;
   if(!SEQ)return L.map((_,i)=>Math.ceil((i+1)/K));
@@ -1796,11 +1796,10 @@ function strikes(L,K,log,maxRd=Infinity,first){      // first: who starts round 
   }
   return cnt;
 }
-function score(P,list,order,eng){      // eng: kept for the callers (the healthiest stack counts HALFHEALTHY always)
+function score(P,list,order,eng){      // eng: kept for the callers
   const K=P.enemy,ix={};order.forEach((n,i)=>ix[n]=i);
   const L=list.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);
   const dm=L.map(s=>s.n*dpu(s)),hit=strikes(L,K,undefined,P.ren?1:Infinity),hp=L.map(s=>s.n*s.hp);
-  if(HALFHEALTHY<1&&dm.length)dm[hp.indexOf(Math.max(...hp))]*=HALFHEALTHY;      // 8.4: the healthiest stack (the first one in the target order) counts only HALFHEALTHY of its damage when the engine ranks the orders
   let hits=hit.reduce((q,x)=>q+x,0);
   if(P.cp){                                                      // CP kill: the game picks the order inside a group of equals, so each of its stacks strikes the average of the group's places
     for(let a=0;a<L.length;){let b=a+1;while(L[a].grp&&b<L.length&&L[b].grp===L[a].grp)b++;
@@ -1856,7 +1855,6 @@ function epicSim(P,L,EP,dice,rng,trace,first){      // first: who starts round 1
   const a=epicSimS(P,L,EP,dice,rng,trace,'o'),b=epicSimS(P,L,EP,dice,rng,trace,'e'),r={...a};['td','nd','ns','ed','es','pot','pex','pvar'].forEach(k=>{r[k]=(a[k]+b[k])/2});return r}
 function epicSimS(P,L,EP,dice,rng,trace,first){
   const N=L.length,e2=EP.st.map(x=>({ty:x[2],hpu:x[1],hp:x[0]*x[1],sp:x[3]||0})),alive=()=>e2.filter(e=>e.hp>0).length,ev=[],dead=new Set();
-  let heal=0,hb=-1;L.forEach((s,i)=>{const v=s.n*s.hp;if(v>hb){hb=v;heal=i}});
   const fr=L.map(()=>1);      // the health left of each of our stacks (1 = untouched): a small enemy stack only wounds
   const info=L.map(s=>{const t=TRN[s.name],vs=t.vs.slice();if(veOf(t,P)>0)for(let i=0;i<4;i++)vs[i]=(vs[i]||0)+veOf(t,P);return{vs,ms:mults(t,P)[2],p:dst(t,P),d:ddf(t,P),pc:ddp(t,P),pa:0}});
   const by=L.map((_,i)=>i).sort((a,b)=>L[b].n*L[b].str-L[a].n*L[a].str||a-b);
@@ -1870,7 +1868,7 @@ function epicSimS(P,L,EP,dice,rng,trace,first){
   const pickT=(i,dmgOf)=>{let tk=null,bv=-1,tb=-1;e2.forEach(e=>{if(e.hp<=0)return;const v=Math.min(dmgOf(e),e.hp),eb=EP.eb&&ARCAT[L[i].cat]===ARB[e.ty]?EP.eb:0;
     if(!tk||v>bv+1e-9||(Math.abs(v-bv)<=1e-9&&(eb>tb||(eb==tb&&(e.hp>tk.hp+1e-9||(Math.abs(e.hp-tk.hp)<=1e-9&&e.hp/e.hpu>tk.hp/tk.hpu)))))){tk=e;bv=v;tb=eb}});return tk};
   const strike=(i,rd)=>{const q=info[i],s=L[i];let bt=null,bb=0,tk=null;
-    const b0=DS*s.n*fr[i]*s.str*(i==heal?HALFHEALTHY:1);
+    const b0=DS*s.n*fr[i]*s.str;
     // no damage spill: a strike deals at most what the stack it hits has left; the target is the stack where the strike (with its bonus) does the most real damage (pickT, Battle rules)
     tk=pickT(i,e=>b0*q.d*(1+(q.vs[e.ty]||0)/q.ms));if(!tk)return;bt=tk.ty;bb=q.vs[bt]||0;
     const k=1+bb/q.ms;
