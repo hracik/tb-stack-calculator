@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.23';
+const APP_VERSION='22.9.24';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1865,7 +1865,7 @@ function epicSimS(P,L,EP,dice,rng,trace,first){
     const after=Math.ceil(e.hp/e.hpu-1e-9);ev.push({r:rd,t:'o',i,ty:e.ty,dmg:a,before,killed:before-after,dead:e.hp<=0,tg,sq:amt>0?bonus*a/amt:0,un:Math.round(L[i].n*fr[i])})};
   const full=P.enemy>4&&!P.raid;      // 6 and 8 enemy stacks: the 2nd strike of a Double strike is the whole strike again (the same bonus, the same target); 3 and 4: the base strength only (no squad bonus), to the stack where it does the most real damage
   // THE TARGET RULE (Battle rules): the most real damage (bonus included, capped by the health the target has left); tie: 1) the stack with the bigger bonus against the attacker, 2) the healthier stack, 3) the stack with more units (OPEN / unconfirmed)
-  const pickT=(i,dmgOf)=>{let tk=null,bv=-1,tb=-1;e2.forEach(e=>{if(e.hp<=0)return;const v=Math.min(dmgOf(e),e.hp),eb=EP.eb&&ARCAT[L[i].cat]===ARB[e.ty]?EP.eb:0;
+  const pickT=(i,dmgOf,ex)=>{let tk=null,bv=-1,tb=-1;e2.forEach(e=>{if(e.hp<=0||e===ex)return;const v=Math.min(dmgOf(e),e.hp),eb=EP.eb&&ARCAT[L[i].cat]===ARB[e.ty]?EP.eb:0;
     if(!tk||v>bv+1e-9||(Math.abs(v-bv)<=1e-9&&(eb>tb||(eb==tb&&(e.hp>tk.hp+1e-9||(Math.abs(e.hp-tk.hp)<=1e-9&&e.hp/e.hpu>tk.hp/tk.hpu)))))){tk=e;bv=v;tb=eb}});return tk};
   const strike=(i,rd)=>{const q=info[i],s=L[i];let bt=null,bb=0,tk=null;
     const b0=DS*s.n*fr[i]*s.str;
@@ -1874,10 +1874,10 @@ function epicSimS(P,L,EP,dice,rng,trace,first){
     const k=1+bb/q.ms;
     {const mF=(1+q.pc)*(1+q.pa),e2F=(1+3*q.pc)*(1+3*q.pa),v=b0*k,w=b0*(full?k:1);pvar+=(v*v+q.p*w*w)*e2F+2*v*w*q.p*mF*mF-Math.pow((v+q.p*w)*mF,2)}      // the spread of what the dice add to this strike (double damage and double strike chances): the fight's luck is judged from the sum of these
     pex+=b0*k*q.d*(1+q.p*(full?1:1/k));ed+=(1-(1-q.pc)*(1-q.pa))*(1+q.p);es+=q.p;
-    if(!dice){const base=b0*q.d;hit(i,base*k,bt,rd,'',base*(k-1),false,tk);if(q.p)hit(i,full?base*q.p*k:base*q.p,full?bt:null,rd,'',0,true,full?tk:pickT(i,()=>base));return}
+    if(!dice){const base=b0*q.d;hit(i,base*k,bt,rd,'',base*(k-1),false,tk);if(q.p){const t2=pickT(i,full?e=>b0*q.d*(1+(q.vs[e.ty]||0)/q.ms):()=>base,tk);if(t2)hit(i,full?base*q.p*(1+(q.vs[t2.ty]||0)/q.ms):base*q.p,t2.ty,rd,'',0,true,t2)}return}
     const F=()=>(1+(rng()<q.pc?1:0))*(1+(rng()<q.pa?1:0)),m1=F();if(m1>1)nd++;
     hit(i,b0*m1*k,bt,rd,m1>1?'<i>double damage</i>':'',b0*m1*(k-1),false,tk);
-    if(rng()<q.p){const m2=F();ns++;if(m2>1)nd++;hit(i,b0*m2*(full?k:1),full?bt:null,rd,'<i>double strike</i>'+(m2>1?'<i>double damage</i>':''),0,false,full?tk:pickT(i,()=>b0*q.d*m2))}};
+    if(rng()<q.p){const m2=F();ns++;if(m2>1)nd++;const t2=pickT(i,full?e=>b0*q.d*(1+(q.vs[e.ty]||0)/q.ms):()=>b0*q.d*m2,tk);if(t2)hit(i,b0*m2*(full?1+(q.vs[t2.ty]||0)/q.ms:1),t2.ty,rd,'<i>double strike</i>'+(m2>1?'<i>double damage</i>':''),0,false,t2)}};
   let last='e';
   for(let rd=0;dead.size<N&&alive();rd++){const K=alive();const ord=e2.filter(e=>e.hp>0).sort((p,q)=>q.sp*q.hp/q.hpu-p.sp*p.hp/p.hpu),used=new Set(),struck=new Set();const nx=()=>{let bi=-1,bv=-1;for(const i of by){if(dead.has(i)||struck.has(i))continue;const v=L[i].n*fr[i]*L[i].str;if(v>bv*(1+1e-9)){bv=v;bi=i}}if(bi>=0)struck.add(bi);return bi};      // the strongest living stack that has not struck in this round, by its strength NOW (a wounded stack has fewer units, so it strikes later)
     
@@ -1910,9 +1910,9 @@ function epicPath(P,L,EP){
   for(let it=0;it<4000&&hp.some(x=>x>1e-6);it++){
     const dv=hp.map(()=>0);let hi=-1;hp.forEach((x,i)=>{if(x>1e-6&&(hi<0||x>hp[hi]))hi=i});
     info.forEach((q,j)=>{const eb=i=>EP.eb&&ARCAT[L[j].cat]===ARB[EP.st[i][2]]?EP.eb:0;      // Battle rules target: the most damage (the flow has no health cap), tie: the stack with the bigger bonus against the attacker, then the healthier
-      const pk=(dm)=>{let bt=-1,bv=-1;EP.st.forEach((x,i)=>{if(hp[i]<=1e-6)return;const v=dm(x);if(bt<0||v>bv+1e-9||(Math.abs(v-bv)<=1e-9&&(eb(i)>eb(bt)||(eb(i)==eb(bt)&&hp[i]>hp[bt])))){bv=v;bt=i}});return bt};
-      const bt=pk(x=>1+(q.vs[x[2]]||0)/q.ms),bb=bt>=0?(q.vs[EP.st[bt][2]]||0):0,b2=pk(()=>1);
-      const base=q.d/N;if(bt<0)dv[hi]+=base;else dv[bt]+=base*(1+bb/q.ms);if(q.p){if(full&&bt>=0)dv[bt]+=base*q.p*(1+bb/q.ms);else dv[b2>=0?b2:hi]+=base*q.p}});
+      const pk=(dm,ex)=>{let bt=-1,bv=-1;EP.st.forEach((x,i)=>{if(hp[i]<=1e-6||i===ex)return;const v=dm(x);if(bt<0||v>bv+1e-9||(Math.abs(v-bv)<=1e-9&&(eb(i)>eb(bt)||(eb(i)==eb(bt)&&hp[i]>hp[bt])))){bv=v;bt=i}});return bt};
+      const bt=pk(x=>1+(q.vs[x[2]]||0)/q.ms),bb=bt>=0?(q.vs[EP.st[bt][2]]||0):0,b2=pk(()=>1,bt),bf=full?pk(x=>1+(q.vs[x[2]]||0)/q.ms,bt):-1;      // the 2nd hit never strikes the stack of the 1st hit
+      const base=q.d/N;if(bt<0)dv[hi]+=base;else dv[bt]+=base*(1+bb/q.ms);if(q.p){if(full){if(bf>=0)dv[bf]+=base*q.p*(1+(q.vs[EP.st[bf][2]]||0)/q.ms)}else if(b2>=0)dv[b2]+=base*q.p}});
     const R=dv.reduce((a,b)=>a+b,0);if(!(R>0))break;
     let dt=0.0025*tot/R;hp.forEach((x,i)=>{if(x>1e-6&&dv[i]>0&&x/dv[i]<dt)dt=x/dv[i]});
     hp.forEach((x,i)=>{hp[i]=Math.max(0,x-dv[i]*dt);if(hp[i]<tot*1e-9)hp[i]=0});
@@ -2701,9 +2701,9 @@ function hitDmg(a,d,rng,expect){
   LK=[m,0];return a.n*a.str*f*m}      // one strike (a double strike is a second strike of the stack: see battle)
 // the target: where the strike does the most real damage (its squad bonus against that stack, no more than the stack has left); a tie: the stack with less health
 // the Specialists' x2 against players (spec) and the engineers' x20 against fortifications (sw) are coded the same way: damage = base x spec x (multiplier + the squad bonus), the squad bonus is doubled / x20 too (the user, 2026-10-27: it fits a real report)
-function pickTarget(a,D){let b=null,bs=-1,bb=0,bh=0;
+function pickTarget(a,D,ex){let b=null,bs=-1,bb=0,bh=0;
   const bon=(d)=>d.evs?1+evBonus(d.evs,a):d.spec*(1+((d.vs&&d.vs[a.ci])||0)/d.ms),eq=(x,y)=>Math.abs(x-y)<=Math.max(Math.abs(x),Math.abs(y))*1e-12;
-  for(const d of D){if(d.n<=0)continue;const h=d.n*d.hp,e=Math.min(a.n*a.str*(a.evs?1+evBonus(a.evs,d):((d.wall?a.sw:a.spec)*(1+(a.vs[d.ci]||0)/a.ms)))*a.ef,h);
+  for(const d of D){if(d.n<=0||d===ex)continue;const h=d.n*d.hp,e=Math.min(a.n*a.str*(a.evs?1+evBonus(a.evs,d):((d.wall?a.sw:a.spec)*(1+(a.vs[d.ci]||0)/a.ms)))*a.ef,h);
     let take=false;
     if(!b||e>bs&&!eq(e,bs))take=true;
     else if(eq(e,bs)){const k=bon(d);      // a tie in damage: the enemy with the bigger bonus against the attacker; the same: the healthier stack; the same: more units (the last one is not confirmed yet)
@@ -2736,7 +2736,7 @@ function battle(A0,B0,rng,o){o=o||{};const A=clone(A0),B=clone(B0),first=o.first
       done.add(a);lastS=side;let d=pickTarget(a,tgt);if(!d)break;
       for(let q=0;q<2&&d;q++){      // q = 1: the double strike, a second strike of the same stack (its own target, its own dice); no random effect: one strike with the average damage
         const dm=hitDmg(a,d,rng,o.expect),k=Math.min(d.n,Math.floor(dm/d.hp));if(o.log)o.log.push([rd+1,side,a.name,d.name,dm,k,d.n-k,d.n,LK[0],q]);d.n-=k;
-        if(q==0){if(o.expect||!(a.pt&&rng()<a.pt))break;d=pickTarget(a,tgt)}}
+        if(q==0){if(o.expect||!(a.pt&&rng()<a.pt))break;d=pickTarget(a,tgt,d)}}
       turn=side=='A'?'B':'A'}
     nextStart=lastS=='A'?'B':'A';
     if(o.snap)o.snap.push({rd:rd+1,A:A.map(s=>s.n),B:B.map(s=>s.n)});
