@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.15';
+const APP_VERSION='23.2.16';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2708,7 +2708,7 @@ function hitDmg(a,d,rng,expect){
 // the Specialists' x2 against players (spec) and the engineers' x20 against fortifications (sw) are coded the same way: damage = base x spec x (multiplier + the squad bonus), the squad bonus is doubled / x20 too (the user, 2026-10-27: it fits a real report)
 function pickTarget(a,D,ex){let b=null,bs=-1,bb=0,bh=0;
   const bon=(d)=>d.evs?1+evBonus(d.evs,a):d.spec*(1+(((d.vs&&d.vs[a.ci])||0)+(d.vt&&typeof a.ty=='string'?d.vt[a.ty]||0:0)+(a.cat=='Engineer'?(d.vs&&d.vs[5])||0:0))/d.ms),eq=(x,y)=>Math.abs(x-y)<=Math.max(Math.abs(x),Math.abs(y))*1e-12;
-  for(const d of D){if(d.n<=0||d===ex)continue;const h=d.p!==undefined?d.p:d.n*d.hp,e=Math.min(a.n*a.str*(a.evs?1+evBonus(a.evs,d):((d.wall?a.sw:a.spec)*(1+vsX(a,d)/a.ms)))*a.ef,h);
+  for(const d of D){if(d.n<=0||d===ex)continue;const h=d.p!==undefined?d.p:d.n*d.hp,e=Math.min(a.n*a.str*(a.evs?1+evBonus(a.evs,d):((d.wall?a.sw:a.spec)*(1+vsX(a,d)/a.ms))),h);      // the target is chosen by the REAL damage (troop bonuses and features, no random effect: a double damage is rolled only after the target is chosen)
     let take=false;
     if(!b||e>bs&&!eq(e,bs))take=true;
     else if(eq(e,bs)){const k=DEADLY?d.n*d.str*bon(d):ex?0:bon(d);      // a tie in damage: the enemy with the bigger bonus against the attacker; the same: the healthier stack; the same: more units (the last one is not confirmed yet)
