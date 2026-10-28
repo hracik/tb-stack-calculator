@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.3';
+const APP_VERSION='23.2.4';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -68,6 +68,8 @@ ARMY.forEach(r=>TR.push({cls:r[0],tier:r[1],name:r[2],cat:r[3],hp:r[4],str:r[5],
 const ENGW=[0.65,0.98,1.46,2.19,3.29,4.94,7.40,11.11,16.67];      // the bonus against fortifications (the 5th number of vs) E1-E9 (the user, 2026-10-27; Ariel 16.67); every other troop has 0
 ENGN.forEach((n,i)=>TR.push({cls:'E',tier:i+1,name:n,cat:'Engineer',hp:ENGH[i],str:ENGS[i],cost:10,vs:[0,0,0,0,ENGW[i]],beast:false,type:'Human',food:ENGF[i],gold:ENGG[i],pool:'A'}));
 MONS.forEach(r=>TR.push({cls:'M',tier:r[0],name:r[1],type:r[2],cat:r[3],hp:r[4],str:r[5],cost:r[6],vs:r[7].concat(0),beast:false,food:r[8],gold:r[9],pool:'M'}));
+const BONX={"Spearman I":{"vt":{"Beast":0.8},"sg":0.54},"Spearman II":{"vt":{"Beast":1.2}},"Rider II":{"sg":0.81},"Spearman III":{"vt":{"Beast":1.8}},"Rider III":{"sg":1.22},"Spearman IV":{"vt":{"Beast":2.7}},"Rider IV":{"sg":1.82},"Spearman V":{"vt":{"Beast":4.05}},"Rider V":{"sg":2.73},"Battle Griffin V":{"ft":2.08},"Heavy Halberdier VI":{"vt":{"Beast":6.08}},"Mounted Knight VI":{"sg":4.1},"Battle Griffin VI":{"ft":3.11},"Heavy Halberdier VII":{"vt":{"Beast":9.11}},"Mounted Knight VII":{"sg":6.15},"Battle Griffin VII":{"ft":4.67},"Punisher I":{"vt":{"Beast":13.67}},"Smiter I":{"sg":9.23},"Corax I":{"ft":7.01},"Punisher II":{"vt":{"Beast":20.5}},"Smiter II":{"sg":13.84},"Corax II":{"ft":10.51},"Swordsman I":{"vt":{"Human":1.05,"Beast":0.4}},"Swordsman II":{"vt":{"Human":1.05,"Beast":0.6}},"Swordsman III":{"vt":{"Human":1.05,"Beast":0.9}},"Swordsman IV":{"vt":{"Human":1.05,"Beast":1.35}},"Swordsman V":{"vt":{"Human":1.05,"Beast":2.03}},"Lion Rider V":{"vt":{"Human":1.05},"sg":1.37},"Deadshot V":{"vt":{"Human":1.05}},"Vulture V":{"vt":{"Human":1.05},"ft":1.04},"Heavy Knight VI":{"vt":{"Human":1.05,"Beast":3.04}},"Lion Rider VI":{"vt":{"Human":1.05},"sg":2.05},"Deadshot VI":{"vt":{"Human":1.05}},"Vulture VI":{"vt":{"Human":1.05},"ft":1.56},"Heavy Knight VII":{"vt":{"Human":1.05,"Beast":4.56}},"Lion Rider VII":{"vt":{"Human":1.05},"sg":3.08},"Deadshot VII":{"vt":{"Human":1.05}},"Vulture VII":{"vt":{"Human":1.05},"ft":2.34},"Duelist I":{"vt":{"Beast":6.83}},"Whitemane I":{"sg":4.61},"Royal Lion I":{"ft":3.5},"Duelist II":{"vt":{"Beast":10.25}},"Whitemane II":{"sg":6.92},"Royal Lion II":{"ft":5.25},"Stone Gargoyle":{"vt":{"Beast":0.72}},"Emerald Dragon":{"vt":{"Giant":0.72}},"Many-Armed Guardian":{"vt":{"Elemental":2.7}},"Ice Phoenix":{"vt":{"Dragon":1.62}},"Ettin":{"ft":2.43},"Flaming Centaur":{"vt":{"Beast":1.62}},"Desert Vanquisher":{"vt":{"Elemental":3.24}},"Fearsome Manticore":{"vt":{"Giant":3.24}},"Troll Rider":{"ft":4.86},"Crystal Dragon":{"vt":{"Elemental":6.08}},"Jungle Destroyer":{"vt":{"Dragon":2.43}},"Wind Lord":{"vt":{"Dragon":9.11}},"Black Dragon":{"vt":{"Beast":7.29}},"Ancient Terror":{"ft":5.47},"Kraken I":{"vt":{"Beast":9.57}},"Fire Phoenix I":{"vt":{"Dragon":12.47}},"Devastator I":{"vt":{"Giant":6.67}},"Trickster I":{"vt":{"Elemental":10.08}},"Kraken II":{"vt":{"Beast":14.35}},"Fire Phoenix II":{"vt":{"Dragon":18.71}},"Devastator II":{"vt":{"Giant":10.0}},"Trickster II":{"vt":{"Elemental":15.12}},"Chitinous Defender Leader":{"vt":{"Swarm":40.0}},"Combat Anteater Leader":{"vt":{"Swarm":40.0}},"Grim Stalker Leader":{"vt":{"Swarm":40.0}},"Wasp-Man Leader":{"vt":{"Swarm":40.0}},"Quicksand":{"sg":13.84},"Slavic Warrior":{"vt":{"Beast":20.5}},"Warregal":{"ft":10.51},"Galloper":{"sg":6.92},"Jago":{"ft":5.25},"Scarface":{"vt":{"Beast":10.25}}};      // bonuses against troop TYPES (vt: Human, Giant, Elemental, Dragon, Beast, Demon, Undead, Elves, Cursed, Swarm), against siege engines (sg: enemy Engineers) and against fortifications (ft, the troops that had none), as fractions; the user's table, 2026-10-28. Not filled yet: the tier 6 and 7 mercenaries
+TR.forEach(t=>{const x=BONX[t.name];if(!x)return;t.vt=x.vt||{};t.vs=(t.vs.concat([0,0,0,0,0,0])).slice(0,6);if(x.ft!=null)t.vs[4]=x.ft;if(x.sg)t.vs[5]=x.sg});
 const BYG={},N2G={};
 TR.forEach(t=>{const g=t.cls+t.tier;(BYG[g]=BYG[g]||[]).push(t);N2G[t.name]=g});
 Object.keys(BYG).forEach(g=>{if(g[0]=='M')BYG[g].sort((a,b)=>CO.indexOf(a.cat)-CO.indexOf(b.cat))});
@@ -2410,7 +2412,8 @@ const veOf=(t,P)=>P.epic?(t.ve||0)+((epCur()||{}).pk?t.vp||0:0):0;      // the b
 const mercG=()=>{for(let i=9;i>=1;i--){const e=$('sG'+i);if(e&&e.checked)return i}return 9};
 const mercTier=()=>{const g=mercG();return g>=6?9:g==5?7:6};
 const mercOK=m=>{const t=mercTier();return t==9?m[1]>=9:t==7?m[1]==7:m[1]<=6};
-const mkMT=m=>({cls:m[0],tier:m[1],name:m[2],cat:m[3],hp:m[4],str:m[5],cost:m[6],vs:m[7],ve:m[10]||0,vp:m[12]||0,jungle:!!m[8],type:m[9]||'Human',beast:m[0]!='M'&&m[9]=='Beast',food:0,gold:m[11],pool:'U'});
+const mkMT0=m=>({cls:m[0],tier:m[1],name:m[2],cat:m[3],hp:m[4],str:m[5],cost:m[6],vs:m[7],ve:m[10]||0,vp:m[12]||0,jungle:!!m[8],type:m[9]||'Human',beast:m[0]!='M'&&m[9]=='Beast',food:0,gold:m[11],pool:'U'});
+const mkMT=m=>{const t=mkMT0(m),x=BONX[t.name];if(x){t.vt=x.vt||{};t.vs=(t.vs.concat([0,0,0,0,0,0])).slice(0,6);if(x.ft!=null)t.vs[4]=x.ft;if(x.sg)t.vs[5]=x.sg;if(t.vt.Swarm)t.vs=[0,0,0,0,0,t.vs[5]||0]}return t};
 const MT_ALL=MERC.map(mkMT),MT=[];
 const mercSync=()=>{MT.length=0;MERC.forEach((m,i)=>{if(mercOK(m))MT.push(MT_ALL[i])})};
 MT_ALL.forEach(t=>TRN[t.name]=t);mercSync();
@@ -2686,7 +2689,7 @@ const ENA=['Punisher II','Smiter II','Purifier II','Corax II','Duelist II','Whit
 function rngMk(seed){let a=seed>>>0;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 function mkStack(name,n,P){const t=TRN[name],m=mults(t,P);
   return{sw:t.cls=='E'?20:1,name,cls:t.cls,cat:t.cat,ty:t.type,bs:!!t.beast,eng:t.cls=='E',gold:t.gold||0,ci:DEFCAT.indexOf(t.cat),n,hp:t.hp*m[0],str:t.str*m[1],ms:m[1],vs:t.vs,
-    spec:(P.pvp&&t.cls=='S'&&t.cat!='Scout')?2:1,pc:ddp(t,P),pa:0,pt:dst(t,P),cost:t.cost,ef:(1+ddp(t,P))*(1+dst(t,P))}}
+    spec:(P.pvp&&t.cls=='S'&&t.cat!='Scout')?2:1,vt:t.vt||{},pc:ddp(t,P),pa:0,pt:dst(t,P),cost:t.cost,ef:(1+ddp(t,P))*(1+dst(t,P))}}
 // the enemy: the army splits the Leadership in equal parts (equal health), the monsters fill the Dominance with equal health (eq=1) or equal cost (eq=0); scale = more / less Leadership and Dominance
 function mkEnemy(P,eq,scale){if(P.mon)return monEnemy(P);const out=[],A=ENA.filter(n=>TRN[n]),M=ENM.filter(n=>TRN[n]),sc=scale||1;
   A.forEach(nm=>{const t=TRN[nm],n=Math.floor(P.capA*sc/A.length/t.cost);if(n>0)out.push(mkStack(nm,n,P))});
@@ -2695,16 +2698,17 @@ function mkEnemy(P,eq,scale){if(P.mon)return monEnemy(P);const out=[],A=ENA.filt
   return out}
 const clone=L=>L.map(s=>({...s}));
 let LK=[1,0];
+const vsX=(a,d)=>(a.vs[d.ci]||0)+(a.vt&&typeof d.ty=='string'?a.vt[d.ty]||0:0)+(d.cat=='Engineer'?a.vs[5]||0:0);      // our bonus against this target: its category (or the wall), its TYPE (Human, Beast ... Swarm) and, for an enemy Engineer, the bonus against siege engines
 function hitDmg(a,d,rng,expect){
-  const f=a.evs?1+evBonus(a.evs,d):((d.wall?a.sw:a.spec)*(1+(a.vs[d.ci]||0)/a.ms));let m=1;if(expect){LK=[1,0];return a.n*a.str*f*a.ef}      // no random effect: every strike deals its average (the chances of double damage and double strike are worked in)
+  const f=a.evs?1+evBonus(a.evs,d):((d.wall?a.sw:a.spec)*(1+vsX(a,d)/a.ms));let m=1;if(expect){LK=[1,0];return a.n*a.str*f*a.ef}      // no random effect: every strike deals its average (the chances of double damage and double strike are worked in)
   
   if(a.pc&&rng()<a.pc)m*=2;if(a.pa&&rng()<a.pa)m*=2;
   LK=[m,0];return a.n*a.str*f*m}      // one strike (a double strike is a second strike of the stack: see battle)
 // the target: where the strike does the most real damage (its squad bonus against that stack, no more than the stack has left); a tie: the stack with less health
 // the Specialists' x2 against players (spec) and the engineers' x20 against fortifications (sw) are coded the same way: damage = base x spec x (multiplier + the squad bonus), the squad bonus is doubled / x20 too (the user, 2026-10-27: it fits a real report)
 function pickTarget(a,D,ex){let b=null,bs=-1,bb=0,bh=0;
-  const bon=(d)=>d.evs?1+evBonus(d.evs,a):d.spec*(1+((d.vs&&d.vs[a.ci])||0)/d.ms),eq=(x,y)=>Math.abs(x-y)<=Math.max(Math.abs(x),Math.abs(y))*1e-12;
-  for(const d of D){if(d.n<=0||d===ex)continue;const h=d.n*d.hp,e=Math.min(a.n*a.str*(a.evs?1+evBonus(a.evs,d):((d.wall?a.sw:a.spec)*(1+(a.vs[d.ci]||0)/a.ms)))*a.ef,h);
+  const bon=(d)=>d.evs?1+evBonus(d.evs,a):d.spec*(1+(((d.vs&&d.vs[a.ci])||0)+(d.vt&&typeof a.ty=='string'?d.vt[a.ty]||0:0)+(a.cat=='Engineer'?(d.vs&&d.vs[5])||0:0))/d.ms),eq=(x,y)=>Math.abs(x-y)<=Math.max(Math.abs(x),Math.abs(y))*1e-12;
+  for(const d of D){if(d.n<=0||d===ex)continue;const h=d.n*d.hp,e=Math.min(a.n*a.str*(a.evs?1+evBonus(a.evs,d):((d.wall?a.sw:a.spec)*(1+vsX(a,d)/a.ms)))*a.ef,h);
     let take=false;
     if(!b||e>bs&&!eq(e,bs))take=true;
     else if(eq(e,bs)){const k=DEADLY?d.n*d.str*bon(d):ex?0:bon(d);      // a tie in damage: the enemy with the bigger bonus against the attacker; the same: the healthier stack; the same: more units (the last one is not confirmed yet)
