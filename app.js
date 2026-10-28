@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.9';
+const APP_VERSION='23.2.10';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2831,6 +2831,16 @@ async function quick(P,names,Es,iters,seed,stop,prog,warm){
 // 22.9 against a monster: the search works on the exact UNIT COUNTS of every stack (not on shares) and minimises the revive gold lost, fight by fight (no random effect, the average strikes). The strike order is the real one (the most total strength first, the sides alternate), so
 // it finds the armies that kill the stacks that are about to strike before they strike, and the small stacks that a strike overshoots. At most MONMAXST stacks. Returns the weights array with .cnt
 const MONMAXST=99;      // no limit on the stacks (the game has none)
+// tie-break, done once on the FINAL result of the search (not inside it: it would steer the search): the same result with the higher tier of the same troop is better (Josephine II over I, Corax II over I) - a stack moves to the next tier of the same troop when the fight is not worse
+function monUp(P,names,Es,w){if(!w||!w.cnt)return w;const E=Es[0],ref=Es.ref||1,nm=names.length,cost=names.map(n=>TRN[n].cost),isM=names.map(n=>TRN[n].cls=='M');
+  const mk=c=>{const L=[];for(let i=0;i<nm;i++)if(c[i]>0)L.push(mkStack(names[i],c[i],P));return L};
+  const ok=c=>{let a=0,m=0,k=0;for(let i=0;i<nm;i++)if(c[i]>0){k++;if(isM[i])m+=c[i]*cost[i];else a+=c[i]*cost[i]}return k<=MONMAXST&&a<=P.capA*1.0000001&&m<=P.capM*1.0000001};
+  const f=c=>{const L=mk(c);return (['A','B'].reduce((q,s)=>{const r=battle(L,E,null,{first:s,mon:true,expect:true});return q+(r.win>0?r.lostG:ref*(1+r.remB))},0))/2};
+  const base=n=>n.replace(/ I{1,2}$/,''),st1=names.map(n=>mkStack(n,1,P));let best=w.cnt.slice(),bv=w.v;
+  for(let i=0;i<nm;i++){if(!(best[i]>0))continue;
+    const j=names.findIndex((n,q)=>q!==i&&base(n)===base(names[i])&&(TRN[n].tier||0)>(TRN[names[i]].tier||0));if(j<0)continue;
+    for(const k of [1,0.98,0.95,0.9,0.8,1.05,1.1]){const d=best.slice();d[j]=Math.max(1,Math.ceil(best[i]*st1[i].str/st1[j].str*k))+(d[j]||0);d[i]=0;if(!ok(d))continue;const v=f(d);if(v<=bv+1e-9){best=d;bv=Math.min(bv,v);break}}}
+  const o=names.map((n,i)=>best[i]>0?best[i]*cost[i]:0);o.cnt=best;o.v=bv;return o}
 function monCounts(P,names,Es,w0,iters,seed,stop){const E=Es[0],ref=Es.ref||1,nm=names.length,cost=names.map(n=>TRN[n].cost),isM=names.map(n=>TRN[n].cls=='M');
   const mk=c=>{const L=[];for(let i=0;i<nm;i++)if(c[i]>0)L.push(mkStack(names[i],c[i],P));return L};
   const ok=c=>{let a=0,m=0,k=0;for(let i=0;i<nm;i++)if(c[i]>0){k++;if(isM[i])m+=c[i]*cost[i];else a+=c[i]*cost[i]}return k<=MONMAXST&&a<=P.capA*1.0000001&&m<=P.capM*1.0000001};
@@ -2852,7 +2862,7 @@ function monCounts(P,names,Es,w0,iters,seed,stop){const E=Es[0],ref=Es.ref||1,nm
     const c=best.slice();c[i]=0;let v=f(c);if(v<=bv){best=c;bv=v;continue}
     for(const k of [0.8,0.9,0.95,0.98,1.02,1.05,1.1,1.25]){const d=best.slice();d[i]=Math.round(d[i]*k);if(!ok(d))continue;v=f(d);if(v<bv){best=d;bv=v}}}
   const w=names.map((n,i)=>best[i]>0?best[i]*cost[i]:0);w.cnt=best;w.v=bv;return w}
-return{monCounts,MONMAXST,quick,template,search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone,monScore}})();
+return{monCounts,monUp,MONMAXST,quick,template,search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone,monScore}})();
 // ---- the screen of the theoretical stacks (One v. One): Find stacks, Rank tier choices, a fight with re-roll. Until stacks are found the Result is replaced by the card; once found the Result is live with them ----
 let THEOWAIT=false,THEOGEN=0,THEORUN=0,THEOCUR=null,THEOTC=null,THEOW={sig:'',m:new Map()};const THEOC=new Map(),THEOT=new Map();      // THEOGEN: a newer run / a change cancels the one that runs; THEOC / THEOT: finished searches and tier checks by input
 const tfm=x=>Math.round(x).toLocaleString('en-US'),tpc=x=>Math.round(x*100)+'%',tsg=x=>(x>=0?'+':'−')+Math.abs(Math.round(x*100))+'%';
@@ -2890,7 +2900,7 @@ function theoAuto(){clearTimeout(THEOAT);THEOAT=setTimeout(function f(){const P=
 // 22.8 after the quick result a deeper search runs quietly behind it; it replaces the result only when it finds an army with fewer losses; any change of the inputs cancels it
 async function theoCounts(P,names,Es,w0,g,rounds,seed0){let best=w0,alt=w0;      // the exact-count search, in rounds (the page is given back between them); every round starts from the best so far, every third from the quick result
   for(let k=0;k<rounds;k++){const r=THEO.monCounts(P,names,Es,k%3==2?alt:best,15000,seed0+k,null);await new Promise(q=>setTimeout(q,0));if(g!==THEOGEN)return null;if(!best.v||r.v<best.v)best=r}
-  return best}
+  return THEO.monUp(P,names,Es,best)}
 async function theoDeepBg(P,names,Es,cur){const g=++THEOGEN;THEORUN=g;
   try{const r=await theoCounts(P,names,Es,cur.w,g,9,100);
     if(!r||g!==THEOGEN)return;
