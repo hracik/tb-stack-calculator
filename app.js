@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.5';
+const APP_VERSION='23.2.6';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -178,7 +178,7 @@ let SOPOS={},BUFN={};      // BUFN: the stacks of the Renegades buffer zone (nam
 // the bonus text of an order row: "+333% vs. mounted" = the troop's best bonus against a class of the enemy (the best one that counts in this mode; when none counts, its best one anyway)
 function vsText(t,P){return vsText0(t,P)+(P.pm&&t.cls=='S'&&t.cat!='Scout'?' · double damage':'')+(t.cls=='G'&&t.cat=='Mounted'?' · +5 % double damage':'')}      // PvP Max damage: the Specialists deal double damage, too
 function vsText0(t,P){
-  if(P.one)return(t.vs[3]>0?'+'+pct(t.vs[3])+' vs. flying':'no bonus')+(t.cls=='S'&&t.cat!='Scout'?' · double damage':'');
+  if(P.one){const f=(t.vs[3]||0)+(t.vt&&t.vt.Human||0);return(f>0?'+'+pct(f)+' vs. flying (Corax II, Human)':'no bonus')+(t.cls=='S'&&t.cat!='Scout'?' · double damage':'')}
   const CL=['melee','ranged','mounted','flying'],use=NOMT(P)?[0,1,3]:[0,1,2,3],ve=veOf(t,P);
   let m=0;use.forEach(i=>{if(t.vs[i]>m)m=t.vs[i]});
   const idx=m>0?use:[0,1,2,3];
@@ -851,7 +851,7 @@ function mults(t,P){                                    // [health multiplier, s
 // 3-stack and 6-stack (= two 3-stacks): the enemy has no mounted stack. Killshot is a 3-stack too.
 const NOMT=P=>P.enemy==3||P.enemy==6;
 // the biggest "vs" bonus the troop has against an enemy type that is present (no mounted enemy in the 3- and 6-stack modes); a ratio: 6.67 = +667%
-function vsRatio(t,P){if(P.one)return t.vs[3]||0;      // CP kill: the only enemy is flying, so only the bonus against flying counts
+function vsRatio(t,P){if(P.one)return(t.vs[3]||0)+(t.vt&&t.vt.Human||0);      // CP kill: the only enemy is flying, so only the bonus against flying counts
   let m=0;(NOMT(P)?[0,1,3]:[0,1,2,3]).forEach(i=>{if(t.vs[i]>m)m=t.vs[i]});return m+(veOf(t,P))}      // + the bonus against epic enemies (it counts against every enemy stack, so it adds to the class bonus)
 // The troop's own bonus is ADDED to your strength bonuses in one pool: damage = base x (1 + (your bonuses + its bonus, in %)/100).
 // Compared with the same stack without its bonus that is a factor of 1 + bonus / (your strength multiplier), e.g. 1 + 6.67/101.51 = 1.0657.
