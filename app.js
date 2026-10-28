@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.29';
+const APP_VERSION='22.9.30';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1188,6 +1188,12 @@ function cpdOrder(P,names,c){
 //   ho     health only: the total strength does not have to fall along the order, a group of equals shares the places (CP kill, CP death, Max damage)
 //   order  who stands where: gives {so: the target order, out: its stacks}
 //   size   how many units every stack gets
+// Monsters behind the whole army (MONLAST) and monsters mixed into the army's list are both candidates: the DAMAGE decides (the one behind the army wins a tie, a mixed one must be clearly better, 0.05 %)
+function fourBoth(P,live,mkOut,CC,quick){
+  const keep=MONLAST;let a,b;
+  try{MONLAST=true;a=fourSearch(P,live,mkOut,CC,quick);MONLAST=false;b=fourSearch(P,live,mkOut,CC,quick)}finally{MONLAST=keep}
+  return b.d>a.d*(1+5e-4)?b:a;
+}
 function byTiers(nT,tryTier,mk,quickTier){      // the number of full monster tiers: the one with the most damage is kept (a tie: more full tiers)
   const win=(r,b)=>!b||r.dmg>b.dmg*(1+1e-9);
   let cs=[];for(let c=nT;c>=1;c--)cs.push(c);
@@ -1207,7 +1213,7 @@ function byTiers(nT,tryTier,mk,quickTier){      // the number of full monster ti
 const tierTry=(P,so,mk,c)=>{const r=allocate(P,mk(so,c));return{so,dmg:dmgAM(P,r,so)}};      // a fixed order: solve it, count the damage
 const MD={
   epic:{kn1:true,ho:false,size:allocTight,      // 3-, 4-, 6- and 8-stack: troops of the same ratio stay together, the smaller squad bonus first; the group order with the most damage wins
-    order:(P,{live,mkOut,nT})=>byTiers(nT,c=>{const f=fourSearch(P,live,mkOut,c);return{so:f.names,dmg:f.d}},mkOut,c=>{const f=fourSearch(P,live,mkOut,c,true);return{so:f.names,dmg:f.d}})},
+    order:(P,{live,mkOut,nT})=>byTiers(nT,c=>{const f=fourBoth(P,live,mkOut,c);return{so:f.names,dmg:f.d}},mkOut,c=>{const f=fourBoth(P,live,mkOut,c,true);return{so:f.names,dmg:f.d}})},
   kill:{kn1:true,ho:false,size:allocWhole,      // Killshot: weakest on the places Kn+1, then the 9s, the 8s ..., the monsters (killOrder); it is a 3-stack mode, so it has the places Kn+1 (1, 4, 7, 10 ...)
     order:(P,{live,mkOut,nT})=>byTiers(nT,c=>tierTry(P,killOrder(P,live,c),mkOut,c),mkOut)},
   cp:{kn1:false,ho:true,size:allocTight,        // CP kill / CP death / Max damage: the order is fixed, the troops of the same class and bonus are one group of equals
