@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='22.9.31';
+const APP_VERSION='22.9.32';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -930,7 +930,6 @@ function placeOutliers(P,rsv,rest,slots){
 // (exempt from the strength rule) at the place that suits its squad bonus, is the one that gives the most damage.
 // An order only wins over an earlier one when it is clearly better (0.05 %).
 const GTOL=1e-9;       // the same ratio = one group: equal up to floating-point noise (v286: there is no 1.5 % band any more - a different ratio is a different place in the order)
-let WEAKFORCE=true;     // true: the weak-on-Kn+1 order is the ONLY candidate where it exists (no damage comparison with the others); false: the damage decides between it and the others
 let MONLAST=true;       // true: the full monster tiers stand BEHIND the whole army in every mode (the army is ordered alone; the monsters follow by SH ratio, then the partial tier). false: army and monsters in one list by SH ratio (the army is ordered alone, weakest on the places Kn+1; the monsters follow by SH ratio, then the partial tier). false: army and monsters are one list by SH ratio
 let QNARROW=true;       // v317: the quick order that ranks the numbers of full monster tiers uses the army-block weak order only (as before v317): the wide order is judged in the whole search of the chosen number (in 320 random runs it never lost more than 0.6 %, ranking with it lost up to 1.5 %)
 let WEAKMON=true;       // v317: the places Kn+1 beyond the army block (inside the full monster tiers) are free for the weak troops too: the rule Kn+1 comes BEFORE 'monsters last'
@@ -1075,7 +1074,7 @@ function fourSearch(P,live,mkOut,CC,quick){     // CC = the number of full monst
   const weakCands=(gs,front)=>{const m=weakOrderM(gs),w=weakOrder(gs),fr=front?[...weakFrontG(gs),...weakFront(gs)]:[];if(!w&&!m.length&&!fr.length)return{list:[],force:false};const n=wm&&w?weakOrder(gs,false):w;return{list:[...m,w,n&&n!==w?n:null,...fr].filter(Boolean),force:!!n}};      // the wide order first; the one with the places Kn+1 of the army block only is the second candidate (the damage decides, the wide one is preferred): a weak troop far behind may cost more than it brings, when the monsters in front of it are many. WEAKFORCE only holds where the army-block order exists (as before v317); a wide order alone is one more candidate
   const fl=u=>u.full?[...u,...tail]:[...u,...mid,...tail];      // the whole order: the army part (with the monsters inside when .full), the full monster tiers, the partial tier and what is below it
   const groupings=bandGroupings(P,ordF);      // the strict groups first, then the merges of neighbouring SH groups (the damage decides between them)
-  if(quick){let bq=null;for(const g0 of groupings){const wc=QNARROW?(n=>({list:n?[n]:[],force:!!n}))(weakOrder(g0,false)):weakCands(g0);let e=null;wc.list.forEach(w=>{const x=ev(fl(w),CC);if(better(x,e))e=x});if(!(e&&WEAKFORCE&&wc.force)){const f0=ev([...flat(g0),...mid,...tail],CC);if(!e||!better(e,f0))e=f0}if(better(e,bq))bq=e}return bq}      // the quick order ranks the tier counts, so it is the same kind of order the whole search will use: the weak-on-Kn+1 one (WEAKFORCE), otherwise the better of it and the plain ascending one
+  if(quick){let bq=null;for(const g0 of groupings){const wl=QNARROW?(n=>n?[n]:[])(weakOrder(g0,false)):weakCands(g0).list;let e=ev([...flat(g0),...mid,...tail],CC);wl.forEach(w=>{const x=ev(fl(w),CC);if(better(x,e))e=x});if(better(e,bq))bq=e}return bq}      // the quick order ranks the tier counts: the plain ascending order first, a weak-on-Kn+1 one only when it is clearly better
   // THE PRINCIPLES (nothing else decides the order): (1) the WEAKEST die first - the groups stand in the order of the rising SH ratio, the engineers (the lowest ratio) in front,
   // inside a group the lowest squad bonus first; (2) the places Kn+1 are the only exception: a small group with a LOWER ratio than the group around it may stand on them (no step in health);
   // (3) the gaps in health between the groups are limited by (2): which small groups go on the places Kn+1, and in which group, is what the damage decides.
@@ -1097,7 +1096,8 @@ function fourSearch(P,live,mkOut,CC,quick){     // CC = the number of full monst
   const isEng=g=>g.u.every(t=>t.cat=='Engineer');
   // gs = the groups, the lowest ratio first. Every way to put small groups (any number, never the engineers: they are handled by the weak-first order above) on the places Kn+1 of a group with a higher ratio is tried: the groups that stay stand in the order of the rising ratio.
   const search=gs=>{
-    const wc=weakCands(gs,true);if(wc.list.length){wc.list.forEach(w=>tryU(w,0));if(WEAKFORCE&&wc.force)return}      // the weak-on-Kn+1 order is one more candidate; the damage decides between it and the others
+    const simple=layout(gs.map(h=>({h,o:[]})));if(simple)tryU(simple,0);      // 1st: the plain order by the SH ratio
+    const wc=weakCands(gs,true);wc.list.forEach(w=>tryU(w,0));      // then the weak-on-Kn+1 versions: a later order must be clearly better (0.05 %)      // the weak-on-Kn+1 order is one more candidate; the damage decides between it and the others
     const m=gs.length,host=new Array(m).fill(-1);
     const rec=(i,n)=>{
       if(i<0){
