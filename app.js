@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.20';
+const APP_VERSION='23.2.21';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2863,7 +2863,7 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
   if(!c1.length)return null;
   const s1=pick(c1,x=>x.L,opt.s1);s1i=s1.i;
   // an enemy stack hits the stack it has a bonus against: the stacks that are not the first striker must be troops that the enemy stacks which WILL strike (all but the ones we stop after the first) have no more bonus against than against the first striker
-  const strikers=rd.army.filter(x=>!K.slice(1).includes(x)),bonF=(h,i)=>1+(h.evs?evBonus(h.evs,st1[i]):0),safe=i=>strikers.every(h=>bonF(h,i)<=bonF(h,s1.i)+1e-12);
+  const strikers=rd.army,bonF=(h,i)=>1+(h.evs?evBonus(h.evs,st1[i]):0),safe=i=>strikers.every(h=>bonF(h,i)<=bonF(h,s1.i)+1e-12);
   const build=strict=>{const cnt=cnt0.slice(),used=new Set([s1.i]),allow=i=>!isE[i]&&!used.has(i)&&cnt[i]==0&&(!strict||safe(i));let prev=Infinity;
     // 3. the stopping strikes
     for(let j=1;j<K.length;j++){const T=K[j],alive=rd.army.filter(x=>!K.slice(0,j).includes(x)),cs=[];
@@ -2894,9 +2894,7 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
       for(const i of idx){const c=cnt.slice();c[i]=0;const v=val(c);if(v<ONE&&v<=cur+MONSTK){cnt[i]=0;cur=v;did=true;break}}
       if(!did)break}
     const w=names.map((n,i)=>cnt[i]>0?cnt[i]*cost[i]:0);w.cnt=cnt;w.v=cur;w.one=cur<ONE;return w};
-  if(opt.mode=='strict')return build(true);if(opt.mode=='loose')return build(false);
-  const a=build(true);if(a&&a.one)return a;      // troops the enemy has no bonus against first; when they cannot do it in one round, all troops
-  const b=build(false);return b&&(!a||b.v<a.v)?b:a}
+  return build(true)}      // only troops that no enemy stack has more bonus against than against the first striker: every enemy strike goes to the first striker, nothing else is ever hit (a monster never dies)
 return{monRecipe,monDice,quick,template,search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone}})();
 // ---- the screen of the theoretical stacks (One v. One): Find stacks, Rank tier choices, a fight with re-roll. Until stacks are found the Result is replaced by the card; once found the Result is live with them ----
 let THEOWAIT=false,THEOGEN=0,THEORUN=0,THEOCUR=null,THEOTC=null,THEOW={sig:'',m:new Map()};const THEOC=new Map(),THEOT=new Map();      // THEOGEN: a newer run / a change cancels the one that runs; THEOC / THEOT: finished searches and tier checks by input
