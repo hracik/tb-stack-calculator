@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.25';
+const APP_VERSION='23.2.26';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2974,9 +2974,6 @@ function theoDying(c){const d=theoFightData(c),by={},first=[],cnt={},dead={},lef
   d.log.forEach(([rr,side,a,t,dmg,k,lf])=>{if(side!='B')return;if(!(t in cnt)){cnt[t]=0;first.push([t,rr])}cnt[t]++;left[t]=lf;if(lf==0&&!dead[t])dead[t]=rr});
   const row=(i,n,t)=>`<div class="oi"><span class="no${i>98?' wd':''}">${i}</span>${tic(n)}<span class="nm">${esc(n)} <small class="mu">${theoInfo(by[n],d.P)}<br>${tnum(by[n].n)} units \u00b7 ${t}</small></span></div>`,rest=d.L.filter(s=>!(s.name in cnt));
   return first.map(([t,rr],i)=>row(i+1,t,`first hit in round ${rr}, hit ${cnt[t]} ${cnt[t]==1?'time':'times'}`+(dead[t]?`, destroyed in round ${dead[t]}`:''))).join('')+rest.map((s,i)=>row(first.length+i+1,s.name,'not hit')).join('')+`<p class="mu bf">The order the enemy hits our stacks for the first time in the fight of the Battle report (${THEOEXP?'no random effect':'dice rolled'}). Against players a hit stack does not have to die: the enemy chooses where to strike. Stacks that are not hit come last.</p>`}
-// the health the winner keeps: the fight with us striking first and the fight with the enemy striking first (same settings), the winner's health left in each, added and divided by two
-function theoAvgLeft(c,r){const P=c.P,E=THEO.mkEnemy(P,1,1),L=THEO.layout(P,c.res.names,c.res.w);let t=0;
-  ['A','B'].forEach(f=>{const q=THEO.battle(L,E,THEO.rngMk(THEOSEED),{first:f,expect:THEOEXP,mon:P.mon});t+=q.win>0?q.remA:q.win<0?q.remB:0});return t/2}
 function theoReport(B){const c=B.fx,{P,E,L,log,r}=theoFightData(c),num=tnum;
   const hp={A:{},B:{}},st={A:{},B:{}};L.forEach(s=>{hp.A[s.name]=s.hp;st.A[s.name]=s.n});E.forEach(s=>{hp.B[s.name]=s.hp;st.B[s.name]=s.n});
   const XP='M4.1 5.9C6.9 6.9 9.5 8.6 11.7 11.5C14 14.4 17.2 17.4 20.3 18.9M4.7 4.8C7.6 7.3 10.2 9.4 12.4 12.1C14.6 14.8 17.3 17.9 19.4 20.2M19.5 4.3C16.9 6.7 13.9 9.6 11.2 12.9C8.8 15.8 6.6 18.4 4.3 19.9M20.2 5.2C17.3 8.1 14.4 11.4 12 14.2C10 16.5 7.6 19.2 5.2 20.7',X='<svg class="bx" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="'+XP+'" stroke="rgba(0,0,0,.5)" stroke-width="3.6"/><path d="'+XP+'" stroke="#e5402a" stroke-width="1.7"/></g></svg>';
@@ -2987,7 +2984,7 @@ function theoReport(B){const c=B.fx,{P,E,L,log,r}=theoFightData(c),num=tnum;
   log.forEach(x=>{const q=sm[x[1]][x[2]];if(q&&!(x[9]>0)){fxa[x[1]][0]+=(1-(1-q.pc)*(1-q.pa))*(1+q.pt);fxa[x[1]][1]+=q.pt}if(!THEOEXP){if(x[8]>1)fxv[x[1]][0]++;if(x[9]>0)fxv[x[1]][1]++}});
   const fxo=(k,n)=>` (ours ${brA(THEOEXP?fxa.A[k]:fxv.A[k])})`;
   BRFXH=brFxBox(THEOEXP,[[fxv.A[0]+fxv.B[0],fxa.A[0]+fxa.B[0],'double damage',fxo(0)],[fxv.A[1]+fxv.B[1],fxa.A[1]+fxa.B[1],'double strikes',fxo(1)]],'');
-  let rd=-1,h=`<p class="bf">${r.win>0?'<b class="tw">We win</b> \u00b7 '+tpc(theoAvgLeft(c,r))+' health remaining':r.win<0?'<b class="tl">We lose</b> \u00b7 '+tpc(theoAvgLeft(c,r))+' health remaining':'<b>Draw</b>'}</p><div class="br">`;
+  let rd=-1,h='<div class="br">';
   log.forEach(([rr,side,a,t,dmg,k,left,before,m1,m2,p0])=>{
     if(rr!==rd){rd=rr;h+=rd==0?`<div class="brh">Siege</div>`:`<div class="brh">Round ${rd}</div>`}
     const op=side=='A'?'B':'A',au=st[side][a],we=side=='A',on=we?a:t,en=we?t:a,t1=TRN[on],tg=(m1>1?`<i>double damage</i>`:'')+(m2>0?`<i>double strike</i>`:'');
