@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.16';
+const APP_VERSION='23.2.17';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2717,6 +2717,7 @@ function pickTarget(a,D,ex){let b=null,bs=-1,bb=0,bh=0;
   return b}
 // one battle. A = our stacks, B = the enemy. The strongest (units x strength, no squad bonus, no Specialists doubling) of the stacks that have not struck in this round strikes next; the sides alternate; round 1 is opened by `first`, every later round by the side that ran out of stacks first. o.log / o.snap record the report
 function battle(A0,B0,rng,o){o=o||{};const A=clone(A0),B=clone(B0),first=o.first||(rng?(rng()<0.5?'A':'B'):'A');
+  if(o.mon&&o.expect)A.forEach(s=>{s.ef=1});      // against a monster "No random effect" is plain: every strike deals its real damage (an averaged strike that overshoots a stack would change who is hit, the real report has none); the dice roll the effects
   // the health of a stack is ONE pool (the real report: the last strike on the Bear dealt 20,344,500 = what the pool had left, 309 units with a wounded one among them): damage is taken off the pool, the units alive = the pool / the health of a unit, rounded UP; the strike is the units alive
   A.forEach(s=>{s.p=s.n*s.hp});B.forEach(s=>{s.p=s.n*s.hp});const take=(d,dm)=>{const n0=d.n;d.p=Math.max(0,d.p-dm);d.n=d.p>0?Math.min(n0,Math.ceil(d.p/d.hp-1e-9)):0;return n0-d.n};      // round 1: a coin toss (Battle rules) unless the caller names the side; from round 2 the side that did NOT make the last strike of the previous round starts
   const alive=L=>L.some(s=>s.n>0);let rd=0,nextStart=first=='A'?'B':'A';      // the engineers strike the wall first and then fight in the battle like the other stacks (real report)
@@ -2984,7 +2985,7 @@ function theoReport(B){const c=B.fx,{P,E,L,log,r}=theoFightData(c),num=tnum;
   const img=n=>MICN[n]?`<img class="ic2" src="${MICN[n]}" alt="">`:ICD[n]?`<img class="ic2" src="${ICD[n]}" alt="">`:'<span class="ic2"></span>';
   const sm={A:{},B:{}};L.forEach(s=>sm.A[s.name]=s);E.forEach(s=>sm.B[s.name]=s);
   const fxv={A:[0,0],B:[0,0]},fxa={A:[0,0],B:[0,0]};      // rolled and average double damage / double strikes per side, counted over the strikes of this fight
-  log.forEach(x=>{const q=sm[x[1]][x[2]];if(q&&!(x[9]>0)){fxa[x[1]][0]+=(1-(1-q.pc)*(1-q.pa))*(1+q.pt);fxa[x[1]][1]+=q.pt}if(!THEOEXP){if(x[8]>1)fxv[x[1]][0]++;if(x[9]>0)fxv[x[1]][1]++}});
+  log.forEach(x=>{const q=sm[x[1]][x[2]];if(q&&!(x[9]>0)&&!(P.mon&&THEOEXP)){fxa[x[1]][0]+=(1-(1-q.pc)*(1-q.pa))*(1+q.pt);fxa[x[1]][1]+=q.pt}if(!THEOEXP){if(x[8]>1)fxv[x[1]][0]++;if(x[9]>0)fxv[x[1]][1]++}});
   const fxo=(k,n)=>` (ours ${brA(THEOEXP?fxa.A[k]:fxv.A[k])})`,sel=`<label>Round 1 <select id="tfirst"><option value="T"${THEOFIRST=='T'?' selected':''}>coin toss</option><option value="A"${THEOFIRST=='A'?' selected':''}>we strike first</option><option value="B"${THEOFIRST=='B'?' selected':''}>the enemy strikes first</option></select></label>`;
   BRFXH=brFxBox(THEOEXP,[[fxv.A[0]+fxv.B[0],fxa.A[0]+fxa.B[0],'double damage',fxo(0)],[fxv.A[1]+fxv.B[1],fxa.A[1]+fxa.B[1],'double strikes',fxo(1)]],'',sel);
   let rd=-1,h=`<p class="bf">${r.win>0?'<b class="tw">We win</b> \u00b7 '+tpc(theoAvgLeft(c,r))+' health remaining':r.win<0?'<b class="tl">We lose</b> \u00b7 '+tpc(theoAvgLeft(c,r))+' health remaining':'<b>Draw</b>'}</p><div class="br">`;
