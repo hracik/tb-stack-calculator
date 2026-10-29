@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.26';
+const APP_VERSION='23.2.27';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2951,8 +2951,7 @@ async function theoRun(deep){
   }finally{if(THEORUN===g){THEORUN=0;theoBusy(0)}}}
 function theoShow(){const c=THEOCUR,out=$('tres');$('tintro').hidden=!!c;
   if(!c){out.innerHTML='';theoBusy(0);return}
-  if(c.res.mon){const r=c.res,fm=tfm,pcs=x=>(x*100).toFixed(x>0&&x<0.1?1:0)+' %';
-    out.innerHTML=`<div class="tsc"><table><tr><th>Win chance</th><th>Units lost</th><th>Revive cost of the losses</th><th>Rounds</th></tr><tr><td class="tn"><b>${pcs(r.win)}</b></td><td class="tn">${fm(r.lostN)}</td><td class="tn">${fm(r.lostG*REV/100/(templeLv()>=1?TEMPLE[templeLv()-1]:1))}</td><td class="tn">${Math.round(r.rd)}</td></tr></table></div><p class="mu">The army in the stacks below fights the monster 400 times with the dice rolled. The siege comes first: our engineers hit the wall, and a wall that is still standing hits back. Then round 1 starts with a coin toss: us or the monster.</p>`;theoBusy(0);return}
+  if(c.res.mon){out.innerHTML='';theoBusy(0);return}      // Attack monsters: no result table above the Battle report (the stacks are in the Result)
   const r=c.res,sel=theoSel(),tiers=theoTiers(sel);
   const nt=tiers.length>3?`<p class="mu">${tiers.length} tiers are ticked, the game allows 3: the top 3 (${tiers.slice(0,3).map(x=>'T'+x).join(', ')}) are used. Rank tier choices compares the combinations.</p>`:'';
   out.innerHTML=`${nt}<div class="tsc"><table><tr><th>Enemy</th><th>We strike first</th><th>The enemy strikes first</th><th>Net</th></tr>${r.rows.map(o=>`<tr><td>${tpc(o.sz)} Leadership and Dominance</td><td class="tn">${tpc(o.A.win)} wins, keep ${tpc(o.A.ra)}</td><td class="tn">${tpc(o.B.win)} wins, keep ${tpc(o.B.ra)}</td><td class="tn"><b>${tsg(o.net)}</b></td></tr>`).join('')}</table></div>
