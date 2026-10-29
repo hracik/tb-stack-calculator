@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.30';
+const APP_VERSION='23.2.31';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2882,16 +2882,18 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
     // 4. the cleaners
     const C=prev-1,cl=[];names.forEach((n,i)=>{if(!allow(i))return;const q=Math.floor(C/st1[i].str);if(q>=1)cl.push({i,q})});cl.sort((a,b)=>tier(b.i)-tier(a.i));
     let cur=val(cnt);
-    for(let g=0;g<16&&!(cur<ONE);g++){let bi=-1,bv=cur;
-      for(const x of cl){if(cnt[x.i]>0)continue;const c=cnt.slice();c[x.i]=x.q;if(!ok(c))continue;const v=val(c);if(v<bv-1e-9){bv=v;bi=x.i}}
-      if(bi<0)break;cnt[bi]=cl.find(x=>x.i==bi).q;cur=bv}
+    for(let g=0;g<16&&!(cur<ONE);g++){const cs=[];
+      for(const x of cl){if(cnt[x.i]>0)continue;const c=cnt.slice();c[x.i]=x.q;if(!ok(c))continue;const v=val(c);if(v<cur-1e-9)cs.push({i:x.i,v})}
+      if(!cs.length)break;
+      const G=cur-Math.min(...cs.map(x=>x.v)),nr=cs.filter(x=>cur-x.v>=G*(1-0.005)-1e-12).sort((a,b)=>tier(b.i)-tier(a.i)||a.v-b.v)[0];      // the best gain; a gain within 0.5 % of it: the higher tier
+      cnt[nr.i]=cl.find(x=>x.i==nr.i).q;cur=nr.v}
     // 5. the first striker's final size: what it loses in the worse start + a margin
     {const L=mk(cnt);let w=0;for(const f of['A','B']){const log=[];battle(L,E,null,{first:f,mon:true,expect:true,log});w=Math.max(w,log.reduce((q,x)=>q+(x[1]=='B'&&x[3]==names[s1.i]?x[5]:0),0))}
      const oth=Math.max(...cnt.map((c,i)=>i==s1.i||isE[i]?0:c*st1[i].str));cnt[s1.i]=Math.max(s1n(w),Math.ceil(2*oth/st1[s1.i].str));
      if(!ok(cnt)){const rest=cnt.reduce((q,c,i)=>q+(i==s1.i||pl[i]!='A'?0:c*cost[i]),0);cnt[s1.i]=Math.floor((P.capA-rest)/cost[s1.i]);if(cnt[s1.i]<s1.nk+w)return null}}
     cur=val(cnt);
     // the stacks that do not pay for themselves go (the weakest first)
-    for(let pass=0;pass<8&&cur<ONE;pass++){let did=false;const idx=cnt.map((c,i)=>i).filter(i=>cnt[i]>0&&i!=s1.i&&!isE[i]).sort((a,b)=>cnt[a]*st1[a].str-cnt[b]*st1[b].str);
+    for(let pass=0;pass<8&&cur<ONE;pass++){let did=false;const idx=cnt.map((c,i)=>i).filter(i=>cnt[i]>0&&i!=s1.i&&!isE[i]).sort((a,b)=>tier(a)-tier(b)||cnt[a]*st1[a].str-cnt[b]*st1[b].str);      // the lower tiers go first, then the weakest
       for(const i of idx){const c=cnt.slice();c[i]=0;const v=val(c);if(v<ONE&&v<=cur+MONSTK){cnt[i]=0;cur=v;did=true;break}}
       if(!did)break}
     const w=names.map((n,i)=>cnt[i]>0?cnt[i]*cost[i]:0);w.cnt=cnt;w.v=cur;w.one=cur<ONE;return w};
