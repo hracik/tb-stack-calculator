@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.44';
+const APP_VERSION='23.2.45';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2831,7 +2831,7 @@ async function quick(P,names,Es,iters,seed,stop,prog,warm){
 
 function monScore(P,names,Es,cnt,ug){ug=ug||1;const E=Es[0],nm=names.length,L=[];let ns=0,mu=0;for(let i=0;i<nm;i++)if(cnt[i]>0){L.push(mkStack(names[i],cnt[i],P));ns++;if(TRN[names[i]].pool=='M')mu+=cnt[i]*TRN[names[i]].cost}
   const r=battle(L,E,null,{first:'A',mon:true,expect:true});
-  return (r.win>0?r.lostG+6*ug*(r.rd-1):1e6*ug)+(0.6*ns+4e-5*mu)*ug}      // 23.2.44 the value of a layout (smaller is better), in GOLD, from ONE fight without random effects, we strike first (the fight of the Battle report): the gold of the units lost, 6 first-striker units of gold for every extra round, 0.6 for every stack and a little for the Dominance spent on monsters (a plain army of a few stacks is better); ug = the gold of one unit of the first striker. No dice fights anywhere in the calculation
+  return (r.win>0?r.lostG+6*ug*(r.rd-1)+(r.rd>1?1e12:0):1e6*ug+1e12)+(0.6*ns+4e-5*mu)*ug}      // 23.2.44 the value of a layout (smaller is better), in GOLD, from ONE fight without random effects, we strike first (the fight of the Battle report): the gold of the units lost, 6 first-striker units of gold for every extra round, 0.6 for every stack and a little for the Dominance spent on monsters (a plain army of a few stacks is better); ug = the gold of one unit of the first striker. No dice fights anywhere in the calculation
 // THE RECIPE of the Attack monsters (learned from a real report of the Elven Citadel, 41 units lost when we strike first and 89 when the enemy does, and from the Citadel Calculator of Game01Master, tb-citadel-calculator; the battle engine above plays that report strike by strike). The enemy is read ONCE (monRead): who strikes when and which of its stacks can still be stopped before they strike. Your bonuses only decide the unit counts - divisions, no search:
 //  1. the engineers kill the wall: the wall health / the damage of one unit, + 2
 //  2. the first striker, the biggest stack of the Leadership, kills the enemy stack that hits hardest before it strikes, and takes the hits that cannot be stopped (the enemy hits where it does the most damage, on a tie the deadliest stack: the one with the most strength)
@@ -2841,7 +2841,11 @@ function monScore(P,names,Es,cnt,ug){ug=ug||1;const E=Es[0],nm=names.length,L=[]
 const MONREAD=new Map();
 function monRead(E){const key=E.map(s=>[s.name,s.n,s.hp,s.str,s.wall?1:0,s.cat,JSON.stringify(s.evs)].join(':')).join('|');let r=MONREAD.get(key);if(r)return r;
   const army=E.filter(s=>!s.wall&&s.n>0).sort((a,b)=>b.n*b.str-a.n*a.str),U=army.slice(),K=[],H=[];let t=0;while(U.length){(t==0?K:H).push(U.shift());t^=1}      // we strike, it strikes ...: of the stacks that have not struck, we stop the strongest, then the strongest left strikes
-  r={walls:E.filter(s=>s.wall&&s.n>0),army,K,H};MONREAD.set(key,r);return r}
+  // 23.2.45 the plans: which enemy stacks we stop and which ones we let strike. Our first striker kills the first enemy stack; after every enemy strike (the strongest stack not yet struck) our next stack may stop ANY stack that has not struck. Plan 0 stops the strongest every time (K / H above); the others stop another stack first (the one that hits less hard strikes instead)
+  const plans=[],rec=(U,Kp,Hp)=>{if(!U.length){plans.push({K:Kp,H:Hp});return}
+    for(const x of(Kp.length?U:[U[0]])){const U2=U.filter(y=>y!==x);if(!U2.length){plans.push({K:Kp.concat([x]),H:Hp});continue}rec(U2.slice(1),Kp.concat([x]),Hp.concat([U2[0]]))}};
+  rec(army.slice(),[],[]);
+  r={walls:E.filter(s=>s.wall&&s.n>0),army,K,H,plans};MONREAD.set(key,r);return r}
 const MONSTK=0.6;      // what a stack must save in units lost to stay (the price of a stack)
 function monRecipe(P,names,Es,opt){opt=opt||{};
   const E=Es[0],nm=names.length,cost=names.map(n=>TRN[n].cost),pl=names.map(n=>TRN[n].pool||'A'),isM=names.map(n=>TRN[n].cls=='M'),isE=names.map(n=>TRN[n].cls=='E'),isU=pl.map(p=>p=='U'),gd=names.map(n=>TRN[n].gold||1),tier=i=>TRN[names[i]].tier||0;      // pl: the pool a troop is paid from: A Leadership, M Dominance, U Authority (the mercenaries)
@@ -2852,7 +2856,7 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
   const mk=c=>{const L=[];for(let i=0;i<nm;i++)if(c[i]>0){const s=mkStack(names[i],c[i],P);s.ef=1;s.pc=0;s.pt=0;L.push(s)}return L};
   let s1i=-1,UG=1;const ONE=4000,val=c=>{const L=mk(c),pos=L.findIndex(s=>s.name==names[s1i]);let t=0;for(const f of['A','B']){const r=battle(L,E,null,{first:f,mon:true,expect:true});t+=r.win>0?r.lostBy.reduce((q,n,j)=>q+n*(L[j].gold||0)*(j==pos?1:5),0)/UG+(r.rd>1?1e4*(1+r.rem1):0):1e9*(1+r.remB)}return t/2};      // 23.2.41 in units of the first striker's gold: the gold of the units lost (a unit lost anywhere but in the first striker counts 5 times its gold)      // the first striker is the one that takes the losses (a unit lost anywhere else counts 5), an extra round costs 10000 (and the enemy health left after round 1) in either start, a loss costs more
   const pick=(cs,key,k)=>{cs.sort((a,b)=>key(a)-key(b));const b0=cs[0],near=cs.filter(x=>key(x)<=key(b0)+Math.abs(key(b0))*0.005+1e-12).sort((a,b)=>tier(b.i)-tier(a.i)||key(a)-key(b));return near.concat(cs.filter(x=>!near.includes(x)))[Math.min(k||0,cs.length-1)]};      // the best by `key`, a tie (within 0.5 %): the higher tier; k = the next best (the variants)
-  const K=rd.K,H=rd.H,T1=K[0],hitOn=(h,i)=>hitDmg(h,st1[i],null,true);
+  const pl0=rd.plans[opt.pl||0]||rd.plans[0],K=pl0.K,H=pl0.H,T1=K[0],hitOn=(h,i)=>hitDmg(h,st1[i],null,true);
   // 1. the wall
   const cnt0=names.map(()=>0);
   if(rd.walls.length){const wp=rd.walls.reduce((q,w)=>q+pool(w),0);let bi=-1,bd=0;
@@ -2862,10 +2866,10 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
   const c1=[];
   names.forEach((n,i)=>{if(isM[i]||isE[i]||isU[i])return;const d=dpu(i,T1);if(!(d>0))return;const hp=st1[i].hp,w=(H.reduce((q,h)=>q+hitOn(h,i),0)+hitOn(T1,i))/hp;c1.push({i,L:(w-0.5*hitOn(T1,i)/hp)*gd[i],w,nk:Math.ceil(pool(T1)/d)})});
   if(!c1.length)return null;
-  const AV=opt.av||{};AV.s1=c1.length>1;const s1=pick(c1,x=>x.L,opt.s1);s1i=s1.i;UG=gd[s1i];      // the first striker is the one with the lowest GOLD lost to the hits that cannot be stopped
+  const AV=opt.av||{};AV.s1=c1.length>1;AV.pls=rd.plans.length;const s1=pick(c1,x=>x.L,opt.s1);s1i=s1.i;UG=gd[s1i];      // the first striker is the one with the lowest GOLD lost to the hits that cannot be stopped
   // an enemy stack hits the stack it has a bonus against: the stacks that are not the first striker must be troops that the enemy stacks which WILL strike (all but the ones we stop after the first) have no more bonus against than against the first striker
   const strikers=rd.army.filter(x=>!K.slice(1).includes(x)),bonF=(h,i)=>1+(h.evs?evBonus(h.evs,st1[i]):0),safe=i=>strikers.every(h=>bonF(h,i)<=bonF(h,s1.i)+1e-12);
-  const build=strict=>{const cnt=cnt0.slice(),used=new Set([s1.i]),allow=i=>!isE[i]&&!used.has(i)&&cnt[i]==0&&(!strict||safe(i));let prev=Infinity;
+  const build=strict=>{const stops=[],cnt=cnt0.slice(),used=new Set([s1.i]),allow=i=>!isE[i]&&!used.has(i)&&cnt[i]==0&&(!strict||safe(i));let prev=Infinity;
     // 3. the stopping strikes
     for(let j=1;j<K.length;j++){const T=K[j],alive=rd.army.filter(x=>!K.slice(0,j).includes(x)),cs=[];
       names.forEach((n,i)=>{if(!allow(i))return;const dT=dpu(i,T);if(!(dT>0))return;
@@ -2876,7 +2880,7 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
         cs.push({i,n:q,dT,rem:Math.max(0,pool(T)-q*dT)/pool(T)})});
       if(!cs.length)continue;
       const good=cs.filter(x=>x.rem<=0.1),use=good.length?good:[cs.reduce((m,x)=>x.rem<m.rem?x:m,cs[0])],ch=pick(use,x=>-x.dT,opt['s'+(j+1)]);if(j<=3&&AV['s'+(j+1)]===undefined)AV['s'+(j+1)]=use.length>1;
-      cnt[ch.i]=ch.n;used.add(ch.i);prev=ch.n*st1[ch.i].str}
+      cnt[ch.i]=ch.n;stops.push({i:ch.i,T});used.add(ch.i);prev=ch.n*st1[ch.i].str}
     // the first striker: provisional size (killing T1 + the hits that cannot be stopped), final size below
     const s1n=l=>s1.nk+Math.ceil(1.5*l)+10;cnt[s1.i]=s1n(s1.w);if(prev===Infinity)prev=cnt[s1.i]*st1[s1.i].str;
     // 4. the cleaners
@@ -2891,6 +2895,8 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
     {const L=mk(cnt);let w=0;for(const f of['A','B']){const log=[];battle(L,E,null,{first:f,mon:true,expect:true,log});w=Math.max(w,log.reduce((q,x)=>q+(x[1]=='B'&&x[3]==names[s1.i]?x[5]:0),0))}
      const oth=Math.max(...cnt.map((c,i)=>i==s1.i||isE[i]?0:c*st1[i].str));cnt[s1.i]=Math.max(s1n(w),Math.ceil(2*oth/st1[s1.i].str));
      if(!ok(cnt)){const rest=cnt.reduce((q,c,i)=>q+(i==s1.i||pl[i]!='A'?0:c*cost[i]),0);cnt[s1.i]=Math.floor((P.capA-rest)/cost[s1.i]);if(cnt[s1.i]<s1.nk+w)return null}}
+    // 23.2.45 every stopper must hit ITS target in the fight (at the edge of the damage the strike goes to another stack): it gets smaller until it does
+    for(const sp of stops){for(let t=0;t<12&&cnt[sp.i]>0;t++){const log=[];battle(mk(cnt),E,null,{first:'A',mon:true,expect:true,log});const e=log.find(x=>x[1]=='A'&&x[2]==names[sp.i]);if(!e||e[3]==sp.T.name)break;cnt[sp.i]=Math.floor(cnt[sp.i]*0.9)}}
     cur=val(cnt);
     // the stacks that do not pay for themselves go (the weakest first)
     for(let pass=0;pass<8&&cur<ONE;pass++){let did=false;const idx=cnt.map((c,i)=>i).filter(i=>cnt[i]>0&&i!=s1.i&&!isE[i]).sort((a,b)=>tier(a)-tier(b)||cnt[a]*st1[a].str-cnt[b]*st1[b].str);      // the lower tiers go first, then the weakest
@@ -2904,9 +2910,9 @@ let THEOWAIT=false,THEOGEN=0,THEORUN=0,THEOCUR=null,THEOTC=null,THEOW={sig:'',m:
 const tfm=x=>Math.round(x).toLocaleString('en-US'),tpc=x=>Math.round(x*100)+'%',tsg=x=>(x>=0?'+':'−')+Math.abs(Math.round(x*100))+'%';
 const TSIZES=[1,1.05,1.1,1.2];      // the enemy Leadership and Dominance the stacks are shown against (the search uses 100 % and 110 %: an all-rounder)
 function theoSel(){const s=[];(ATK=='monsters'?['E','S','G','M']:['S','G','M']).forEach(c=>{for(let i=1;i<=9;i++){const el=$('s'+c+i);if(el&&el.checked)s.push(c+i)}});return s}
-const theoTiers=sel=>[...new Set(sel.map(x=>+x.slice(1)))].sort((a,b)=>b-a);      // the ticked tier numbers, the highest first
+const theoTiers=sel=>[...new Set(sel.filter(x=>x[0]!='E').map(x=>+x.slice(1)))].sort((a,b)=>b-a);      // 23.2.45 the engineers are not counted: the 3 tiers of the game are the army and monster tiers (the real Heim report: Cannon I with the tiers V, VI, VII)      // the ticked tier numbers, the highest first
 const theoMerc=()=>{if(ATK!='monsters'||!(v('capU')>0))return[];mercSync();return MT.filter(t=>!XS.has(t.name)&&t.cat!='Scout').map(t=>t.name)};      // 23.2.14 Attack monsters: the mercenaries that are on (as many as the Authority pays for) are troops of the recipe too (not the Scouts: Grace)
-const theoNames=(sel,tiers)=>TR.filter(t=>(ATK=='monsters'?'GSME':'GSM').includes(t.cls)&&t.cat!='Scout'&&sel.includes(t.cls+t.tier)&&tiers.includes(t.tier)&&!XS.has(t.name)).map(t=>t.name).concat(theoMerc());
+const theoNames=(sel,tiers)=>TR.filter(t=>(ATK=='monsters'?'GSME':'GSM').includes(t.cls)&&t.cat!='Scout'&&sel.includes(t.cls+t.tier)&&(t.cls=='E'||tiers.includes(t.tier))&&!XS.has(t.name)).map(t=>t.name).concat(theoMerc());
 const theoEs=(P,names)=>P.mon?[THEO.mkEnemy(P)]:[[1,1],[1,0],[1.1,1],[1.1,0]].map(([sc,eq])=>THEO.mkEnemy(P,eq,sc));      // the search: equal health / equal cost monsters, at 100 % and 110 %
 // 22.8 against a monster; 23.2.44 ONE fight without random effects, we strike first (no dice fights): win, units and revive gold lost, rounds
 // 23.2.35 the revive gold of the units lost, as everywhere in the app: 90 % of the dead units of a stack come back (rounded down), the gold of a unit divided by the Temple factor (level 45: 5.91)
@@ -2934,13 +2940,18 @@ function theoProg(x,txt){$('tpi').style.width=Math.min(100,Math.round(x*100))+'%
 const theoTierTxt=names=>[...new Set(names.map(n=>TRN[n].tier))].sort((a,b)=>b-a).map(x=>'T'+x).join(' + ');
 let THEOAT=0;
 function theoAuto(){clearTimeout(THEOAT);THEOAT=setTimeout(function f(){const P=getP();if(!P.mon||theoFix(P))return;if(THEORUN){THEOAT=setTimeout(f,150);return}theoRun(false)},350)}
-const MONVAR=[{},{s1:1},{s2:1},{s3:1},{s2:1,s3:1}];      // the recipe and its variants (the next best first striker / stopping strike); the one with the lowest gold revive cost in the plain fight wins
+const MONVAR=[{},{s1:1},{s2:1},{s3:1},{s2:1,s3:1},{pl:1},{pl:2}];      // the recipe and its variants (the next best first striker / stopping strike); the one with the lowest gold revive cost in the plain fight wins
 // the Attack monsters layout: THE RECIPE (about 20 ms): the enemy is read once, the bonuses only decide the unit counts; a layout that finishes the enemy in one round is better than any other
 // 23.2.41 faster: a layout is scored once (the same layout from two variants, and, with `memo` (the Tier check: the inputs do not change inside one check), the same layout from two sets of tiers: unused tiers do not change the layout)
+const MONPLAN=new Map();
 function monBest(P,names,memo){
   const full=theoEs(P,names);let rb=null;
-  const seen=new Map(),av={},skip=o=>(o.s1&&!av.s1)||(o.s2&&!av.s2)||(o.s3&&!o.s2&&!av.s3);      // a variant that takes the next best of a choice that had only one candidate (seen in the first run) is the same layout: not built
-  for(const o of MONVAR){if(skip(o))continue;const w=THEO.monRecipe(P,names,full,o==MONVAR[0]?{av}:o);if(!w)continue;const sk=names.map((n,i)=>w.cnt[i]>0?n+':'+w.cnt[i]:'').join(',')+'|'+w.ug;let m=seen.get(sk);if(m===undefined){m=memo&&memo.get(sk);if(m===undefined){m=THEO.monScore(P,names,full,w.cnt,w.ug)-(w.one?1e12:0);if(memo)memo.set(sk,m)}seen.set(sk,m)}if(!rb||m<rb.m)rb={w,m}}
+  const seen=new Map(),av={},skip=o=>(o.s1&&!av.s1)||(o.s2&&!av.s2)||(o.s3&&!o.s2&&!av.s3)||(o.pl&&o.pl>=av.pls);      // a variant that takes the next best of a choice that had only one candidate (seen in the first run) is the same layout: not built
+  const pk=JSON.stringify([Object.assign({},P,{capA:0,capM:0,capU:0}),names,[...XS].sort()]),pc=MONPLAN.get(pk);      // 23.2.45 the plan (the variant: which enemy stacks are stopped, by which troops) is chosen once per enemy and tiers, then reused: the army size changes the counts, not the plan
+  if(pc!==undefined){const w=THEO.monRecipe(P,names,full,pc==0?{av}:MONVAR[pc]);if(w)return w}
+  let bi=-1;
+  for(let oi=0;oi<MONVAR.length;oi++){const o=MONVAR[oi];if(skip(o))continue;const w=THEO.monRecipe(P,names,full,o==MONVAR[0]?{av}:o);if(!w)continue;const sk=names.map((n,i)=>w.cnt[i]>0?n+':'+w.cnt[i]:'').join(',')+'|'+w.ug;let m=seen.get(sk);if(m===undefined){m=memo&&memo.get(sk);if(m===undefined){m=THEO.monScore(P,names,full,w.cnt,w.ug);if(memo)memo.set(sk,m)}seen.set(sk,m)}if(!rb||m<rb.m){rb={w,m};bi=oi}}
+  if(rb&&bi>=0)MONPLAN.set(pk,bi);
   return rb&&rb.w}
 // 23.2.32 Attack monsters: no army can be built (nothing is on, no engineer, no army troop): the Result stays with 0 units everywhere, so a troop that was turned off can be turned on again; the card says what is missing
 function theoNone(P,names){THEORUN=0;theoBusy(0);
@@ -2966,13 +2977,13 @@ async function tierHintMon(gen,body){
   // 23.2.38 never a tier higher than the highest one ticked: the player may not have it. Per class (like the other modes); E, S and G with no tier ticked at all may be offered the highest tier (9) and below (you may need them, e.g. no E ticked: E9); the monsters only up to your highest ticked one, none when no monster tier is ticked
   const mx=c=>Math.max(0,...sel.filter(x=>x[0]==c).map(x=>+x.slice(1))),cap={};['E','S','G','M'].forEach(c=>{cap[c]=mx(c)||(c=='M'?0:9)});
   const all=[];['E','S','G','M'].forEach(c=>{for(let i=cap[c];i>=1;i--)if($('s'+c+i))all.push(c+i)});
-  const eff=s=>{const t=theoTiers(s).slice(0,3);return s.filter(x=>t.includes(+x.slice(1)))};      // the ticks that count: the top 3 tiers (the game allows 3)
+  const eff=s=>{const t=theoTiers(s).slice(0,3);return s.filter(x=>x[0]=='E'||t.includes(+x.slice(1)))};      // the ticks that count: the top 3 tiers (the game allows 3)
   let LY=performance.now();const yl=async()=>{if(performance.now()-LY>40){await new Promise(r=>setTimeout(r,0));LY=performance.now()}};      // 23.2.44 the page is given back every 40 ms of work, not after every few choices (every wait costs 4 to 16 ms or more on a phone)
   const cur=ev(sel),cs=new Map(),tick=async s=>{const k=[...s].sort().join(',');if(!cs.has(k)){cs.set(k,{set:eff(s),o:ev(s)});await yl()}return gen===HINTGEN};
   for(const x of all){const on=sel.includes(x);await yl();if(gen!==HINTGEN)return;const s2=on?sel.filter(y=>y!=x):[...sel,x];cs.set(s2.slice().sort().join(','),{set:eff(s2),o:ev(s2)})}
   // 23.2.34 more than one tick: every choice of up to 3 tier numbers with all the classes ticked at them, and your ticks with those added
   const TN=[9,8,7,6,5,4,3,2,1],Ts=[];TN.forEach(a=>{Ts.push([a]);TN.forEach(b=>{if(b<a){Ts.push([a,b]);TN.forEach(c=>{if(c<b)Ts.push([a,b,c])})}})});
-  for(const T of Ts){const f=all.filter(x=>T.includes(+x.slice(1)));if(!(await tick(f))||!(await tick([...new Set([...sel,...f])])))return}
+  for(const T of Ts){const f=all.filter(x=>x[0]!='E'&&T.includes(+x.slice(1)));if(!(await tick(f))||!(await tick([...new Set([...sel,...f])])))return}
   // 23.2.38 a better choice must show in what is shown: the fight ends in round 1 when the current one does not, or the gold lost is lower by more than GMARG (OPEN, fitted). A better score alone is no advice.
   const GMARG=0.05,tol=cur?Math.max(2*GU,0.02*q(cur)):2*GU,ce=eff(sel),cand=[...cs.values()].filter(c=>c.o);
   const adds=c=>c.set.filter(x=>!sel.includes(x)),rems=c=>ce.filter(x=>!c.set.includes(x)),imp=o=>!cur||(isOne(o)!=isOne(cur)?isOne(o):o.lostG<cur.lostG*(1-GMARG));
