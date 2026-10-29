@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.41';
+const APP_VERSION='23.2.42';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2938,9 +2938,10 @@ let THEOAT=0;
 function theoAuto(){clearTimeout(THEOAT);THEOAT=setTimeout(function f(){const P=getP();if(!P.mon||theoFix(P))return;if(THEORUN){THEOAT=setTimeout(f,150);return}theoRun(false)},350)}
 const MONVAR=[{},{s1:1},{s2:1},{s3:1},{s2:1,s3:1}];      // the recipe and its variants (the next best first striker / stopping strike); the one that does best with the dice wins
 // the Attack monsters layout: THE RECIPE (about 20 ms): the enemy is read once, the bonuses only decide the unit counts; a layout that finishes the enemy in one round is better than any other
-function monBest(P,names){
+// 23.2.41 faster: a layout is dice-tested once (the same layout from two variants, and, with `memo` (the Tier check: the inputs do not change inside one check), the same layout from two sets of tiers: unused tiers do not change the layout)
+function monBest(P,names,memo){
   const full=theoEs(P,names);let rb=null;
-  for(const o of MONVAR){const w=THEO.monRecipe(P,names,full,o);if(!w)continue;const m=THEO.monDice(P,names,full,w.cnt,w.ug)-(w.one?1e12:0);if(!rb||m<rb.m)rb={w,m}}
+  const seen=new Map();for(const o of MONVAR){const w=THEO.monRecipe(P,names,full,o);if(!w)continue;const sk=names.map((n,i)=>w.cnt[i]>0?n+':'+w.cnt[i]:'').join(',')+'|'+w.ug;let m=seen.get(sk);if(m===undefined){m=memo&&memo.get(sk);if(m===undefined){m=THEO.monDice(P,names,full,w.cnt,w.ug)-(w.one?1e12:0);if(memo)memo.set(sk,m)}seen.set(sk,m)}if(!rb||m<rb.m)rb={w,m}}
   return rb&&rb.w}
 // 23.2.32 Attack monsters: no army can be built (nothing is on, no engineer, no army troop): the Result stays with 0 units everywhere, so a troop that was turned off can be turned on again; the card says what is missing
 function theoNone(P,names){THEORUN=0;theoBusy(0);
@@ -2959,9 +2960,9 @@ function theoMonWarn(r){const bad=r.one<TMONOK||r.win<0.999,rf=r.ref,fr=x=>(Math
   return h}
 // 23.2.33 Attack monsters: the Tier check, the same button and bubble under the tiers as in the other modes: are the ticked tiers enough? Every tier tick is turned the other way, one at a time, and the recipe runs again; what the fight is then (round 1, units lost) tells which ticks are needed, which are not and which one to add. OPEN (fitted): a change counts when it moves the score by more than 2 % (at least 2 units); score = units lost + 6 for every extra round, like the choice of the variant
 async function tierHintMon(gen,body){
-  const P=getP(),sel=theoSel(),isOne=o=>o.one>=TMONOK&&o.win>=0.999,cache=new Map();
+  const P=getP(),sel=theoSel(),isOne=o=>o.one>=TMONOK&&o.win>=0.999,cache=new Map(),memo=new Map();
   const tl=templeLv(),GU=80*REV/100/(tl>=1?TEMPLE[tl-1]:1),q=o=>o.lostG+GU*(6*(o.rd-1)+(o.win<1?1e4*(1-o.win):0)),Q=o=>o?(isOne(o)?0:1e5*GU)+q(o):Infinity;      // the score of the plain fight (the gold revive cost + 6 units of a tier 9 flying troop for every extra round; GU = the revive gold of one such unit), no dice: it tells the same objective apart, it never makes a choice "better" on its own
-  const ev=s=>{const names=theoNames(s,theoTiers(s).slice(0,3)),k=names.join('|');if(cache.has(k))return cache.get(k);let o=null;if(names.length){const w=monBest(P,names);if(w){const L=THEO.layout(P,names,w),pf=THEO.battle(L,THEO.mkEnemy(P),THEO.rngMk(THEOSEED),{first:'A',expect:true,mon:true}),st=L.filter(x=>x.n>0);o={lostN:pf.lostN,lostG:reviveGold(L,pf.lostBy),rd:pf.rd,one:pf.rd==1&&pf.win>0?1:0,win:pf.win>0?1:0,st:st.map(x=>({name:x.name,n:x.n})),used:[...new Set(st.filter(x=>TRN[x.name].pool!='U').map(x=>TRN[x.name].cls+TRN[x.name].tier))]}}}cache.set(k,o);return o};
+  const ev=s=>{const names=theoNames(s,theoTiers(s).slice(0,3)),k=names.join('|');if(cache.has(k))return cache.get(k);let o=null;if(names.length){const w=monBest(P,names,memo);if(w){const L=THEO.layout(P,names,w),pf=THEO.battle(L,THEO.mkEnemy(P),THEO.rngMk(THEOSEED),{first:'A',expect:true,mon:true}),st=L.filter(x=>x.n>0);o={lostN:pf.lostN,lostG:reviveGold(L,pf.lostBy),rd:pf.rd,one:pf.rd==1&&pf.win>0?1:0,win:pf.win>0?1:0,st:st.map(x=>({name:x.name,n:x.n})),used:[...new Set(st.filter(x=>TRN[x.name].pool!='U').map(x=>TRN[x.name].cls+TRN[x.name].tier))]}}}cache.set(k,o);return o};
   // 23.2.38 never a tier higher than the highest one ticked: the player may not have it. Per class (like the other modes); E, S and G with no tier ticked at all may be offered the highest tier (9) and below (you may need them, e.g. no E ticked: E9); the monsters only up to your highest ticked one, none when no monster tier is ticked
   const mx=c=>Math.max(0,...sel.filter(x=>x[0]==c).map(x=>+x.slice(1))),cap={};['E','S','G','M'].forEach(c=>{cap[c]=mx(c)||(c=='M'?0:9)});
   const all=[];['E','S','G','M'].forEach(c=>{for(let i=cap[c];i>=1;i--)if($('s'+c+i))all.push(c+i)});
