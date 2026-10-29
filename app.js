@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.31';
+const APP_VERSION='23.2.32';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2579,7 +2579,7 @@ function calcRun0(){
   if(!RENEGADES()&&$('mode').value=='ren'){$('mode').value='max';SO=[]}      // Renegades is off: a tab saved in it falls back to Max damage
   {const rb=document.querySelector('.cm[data-m=ren]');if(rb){rb.disabled=!RENEGADES()}}
   const P=getP(),{st,A,Mo,U}=solve(P,O);
-  const fx=P.ov||P.mon?theoFix(P):null;if(fx)theoApply(fx,st,U);      // 21.6.2 One v. One: the stacks the simulator found go into the Result
+  const fx0=P.ov||P.mon?theoFix(P):null,fx=fx0&&!fx0.res.none?fx0:null;if(fx0)theoApply(fx0,st,U);      // 21.6.2 One v. One: the stacks the simulator found go into the Result. fx0.res.none (Attack monsters, 23.2.32): no army can be built - the Result stays, with 0 units everywhere, so a troop that was turned off can be turned on again
   {const rl=$('renlv'),tg=P.ren?renTarget():0,nt=$('renlt');if(rl)rl.hidden=!P.ren;if(nt)nt.textContent=tg?'Damage to reach: '+tg.toLocaleString('en-US'):'No level: the Tier check looks for the most damage per gold of the full revive.'}      // 14.19: the Level box is shown in Renegades only
   SO=st.so;
   {const sx=[...st,...U.all];sx.so=[...st.so,...U.ord];drawSO(sx,P)}                  // after the allocation: the list shows the unit counts
@@ -2630,7 +2630,7 @@ function calcRun0(){
     ...(P.capA>0?[[`Soldiers — Leadership ${usedOf(A).toLocaleString()} / ${P.capA.toLocaleString()}`,Aall.length?(mob?mobList(prepComp(prepTier(ord(flatOrder(Aall),COMPA))),prepMob()&&VIEW=='mobile'):table(Aall)):'<p class="mu">No army tiers selected.</p>']]:[])].sort((x,y)=>prepMob()||(SHOWTR&&VIEW=='computer')?secRank(x[0])-secRank(y[0]):0).map(([t,b],k)=>`<h2${k?' class="sh2"':''}>${t}</h2>${b}`).join('');
   const hitsRow=Math.max(...REVCASES.map(c=>HIT[c[0]]))>1;      // the hits of every revive mode, after the food consumption in the second row (only when one of them pays for more than 1 hit)
   {const rc=$('rtitle').closest('.card');if(rc)rc.hidden=!(!pvOff&&(P.capA>0||P.capM>0||P.capU>0))}
-  THEOWAIT=!!((P.ov||P.mon)&&(P.capA>0||P.capM>0)&&!fx);      // One v. One: until the stacks are found the block shows the text and the buttons instead of the Result content
+  THEOWAIT=!!((P.ov||P.mon)&&(P.capA>0||P.capM>0)&&!fx0);      // One v. One: until the stacks are found the block shows the text and the buttons instead of the Result content
   {const rc=$('rtitle').closest('.card');if(rc)rc.querySelectorAll(':scope > #rsm,:scope > .ctl,:scope > #res').forEach(e=>e.classList.toggle('thd',THEOWAIT))}      // Leadership, Dominance and Authority all 0: nothing to show, the whole Result section is hidden
   const tgt=P.ren?renTarget():0,lvN=Math.floor(+$('renLv').value);      // 14.19: Renegades with a Level: is the target reached?
   const kmb=x=>{let v=Math.abs(x),i=0;const up=t=>{if(t<=0)return 0;const p=Math.pow(10,Math.floor(Math.log10(t))-2);return Math.round(+(t/p).toFixed(6))*p};while(v>=1e3&&i<3){v/=1e3;i++}let c=i?up(v):Math.round(v);if(c>=1e3&&i<3){c=up(c/1e3);i++}return (x<0?'-':'')+(i?(+c.toPrecision(3)).toString()+'KMB'[i-1]:String(c))};      // 19.0.30: normal rounding to 3 digits: 1,900,949 -> 1.9M, 626,252 -> 626K, 42,300 -> 42.3K, 8,650 -> 8.65K, 999,999 -> 1M
@@ -2658,7 +2658,7 @@ function calcRun0(){
   cmpSet({P,Aall,Mall,mItems,ordp:[...st.so,...U.ord],O:O.slice(),sc,rcost,scost,EP});      // the Compare card under the Result
   {const tcb=document.querySelector('.tc');if(tcb)tcb.disabled=pvOff||!(P.capA>0||P.capM>0)}      // the Tier check button: nothing to check without a capacity
   {const a=$('tca');if(a&&a.dataset.open=='1')closeBubble()}      // any change makes an open check out of date
-  theoSync(P,fx);      // the Win chances card of One v. One
+  theoSync(P,fx0);      // the Win chances card of One v. One
   {const bd=document.querySelector('.ob[data-o=die]');if(bd){bd.textContent='Target order'}}      // against players the order is the order of being hit, against epics it is the target order
   save();
 }
@@ -2909,10 +2909,10 @@ const theoMerc=()=>{if(ATK!='monsters'||!(v('capU')>0))return[];mercSync();retur
 const theoNames=(sel,tiers)=>TR.filter(t=>(ATK=='monsters'?'GSME':'GSM').includes(t.cls)&&t.cat!='Scout'&&sel.includes(t.cls+t.tier)&&tiers.includes(t.tier)&&!XS.has(t.name)).map(t=>t.name).concat(theoMerc());
 const theoEs=(P,names)=>P.mon?[THEO.mkEnemy(P)]:[[1,1],[1,0],[1.1,1],[1.1,0]].map(([sc,eq])=>THEO.mkEnemy(P,eq,sc));      // the search: equal health / equal cost monsters, at 100 % and 110 %
 // 22.8 against a monster: N fights with the dice rolled, the start of round 1 tossed (after the siege); the win chance, the units and the revive gold lost (on average and when we win), the rounds
-function theoStatsMon(P,names,w,N){const L=THEO.layout(P,names,w),E=THEO.mkEnemy(P),rng=THEO.rngMk(4242);let win=0,lg=0,ln=0,wlg=0,wln=0,rd=0,rb=0;
-  for(let i=0;i<N;i++){const r=THEO.battle(L,E,rng,{mon:true});if(r.win>0){win++;wlg+=r.lostG;wln+=r.lostN}lg+=r.lostG;ln+=r.lostN;rd+=r.rd;rb+=r.remB}
+function theoStatsMon(P,names,w,N){const L=THEO.layout(P,names,w),E=THEO.mkEnemy(P),rng=THEO.rngMk(4242);let win=0,lg=0,ln=0,wlg=0,wln=0,rd=0,rb=0,r1=0;
+  for(let i=0;i<N;i++){const r=THEO.battle(L,E,rng,{mon:true});if(r.win>0){win++;wlg+=r.lostG;wln+=r.lostN}lg+=r.lostG;ln+=r.lostN;rd+=r.rd;rb+=r.remB;if(r.rd==1)r1++}
   const tot=L.reduce((q,s)=>q+s.n*s.hp,0);
-  return{mon:true,names,w,stacks:L.map(s=>({name:s.name,n:s.n,sh:s.n*s.hp/tot})),win:win/N,lostG:lg/N,lostN:ln/N,winG:win?wlg/win:0,winN:win?wln/win:0,rd:rd/N,remB:rb/N,net:win/N*2-rb/N}}
+  return{mon:true,names,w,stacks:L.map(s=>({name:s.name,n:s.n,sh:s.n*s.hp/tot})),win:win/N,lostG:lg/N,lostN:ln/N,winG:win?wlg/win:0,winN:win?wln/win:0,rd:rd/N,one:r1/N,remB:rb/N,net:win/N*2-rb/N}}      // one = the share of the fights that end in round 1
 function theoStats(P,names,w,N){const L=THEO.layout(P,names,w),rows=[];
   TSIZES.forEach(sz=>{const o={sz,A:{win:0,ra:0,rb:0,margin:0},B:{win:0,ra:0,rb:0,margin:0}};
     [1,0].forEach((eq,j)=>{const E=THEO.mkEnemy(P,eq,sz);['A','B'].forEach(f=>{const r=THEO.mc(L,E,N,4242+j*13,f),t=o[f];['win','ra','rb','margin'].forEach(k=>t[k]+=r[k]/2)})});
@@ -2929,7 +2929,7 @@ function theoFix(P){const sel=theoSel(),names=theoNames(sel,theoTiers(sel).slice
 function theoApply(fx,st,U){const m={};fx.res.stacks.forEach(s=>m[s.name]=s.n);      // the found units go into the Result: the same stacks, the same cards, the same buttons
   st.forEach(s=>{s.n=m[s.name]||0});U.all.forEach(s=>{s.n=0});U.list=[];U.ord=[];U.used=0;
   U.all.filter(s=>m[s.name]>0).sort((a,b)=>m[b.name]*b.str-m[a.name]*a.str).forEach(s=>{s.n=m[s.name];U.list.push(s);U.ord.push(s.name);U.used+=s.n*s.cost})}      // 23.2.14 the mercenaries of the recipe (strongest first)
-function theoBusy(on,txt){const b=$('tgo'),d=$('tdp'),c=$('ttc');b.textContent=on=='go'?'Stop':($('tres').innerHTML?'Find stacks again':'Find stacks');d.textContent=on=='deep'?'Stop':'Search deeper';c.textContent=on=='tc'?'Stop':'Rank tier choices';b.disabled=on=='tc'||on=='deep';d.disabled=on=='tc'||on=='go';c.disabled=on=='go'||on=='deep';$('tpr').hidden=!on;if(on){$('tpi').style.width='0%';$('tps').textContent=txt||''}}
+function theoBusy(on,txt){const b=$('tgo'),d=$('tdp'),c=$('ttc');b.textContent=on=='go'?'Stop':($('tres').innerHTML?'Find stacks again':'Find stacks');d.textContent=on=='deep'?'Stop':'Search deeper';c.textContent=on=='tc'?'Stop':ATK=='monsters'?'Tier check':'Rank tier choices';b.disabled=on=='tc'||on=='deep';d.disabled=on=='tc'||on=='go';c.disabled=on=='go'||on=='deep';$('tpr').hidden=!on;if(on){$('tpi').style.width='0%';$('tps').textContent=txt||''}}
 function theoProg(x,txt){$('tpi').style.width=Math.min(100,Math.round(x*100))+'%';if(txt)$('tps').textContent=txt}
 const theoTierTxt=names=>[...new Set(names.map(n=>TRN[n].tier))].sort((a,b)=>b-a).map(x=>'T'+x).join(' + ');
 let THEOAT=0;
@@ -2940,20 +2940,59 @@ function monBest(P,names){
   const full=theoEs(P,names);let rb=null;
   for(const o of MONVAR){const w=THEO.monRecipe(P,names,full,o);if(!w)continue;const m=THEO.monDice(P,names,full,w.cnt)-(w.one?1e5:0);if(!rb||m<rb.m)rb={w,m}}
   return rb&&rb.w}
+// 23.2.32 Attack monsters: no army can be built (nothing is on, no engineer, no army troop): the Result stays with 0 units everywhere, so a troop that was turned off can be turned on again; the card says what is missing
+function theoNone(P,names){THEORUN=0;theoBusy(0);
+  const sel=theoSel(),hasE=names.some(n=>TRN[n].cls=='E'),hasA=names.some(n=>TRN[n].pool=='A'&&TRN[n].cls!='E');
+  const need=(what,cls)=>sel.some(x=>cls.includes(x[0]))?`No ${what} is on: every one of the ticked tiers is turned off. Turn one on in the Result.`:`No ${what} is ticked: tick a tier of ${what=='engineer'?'the Engineer Corps':'the Guardsmen or the Specialists'}, or turn one on in the Result.`;
+  const why=!names.length?'Nothing to fight with: no tier is ticked, or every troop of the ticked tiers is turned off. Tick a tier, or turn troops on in the Result.':!hasE?need('engineer','E'):!hasA?need('army troop','GS'):'No army found for this monster: the troops that are on cannot do it. Tick more tiers, or turn troops on in the Result.';
+  THEOC.set(theoKey(P,names),{P,res:{mon:true,none:true,names,w:null,stacks:[],why}});calc()}
+// the same fight with every troop turned on (what turning troops off costs); only what the warning needs
+function theoAllOn(P,sel,tiers){const keep=XS;XS=new Set();try{const names=theoNames(sel,tiers),w=names.length?monBest(P,names):null;if(!w)return null;const r=theoStatsMon(P,names,w,400);return{lostN:r.lostN,rd:r.rd,one:r.one,win:r.win,stacks:r.stacks.map(s=>({name:s.name,n:s.n}))}}finally{XS=keep}}
+// 23.2.32 Attack monsters: said only when the fight is not what the Goal says (the enemy dead in round 1); nothing is said when it is. Fitted (OPEN): "in round 1" = at least 90 % of the dice fights
+const TMONOK=0.9;
+function theoMonWarn(r){const bad=r.one<TMONOK||r.win<0.999,rf=r.ref,fr=x=>(Math.round(x*10)/10).toString();let h='';
+  if(bad)h+=`<p class="mu"><b>Not finished in round 1.</b> ${tpc(r.one)} of the fights end in round 1 (${fr(r.rd)} rounds on average), ${tfm(r.lostN)} units lost on average${r.win<0.999?`, ${tpc(r.win)} wins`:''}. Tier check shows whether ticking more tiers helps.</p>`;
+  if(rf&&(rf.lostN<r.lostN-0.5||rf.one>r.one+0.02||rf.win>r.win+0.001)){const used=rf.stacks.filter(s=>s.n>0&&XS.has(s.name)).map(s=>`${esc(s.name)} (${tfm(s.n)})`);
+    if(used.length)h+=`<p class="mu"><b>Turned off, but used when on:</b> ${used.join(', ')}. With every troop on: ${tpc(rf.one)} of the fights end in round 1, ${tfm(rf.lostN)} units lost on average.</p>`}
+  return h}
+// 23.2.32 Attack monsters: Tier check - are the ticked tiers enough? Every tier tick is turned the other way, one at a time, and the recipe runs again; what the fight is then (round 1, rounds, units lost) tells which ticks are needed, which are not and which one to add. OPEN (fitted): a change counts when it moves the score by more than 2 % (at least 2 units); score = units lost + 6 for every extra round, like the choice of the variant
+async function theoTierCheckMon(){
+  if(THEORUN){THEOGEN++;return}
+  const P=getP();if(!P.mon)return;
+  const sel=theoSel(),g=++THEOGEN;THEORUN=g;theoBusy('tc','');
+  const q=o=>o?o.lostN+6*(o.rd-1)+(o.win<1?1e4*(1-o.win):0):Infinity,cache=new Map();
+  const ev=s=>{const names=theoNames(s,theoTiers(s).slice(0,3)),k=names.join('|');if(cache.has(k))return cache.get(k);let o=null;if(names.length){const w=monBest(P,names);if(w){const r=theoStatsMon(P,names,w,200);o={lostN:r.lostN,rd:r.rd,one:r.one,win:r.win}}}cache.set(k,o);return o};
+  const all=[];['E','S','G','M'].forEach(c=>{for(let i=9;i>=1;i--)if($('s'+c+i))all.push(c+i)});
+  try{
+    const cur=ev(sel),rows=[];
+    for(let i=0;i<all.length;i++){const x=all[i],on=sel.includes(x);
+      theoProg(i/all.length,`Checking ${x} ${on?'off':'on'} (${i+1} of ${all.length})`);
+      await new Promise(r=>setTimeout(r,0));if(g!==THEOGEN)return;
+      rows.push({x,on,o:ev(on?sel.filter(y=>y!=x):[...sel,x])})}
+    const tol=Math.max(2,0.02*(cur?q(cur):0)),fr=x=>(Math.round(x*100)/100).toFixed(2),tr=(lab,x,o)=>`<tr><td>${lab}</td><td>${x}</td><td class="tn">${o?tpc(o.one):'–'}</td><td class="tn">${o?fr(o.rd):'–'}</td><td class="tn"><b>${o?tfm(o.lostN):'no army'}</b></td></tr>`;
+    const help=rows.filter(r=>!r.on&&r.o&&(!cur||q(cur)-q(r.o)>tol)).sort((a,b)=>q(a.o)-q(b.o)).slice(0,6),need=rows.filter(r=>r.on&&(!r.o||!cur||q(r.o)-q(cur)>tol)),free=rows.filter(r=>r.on&&r.o&&cur&&q(r.o)-q(cur)<=tol).map(r=>r.x);
+    const okNow=cur&&cur.one>=TMONOK&&cur.win>=0.999;
+    const verdict=!cur?'<b>No army can be built with the ticked tiers.</b>'+(help.length?' Ticking one of the tiers below gives one.':' No single tick gives one: engineers and an army troop are needed.'):okNow&&!help.length?`<b>The ticked tiers are enough.</b> The enemy dies in round 1 in ${tpc(cur.one)} of the fights, ${tfm(cur.lostN)} units lost on average.`:okNow?`<b>The ticked tiers are enough to finish in round 1</b> (${tfm(cur.lostN)} units lost on average), but a tier below would lose fewer.`:`<b>The ticked tiers are not enough.</b> ${tpc(cur.one)} of the fights end in round 1 (${fr(cur.rd)} rounds), ${tfm(cur.lostN)} units lost on average.`+(help.length?'':' No single tick fixes it: try more than one, or turn troops on in the Result.');
+    const tbl=[...(cur?[tr('Now','your ticks',cur)]:[]),...help.map(r=>tr('Tick',r.x,r.o)),...need.map(r=>tr('Needed, without it',r.x,r.o))];
+    $('ttab').innerHTML=`<h3 class="tth">Tier check</h3><p>${verdict}</p>${tbl.length?`<div class="tsc"><table><tr><th></th><th>Tier</th><th>Round 1</th><th>Rounds</th><th>Units lost</th></tr>${tbl.join('')}</table></div>`:''}${free.length?`<p class="mu">Any one of these can be left off without a change (not all of them together): ${free.join(', ')}.</p>`:''}<p class="mu">Every tick was turned the other way, one at a time (200 dice fights each). A change counts when it moves units lost + 6 per extra round by more than 2 % (at least 2 units). The game allows 3 tiers: the top 3 ticked are used.${XS.size?` The ${XS.size} troop${XS.size>1?'s':''} turned off in the Result stay${XS.size>1?'':'s'} off in this check.`:''}</p>`;
+  }finally{if(THEORUN===g){THEORUN=0;theoBusy(0)}}}
 async function theoRun(deep){
   if(THEORUN){THEOGEN++;return}      // the button is Stop while it runs
   const P=getP(),sel=theoSel(),tiers=theoTiers(sel).slice(0,3),names=theoNames(sel,tiers);
-  if(!names.length){$('tres').innerHTML='<p class="mu">Tick some tiers first.</p>';return}
+  if(!names.length){if(P.mon){theoNone(P,names);return}$('tres').innerHTML='<p class="mu">Tick some tiers first.</p>';return}
   const g=++THEOGEN;THEORUN=g;theoBusy(deep?'deep':'go',deep?'Searching from scratch...':'Polishing the strategy for your bonuses...');
   try{const Es=theoEs(P,names),stop=()=>g!==THEOGEN,pw=null,r=P.mon?{w:monBest(P,names)}:deep?await THEO.search(P,names,Es,1,5,stop,x=>theoProg(x),null):await THEO.quick(P,names,Es,P.mon?1500:900,5,stop,x=>theoProg(x),null);      // never from an earlier result: the same inputs give the same stacks, whatever was done before
     if(!r||g!==THEOGEN)return;
-    if(P.mon&&!r.w){THEORUN=0;theoBusy(0);$('tres').innerHTML='<p class="mu">No army found for this monster: tick more tiers (engineers and an army troop are needed).</p>';return}
-    const res=P.mon?theoStatsMon(P,names,r.w,400):theoStats(P,names,r.w,500);res.deep=!!deep;THEOC.set(theoKey(P,names),{P,res});
+    if(P.mon&&!r.w){THEORUN=0;theoBusy(0);theoNone(P,names);return}
+    const res=P.mon?theoStatsMon(P,names,r.w,400):theoStats(P,names,r.w,500);res.deep=!!deep;
+    if(P.mon&&XS.size){const R=theoAllOn(P,sel,tiers);if(R)res.ref=R}      // 23.2.32 troops turned off in the Result: what the same fight is with every troop on, to tell what the turning off costs
+    THEOC.set(theoKey(P,names),{P,res});
     THEORUN=0;theoBusy(0);calc();      // the Result comes back with the found stacks
   }finally{if(THEORUN===g){THEORUN=0;theoBusy(0)}}}
 function theoShow(){const c=THEOCUR,out=$('tres');$('tintro').hidden=!!c;
   if(!c){out.innerHTML='';theoBusy(0);return}
-  if(c.res.mon){out.innerHTML='';theoBusy(0);return}      // Attack monsters: no result table above the Battle report (the stacks are in the Result)
+  if(c.res.none){out.innerHTML=`<p class="mu">${c.res.why}</p>`;theoBusy(0);return}      // 23.2.32 no army can be built: the card says what is missing, the Result stays (0 units) so a turned off troop can be turned on again
+  if(c.res.mon){out.innerHTML=theoMonWarn(c.res);theoBusy(0);return}      // Attack monsters: no result table above the Battle report (the stacks are in the Result); only a warning when the fight is not what the Goal says
   const r=c.res,sel=theoSel(),tiers=theoTiers(sel);
   const nt=tiers.length>3?`<p class="mu">${tiers.length} tiers are ticked, the game allows 3: the top 3 (${tiers.slice(0,3).map(x=>'T'+x).join(', ')}) are used. Rank tier choices compares the combinations.</p>`:'';
   out.innerHTML=`${nt}<div class="tsc"><table><tr><th>Enemy</th><th>We strike first</th><th>The enemy strikes first</th><th>Net</th></tr>${r.rows.map(o=>`<tr><td>${tpc(o.sz)} Leadership and Dominance</td><td class="tn">${tpc(o.A.win)} wins, keep ${tpc(o.A.ra)}</td><td class="tn">${tpc(o.B.win)} wins, keep ${tpc(o.B.ra)}</td><td class="tn"><b>${tsg(o.net)}</b></td></tr>`).join('')}</table></div>
@@ -3015,13 +3054,13 @@ function theoTab(rows){const el=$('ttab');if(!rows||!rows.length){el.innerHTML='
   const rk=rows.slice().sort((a,b)=>b.res.net-a.res.net);
   el.innerHTML=`<h3 class="tth">Tier choices, best first</h3><div class="tsc"><table><tr><th>Tiers</th><th>Stacks</th><th>Win 1st</th><th>Win 2nd</th><th>Net</th></tr>${rk.map((x,i)=>`<tr${i==0?' class="tbest"':''}><td>${x.set.map(t=>'T'+t).join(' + ')}</td><td class="tn">${x.res.stacks.length}</td><td class="tn">${tpc(x.res.winA)}</td><td class="tn">${tpc(x.res.winB)}</td><td class="tn"><b>${tsg(x.res.net)}</b></td></tr>`).join('')}</table></div><p class="mu">Ranked by the net health left in the two fights together, averaged over enemies with 100%, 105%, 110% and 120% of your Leadership and Dominance. Quick search, so the numbers can move a few points; Find stacks gives the precise ones for the tiers you ticked. Only the top tier plus up to two more are tried (the game allows 3).</p>`}
 function theoSync(P,fx){const c=$('theo');if(!c)return;
-  {const ti=$('tintro');if(ti&&ti.dataset.m!==String(!!P.mon)){ti.dataset.m=String(!!P.mon);ti.innerHTML=P.mon?'<p class="mu">Find the army that kills the monster with the fewest losses.</p>':''}const tb=$('ttc');if(tb)tb.hidden=!!P.mon;{const tr=document.querySelector('#theo .trow');if(tr)tr.hidden=!!P.mon}const tw=document.querySelector('.tcw');if(tw)tw.hidden=!!P.mon;const cb=$('cmpbtn');if(cb)cb.hidden=!!P.mon;if(P.mon&&SHOWCMP){SHOWCMP=false}}const on=(P.ov||P.mon)&&(P.capA>0||P.capM>0);c.hidden=!on;if(!on){THEOGEN++;return}
+  {const ti=$('tintro');if(ti&&ti.dataset.m!==String(!!P.mon)){ti.dataset.m=String(!!P.mon);ti.innerHTML=P.mon?'<p class="mu">Find the army that kills the monster with the fewest losses.</p>':''}const tb=$('ttc');if(tb){tb.hidden=false;if(!THEORUN)tb.textContent=P.mon?'Tier check':'Rank tier choices'}[$('tgo'),$('tdp')].forEach(b=>{if(b)b.hidden=!!P.mon});{const tr=document.querySelector('#theo .trow');if(tr)tr.hidden=false}/* 23.2.32 against a monster only the Tier check button is shown (the army is found by itself) */const tw=document.querySelector('.tcw');if(tw)tw.hidden=!!P.mon;const cb=$('cmpbtn');if(cb)cb.hidden=!!P.mon;if(P.mon&&SHOWCMP){SHOWCMP=false}}const on=(P.ov||P.mon)&&(P.capA>0||P.capM>0);c.hidden=!on;if(!on){THEOGEN++;return}
   const sel=theoSel(),key=theoKey(P,theoNames(sel,theoTiers(sel).slice(0,3)));
   if(c.dataset.last!==key){if(THEORUN)THEOGEN++;c.dataset.last=key;THEOTC=THEOT.get(JSON.stringify([P,sel]))||null;theoTab(THEOTC)}      // the inputs changed: a running search is out of date
   if(P.mon&&!fx)theoAuto();      // 22.8 against a monster there are no buttons: the army is searched as soon as the inputs are there
   if(THEOCUR!==fx){THEOCUR=fx;theoShow()}}
 [$('br'),$('rsm')].forEach(el=>el.addEventListener('click',e=>{const b=e.target.closest('[data-ta]'),a=b&&b.dataset.ta;if(a=='expect'){THEOEXP=true;drawBR()}else if(a=='dice'){THEOEXP=false;THEOSEED=Math.floor(Math.random()*2e9)+1;drawBR()}}));
-$('tgo').addEventListener('click',()=>{theoRun(false)});$('tdp').addEventListener('click',()=>{theoRun(true)});$('ttc').addEventListener('click',()=>{theoTierCheck()});
+$('tgo').addEventListener('click',()=>{theoRun(false)});$('tdp').addEventListener('click',()=>{theoRun(true)});$('ttc').addEventListener('click',()=>{if(getP().mon)theoTierCheckMon();else theoTierCheck()});
 function refresh(){sync();calc()}
 // ---- the tier check (the Tier check button, shown in a window): would one more or one less tier give more damage? ----
 // The same calculation is run again with one tier added or removed, per troop type, one calculation per timer tick. Only tiers BELOW the highest ticked tier are tried (the top tiers are the best ones, a higher tier is never suggested), going down one tier at a time: as soon as a lower tier gives no gain, the tiers below it are not tried. Tiers are also removed from the lowest ticked one upwards, while that gives more damage. 12.6, engineers only: with no engineer ticked the engineer tiers of the Guardsmen's level are tried (E9, then E9 + E8 ...). 12.7: every type (Guardsmen, Specialists, Engineers, Monsters) is also tried with all its tiers off, the top one too. 12.8: a type that was unticked completely is not touched again in the same check.
