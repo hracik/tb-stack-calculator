@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.40';
+const APP_VERSION='23.2.41';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2829,9 +2829,9 @@ async function quick(P,names,Es,iters,seed,stop,prog,warm){
   if(best){best.w=await twins(P,names,Es,best.w,stop)}
   return best}
 
-function monDice(P,names,Es,cnt){const E=Es[0],nm=names.length,L=[];let ns=0,mu=0;for(let i=0;i<nm;i++)if(cnt[i]>0){L.push(mkStack(names[i],cnt[i],P));ns++;if(TRN[names[i]].pool=='M')mu+=cnt[i]*TRN[names[i]].cost}
-  let t=0,n=0;for(const f of ['A','B']){const rng=rngMk(77);for(let k=0;k<60;k++){const r=battle(L,E,rng,{first:f,mon:true});t+=r.win>0?r.lostN+6*(r.rd-1):1e6;n++}}
-  return t/n+0.6*ns+4e-5*mu}      // the value of a layout played with the dice (smaller is better): the units lost, 6 for every extra round, 0.6 for every stack and a little for the Dominance spent on monsters (a plain army of a few stacks is better)
+function monDice(P,names,Es,cnt,ug){ug=ug||1;const E=Es[0],nm=names.length,L=[];let ns=0,mu=0;for(let i=0;i<nm;i++)if(cnt[i]>0){L.push(mkStack(names[i],cnt[i],P));ns++;if(TRN[names[i]].pool=='M')mu+=cnt[i]*TRN[names[i]].cost}
+  let t=0,n=0;for(const f of ['A','B']){const rng=rngMk(77);for(let k=0;k<60;k++){const r=battle(L,E,rng,{first:f,mon:true});t+=r.win>0?r.lostG+6*ug*(r.rd-1):1e6*ug;n++}}
+  return t/n+(0.6*ns+4e-5*mu)*ug}      // the value of a layout played with the dice (smaller is better), in GOLD (23.2.41: the goal is the lowest revive gold): the gold of the units lost, 6 first-striker units of gold for every extra round, 0.6 for every stack and a little for the Dominance spent on monsters (a plain army of a few stacks is better); ug = the gold of one unit of the first striker (the old unit values keep their meaning)
 // THE RECIPE of the Attack monsters (learned from a real report of the Elven Citadel, 41 units lost when we strike first and 89 when the enemy does, and from the Citadel Calculator of Game01Master, tb-citadel-calculator; the battle engine above plays that report strike by strike). The enemy is read ONCE (monRead): who strikes when and which of its stacks can still be stopped before they strike. Your bonuses only decide the unit counts - divisions, no search:
 //  1. the engineers kill the wall: the wall health / the damage of one unit, + 2
 //  2. the first striker, the biggest stack of the Leadership, kills the enemy stack that hits hardest before it strikes, and takes the hits that cannot be stopped (the enemy hits where it does the most damage, on a tie the deadliest stack: the one with the most strength)
@@ -2844,13 +2844,13 @@ function monRead(E){const key=E.map(s=>[s.name,s.n,s.hp,s.str,s.wall?1:0,s.cat,J
   r={walls:E.filter(s=>s.wall&&s.n>0),army,K,H};MONREAD.set(key,r);return r}
 const MONSTK=0.6;      // what a stack must save in units lost to stay (the price of a stack)
 function monRecipe(P,names,Es,opt){opt=opt||{};
-  const E=Es[0],nm=names.length,cost=names.map(n=>TRN[n].cost),pl=names.map(n=>TRN[n].pool||'A'),isM=names.map(n=>TRN[n].cls=='M'),isE=names.map(n=>TRN[n].cls=='E'),isU=pl.map(p=>p=='U'),tier=i=>TRN[names[i]].tier||0;      // pl: the pool a troop is paid from: A Leadership, M Dominance, U Authority (the mercenaries)
+  const E=Es[0],nm=names.length,cost=names.map(n=>TRN[n].cost),pl=names.map(n=>TRN[n].pool||'A'),isM=names.map(n=>TRN[n].cls=='M'),isE=names.map(n=>TRN[n].cls=='E'),isU=pl.map(p=>p=='U'),gd=names.map(n=>TRN[n].gold||1),tier=i=>TRN[names[i]].tier||0;      // pl: the pool a troop is paid from: A Leadership, M Dominance, U Authority (the mercenaries)
   const rd=monRead(E);if(!rd.army.length)return null;
   const st1=names.map(n=>{const s=mkStack(n,1,P);s.ef=1;s.pc=0;s.pt=0;return s});      // one unit, no random effect (a random effect only adds damage)
   const dpu=(i,d)=>hitDmg(st1[i],d,null,true),pool=d=>d.n*d.hp;
   const ok=c=>{let a=0,m=0,u=0;for(let i=0;i<nm;i++)if(c[i]>0){if(pl[i]=='U')u+=c[i]*cost[i];else if(pl[i]=='M')m+=c[i]*cost[i];else a+=c[i]*cost[i]}return a<=P.capA*1.0000001&&m<=P.capM*1.0000001&&u<=(P.capU||0)*1.0000001};
   const mk=c=>{const L=[];for(let i=0;i<nm;i++)if(c[i]>0){const s=mkStack(names[i],c[i],P);s.ef=1;s.pc=0;s.pt=0;L.push(s)}return L};
-  let s1i=-1;const ONE=4000,val=c=>{const L=mk(c),pos=L.findIndex(s=>s.name==names[s1i]);let t=0;for(const f of['A','B']){const r=battle(L,E,null,{first:f,mon:true,expect:true});t+=r.win>0?r.lostBy[pos]+5*(r.lostN-r.lostBy[pos])+(r.rd>1?1e4*(1+r.rem1):0):1e9*(1+r.remB)}return t/2};      // the first striker is the one that takes the losses (a unit lost anywhere else counts 5), an extra round costs 10000 (and the enemy health left after round 1) in either start, a loss costs more
+  let s1i=-1,UG=1;const ONE=4000,val=c=>{const L=mk(c),pos=L.findIndex(s=>s.name==names[s1i]);let t=0;for(const f of['A','B']){const r=battle(L,E,null,{first:f,mon:true,expect:true});t+=r.win>0?r.lostBy.reduce((q,n,j)=>q+n*(L[j].gold||0)*(j==pos?1:5),0)/UG+(r.rd>1?1e4*(1+r.rem1):0):1e9*(1+r.remB)}return t/2};      // 23.2.41 in units of the first striker's gold: the gold of the units lost (a unit lost anywhere but in the first striker counts 5 times its gold)      // the first striker is the one that takes the losses (a unit lost anywhere else counts 5), an extra round costs 10000 (and the enemy health left after round 1) in either start, a loss costs more
   const pick=(cs,key,k)=>{cs.sort((a,b)=>key(a)-key(b));const b0=cs[0],near=cs.filter(x=>key(x)<=key(b0)+Math.abs(key(b0))*0.005+1e-12).sort((a,b)=>tier(b.i)-tier(a.i)||key(a)-key(b));return near.concat(cs.filter(x=>!near.includes(x)))[Math.min(k||0,cs.length-1)]};      // the best by `key`, a tie (within 0.5 %): the higher tier; k = the next best (the variants)
   const K=rd.K,H=rd.H,T1=K[0],hitOn=(h,i)=>hitDmg(h,st1[i],null,true);
   // 1. the wall
@@ -2858,11 +2858,11 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
   if(rd.walls.length){const wp=rd.walls.reduce((q,w)=>q+pool(w),0);let bi=-1,bd=0;
     for(const mer of[false,true]){names.forEach((n,i)=>{if(!isE[i]||isU[i]!==mer)return;const d=dpu(i,rd.walls[0]);if(d>bd*(1+1e-9)||(bi>=0&&Math.abs(d-bd)<=bd*1e-9&&tier(i)>tier(bi))){bd=d;bi=i}});if(bi>=0)break}      // the engineers of the Leadership first, the mercenary Ariel only when there are none
     if(bi<0)return null;cnt0[bi]=Math.ceil(wp/bd-1e-9)}      // exactly the units that kill the wall: wall health / damage of one engineer, rounded up
-  // 2. the first striker: the army stack that loses the fewest units to the hits that cannot be stopped
+  // 2. the first striker: the army stack that loses the least gold (units x revive gold) to the hits that cannot be stopped
   const c1=[];
-  names.forEach((n,i)=>{if(isM[i]||isE[i]||isU[i])return;const d=dpu(i,T1);if(!(d>0))return;const hp=st1[i].hp,w=(H.reduce((q,h)=>q+hitOn(h,i),0)+hitOn(T1,i))/hp;c1.push({i,L:w-0.5*hitOn(T1,i)/hp,w,nk:Math.ceil(pool(T1)/d)})});
+  names.forEach((n,i)=>{if(isM[i]||isE[i]||isU[i])return;const d=dpu(i,T1);if(!(d>0))return;const hp=st1[i].hp,w=(H.reduce((q,h)=>q+hitOn(h,i),0)+hitOn(T1,i))/hp;c1.push({i,L:(w-0.5*hitOn(T1,i)/hp)*gd[i],w,nk:Math.ceil(pool(T1)/d)})});
   if(!c1.length)return null;
-  const s1=pick(c1,x=>x.L,opt.s1);s1i=s1.i;
+  const s1=pick(c1,x=>x.L,opt.s1);s1i=s1.i;UG=gd[s1i];      // the first striker is the one with the lowest GOLD lost to the hits that cannot be stopped
   // an enemy stack hits the stack it has a bonus against: the stacks that are not the first striker must be troops that the enemy stacks which WILL strike (all but the ones we stop after the first) have no more bonus against than against the first striker
   const strikers=rd.army.filter(x=>!K.slice(1).includes(x)),bonF=(h,i)=>1+(h.evs?evBonus(h.evs,st1[i]):0),safe=i=>strikers.every(h=>bonF(h,i)<=bonF(h,s1.i)+1e-12);
   const build=strict=>{const cnt=cnt0.slice(),used=new Set([s1.i]),allow=i=>!isE[i]&&!used.has(i)&&cnt[i]==0&&(!strict||safe(i));let prev=Infinity;
@@ -2896,7 +2896,7 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
     for(let pass=0;pass<8&&cur<ONE;pass++){let did=false;const idx=cnt.map((c,i)=>i).filter(i=>cnt[i]>0&&i!=s1.i&&!isE[i]).sort((a,b)=>tier(a)-tier(b)||cnt[a]*st1[a].str-cnt[b]*st1[b].str);      // the lower tiers go first, then the weakest
       for(const i of idx){const c=cnt.slice();c[i]=0;const v=val(c);if(v<ONE&&v<=cur+MONSTK){cnt[i]=0;cur=v;did=true;break}}
       if(!did)break}
-    const w=names.map((n,i)=>cnt[i]>0?cnt[i]*cost[i]:0);w.cnt=cnt;w.v=cur;w.one=cur<ONE;return w};
+    const w=names.map((n,i)=>cnt[i]>0?cnt[i]*cost[i]:0);w.cnt=cnt;w.v=cur;w.one=cur<ONE;w.ug=UG;return w};
   return build(true)}      // only troops that no enemy stack which STRIKES at full strength has more bonus against than against the first striker (the stacks we stop are wounded when they strike: a Fire Phoenix wounds the Bear and the Bear's hit does not kill it); no other troops are brought in
 return{monRecipe,monDice,quick,template,search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone}})();
 // ---- the screen of the theoretical stacks (One v. One): Find stacks, Rank tier choices, a fight with re-roll. Until stacks are found the Result is replaced by the card; once found the Result is live with them ----
@@ -2911,10 +2911,10 @@ const theoEs=(P,names)=>P.mon?[THEO.mkEnemy(P)]:[[1,1],[1,0],[1.1,1],[1.1,0]].ma
 // 22.8 against a monster: N fights with the dice rolled, the start of round 1 tossed (after the siege); the win chance, the units and the revive gold lost (on average and when we win), the rounds
 // 23.2.35 the revive gold of the units lost, as everywhere in the app: 90 % of the dead units of a stack come back (rounded down), the gold of a unit divided by the Temple factor (level 45: 5.91)
 const reviveGold=(L,lostBy)=>{const tl=templeLv(),tf=tl>=1?TEMPLE[tl-1]:1;return lostBy.reduce((q,n,i)=>q+Math.floor(n*REV/100+1e-9)*(L[i].gold||0),0)/tf};
-function theoStatsMon(P,names,w,N){const L=THEO.layout(P,names,w),E=THEO.mkEnemy(P),rng=THEO.rngMk(4242);let win=0,lg=0,ln=0,wlg=0,wln=0,rd=0,rb=0,r1=0;
-  for(let i=0;i<N;i++){const r=THEO.battle(L,E,rng,{mon:true});if(r.win>0){win++;wlg+=r.lostG;wln+=r.lostN}lg+=r.lostG;ln+=r.lostN;rd+=r.rd;rb+=r.remB;if(r.rd==1)r1++}
+function theoStatsMon(P,names,w,N){const L=THEO.layout(P,names,w),E=THEO.mkEnemy(P),rng=THEO.rngMk(4242);let win=0,lg=0,ln=0,wlg=0,wln=0,rd=0,rb=0,r1=0,rg=0;
+  for(let i=0;i<N;i++){const r=THEO.battle(L,E,rng,{mon:true});if(r.win>0){win++;wlg+=r.lostG;wln+=r.lostN}lg+=r.lostG;ln+=r.lostN;rg+=reviveGold(L,r.lostBy);rd+=r.rd;rb+=r.remB;if(r.rd==1)r1++}
   const tot=L.reduce((q,s)=>q+s.n*s.hp,0),pf=THEO.battle(L,E,THEO.rngMk(THEOSEED),{first:'A',expect:true,mon:true});
-  return{mon:true,names,w,stacks:L.map(s=>({name:s.name,n:s.n,sh:s.n*s.hp/tot})),win:win/N,lostG:lg/N,lostN:ln/N,winG:win?wlg/win:0,winN:win?wln/win:0,rd:rd/N,one:r1/N,remB:rb/N,net:win/N*2-rb/N,pg:reviveGold(L,pf.lostBy),pu:pf.lostN}}      // one = the share of the fights that end in round 1; pg / pu = the revive gold and the units lost of the plain fight (no random effects, we strike first: the one of the Battle report)
+  return{mon:true,names,w,stacks:L.map(s=>({name:s.name,n:s.n,sh:s.n*s.hp/tot})),win:win/N,lostG:lg/N,lostN:ln/N,winG:win?wlg/win:0,winN:win?wln/win:0,rd:rd/N,one:r1/N,rg:rg/N,remB:rb/N,net:win/N*2-rb/N,pg:reviveGold(L,pf.lostBy),pu:pf.lostN}}      // one = the share of the fights that end in round 1; pg / pu = the revive gold and the units lost of the plain fight (no random effects, we strike first: the one of the Battle report)
 function theoStats(P,names,w,N){const L=THEO.layout(P,names,w),rows=[];
   TSIZES.forEach(sz=>{const o={sz,A:{win:0,ra:0,rb:0,margin:0},B:{win:0,ra:0,rb:0,margin:0}};
     [1,0].forEach((eq,j)=>{const E=THEO.mkEnemy(P,eq,sz);['A','B'].forEach(f=>{const r=THEO.mc(L,E,N,4242+j*13,f),t=o[f];['win','ra','rb','margin'].forEach(k=>t[k]+=r[k]/2)})});
@@ -2940,7 +2940,7 @@ const MONVAR=[{},{s1:1},{s2:1},{s3:1},{s2:1,s3:1}];      // the recipe and its v
 // the Attack monsters layout: THE RECIPE (about 20 ms): the enemy is read once, the bonuses only decide the unit counts; a layout that finishes the enemy in one round is better than any other
 function monBest(P,names){
   const full=theoEs(P,names);let rb=null;
-  for(const o of MONVAR){const w=THEO.monRecipe(P,names,full,o);if(!w)continue;const m=THEO.monDice(P,names,full,w.cnt)-(w.one?1e5:0);if(!rb||m<rb.m)rb={w,m}}
+  for(const o of MONVAR){const w=THEO.monRecipe(P,names,full,o);if(!w)continue;const m=THEO.monDice(P,names,full,w.cnt,w.ug)-(w.one?1e12:0);if(!rb||m<rb.m)rb={w,m}}
   return rb&&rb.w}
 // 23.2.32 Attack monsters: no army can be built (nothing is on, no engineer, no army troop): the Result stays with 0 units everywhere, so a troop that was turned off can be turned on again; the card says what is missing
 function theoNone(P,names){THEORUN=0;theoBusy(0);
@@ -2949,18 +2949,18 @@ function theoNone(P,names){THEORUN=0;theoBusy(0);
   const why=!names.length?'Nothing to fight with: no tier is ticked, or every troop of the ticked tiers is turned off. Tick a tier, or turn troops on in the Result.':!hasE?need('engineer','E'):!hasA?need('army troop','GS'):'No army found for this monster: the troops that are on cannot do it. Tick more tiers, or turn troops on in the Result.';
   THEOC.set(theoKey(P,names),{P,res:{mon:true,none:true,names,w:null,stacks:[],why}});calc()}
 // the same fight with every troop turned on (what turning troops off costs); only what the warning needs
-function theoAllOn(P,sel,tiers){const keep=XS;XS=new Set();try{const names=theoNames(sel,tiers),w=names.length?monBest(P,names):null;if(!w)return null;const r=theoStatsMon(P,names,w,400);return{lostN:r.lostN,rd:r.rd,one:r.one,win:r.win,stacks:r.stacks.map(s=>({name:s.name,n:s.n}))}}finally{XS=keep}}
+function theoAllOn(P,sel,tiers){const keep=XS;XS=new Set();try{const names=theoNames(sel,tiers),w=names.length?monBest(P,names):null;if(!w)return null;const r=theoStatsMon(P,names,w,400);return{lostN:r.lostN,rg:r.rg,rd:r.rd,one:r.one,win:r.win,stacks:r.stacks.map(s=>({name:s.name,n:s.n}))}}finally{XS=keep}}
 // 23.2.32 Attack monsters: said only when the fight is not what the Goal says (the enemy dead in round 1); nothing is said when it is. Fitted (OPEN): "in round 1" = at least 90 % of the dice fights
 const TMONOK=0.9;
 function theoMonWarn(r){const bad=r.one<TMONOK||r.win<0.999,rf=r.ref,fr=x=>(Math.round(x*10)/10).toString();let h='';
-  if(bad)h+=`<p class="mu"><b>Not finished in round 1.</b> ${tpc(r.one)} of the fights end in round 1 (${fr(r.rd)} rounds on average), ${tfm(r.lostN)} units lost on average${r.win<0.999?`, ${tpc(r.win)} wins`:''}. Tier check shows whether ticking more tiers helps.</p>`;
-  if(rf&&(rf.lostN<r.lostN-0.5||rf.one>r.one+0.02||rf.win>r.win+0.001)){const used=rf.stacks.filter(s=>s.n>0&&XS.has(s.name)).map(s=>`${esc(s.name)} (${tfm(s.n)})`);
-    if(used.length)h+=`<p class="mu"><b>Turned off, but used when on:</b> ${used.join(', ')}. With every troop on: ${tpc(rf.one)} of the fights end in round 1, ${tfm(rf.lostN)} units lost on average.</p>`}
+  if(bad)h+=`<p class="mu"><b>Not finished in round 1.</b> ${tpc(r.one)} of the fights end in round 1 (${fr(r.rd)} rounds on average), ${tfm(r.rg)} gold revive cost on average${r.win<0.999?`, ${tpc(r.win)} wins`:''}. Tier check shows whether ticking more tiers helps.</p>`;
+  if(rf&&(rf.rg<r.rg*0.95||rf.one>r.one+0.02||rf.win>r.win+0.001)){const used=rf.stacks.filter(s=>s.n>0&&XS.has(s.name)).map(s=>`${esc(s.name)} (${tfm(s.n)})`);
+    if(used.length)h+=`<p class="mu"><b>Turned off, but used when on:</b> ${used.join(', ')}. With every troop on: ${tpc(rf.one)} of the fights end in round 1, ${tfm(rf.rg)} gold revive cost on average.</p>`}
   return h}
 // 23.2.33 Attack monsters: the Tier check, the same button and bubble under the tiers as in the other modes: are the ticked tiers enough? Every tier tick is turned the other way, one at a time, and the recipe runs again; what the fight is then (round 1, units lost) tells which ticks are needed, which are not and which one to add. OPEN (fitted): a change counts when it moves the score by more than 2 % (at least 2 units); score = units lost + 6 for every extra round, like the choice of the variant
 async function tierHintMon(gen,body){
   const P=getP(),sel=theoSel(),isOne=o=>o.one>=TMONOK&&o.win>=0.999,cache=new Map();
-  const q=o=>o.lostN+6*(o.rd-1)+(o.win<1?1e4*(1-o.win):0),Q=o=>o?(isOne(o)?0:1e5)+q(o):Infinity;      // the score of the plain fight (units lost + 6 for every extra round), no dice: it tells the same objective apart, it never makes a choice "better" on its own
+  const tl=templeLv(),GU=80*REV/100/(tl>=1?TEMPLE[tl-1]:1),q=o=>o.lostG+GU*(6*(o.rd-1)+(o.win<1?1e4*(1-o.win):0)),Q=o=>o?(isOne(o)?0:1e5*GU)+q(o):Infinity;      // the score of the plain fight (the gold revive cost + 6 units of a tier 9 flying troop for every extra round; GU = the revive gold of one such unit), no dice: it tells the same objective apart, it never makes a choice "better" on its own
   const ev=s=>{const names=theoNames(s,theoTiers(s).slice(0,3)),k=names.join('|');if(cache.has(k))return cache.get(k);let o=null;if(names.length){const w=monBest(P,names);if(w){const L=THEO.layout(P,names,w),pf=THEO.battle(L,THEO.mkEnemy(P),THEO.rngMk(THEOSEED),{first:'A',expect:true,mon:true}),st=L.filter(x=>x.n>0);o={lostN:pf.lostN,lostG:reviveGold(L,pf.lostBy),rd:pf.rd,one:pf.rd==1&&pf.win>0?1:0,win:pf.win>0?1:0,st:st.map(x=>({name:x.name,n:x.n})),used:[...new Set(st.filter(x=>TRN[x.name].pool!='U').map(x=>TRN[x.name].cls+TRN[x.name].tier))]}}}cache.set(k,o);return o};
   // 23.2.38 never a tier higher than the highest one ticked: the player may not have it. Per class (like the other modes); E, S and G with no tier ticked at all may be offered the highest tier (9) and below (you may need them, e.g. no E ticked: E9); the monsters only up to your highest ticked one, none when no monster tier is ticked
   const mx=c=>Math.max(0,...sel.filter(x=>x[0]==c).map(x=>+x.slice(1))),cap={};['E','S','G','M'].forEach(c=>{cap[c]=mx(c)||(c=='M'?0:9)});
@@ -2972,7 +2972,7 @@ async function tierHintMon(gen,body){
   const TN=[9,8,7,6,5,4,3,2,1],Ts=[];TN.forEach(a=>{Ts.push([a]);TN.forEach(b=>{if(b<a){Ts.push([a,b]);TN.forEach(c=>{if(c<b)Ts.push([a,b,c])})}})});
   for(const T of Ts){const f=all.filter(x=>T.includes(+x.slice(1)));if(!(await tick(f))||!(await tick([...new Set([...sel,...f])])))return}
   // 23.2.38 a better choice must show in what is shown: the fight ends in round 1 when the current one does not, or the gold lost is lower by more than GMARG (OPEN, fitted). A better score alone is no advice.
-  const GMARG=0.05,tol=cur?Math.max(2,0.02*q(cur)):2,ce=eff(sel),cand=[...cs.values()].filter(c=>c.o);
+  const GMARG=0.05,tol=cur?Math.max(2*GU,0.02*q(cur)):2*GU,ce=eff(sel),cand=[...cs.values()].filter(c=>c.o);
   const adds=c=>c.set.filter(x=>!sel.includes(x)),rems=c=>ce.filter(x=>!c.set.includes(x)),imp=o=>!cur||(isOne(o)!=isOne(cur)?isOne(o):o.lostG<cur.lostG*(1-GMARG));
   const ic0=cand.filter(c=>imp(c.o)),ic=ic0.some(c=>isOne(c.o))?ic0.filter(c=>isOne(c.o)):ic0,bG=ic.length?Math.min(...ic.map(c=>c.o.lostG)):0;
   const cut=c=>{const keep=c.set.filter(x=>c.o.used.includes(x));if(keep.length==c.set.length||!keep.length)return c;const o2=ev(keep);return o2&&isOne(o2)==isOne(c.o)&&o2.lostG<=c.o.lostG*1.02&&Q(o2)<=Q(c.o)+tol?{set:eff(keep),o:o2}:c};      // the ticks that bring no unit into the battle are dropped (when the fight is no worse): no second engineer tier, no tier that is not used
@@ -2982,7 +2982,7 @@ async function tierHintMon(gen,body){
   const kg=tfm,okNow=cur&&isOne(cur),bl=a=>a.map(x=>`<b>${x}</b>`).join(', '),img=n=>MICN[n]?`<img class="ic2" src="${MICN[n]}" alt="">`:ICD[n]?`<img class="ic2" src="${ICD[n]}" alt="">`:'<span class="ic2"></span>',us=l=>`<div class="tcus">${l.map(x=>`<span class="tcu" title="${esc(x.name)}">${img(x.name)}<small>${tfm(x.n)}</small></span>`).join('')}</div>`;      // the troops of the fight as icons with their units
   const chg=c=>[adds(c).length?'tick '+bl(adds(c)):'',rems(c).length?'untick '+bl(rems(c)):''].filter(Boolean).join(' and ');
   const inn=better?better.o.st.filter(x=>!(cur&&cur.st.some(y=>y.name==x.name))):[],out=better&&cur?cur.st.filter(x=>!better.o.st.some(y=>y.name==x.name)):[];      // the troops that come into the fight / leave it with that choice
-  const bestH=better?`<div class="tcb"><small>&#9876;&#65039; Fewest losses</small>${chg(better)}<br><span>Gold revive cost ${kg(better.o.lostG)}${isOne(better.o)?'':' &middot; the fight still takes more than 1 round'}</span>${inn.length?`<span class="tcio">Comes in</span>${us(inn)}`:''}${out.length?`<span class="tcio">Leaves</span>${us(out)}`:''}</div>`:`<div class="tcb"><small>&#9876;&#65039; Fewest losses</small>${okNow?'No other choice of tiers gives fewer losses.':cur?`No choice of tiers brings the fight to round 1.${XS.size?' Troops are turned off in the Result: turn them on too.':''}`:'No choice of tiers gives an army: engineers and an army troop are needed.'}</div>`;
+  const bestH=better?`<div class="tcb"><small>&#9876;&#65039; Lowest revive cost</small>${chg(better)}<br><span>Gold revive cost ${kg(better.o.lostG)}${isOne(better.o)?'':' &middot; the fight still takes more than 1 round'}</span>${inn.length?`<span class="tcio">Comes in</span>${us(inn)}`:''}${out.length?`<span class="tcio">Leaves</span>${us(out)}`:''}</div>`:`<div class="tcb"><small>&#9876;&#65039; Lowest revive cost</small>${okNow?'No other choice of tiers gives a lower revive cost.':cur?`No choice of tiers brings the fight to round 1.${XS.size?' Troops are turned off in the Result: turn them on too.':''}`:'No choice of tiers gives an army: engineers and an army troop are needed.'}</div>`;
   const unH=unOk?`<div class="tcb"><small>&#129529; No use in the battle</small>untick ${bl(un)}<br><span>Not one unit of ${un.length>1?'them comes':'it comes'} into the battle; the fight stays the same${unOk.lostG==cur.lostG?'':' (gold revive cost '+kg(unOk.lostG)+')'}</span></div>`:'';
   body.innerHTML=`<p>In the fight${cur?`: gold revive cost <b>${kg(cur.lostG)}</b>${isOne(cur)?'':' <small class="mu">(not finished in round 1)</small>'}`:': no army can be built'}</p>${cur?us(cur.st):''}${bestH}${unH}`}
 async function theoRun(deep){
