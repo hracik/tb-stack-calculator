@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.19';
+const APP_VERSION='23.2.20';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2856,7 +2856,7 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
   const cnt0=names.map(()=>0);
   if(rd.walls.length){const wp=rd.walls.reduce((q,w)=>q+pool(w),0);let bi=-1,bd=0;
     for(const mer of[false,true]){names.forEach((n,i)=>{if(!isE[i]||isU[i]!==mer)return;const d=dpu(i,rd.walls[0]);if(d>bd*(1+1e-9)||(bi>=0&&Math.abs(d-bd)<=bd*1e-9&&tier(i)>tier(bi))){bd=d;bi=i}});if(bi>=0)break}      // the engineers of the Leadership first, the mercenary Ariel only when there are none
-    if(bi<0)return null;cnt0[bi]=Math.ceil(wp/bd)+2}
+    if(bi<0)return null;cnt0[bi]=Math.ceil(wp/bd-1e-9)}      // exactly the units that kill the wall: wall health / damage of one engineer, rounded up
   // 2. the first striker: the army stack that loses the fewest units to the hits that cannot be stopped
   const c1=[];
   names.forEach((n,i)=>{if(isM[i]||isE[i]||isU[i])return;const d=dpu(i,T1);if(!(d>0))return;const hp=st1[i].hp,w=(H.reduce((q,h)=>q+hitOn(h,i),0)+hitOn(T1,i))/hp;c1.push({i,L:w-0.5*hitOn(T1,i)/hp,w,nk:Math.ceil(pool(T1)/d)})});
