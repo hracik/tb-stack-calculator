@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.22';
+const APP_VERSION='23.2.23';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2506,7 +2506,7 @@ function allocMerc(P,ld,so,X){
 }
 // the order of the cards in the Mercenaries section (the ones not listed come after them, by name)
 const MORD=['Ariel','Grim Stalker Leader','Wasp-Man Leader','Chitinous Defender Leader','Combat Anteater Leader','Warregal','Quicksand','Highlander','Slavic Warrior','Superior Epic Monster Hunter','Elder Witch','Jago','Galloper','Pounder','Scarface','Grace','Wyvern','Warden','Eternal Cannoneer','Demonic Salamander'];
-const mercVis=s=>s.n>0||s.off||s.name=='Ariel'||s.name=='Grace';      // the Mercenaries section shows only the ones with units (a turned-off one stays, to be turned on again); Ariel and Grace stay even at 0 units
+const mercVis=s=>ATK=='monsters'||s.n>0||s.off||s.name=='Ariel'||s.name=='Grace';      // the Mercenaries section shows only the ones with units (a turned-off one stays, to be turned on again); Ariel and Grace stay even at 0 units. Attack monsters: all of them, the turned-off ones last
 const mercSorted=c=>{const rk=m=>{const i=MORD.indexOf(m[2]);return i<0?999:i};return MERC.filter(m=>m[0]==c&&mercOK(m)).sort((a,b)=>rk(a)-rk(b)||a[2].localeCompare(b[2]))};
 function mercTable(all){
   const by={};all.forEach(s=>by[s.name]=s);
@@ -2514,6 +2514,7 @@ function mercTable(all){
   let o='<div class="sc"><table><colgroup><col><col><col><col><col></colgroup>';    // 5 cards per row
   [['E','Engineer Corps'],['G','Guardsmen'],['S','Specialists'],['M','Monsters']].forEach(([c,label])=>{
     const list=mercSorted(c).filter(m=>mercVis(by[m[2]]));
+    if(ATK=='monsters')list.sort((a,b)=>(by[a[2]].off?1:0)-(by[b[2]].off?1:0));      // Attack monsters: the turned-off mercenaries come last (the sort keeps the order of the rest)
     if(list.length)o+=`<tr><th class="gl" colspan="5">${label}</th></tr>`;     // the label is one row above its cards
     for(let i=0;i<list.length;i+=5){
       const row=list.slice(i,i+5).map(cell);while(row.length<5)row.push('<td></td>');
