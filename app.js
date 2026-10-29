@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.32';
+const APP_VERSION='23.2.33';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2929,7 +2929,7 @@ function theoFix(P){const sel=theoSel(),names=theoNames(sel,theoTiers(sel).slice
 function theoApply(fx,st,U){const m={};fx.res.stacks.forEach(s=>m[s.name]=s.n);      // the found units go into the Result: the same stacks, the same cards, the same buttons
   st.forEach(s=>{s.n=m[s.name]||0});U.all.forEach(s=>{s.n=0});U.list=[];U.ord=[];U.used=0;
   U.all.filter(s=>m[s.name]>0).sort((a,b)=>m[b.name]*b.str-m[a.name]*a.str).forEach(s=>{s.n=m[s.name];U.list.push(s);U.ord.push(s.name);U.used+=s.n*s.cost})}      // 23.2.14 the mercenaries of the recipe (strongest first)
-function theoBusy(on,txt){const b=$('tgo'),d=$('tdp'),c=$('ttc');b.textContent=on=='go'?'Stop':($('tres').innerHTML?'Find stacks again':'Find stacks');d.textContent=on=='deep'?'Stop':'Search deeper';c.textContent=on=='tc'?'Stop':ATK=='monsters'?'Tier check':'Rank tier choices';b.disabled=on=='tc'||on=='deep';d.disabled=on=='tc'||on=='go';c.disabled=on=='go'||on=='deep';$('tpr').hidden=!on;if(on){$('tpi').style.width='0%';$('tps').textContent=txt||''}}
+function theoBusy(on,txt){const b=$('tgo'),d=$('tdp'),c=$('ttc');b.textContent=on=='go'?'Stop':($('tres').innerHTML?'Find stacks again':'Find stacks');d.textContent=on=='deep'?'Stop':'Search deeper';c.textContent=on=='tc'?'Stop':'Rank tier choices';b.disabled=on=='tc'||on=='deep';d.disabled=on=='tc'||on=='go';c.disabled=on=='go'||on=='deep';$('tpr').hidden=!on;if(on){$('tpi').style.width='0%';$('tps').textContent=txt||''}}
 function theoProg(x,txt){$('tpi').style.width=Math.min(100,Math.round(x*100))+'%';if(txt)$('tps').textContent=txt}
 const theoTierTxt=names=>[...new Set(names.map(n=>TRN[n].tier))].sort((a,b)=>b-a).map(x=>'T'+x).join(' + ');
 let THEOAT=0;
@@ -2955,27 +2955,18 @@ function theoMonWarn(r){const bad=r.one<TMONOK||r.win<0.999,rf=r.ref,fr=x=>(Math
   if(rf&&(rf.lostN<r.lostN-0.5||rf.one>r.one+0.02||rf.win>r.win+0.001)){const used=rf.stacks.filter(s=>s.n>0&&XS.has(s.name)).map(s=>`${esc(s.name)} (${tfm(s.n)})`);
     if(used.length)h+=`<p class="mu"><b>Turned off, but used when on:</b> ${used.join(', ')}. With every troop on: ${tpc(rf.one)} of the fights end in round 1, ${tfm(rf.lostN)} units lost on average.</p>`}
   return h}
-// 23.2.32 Attack monsters: Tier check - are the ticked tiers enough? Every tier tick is turned the other way, one at a time, and the recipe runs again; what the fight is then (round 1, rounds, units lost) tells which ticks are needed, which are not and which one to add. OPEN (fitted): a change counts when it moves the score by more than 2 % (at least 2 units); score = units lost + 6 for every extra round, like the choice of the variant
-async function theoTierCheckMon(){
-  if(THEORUN){THEOGEN++;return}
-  const P=getP();if(!P.mon)return;
-  const sel=theoSel(),g=++THEOGEN;THEORUN=g;theoBusy('tc','');
-  const q=o=>o?o.lostN+6*(o.rd-1)+(o.win<1?1e4*(1-o.win):0):Infinity,cache=new Map();
+// 23.2.33 Attack monsters: the Tier check, the same button and bubble under the tiers as in the other modes: are the ticked tiers enough? Every tier tick is turned the other way, one at a time, and the recipe runs again; what the fight is then (round 1, units lost) tells which ticks are needed, which are not and which one to add. OPEN (fitted): a change counts when it moves the score by more than 2 % (at least 2 units); score = units lost + 6 for every extra round, like the choice of the variant
+async function tierHintMon(gen,body){
+  const P=getP(),sel=theoSel(),q=o=>o?o.lostN+6*(o.rd-1)+(o.win<1?1e4*(1-o.win):0):Infinity,cache=new Map();
   const ev=s=>{const names=theoNames(s,theoTiers(s).slice(0,3)),k=names.join('|');if(cache.has(k))return cache.get(k);let o=null;if(names.length){const w=monBest(P,names);if(w){const r=theoStatsMon(P,names,w,200);o={lostN:r.lostN,rd:r.rd,one:r.one,win:r.win}}}cache.set(k,o);return o};
   const all=[];['E','S','G','M'].forEach(c=>{for(let i=9;i>=1;i--)if($('s'+c+i))all.push(c+i)});
-  try{
-    const cur=ev(sel),rows=[];
-    for(let i=0;i<all.length;i++){const x=all[i],on=sel.includes(x);
-      theoProg(i/all.length,`Checking ${x} ${on?'off':'on'} (${i+1} of ${all.length})`);
-      await new Promise(r=>setTimeout(r,0));if(g!==THEOGEN)return;
-      rows.push({x,on,o:ev(on?sel.filter(y=>y!=x):[...sel,x])})}
-    const tol=Math.max(2,0.02*(cur?q(cur):0)),fr=x=>(Math.round(x*100)/100).toFixed(2),tr=(lab,x,o)=>`<tr><td>${lab}</td><td>${x}</td><td class="tn">${o?tpc(o.one):'–'}</td><td class="tn">${o?fr(o.rd):'–'}</td><td class="tn"><b>${o?tfm(o.lostN):'no army'}</b></td></tr>`;
-    const help=rows.filter(r=>!r.on&&r.o&&(!cur||q(cur)-q(r.o)>tol)).sort((a,b)=>q(a.o)-q(b.o)).slice(0,6),need=rows.filter(r=>r.on&&(!r.o||!cur||q(r.o)-q(cur)>tol)),free=rows.filter(r=>r.on&&r.o&&cur&&q(r.o)-q(cur)<=tol).map(r=>r.x);
-    const okNow=cur&&cur.one>=TMONOK&&cur.win>=0.999;
-    const verdict=!cur?'<b>No army can be built with the ticked tiers.</b>'+(help.length?' Ticking one of the tiers below gives one.':' No single tick gives one: engineers and an army troop are needed.'):okNow&&!help.length?`<b>The ticked tiers are enough.</b> The enemy dies in round 1 in ${tpc(cur.one)} of the fights, ${tfm(cur.lostN)} units lost on average.`:okNow?`<b>The ticked tiers are enough to finish in round 1</b> (${tfm(cur.lostN)} units lost on average), but a tier below would lose fewer.`:`<b>The ticked tiers are not enough.</b> ${tpc(cur.one)} of the fights end in round 1 (${fr(cur.rd)} rounds), ${tfm(cur.lostN)} units lost on average.`+(help.length?'':' No single tick fixes it: try more than one, or turn troops on in the Result.');
-    const tbl=[...(cur?[tr('Now','your ticks',cur)]:[]),...help.map(r=>tr('Tick',r.x,r.o)),...need.map(r=>tr('Needed, without it',r.x,r.o))];
-    $('ttab').innerHTML=`<h3 class="tth">Tier check</h3><p>${verdict}</p>${tbl.length?`<div class="tsc"><table><tr><th></th><th>Tier</th><th>Round 1</th><th>Rounds</th><th>Units lost</th></tr>${tbl.join('')}</table></div>`:''}${free.length?`<p class="mu">Any one of these can be left off without a change (not all of them together): ${free.join(', ')}.</p>`:''}<p class="mu">Every tick was turned the other way, one at a time (200 dice fights each). A change counts when it moves units lost + 6 per extra round by more than 2 % (at least 2 units). The game allows 3 tiers: the top 3 ticked are used.${XS.size?` The ${XS.size} troop${XS.size>1?'s':''} turned off in the Result stay${XS.size>1?'':'s'} off in this check.`:''}</p>`;
-  }finally{if(THEORUN===g){THEORUN=0;theoBusy(0)}}}
+  const cur=ev(sel),rows=[];
+  for(const x of all){const on=sel.includes(x);await new Promise(r=>setTimeout(r,0));if(gen!==HINTGEN)return;rows.push({x,on,o:ev(on?sel.filter(y=>y!=x):[...sel,x])})}
+  const tol=Math.max(2,0.02*(cur?q(cur):0)),help=rows.filter(r=>!r.on&&r.o&&(!cur||q(cur)-q(r.o)>tol)).sort((a,b)=>q(a.o)-q(b.o)).slice(0,4),need=cur?rows.filter(r=>r.on&&(!r.o||q(r.o)-q(cur)>tol)):[],free=rows.filter(r=>r.on&&r.o&&cur&&q(r.o)-q(cur)<=tol).map(r=>r.x);
+  const okNow=cur&&cur.one>=TMONOK&&cur.win>=0.999,det=o=>o?`Round 1 ${tpc(o.one)} &middot; units lost ${tfm(o.lostN)}`:'no army',tiers=theoTierTxt(theoNames(sel,theoTiers(sel).slice(0,3)))||'none';
+  const best=help[0],bestH=`<p class="tcb"><small>&#9876;&#65039; Fewest losses</small>${best?`tick <b>${best.x}</b><br><span>${det(best.o)}</span>`:!cur?'No single tick gives an army: engineers and an army troop are needed.':okNow?'No other choice of tiers gives fewer losses.':'No single tick brings the fight to round 1: tick more than one, or turn troops on in the Result.'}</p>`;
+  const tr=(l,o)=>`<tr><td>${l}</td><td>${o?tpc(o.one):'\u2013'}</td><td>${o?tfm(o.lostN):'no army'}</td></tr>`,alts=[...help.slice(1).map(r=>tr(`tick <b>${r.x}</b>`,r.o)),...need.map(r=>tr(`untick <b>${r.x}</b>`,r.o))];
+  body.innerHTML=`<p>Current tiers: <b>${tiers}</b>${cur?`, round 1 <b>${tpc(cur.one)}</b>, units lost <b>${tfm(cur.lostN)}</b>`:', no army can be built'}</p>${bestH}${alts.length?`<p class="mu tcalt0">What each tier does</p><table class="tct"><thead><tr><th>Change</th><th>Round 1</th><th>Units lost</th></tr></thead><tbody>${alts.join('')}</tbody></table>`:''}${free.length?`<p class="mu">${free.length>1?'Any one of these can be left off without a change (not all of them together)':'This one can be left off without a change'}: ${free.join(', ')}.</p>`:''}<p class="mu">Every tick was turned the other way, one at a time (200 dice fights each).${XS.size?` The ${XS.size} troop${XS.size>1?'s':''} turned off in the Result stay${XS.size>1?'':'s'} off.`:''}</p>`}
 async function theoRun(deep){
   if(THEORUN){THEOGEN++;return}      // the button is Stop while it runs
   const P=getP(),sel=theoSel(),tiers=theoTiers(sel).slice(0,3),names=theoNames(sel,tiers);
@@ -3054,13 +3045,13 @@ function theoTab(rows){const el=$('ttab');if(!rows||!rows.length){el.innerHTML='
   const rk=rows.slice().sort((a,b)=>b.res.net-a.res.net);
   el.innerHTML=`<h3 class="tth">Tier choices, best first</h3><div class="tsc"><table><tr><th>Tiers</th><th>Stacks</th><th>Win 1st</th><th>Win 2nd</th><th>Net</th></tr>${rk.map((x,i)=>`<tr${i==0?' class="tbest"':''}><td>${x.set.map(t=>'T'+t).join(' + ')}</td><td class="tn">${x.res.stacks.length}</td><td class="tn">${tpc(x.res.winA)}</td><td class="tn">${tpc(x.res.winB)}</td><td class="tn"><b>${tsg(x.res.net)}</b></td></tr>`).join('')}</table></div><p class="mu">Ranked by the net health left in the two fights together, averaged over enemies with 100%, 105%, 110% and 120% of your Leadership and Dominance. Quick search, so the numbers can move a few points; Find stacks gives the precise ones for the tiers you ticked. Only the top tier plus up to two more are tried (the game allows 3).</p>`}
 function theoSync(P,fx){const c=$('theo');if(!c)return;
-  {const ti=$('tintro');if(ti&&ti.dataset.m!==String(!!P.mon)){ti.dataset.m=String(!!P.mon);ti.innerHTML=P.mon?'<p class="mu">Find the army that kills the monster with the fewest losses.</p>':''}const tb=$('ttc');if(tb){tb.hidden=false;if(!THEORUN)tb.textContent=P.mon?'Tier check':'Rank tier choices'}[$('tgo'),$('tdp')].forEach(b=>{if(b)b.hidden=!!P.mon});{const tr=document.querySelector('#theo .trow');if(tr)tr.hidden=false}/* 23.2.32 against a monster only the Tier check button is shown (the army is found by itself) */const tw=document.querySelector('.tcw');if(tw)tw.hidden=!!P.mon;const cb=$('cmpbtn');if(cb)cb.hidden=!!P.mon;if(P.mon&&SHOWCMP){SHOWCMP=false}}const on=(P.ov||P.mon)&&(P.capA>0||P.capM>0);c.hidden=!on;if(!on){THEOGEN++;return}
+  {const ti=$('tintro');if(ti&&ti.dataset.m!==String(!!P.mon)){ti.dataset.m=String(!!P.mon);ti.innerHTML=P.mon?'<p class="mu">Find the army that kills the monster with the fewest losses.</p>':''}const tb=$('ttc');if(tb)tb.hidden=!!P.mon;{const tr=document.querySelector('#theo .trow');if(tr)tr.hidden=!!P.mon}const cb=$('cmpbtn');if(cb)cb.hidden=!!P.mon;if(P.mon&&SHOWCMP){SHOWCMP=false}}const on=(P.ov||P.mon)&&(P.capA>0||P.capM>0);c.hidden=!on;if(!on){THEOGEN++;return}
   const sel=theoSel(),key=theoKey(P,theoNames(sel,theoTiers(sel).slice(0,3)));
   if(c.dataset.last!==key){if(THEORUN)THEOGEN++;c.dataset.last=key;THEOTC=THEOT.get(JSON.stringify([P,sel]))||null;theoTab(THEOTC)}      // the inputs changed: a running search is out of date
   if(P.mon&&!fx)theoAuto();      // 22.8 against a monster there are no buttons: the army is searched as soon as the inputs are there
   if(THEOCUR!==fx){THEOCUR=fx;theoShow()}}
 [$('br'),$('rsm')].forEach(el=>el.addEventListener('click',e=>{const b=e.target.closest('[data-ta]'),a=b&&b.dataset.ta;if(a=='expect'){THEOEXP=true;drawBR()}else if(a=='dice'){THEOEXP=false;THEOSEED=Math.floor(Math.random()*2e9)+1;drawBR()}}));
-$('tgo').addEventListener('click',()=>{theoRun(false)});$('tdp').addEventListener('click',()=>{theoRun(true)});$('ttc').addEventListener('click',()=>{if(getP().mon)theoTierCheckMon();else theoTierCheck()});
+$('tgo').addEventListener('click',()=>{theoRun(false)});$('tdp').addEventListener('click',()=>{theoRun(true)});$('ttc').addEventListener('click',()=>{theoTierCheck()});
 function refresh(){sync();calc()}
 // ---- the tier check (the Tier check button, shown in a window): would one more or one less tier give more damage? ----
 // The same calculation is run again with one tier added or removed, per troop type, one calculation per timer tick. Only tiers BELOW the highest ticked tier are tried (the top tiers are the best ones, a higher tier is never suggested), going down one tier at a time: as soon as a lower tier gives no gain, the tiers below it are not tried. Tiers are also removed from the lowest ticked one upwards, while that gives more damage. 12.6, engineers only: with no engineer ticked the engineer tiers of the Guardsmen's level are tried (E9, then E9 + E8 ...). 12.7: every type (Guardsmen, Specialists, Engineers, Monsters) is also tried with all its tiers off, the top one too. 12.8: a type that was unticked completely is not touched again in the same check.
@@ -3189,13 +3180,13 @@ async function tierHintRun(gen,body0){
 }
 function closeTierCheck(){HINTGEN++;$('tcm').hidden=true}
 let TCC=null;      // 20.4.2: the last finished Tier check {sig, node}: with the same inputs and tiers the button only shows / hides it again, no new run
-const tcSig=()=>{const d=snap();return JSON.stringify([d.vals,d.chk,d.atk,d.mode,d.enemy])};
+const tcSig=()=>{const d=snap();return JSON.stringify([d.vals,d.chk,d.atk,d.mode,d.enemy,ATK=='monsters'?[d.X,$('monster').value]:0])};
 function tierBubble(){      // 19.1: the Tier check result is shown in a bubble under the tiers
   const a=$('tca');if(!a)return;const sig=tcSig();
   if(TCC&&TCC.sig===sig){if(a.dataset.open=='1'){closeBubble()}else{a.dataset.open='1';tcOn(1);a.innerHTML='';a.appendChild(TCC.node)}return}      // nothing changed since the finished check: hide / show it
   TCC=null;a.dataset.open='1';a.innerHTML='<p class="mu" data-w=1>Checking the tiers...</p>';tcOn(1);const g=++HINTGEN;
   const b=document.createElement('div');b.className='tcb2';a.innerHTML='';a.appendChild(b);b.innerHTML='<p class="mu" data-w=1>Checking the tiers...</p>';
-  tierHint(g,b).then(()=>{if(g===HINTGEN&&!b.querySelector('[data-w]'))TCC={sig,node:b}}).catch(()=>{})}
+  (getP().mon?tierHintMon(g,b):tierHint(g,b)).then(()=>{if(g===HINTGEN&&!b.querySelector('[data-w]'))TCC={sig,node:b}}).catch(()=>{})}
 const tcOn=on=>document.querySelectorAll('.tcw .tc').forEach(b=>{b.classList.toggle('on',!!on);b.setAttribute('aria-pressed',on?'true':'false')});      // 20.4.3: the Tier check button is lit while its bubble is open (checking or showing the result)
 function closeBubble(){HINTGEN++;const a=$('tca');if(a){a.dataset.open='0';a.innerHTML=''}tcOn(0)}
 $('tcx').addEventListener('click',closeTierCheck);$('tcm').addEventListener('click',e=>{if(e.target===$('tcm'))closeTierCheck()});
