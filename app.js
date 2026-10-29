@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.45';
+const APP_VERSION='23.2.46';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -140,7 +140,7 @@ document.addEventListener('click',e=>{
   const eb=e.target.closest('.eb');if(eb){runBest(+eb.dataset.e);return}
   const tc=e.target.closest('[data-troop]');if(tc){const nm=tc.dataset.troop;if(XS.has(nm))XS.delete(nm);else XS.add(nm);calc();return}
   const pb=e.target.closest('.pb');
-  if(pb){TY.forEach(t=>{$('bh_'+t).value=pb.dataset.p;$('bs_'+t).value=pb.dataset.p;if(pb.dataset.dh!==undefined)$('dh_'+t).value=pb.dataset.dh});calc();return}   // research I and II set Double strike to 0, III to 5 % for every group
+  if(pb){TY.forEach(t=>{$('bh_'+t).value=pb.dataset.p;$('bs_'+t).value=pb.dataset.p;if(pb.dataset.dh!==undefined)$('dh_'+t).value=pb.dataset.dh});calc();return}   // research I sets Double strike to 0, II and III to 5 % for every group (II was 0 before 23.2.46: wrong)
 });
 
 let VIEW='grouped';try{const sv=localStorage.getItem('sc_view');if(sv=='mobile'||sv=='computer')VIEW=sv}catch(e){}      // result view: Grouped (cards in groups), Mobile (one unit per line) or Computer (two units per line, same order as Mobile). One setting for all tabs.
