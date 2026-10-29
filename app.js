@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.17';
+const APP_VERSION='23.2.18';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1851,11 +1851,11 @@ let BRD=null,BRFXH='';
 // The whole hit on an epic whose stacks are known (4 stacks: [units, health, type]), event by event; the epic starts at full health, a strike goes to the stack where it does the most real damage (Battle rules: bonus included, capped by the health left; tie: bigger bonus against the attacker, healthier, more units),
 // the 2nd strike of a Double strike (no squad bonus) goes by the same rule, but never to the stack of the 1st hit, and on a tie in damage to the healthiest stack (the bigger bonus against the attacker decides only the 1st hit), the damage past the health of a stack is lost. The enemy kills as many of our stacks per round as it has living stacks. dice: roll the Double damage and the Double strike, else the averages.
 const ARB={1:3,3:0,0:2,2:1},ARCAT={Melee:0,Ranged:1,Mounted:2,Flying:3};      // the +50 % of an Arachne stack: its type -> the troop type it has the bonus against (enemy type 0 melee, 1 ranged, 2 mounted, 3 flying)
-function epicSim(P,L,EP,dice,rng,trace,first){      // first: who starts round 1 ('o' us, 'e' the enemy): a coin toss (Battle rules): with dice it is rolled from rng, without dice the numbers are the average of both starts
-  if(first)return epicSimS(P,L,EP,dice,rng,trace,first);
+function epicSim(P,L,EP,dice,rng,trace,first,plain){      // first: who starts round 1 ('o' us, 'e' the enemy): a coin toss (Battle rules): with dice it is rolled from rng, without dice the numbers are the average of both starts
+  if(first)return epicSimS(P,L,EP,dice,rng,trace,first,plain);
   if(dice)return epicSimS(P,L,EP,dice,rng,trace,rng()<0.5?'o':'e');
   const a=epicSimS(P,L,EP,dice,rng,trace,'o'),b=epicSimS(P,L,EP,dice,rng,trace,'e'),r={...a};['td','nd','ns','ed','es','pot','pex','pvar'].forEach(k=>{r[k]=(a[k]+b[k])/2});return r}
-function epicSimS(P,L,EP,dice,rng,trace,first){
+function epicSimS(P,L,EP,dice,rng,trace,first,plain){      // plain: the report's "No random effect": every strike deals its real damage (no double damage, no double strike); the averages are only for the ordering and the scores
   const N=L.length,e2=EP.st.map(x=>({ty:x[2],hpu:x[1],hp:x[0]*x[1],sp:x[3]||0})),alive=()=>e2.filter(e=>e.hp>0).length,ev=[],dead=new Set();
   const fr=L.map(()=>1);      // the health left of each of our stacks (1 = untouched): a small enemy stack only wounds
   const info=L.map(s=>{const t=TRN[s.name],vs=t.vs.slice();if(veOf(t,P)>0)for(let i=0;i<4;i++)vs[i]=(vs[i]||0)+veOf(t,P);return{vs,ms:mults(t,P)[2],p:dst(t,P),d:ddf(t,P),pc:ddp(t,P),pa:0}});
@@ -1873,11 +1873,11 @@ function epicSimS(P,L,EP,dice,rng,trace,first){
   const strike=(i,rd)=>{const q=info[i],s=L[i];let bt=null,bb=0,tk=null;
     const b0=DS*s.n*fr[i]*s.str;
     // no damage spill: a strike deals at most what the stack it hits has left; the target is the stack where the strike (with its bonus) does the most real damage (pickT, Battle rules)
-    tk=pickT(i,e=>b0*q.d*(1+(q.vs[e.ty]||0)/q.ms));if(!tk)return;bt=tk.ty;bb=q.vs[bt]||0;
+    const qd=plain?1:q.d;tk=pickT(i,e=>b0*qd*(1+(q.vs[e.ty]||0)/q.ms));if(!tk)return;bt=tk.ty;bb=q.vs[bt]||0;
     const k=1+bb/q.ms;
     {const mF=(1+q.pc)*(1+q.pa),e2F=(1+3*q.pc)*(1+3*q.pa),v=b0*k,w=b0*(full?k:1);pvar+=(v*v+q.p*w*w)*e2F+2*v*w*q.p*mF*mF-Math.pow((v+q.p*w)*mF,2)}      // the spread of what the dice add to this strike (double damage and double strike chances): the fight's luck is judged from the sum of these
     pex+=b0*k*q.d*(1+q.p*(full?1:1/k));ed+=(1-(1-q.pc)*(1-q.pa))*(1+q.p);es+=q.p;
-    if(!dice){const base=b0*q.d;hit(i,base*k,bt,rd,'',base*(k-1),false,tk);if(q.p){const t2=pickT(i,full?e=>b0*q.d*(1+(q.vs[e.ty]||0)/q.ms):()=>base,tk);if(t2)hit(i,full?base*q.p*(1+(q.vs[t2.ty]||0)/q.ms):base*q.p,t2.ty,rd,'',0,true,t2)}return}
+    if(!dice){const base=b0*qd;hit(i,base*k,bt,rd,'',base*(k-1),false,tk);if(q.p&&!plain){const t2=pickT(i,full?e=>b0*q.d*(1+(q.vs[e.ty]||0)/q.ms):()=>base,tk);if(t2)hit(i,full?base*q.p*(1+(q.vs[t2.ty]||0)/q.ms):base*q.p,t2.ty,rd,'',0,true,t2)}return}
     const F=()=>(1+(rng()<q.pc?1:0))*(1+(rng()<q.pa?1:0)),m1=F();if(m1>1)nd++;
     hit(i,b0*m1*k,bt,rd,m1>1?'<i>double damage</i>':'',b0*m1*(k-1),false,tk);
     if(rng()<q.p){const m2=F();ns++;if(m2>1)nd++;const t2=pickT(i,full?e=>b0*q.d*(1+(q.vs[e.ty]||0)/q.ms):()=>b0*q.d*m2,tk);if(t2)hit(i,b0*m2*(full?1+(q.vs[t2.ty]||0)/q.ms:1),t2.ty,rd,'<i>double strike</i>'+(m2>1?'<i>double damage</i>':''),0,false,t2)}};
@@ -2015,7 +2015,7 @@ function battleHtml(P,list,order,sc){
     KSAVGF=P.kill?(ksAvg(P,L,EPK)||{f:0}).f:null;      // the score of the average fight: what a rolled Killshot is compared with
     const ks=P.kill?killState(P,L,EPK,ex?0:THEOSEED):null,EPS=ks?(ks.EPSR||(ks.avg?ks.avg.EPS:ks.EPS)):(P.enemy==3||P.enemy==6)?{...EPK,st:EPK.st.filter(x=>x[2]!=2)}:EPK;      // the 3-stack mode has no mounted enemy stack; the Killshot starts at the biggest state the army kills (killState)
     KSROLLF=ks?ks.f:null;      // the score of the rolled fight (the Random effects points)
-    const sim=epicSim(P,L,EPS,!ex,ks&&ks.seed?THEO.rngMk(ks.seed):rng,undefined,ex?'o':undefined),avg=epicSim(P,L,EPS,false,null);td=sim.td;ad=avg.td;nd=sim.nd;ns=sim.ns;ed=sim.ed;es=sim.es;
+    const sim=epicSim(P,L,EPS,!ex,ks&&ks.seed?THEO.rngMk(ks.seed):rng,undefined,ex?'o':undefined,ex),avg=epicSim(P,L,EPS,false,null);td=sim.td;ad=avg.td;nd=sim.nd;ns=sim.ns;ed=sim.ed;es=sim.es;
     sim.ev.forEach(x=>{
       if(x.r!==rd){rd=x.r;h+=`<div class="brh">Round ${x.r+1}</div>`}
       const s=L[x.i];
@@ -2717,7 +2717,7 @@ function pickTarget(a,D,ex){let b=null,bs=-1,bb=0,bh=0;
   return b}
 // one battle. A = our stacks, B = the enemy. The strongest (units x strength, no squad bonus, no Specialists doubling) of the stacks that have not struck in this round strikes next; the sides alternate; round 1 is opened by `first`, every later round by the side that ran out of stacks first. o.log / o.snap record the report
 function battle(A0,B0,rng,o){o=o||{};const A=clone(A0),B=clone(B0),first=o.first||(rng?(rng()<0.5?'A':'B'):'A');
-  if(o.mon&&o.expect)A.forEach(s=>{s.ef=1});      // against a monster "No random effect" is plain: every strike deals its real damage (an averaged strike that overshoots a stack would change who is hit, the real report has none); the dice roll the effects
+  if(o.expect){A.forEach(s=>{s.ef=1});B.forEach(s=>{s.ef=1})}      // "No random effect" is plain in every report: every strike deals its real damage (the averaged damage is only for our own ordering); the dice roll the effects
   // the health of a stack is ONE pool (the real report: the last strike on the Bear dealt 20,344,500 = what the pool had left, 309 units with a wounded one among them): damage is taken off the pool, the units alive = the pool / the health of a unit, rounded UP; the strike is the units alive
   A.forEach(s=>{s.p=s.n*s.hp});B.forEach(s=>{s.p=s.n*s.hp});const take=(d,dm)=>{const n0=d.n;d.p=Math.max(0,d.p-dm);d.n=d.p>0?Math.min(n0,Math.ceil(d.p/d.hp-1e-9)):0;return n0-d.n};      // round 1: a coin toss (Battle rules) unless the caller names the side; from round 2 the side that did NOT make the last strike of the previous round starts
   const alive=L=>L.some(s=>s.n>0);let rd=0,nextStart=first=='A'?'B':'A';      // the engineers strike the wall first and then fight in the battle like the other stacks (real report)
@@ -2985,7 +2985,7 @@ function theoReport(B){const c=B.fx,{P,E,L,log,r}=theoFightData(c),num=tnum;
   const img=n=>MICN[n]?`<img class="ic2" src="${MICN[n]}" alt="">`:ICD[n]?`<img class="ic2" src="${ICD[n]}" alt="">`:'<span class="ic2"></span>';
   const sm={A:{},B:{}};L.forEach(s=>sm.A[s.name]=s);E.forEach(s=>sm.B[s.name]=s);
   const fxv={A:[0,0],B:[0,0]},fxa={A:[0,0],B:[0,0]};      // rolled and average double damage / double strikes per side, counted over the strikes of this fight
-  log.forEach(x=>{const q=sm[x[1]][x[2]];if(q&&!(x[9]>0)&&!(P.mon&&THEOEXP)){fxa[x[1]][0]+=(1-(1-q.pc)*(1-q.pa))*(1+q.pt);fxa[x[1]][1]+=q.pt}if(!THEOEXP){if(x[8]>1)fxv[x[1]][0]++;if(x[9]>0)fxv[x[1]][1]++}});
+  log.forEach(x=>{const q=sm[x[1]][x[2]];if(q&&!(x[9]>0)){fxa[x[1]][0]+=(1-(1-q.pc)*(1-q.pa))*(1+q.pt);fxa[x[1]][1]+=q.pt}if(!THEOEXP){if(x[8]>1)fxv[x[1]][0]++;if(x[9]>0)fxv[x[1]][1]++}});
   const fxo=(k,n)=>` (ours ${brA(THEOEXP?fxa.A[k]:fxv.A[k])})`,sel=`<label>Round 1 <select id="tfirst"><option value="T"${THEOFIRST=='T'?' selected':''}>coin toss</option><option value="A"${THEOFIRST=='A'?' selected':''}>we strike first</option><option value="B"${THEOFIRST=='B'?' selected':''}>the enemy strikes first</option></select></label>`;
   BRFXH=brFxBox(THEOEXP,[[fxv.A[0]+fxv.B[0],fxa.A[0]+fxa.B[0],'double damage',fxo(0)],[fxv.A[1]+fxv.B[1],fxa.A[1]+fxa.B[1],'double strikes',fxo(1)]],'',sel);
   let rd=-1,h=`<p class="bf">${r.win>0?'<b class="tw">We win</b> \u00b7 '+tpc(theoAvgLeft(c,r))+' health remaining':r.win<0?'<b class="tl">We lose</b> \u00b7 '+tpc(theoAvgLeft(c,r))+' health remaining':'<b>Draw</b>'}</p><div class="br">`;
