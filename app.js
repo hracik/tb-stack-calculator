@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.29';
+const APP_VERSION='23.2.30';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2961,15 +2961,15 @@ function theoShow(){const c=THEOCUR,out=$('tres');$('tintro').hidden=!!c;
 // the Battle report of One v. One: a fight of the found stacks against the 100 % enemy, in the design of the usual report: our strikes are the tan lines (+ damage), the enemy strikes are the red lines, a destroyed stack gets the red cross
 let THEOSEED=Math.floor(Math.random()*2e9)+1,THEOEXP=true;      // THEOEXP: no random effect (the average strikes) or the dice are rolled
 // the one fight the report, the target order and the hitting order all show (the settings of the report: no random effect / dice, who strikes first)
-function theoFightData(c){const P=c.P,E=THEO.mkEnemy(P,1,1),L=THEO.layout(P,c.res.names,c.res.w),log=[],r=THEO.battle(L,E,THEO.rngMk(THEOSEED),{first:THEOEXP?'A':undefined,log,expect:THEOEXP,mon:P.mon});return{P,E,L,log,r}}
+function theoFightData(c,plain){const P=c.P,E=THEO.mkEnemy(P,1,1),L=THEO.layout(P,c.res.names,c.res.w),log=[],ex=plain||THEOEXP,r=THEO.battle(L,E,THEO.rngMk(THEOSEED),{first:ex?'A':undefined,log,expect:ex,mon:P.mon});return{P,E,L,log,r}}      // plain: the fight without random effects, we strike first (the Target order and the Strike order never follow the dice of the Battle report)
 const tnum=v=>Math.round(v).toLocaleString('en-US'),tic=n=>ICD[n]?`<img class="ic2" src="${ICD[n]}" alt="">`:'';
 // the hitting order: our stacks in the order they strike in round 1 (the most total strength first: units x strength with your bonuses)
-function theoHits(c){const d=theoFightData(c),L=d.L.slice().sort((a,b)=>b.n*b.str-a.n*a.str);
+function theoHits(c){const d=theoFightData(c,true),L=d.L.slice().sort((a,b)=>b.n*b.str-a.n*a.str);
   return L.map((s,i)=>`<div class="oi"><span class="no${i>98?' wd':''}">${i+1}</span>${tic(s.name)}<span class="nm">${esc(s.name)} <small class="mu">${theoInfo(s,d.P)}</small></span></div>`).join('')+'<p class="mu bf">The strike order in round 1: the stack with the most total strength strikes first.</p>'}
 // the order of being hit: the order the enemy hits our stacks for the first time in the fight of the Battle report; the stacks that are never hit come last. (Against epics a hit stack dies, so there it is the target order; against players the enemy chooses where to strike.)
 // the same facts as the stacks of the epic modes: class and tier, the bonus against the enemy, strength per health, the totals of health, strength and damage
 const theoInfo=(s,P)=>factsHtml(s.name,P,s.n,s.hp);
-function theoDying(c){const d=theoFightData(c),by={},first=[],cnt={},dead={},left={};d.L.forEach(s=>{by[s.name]=s;left[s.name]=s.n});
+function theoDying(c){const d=theoFightData(c,true),by={},first=[],cnt={},dead={},left={};d.L.forEach(s=>{by[s.name]=s;left[s.name]=s.n});
   d.log.forEach(([rr,side,a,t,dmg,k,lf])=>{if(side!='B')return;if(!(t in cnt)){cnt[t]=0;first.push([t,rr])}cnt[t]++;left[t]=lf;if(lf==0&&!dead[t])dead[t]=rr});
   const row=(i,n,t)=>`<div class="oi"><span class="no${i>98?' wd':''}">${i}</span>${tic(n)}<span class="nm">${esc(n)} <small class="mu">${theoInfo(by[n],d.P)}<br>${tnum(by[n].n)} units \u00b7 ${t}</small></span></div>`,rest=d.L.filter(s=>!(s.name in cnt));
   return first.map(([t,rr],i)=>row(i+1,t,`first hit in round ${rr}, hit ${cnt[t]} ${cnt[t]==1?'time':'times'}`+(dead[t]?`, destroyed in round ${dead[t]}`:''))).join('')+rest.map((s,i)=>row(first.length+i+1,s.name,'not hit')).join('')}
