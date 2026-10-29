@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.23';
+const APP_VERSION='23.2.24';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2903,7 +2903,7 @@ const tfm=x=>Math.round(x).toLocaleString('en-US'),tpc=x=>Math.round(x*100)+'%',
 const TSIZES=[1,1.05,1.1,1.2];      // the enemy Leadership and Dominance the stacks are shown against (the search uses 100 % and 110 %: an all-rounder)
 function theoSel(){const s=[];(ATK=='monsters'?['E','S','G','M']:['S','G','M']).forEach(c=>{for(let i=1;i<=9;i++){const el=$('s'+c+i);if(el&&el.checked)s.push(c+i)}});return s}
 const theoTiers=sel=>[...new Set(sel.map(x=>+x.slice(1)))].sort((a,b)=>b-a);      // the ticked tier numbers, the highest first
-const theoMerc=()=>{if(ATK!='monsters'||!(v('capU')>0))return[];mercSync();return MT.filter(t=>!XS.has(t.name)&&t.cat!='Scout'&&t.cat!='Epic Monster Hunter').map(t=>t.name)};      // 23.2.14 Attack monsters: the mercenaries that are on (as many as the Authority pays for) are troops of the recipe too
+const theoMerc=()=>{if(ATK!='monsters'||!(v('capU')>0))return[];mercSync();return MT.filter(t=>!XS.has(t.name)&&t.cat!='Scout').map(t=>t.name)};      // 23.2.14 Attack monsters: the mercenaries that are on (as many as the Authority pays for) are troops of the recipe too (not the Scouts: Grace)
 const theoNames=(sel,tiers)=>TR.filter(t=>(ATK=='monsters'?'GSME':'GSM').includes(t.cls)&&t.cat!='Scout'&&sel.includes(t.cls+t.tier)&&tiers.includes(t.tier)&&!XS.has(t.name)).map(t=>t.name).concat(theoMerc());
 const theoEs=(P,names)=>P.mon?[THEO.mkEnemy(P)]:[[1,1],[1,0],[1.1,1],[1.1,0]].map(([sc,eq])=>THEO.mkEnemy(P,eq,sc));      // the search: equal health / equal cost monsters, at 100 % and 110 %
 // 22.8 against a monster: N fights with the dice rolled, the start of round 1 tossed (after the siege); the win chance, the units and the revive gold lost (on average and when we win), the rounds
