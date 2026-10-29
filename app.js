@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.18';
+const APP_VERSION='23.2.19';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2003,11 +2003,11 @@ function battleHtml(P,list,order,sc){
   const K=P.enemy,ix={};order.forEach((n,i)=>ix[n]=i);
   const L=list.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);
   if(!L.length)return '<p class="mu">No units.</p>';
-  const log=[];strikes(L,K,log,P.ren?1:Infinity);
+  const ex=THEOEXP,rng=THEO.rngMk(THEOSEED),log=[];strikes(L,K,log,P.ren?1:Infinity,ex||rng()<0.5?'o':'e');      // we strike first; only the dice toss the coin (the same seed gives the same fight until Roll again)
   const num=x=>Math.round(x).toLocaleString();
   const fm0=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3)).toString()+u[i]};
   const XP='M4.1 5.9C6.9 6.9 9.5 8.6 11.7 11.5C14 14.4 17.2 17.4 20.3 18.9M4.7 4.8C7.6 7.3 10.2 9.4 12.4 12.1C14.6 14.8 17.3 17.9 19.4 20.2M19.5 4.3C16.9 6.7 13.9 9.6 11.2 12.9C8.8 15.8 6.6 18.4 4.3 19.9M20.2 5.2C17.3 8.1 14.4 11.4 12 14.2C10 16.5 7.6 19.2 5.2 20.7',XS='<svg class="bx" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="'+XP+'" stroke="rgba(0,0,0,.5)" stroke-width="3.6"/><path d="'+XP+'" stroke="#e5402a" stroke-width="1.7"/></g></svg>'; // a hand-drawn red X: four uneven pen strokes
-  const EN=brEnemy(P),ex=THEOEXP,rng=THEO.rngMk(THEOSEED);      // the dice: the same seed gives the same fight until Roll again
+  const EN=brEnemy(P);
   let rd=-1,td=0,ad=0,nd=0,ns=0,ed=0,es=0,h='<div class="br">';
   const EPK=epCur(),known=ATK=='epics'&&!P.cp&&!P.ren&&!P.one&&!P.pm&&(P.enemy==4||P.enemy==3||P.enemy==6||P.enemy==8)&&EPK&&EPK.st&&(EPK.st.length==4||EPK.st.length==8)&&EPK.score;      // an epic with known stacks: the report follows its stacks (type, units, units killed)
   if(known){
@@ -2961,9 +2961,9 @@ function theoShow(){const c=THEOCUR,out=$('tres');$('tintro').hidden=!!c;
 <p class="mu">${r.stacks.length} stacks, tiers ${theoTierTxt(r.names)}, ${r.deep?'deep search':'quick search (the strategy, polished)'}; the stacks are in the Result below, and its Battle report shows a fight. Net = the health we keep minus the health the enemy keeps, going first and going second added together (in % of each army's own health; a win with 18% left and a loss that leaves the enemy 6% is +12%). The enemy: a full city of the top tier (8 army stacks, 4 monster stacks), equal health in every stack, the monsters split by health or by cost. Every case is 500 simulated fights; double damage and double strike are rolled. The mercenaries are not used.</p>
 `;theoBusy(0)}
 // the Battle report of One v. One: a fight of the found stacks against the 100 % enemy, in the design of the usual report: our strikes are the tan lines (+ damage), the enemy strikes are the red lines, a destroyed stack gets the red cross
-let THEOSEED=Math.floor(Math.random()*2e9)+1,THEOFIRST='T',THEOEXP=true;      // THEOEXP: no random effect (the average strikes) or the dice are rolled
+let THEOSEED=Math.floor(Math.random()*2e9)+1,THEOEXP=true;      // THEOEXP: no random effect (the average strikes) or the dice are rolled
 // the one fight the report, the target order and the hitting order all show (the settings of the report: no random effect / dice, who strikes first)
-function theoFightData(c){const P=c.P,E=THEO.mkEnemy(P,1,1),L=THEO.layout(P,c.res.names,c.res.w),log=[],r=THEO.battle(L,E,THEO.rngMk(THEOSEED),{first:THEOFIRST=='T'?undefined:THEOFIRST,log,expect:THEOEXP,mon:P.mon});return{P,E,L,log,r}}
+function theoFightData(c){const P=c.P,E=THEO.mkEnemy(P,1,1),L=THEO.layout(P,c.res.names,c.res.w),log=[],r=THEO.battle(L,E,THEO.rngMk(THEOSEED),{first:THEOEXP?'A':undefined,log,expect:THEOEXP,mon:P.mon});return{P,E,L,log,r}}
 const tnum=v=>Math.round(v).toLocaleString('en-US'),tic=n=>ICD[n]?`<img class="ic2" src="${ICD[n]}" alt="">`:'';
 // the hitting order: our stacks in the order they strike in round 1 (the most total strength first: units x strength with your bonuses)
 function theoHits(c){const d=theoFightData(c),L=d.L.slice().sort((a,b)=>b.n*b.str-a.n*a.str);
@@ -2986,8 +2986,8 @@ function theoReport(B){const c=B.fx,{P,E,L,log,r}=theoFightData(c),num=tnum;
   const sm={A:{},B:{}};L.forEach(s=>sm.A[s.name]=s);E.forEach(s=>sm.B[s.name]=s);
   const fxv={A:[0,0],B:[0,0]},fxa={A:[0,0],B:[0,0]};      // rolled and average double damage / double strikes per side, counted over the strikes of this fight
   log.forEach(x=>{const q=sm[x[1]][x[2]];if(q&&!(x[9]>0)){fxa[x[1]][0]+=(1-(1-q.pc)*(1-q.pa))*(1+q.pt);fxa[x[1]][1]+=q.pt}if(!THEOEXP){if(x[8]>1)fxv[x[1]][0]++;if(x[9]>0)fxv[x[1]][1]++}});
-  const fxo=(k,n)=>` (ours ${brA(THEOEXP?fxa.A[k]:fxv.A[k])})`,sel=`<label>Round 1 <select id="tfirst"><option value="T"${THEOFIRST=='T'?' selected':''}>coin toss</option><option value="A"${THEOFIRST=='A'?' selected':''}>we strike first</option><option value="B"${THEOFIRST=='B'?' selected':''}>the enemy strikes first</option></select></label>`;
-  BRFXH=brFxBox(THEOEXP,[[fxv.A[0]+fxv.B[0],fxa.A[0]+fxa.B[0],'double damage',fxo(0)],[fxv.A[1]+fxv.B[1],fxa.A[1]+fxa.B[1],'double strikes',fxo(1)]],'',sel);
+  const fxo=(k,n)=>` (ours ${brA(THEOEXP?fxa.A[k]:fxv.A[k])})`;
+  BRFXH=brFxBox(THEOEXP,[[fxv.A[0]+fxv.B[0],fxa.A[0]+fxa.B[0],'double damage',fxo(0)],[fxv.A[1]+fxv.B[1],fxa.A[1]+fxa.B[1],'double strikes',fxo(1)]],'');
   let rd=-1,h=`<p class="bf">${r.win>0?'<b class="tw">We win</b> \u00b7 '+tpc(theoAvgLeft(c,r))+' health remaining':r.win<0?'<b class="tl">We lose</b> \u00b7 '+tpc(theoAvgLeft(c,r))+' health remaining':'<b>Draw</b>'}</p><div class="br">`;
   log.forEach(([rr,side,a,t,dmg,k,left,before,m1,m2,p0])=>{
     if(rr!==rd){rd=rr;h+=rd==0?`<div class="brh">Siege</div>`:`<div class="brh">Round ${rd}</div>`}
@@ -3024,7 +3024,6 @@ function theoSync(P,fx){const c=$('theo');if(!c)return;
   if(P.mon&&!fx)theoAuto();      // 22.8 against a monster there are no buttons: the army is searched as soon as the inputs are there
   if(THEOCUR!==fx){THEOCUR=fx;theoShow()}}
 [$('br'),$('rsm')].forEach(el=>el.addEventListener('click',e=>{const b=e.target.closest('[data-ta]'),a=b&&b.dataset.ta;if(a=='expect'){THEOEXP=true;drawBR()}else if(a=='dice'){THEOEXP=false;THEOSEED=Math.floor(Math.random()*2e9)+1;drawBR()}}));
-[$('br'),$('rsm')].forEach(el=>el.addEventListener('change',e=>{if(e.target.id=='tfirst'){THEOFIRST=e.target.value;drawBR()}}));
 $('tgo').addEventListener('click',()=>{theoRun(false)});$('tdp').addEventListener('click',()=>{theoRun(true)});$('ttc').addEventListener('click',()=>{theoTierCheck()});
 function refresh(){sync();calc()}
 // ---- the tier check (the Tier check button, shown in a window): would one more or one less tier give more damage? ----
