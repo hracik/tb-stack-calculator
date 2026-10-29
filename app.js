@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.21';
+const APP_VERSION='23.2.22';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2863,7 +2863,7 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
   if(!c1.length)return null;
   const s1=pick(c1,x=>x.L,opt.s1);s1i=s1.i;
   // an enemy stack hits the stack it has a bonus against: the stacks that are not the first striker must be troops that the enemy stacks which WILL strike (all but the ones we stop after the first) have no more bonus against than against the first striker
-  const strikers=rd.army,bonF=(h,i)=>1+(h.evs?evBonus(h.evs,st1[i]):0),safe=i=>strikers.every(h=>bonF(h,i)<=bonF(h,s1.i)+1e-12);
+  const strikers=rd.army.filter(x=>!K.slice(1).includes(x)),bonF=(h,i)=>1+(h.evs?evBonus(h.evs,st1[i]):0),safe=i=>strikers.every(h=>bonF(h,i)<=bonF(h,s1.i)+1e-12);
   const build=strict=>{const cnt=cnt0.slice(),used=new Set([s1.i]),allow=i=>!isE[i]&&!used.has(i)&&cnt[i]==0&&(!strict||safe(i));let prev=Infinity;
     // 3. the stopping strikes
     for(let j=1;j<K.length;j++){const T=K[j],alive=rd.army.filter(x=>!K.slice(0,j).includes(x)),cs=[];
@@ -2894,7 +2894,7 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
       for(const i of idx){const c=cnt.slice();c[i]=0;const v=val(c);if(v<ONE&&v<=cur+MONSTK){cnt[i]=0;cur=v;did=true;break}}
       if(!did)break}
     const w=names.map((n,i)=>cnt[i]>0?cnt[i]*cost[i]:0);w.cnt=cnt;w.v=cur;w.one=cur<ONE;return w};
-  return build(true)}      // only troops that no enemy stack has more bonus against than against the first striker: every enemy strike goes to the first striker, nothing else is ever hit (a monster never dies)
+  return build(true)}      // only troops that no enemy stack which STRIKES at full strength has more bonus against than against the first striker (the stacks we stop are wounded when they strike: a Fire Phoenix wounds the Bear and the Bear's hit does not kill it); no other troops are brought in
 return{monRecipe,monDice,quick,template,search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone}})();
 // ---- the screen of the theoretical stacks (One v. One): Find stacks, Rank tier choices, a fight with re-roll. Until stacks are found the Result is replaced by the card; once found the Result is live with them ----
 let THEOWAIT=false,THEOGEN=0,THEORUN=0,THEOCUR=null,THEOTC=null,THEOW={sig:'',m:new Map()};const THEOC=new Map(),THEOT=new Map();      // THEOGEN: a newer run / a change cancels the one that runs; THEOC / THEOT: finished searches and tier checks by input
@@ -2906,10 +2906,10 @@ const theoMerc=()=>{if(ATK!='monsters'||!(v('capU')>0))return[];mercSync();retur
 const theoNames=(sel,tiers)=>TR.filter(t=>(ATK=='monsters'?'GSME':'GSM').includes(t.cls)&&t.cat!='Scout'&&sel.includes(t.cls+t.tier)&&tiers.includes(t.tier)&&!XS.has(t.name)).map(t=>t.name).concat(theoMerc());
 const theoEs=(P,names)=>P.mon?[THEO.mkEnemy(P)]:[[1,1],[1,0],[1.1,1],[1.1,0]].map(([sc,eq])=>THEO.mkEnemy(P,eq,sc));      // the search: equal health / equal cost monsters, at 100 % and 110 %
 // 22.8 against a monster: N fights with the dice rolled, the start of round 1 tossed (after the siege); the win chance, the units and the revive gold lost (on average and when we win), the rounds
-function theoStatsMon(P,names,w,N){const L=THEO.layout(P,names,w),E=THEO.mkEnemy(P),rng=THEO.rngMk(4242);let win=0,lg=0,ln=0,wlg=0,wln=0,rd=0,rb=0;
-  for(let i=0;i<N;i++){const r=THEO.battle(L,E,rng,{mon:true});if(r.win>0){win++;wlg+=r.lostG;wln+=r.lostN}lg+=r.lostG;ln+=r.lostN;rd+=r.rd;rb+=r.remB}
+function theoStatsMon(P,names,w,N){const L=THEO.layout(P,names,w),E=THEO.mkEnemy(P),rng=THEO.rngMk(4242),mi=L.map((s,i)=>TRN[s.name].cls=='M'?i:-1).filter(i=>i>=0);let win=0,lg=0,ln=0,wlg=0,wln=0,rd=0,rb=0,mf=0,mu=0;
+  for(let i=0;i<N;i++){const r=THEO.battle(L,E,rng,{mon:true});if(r.win>0){win++;wlg+=r.lostG;wln+=r.lostN}lg+=r.lostG;ln+=r.lostN;rd+=r.rd;rb+=r.remB;const m=mi.reduce((q,j)=>q+r.lostBy[j],0);if(m>0){mf++;mu+=m}}
   const tot=L.reduce((q,s)=>q+s.n*s.hp,0);
-  return{mon:true,names,w,stacks:L.map(s=>({name:s.name,n:s.n,sh:s.n*s.hp/tot})),win:win/N,lostG:lg/N,lostN:ln/N,winG:win?wlg/win:0,winN:win?wln/win:0,rd:rd/N,remB:rb/N,net:win/N*2-rb/N}}
+  return{mon:true,names,w,stacks:L.map(s=>({name:s.name,n:s.n,sh:s.n*s.hp/tot})),win:win/N,lostG:lg/N,lostN:ln/N,winG:win?wlg/win:0,winN:win?wln/win:0,rd:rd/N,remB:rb/N,net:win/N*2-rb/N,monF:mf/N,monU:mu/N}}
 function theoStats(P,names,w,N){const L=THEO.layout(P,names,w),rows=[];
   TSIZES.forEach(sz=>{const o={sz,A:{win:0,ra:0,rb:0,margin:0},B:{win:0,ra:0,rb:0,margin:0}};
     [1,0].forEach((eq,j)=>{const E=THEO.mkEnemy(P,eq,sz);['A','B'].forEach(f=>{const r=THEO.mc(L,E,N,4242+j*13,f),t=o[f];['win','ra','rb','margin'].forEach(k=>t[k]+=r[k]/2)})});
@@ -2951,7 +2951,7 @@ async function theoRun(deep){
 function theoShow(){const c=THEOCUR,out=$('tres');$('tintro').hidden=!!c;
   if(!c){out.innerHTML='';theoBusy(0);return}
   if(c.res.mon){const r=c.res,fm=tfm,pcs=x=>(x*100).toFixed(x>0&&x<0.1?1:0)+' %';
-    out.innerHTML=`<div class="tsc"><table><tr><th>Win chance</th><th>Units lost</th><th>Revive cost of the losses</th><th>Rounds</th></tr><tr><td class="tn"><b>${pcs(r.win)}</b></td><td class="tn">${fm(r.lostN)}</td><td class="tn">${fm(r.lostG*REV/100/(templeLv()>=1?TEMPLE[templeLv()-1]:1))}</td><td class="tn">${Math.round(r.rd)}</td></tr></table></div><p class="mu">The army in the stacks below fights the monster 400 times with the dice rolled. The siege comes first: our engineers hit the wall, and a wall that is still standing hits back. Then round 1 starts with a coin toss: us or the monster.</p>`;theoBusy(0);return}
+    out.innerHTML=`<div class="tsc"><table><tr><th>Win chance</th><th>Units lost</th><th>Revive cost of the losses</th><th>Rounds</th></tr><tr><td class="tn"><b>${pcs(r.win)}</b></td><td class="tn">${fm(r.lostN)}</td><td class="tn">${fm(r.lostG*REV/100/(templeLv()>=1?TEMPLE[templeLv()-1]:1))}</td><td class="tn">${Math.round(r.rd)}</td></tr></table></div><p class="mu">The army in the stacks below fights the monster 400 times with the dice rolled. The siege comes first: our engineers hit the wall, and a wall that is still standing hits back. Then round 1 starts with a coin toss: us or the monster.</p>${r.monF>0?`<p class="mu">A monster of ours loses units in ${(r.monF*100).toFixed(r.monF<0.1?1:0)} % of these fights (${r.monU.toFixed(1)} units on average).</p>`:''}`;theoBusy(0);return}
   const r=c.res,sel=theoSel(),tiers=theoTiers(sel);
   const nt=tiers.length>3?`<p class="mu">${tiers.length} tiers are ticked, the game allows 3: the top 3 (${tiers.slice(0,3).map(x=>'T'+x).join(', ')}) are used. Rank tier choices compares the combinations.</p>`:'';
   out.innerHTML=`${nt}<div class="tsc"><table><tr><th>Enemy</th><th>We strike first</th><th>The enemy strikes first</th><th>Net</th></tr>${r.rows.map(o=>`<tr><td>${tpc(o.sz)} Leadership and Dominance</td><td class="tn">${tpc(o.A.win)} wins, keep ${tpc(o.A.ra)}</td><td class="tn">${tpc(o.B.win)} wins, keep ${tpc(o.B.ra)}</td><td class="tn"><b>${tsg(o.net)}</b></td></tr>`).join('')}</table></div>
