@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.27';
+const APP_VERSION='23.2.28';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -131,7 +131,7 @@ function sync(){
 document.addEventListener('click',e=>{
   if(e.target.closest('.tctab'))return;      // the Tier check tabs have their own handler (their .vb class and data-t must not reach the view / tab handlers)
   if(tabClick(e))return;
-  const ab=e.target.closest('.ab');if(ab){if(ab.dataset.a!=ATK){ATK=ab.dataset.a;refresh()}return}      // Attack epics / Attack players
+  const ab=e.target.closest('.ab');if(ab){if(ab.dataset.a!=ATK){ATK=ab.dataset.a;refresh()}return}      // Attack epic monsters / Attack players
   const sb=e.target.closest('.sb');if(sb&&!sb.disabled){if(sb.dataset.sh=='train'&&!(v('foodP')>0))FMPREV={cmp:SHOWCMP,shw:$('shw').value};if(SHOWCMP){SHOWCMP=false;try{localStorage.setItem('sc_cmp','0')}catch(x){}}$('shw').value=sb.dataset.sh;calc();if(sb.dataset.sh=='train'&&!(v('foodP')>0)){FMP=true;drawFM()}return}
   if(e.target.closest('.tc')){if(!e.target.closest('.tc').disabled){tierBubble();e.target.closest('.tc').blur()}return}      // the Tier check button
   const vb=e.target.closest('.vb');if(vb&&vb.id=='cmpbtn'){SHOWCMP=true;try{localStorage.setItem('sc_cmp',SHOWCMP?'1':'0')}catch(x){}calc();return}
@@ -234,7 +234,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 const MODE_IDS=['mode','enemy'],APP_IDS=['lang'];      // APP_IDS = settings of the whole app (the language): never stored in a tab and never changed by opening one
                        // the two hidden mode boxes are kept out of the input lists: the mode is stored in the tab as mode / enemy (see snap and load)
 function snap(){
-  const d={vals:{},chk:{},O:O.slice(),X:[...XS],S:SO.slice(),atk:ATK,mode:$('mode').value,enemy:$('enemy').value,le:{...LASTE},lp:LASTP,cmp:{...CMPV}};      // the Attack epics / Attack players switch, the attack mode (4-stack, CP kill ...) and the last mode of each view belong to the tab
+  const d={vals:{},chk:{},O:O.slice(),X:[...XS],S:SO.slice(),atk:ATK,mode:$('mode').value,enemy:$('enemy').value,le:{...LASTE},lp:LASTP,cmp:{...CMPV}};      // the Attack epic monsters / Attack players switch, the attack mode (4-stack, CP kill ...) and the last mode of each view belong to the tab
   document.querySelectorAll('input[id],select[id]').forEach(el=>{if(MODE_IDS.includes(el.id)||APP_IDS.includes(el.id))return;if(el.type=='checkbox')d.chk[el.id]=el.checked;else d.vals[el.id]=(el.value===''&&el.matches(NUMBOX))?'0':el.value});      // a box that is empty only while it is being typed in counts as 0
   return d;
 }
@@ -244,7 +244,7 @@ function load(d){
   Object.entries(chk).forEach(([id,c])=>{const el=$(id);if(el)el.checked=c});
   fmtAll();
   O=(d.O||[]).slice();XS=new Set(d.X||[]);SO=(d.S||[]).slice();
-  ATK=d.atk=='players'||d.atk=='monsters'?d.atk:'epics';      // tabs saved before this existed open in Attack epics, in the 4-stack mode
+  ATK=d.atk=='players'||d.atk=='monsters'?d.atk:'epics';      // tabs saved before this existed open in Attack epic monsters, in the 4-stack mode
   $('mode').value=d.mode||'max';$('enemy').value=d.enemy||'4';LASTE=d.le?{...d.le}:{mode:'max',enemy:'4'};LASTP=d.lp||'cp';
   CMPV=d.cmp&&typeof d.cmp=='object'?{...d.cmp}:{};CMPK='';      // the units typed in Compare belong to the tab
 }
@@ -2535,8 +2535,8 @@ const MODEINFO={
   'pm':['PvMany · Max damage','You hit another player who has every kind of troop in the city, so it is a total battle. Win or lose, stacks are created with the goal of maximizing damage, using the Specialists\' double damage.'],
   'cpd':['Pv1 · CP death','You hit another player who has only one flying troop type in the city, but a very large one, and your army is not strong enough to kill it. Stacks are created with the goal of maximizing damage, using the Specialists\' double damage and the bonuses against flying enemies.']
 };
-const PVMODES=['cp','cpd','ovo','pvpmax','ren'];      // the modes of the Attack players view; every other mode belongs to Attack epics
-let ATK='epics',LASTE={mode:'max',enemy:'4'},LASTP='cp';      // ATK = the view (stored in the tab, like the inputs; a new tab starts in Attack epics). LASTE / LASTP = the last mode of each view, so switching back returns to it.
+const PVMODES=['cp','cpd','ovo','pvpmax','ren'];      // the modes of the Attack players view; every other mode belongs to Attack epic monsters
+let ATK='epics',LASTE={mode:'max',enemy:'4'},LASTP='cp';      // ATK = the view (stored in the tab, like the inputs; a new tab starts in Attack epic monsters). LASTE / LASTP = the last mode of each view, so switching back returns to it.
 function calc(){const t0=performance.now();clearTimeout(CALCT);syncDebug();try{calcRun()}finally{CALCMS=performance.now()-t0}}      // every calculation measures itself: the wait after typing follows it
 let EPPREV='';
 function epAuto(){      // the epic is optional (Choose epic): none = all the stack modes, no Killshot, no score; an epic that can not be hit in the mode = the nearest mode it can (3 <-> 6, 4 <-> 8)
@@ -2570,7 +2570,7 @@ function calcRun0(){
   const ep=ATK=='epics',pl=ATK=='players',pvOff=pl&&!okP.length;      // pvOff: the Attack players view while no PvP mode is switched on (nothing to calculate)
   document.querySelectorAll('.ab').forEach(b=>b.classList.toggle('on',b.dataset.a==ATK));{const t=$('atk');if(t)t.dataset.v=ATK}
   {const hb=$('hp-bonx');if(hb&&hb.dataset.v!==ATK){hb.dataset.v=ATK;hb.innerHTML=helpHtml(HELP.bonx,ATK=='players')}}
-  {const hr=$('hp-rare');if(hr&&hr.dataset.v!==ATK){hr.dataset.v=ATK;hr.innerHTML=helpHtml(HELP.rare,ATK=='players')}}      // 13.10: the Help of Bonuses against enemies follows the Attack epics / Attack players view
+  {const hr=$('hp-rare');if(hr&&hr.dataset.v!==ATK){hr.dataset.v=ATK;hr.innerHTML=helpHtml(HELP.rare,ATK=='players')}}      // 13.10: the Help of Bonuses against enemies follows the Attack epic monsters / Attack players view
   [['mrE',ep],['mrP',pl]].forEach(([id,on])=>{const el=$(id);if(el)el.hidden=!on});      // the settings of the chosen view
   {const o=$('osd');if(o)o.hidden=pvOff}
   [['bcEpic',['bs_Epic'],ep],['bcPlayers',['bh_Players','bs_Players'],pl]].forEach(([c,ids,on])=>{const el=$(c);if(el)el.hidden=!on;ids.forEach(i=>{const x=$(i);if(x)x.disabled=!on})});
@@ -3165,7 +3165,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
 const HELP={
   army:{t:["Don't have mercenaries at all? Keep Authority at 0, it has no use for you. Have a little bit of mercenaries? Just input less Authority than you actually have, check the given stacks and adjust if needed.","Lack of monster coins, so you want to use smaller monster stacks? Just input less Dominance than you actually have, check the given stacks and adjust if needed."],img:[]},
   food:{t:["<b>Food prod.</b> is the total food production you can use to train army. It has no effect on the stacks, but it enables the Preparation action, which shows how many units you can train per stack at once to achieve the maximum hit per training.","The <b>Revive</b> selection is used together with Food prod. to calculate the number of units you can train per stack.","The app assumes you have the 25 % food consumption reduction bonus active.","<b>Temple</b> is your Temple level (0-45; 45 is the highest, 0 = no Temple). The Result summary shows the <b>revive cost</b> in gold as <b>selected / full</b>: the gold to revive the stacks that the Revive select brings back, and the gold of a full revive of the whole hit."],img:[]},
-  bonx:{t:["Bonus against epic monsters can be found by clicking on a troop in the battle report or in the city."],tp:["Bonuses against players can be found by clicking on a troop in the battle report or in the city."],img:[]},      // 13.10: tp = the text of the Attack players view (t is the Attack epics one); calc switches the panel
+  bonx:{t:["Bonus against epic monsters can be found by clicking on a troop in the battle report or in the city."],tp:["Bonuses against players can be found by clicking on a troop in the battle report or in the city."],img:[]},      // 13.10: tp = the text of the Attack players view (t is the Attack epic monsters one); calc switches the panel
   bon:{t:["The <b>Health</b> and <b>Strength</b> bonuses of each troop category (Guardsmen, Specialists, Monsters and Siege Engines) can be found by clicking on a troop in the battle report or in the city.","Do not check the Guardsmen/Specialists bonuses on troops that are both Guardsmen/Specialists and Beasts: the flying G5-G7 and S8-S9."],img:[]},
   mb:{t:["Monster boost research in the Academy has 3 parts. Click I, II or III based on the latest research part you have already finished. For a partially finished part, e.g. no research is done for health at part III, still click III and adjust the health manually to 50."],img:[]},
   rare:{t:["These should be rarely used bonuses. More often than not you don't need to input anything and can leave them at 0.","Combatless Guardsmen mercenaries (Guardsmen mercenaries that are not Melee, Ranged, Mounted or Flying, such as the Epic Monster Hunter and the Elder Witch) use only their own bonus in Special troop type bonuses, not the Guardsmen bonus. Scouts (a Specialists unit type) likewise use only their own bonus, not the Specialists bonus.","Combat type bonuses: use these only if a specific category or type has a bonus on top of the class bonus above \u2014 e.g. unbalanced research, talents, or captain effects. Leave all on 0% if there are no imbalances.","Category bonus Double damage comes only from <b>standard equipment</b> that can be crafted for Guardsmen, Specialists or Engineers, or from the <b>Imbalance</b> hero talents."],tp:["These should be rarely used bonuses. More often than not you don't need to input anything and can leave them at 0.","Combatless Guardsmen mercenaries (Guardsmen mercenaries that are not Melee, Ranged, Mounted or Flying, such as the Epic Monster Hunter and the Elder Witch) use only their own bonus in Special troop type bonuses, not the Guardsmen bonus. Scouts (a Specialists unit type) likewise use only their own bonus, not the Specialists bonus.","Combat type bonuses: use these only if a specific category or type has a bonus on top of the class bonus above \u2014 e.g. unbalanced research, talents, or captain effects. Leave all on 0% if there are no imbalances.","Category bonus Strength against players comes only from <b>tournament equipment</b> that can be crafted for Guardsmen or Specialists.","Category bonus Double damage comes only from <b>standard equipment</b> that can be crafted for Guardsmen, Specialists or Engineers, or from the <b>Imbalance</b> hero talents."],img:[]},      // 19.0.107: tp = the text of the Attack players view (the Rare bonuses card follows the view like Army bonuses)
