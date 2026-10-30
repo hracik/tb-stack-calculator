@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.87';
+const APP_VERSION='23.2.88';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -132,7 +132,7 @@ function sync(){
 document.addEventListener('click',e=>{
   if(e.target.closest('.tctab'))return;      // the Tier check tabs have their own handler (their .vb class and data-t must not reach the view / tab handlers)
   if(tabClick(e))return;
-  const ab=e.target.closest('.ab');if(ab){if(ab.dataset.a!=ATK){ATK=ab.dataset.a;refresh()}return}      // Attack epic monsters / Attack players
+  const ab=e.target.closest('.ab');if(ab){if(ab.disabled)return;if(ab.dataset.a!=ATK){ATK=ab.dataset.a;refresh()}return}      // Attack epic monsters / Attack players
   const sb=e.target.closest('.sb');if(sb&&!sb.disabled){if(sb.dataset.sh=='train'&&!(v('foodP')>0))FMPREV={cmp:SHOWCMP,shw:$('shw').value};if(SHOWCMP){SHOWCMP=false;try{localStorage.setItem('sc_cmp','0')}catch(x){}}$('shw').value=sb.dataset.sh;calc();if(sb.dataset.sh=='train'&&!(v('foodP')>0)){FMP=true;drawFM()}return}
   if(e.target.closest('.tc')){if(!e.target.closest('.tc').disabled){tierBubble();e.target.closest('.tc').blur()}return}      // the Tier check button
   const vb=e.target.closest('.vb');if(vb&&vb.id=='cmpbtn'){SHOWCMP=true;try{localStorage.setItem('sc_cmp',SHOWCMP?'1':'0')}catch(x){}calc();return}

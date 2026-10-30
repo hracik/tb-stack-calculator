@@ -150,6 +150,7 @@ summary h2{display:inline;border:0;padding:0;margin:0}
 .atk[data-v=players]::before{transform:translateX(100%)}.atk[data-v=monsters]::before{transform:translateX(200%)}
 .ab{position:relative;z-index:1;margin:0;padding:9px 4px;width:100%;white-space:normal;line-height:1.15;font:inherit;font-size:15px;background:transparent;color:var(--ac);border-radius:7px}
 .ab.on{color:#000;font-weight:600}
+.ab:disabled{opacity:.4;cursor:not-allowed}
 .pbrow .tc{margin:0;min-width:0;width:100%;padding:5px 3px;white-space:nowrap;font:inherit}
 .tcw{max-width:400px;margin:12px auto 0;padding:8px 12px 10px;text-align:center}
 .tct{width:100%;table-layout:fixed;margin:4px 0 0;border-collapse:collapse;font-size:13px}
