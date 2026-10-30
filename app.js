@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.81';
+const APP_VERSION='23.2.82';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -244,7 +244,7 @@ function load(d){
   Object.entries(chk).forEach(([id,c])=>{const el=$(id);if(el)el.checked=c});
   fmtAll();
   O=(d.O||[]).slice();XS=new Set(d.X||[]);SO=(d.S||[]).slice();
-  ATK=d.atk=='players'||d.atk=='monsters'?d.atk:'epics';      // tabs saved before this existed open in Attack epic monsters, in the 4-stack mode
+  ATK=d.atk=='players'?d.atk:'epics';      // tabs saved before this existed open in Attack epic monsters, in the 4-stack mode      // 23.2.82 Attack monsters is switched off for now (its code stays); a tab saved in it opens in Attack epic monsters
   $('mode').value=d.mode||'max';$('enemy').value=d.enemy||'4';LASTE=d.le?{...d.le}:{mode:'max',enemy:'4'};LASTP=d.lp||'cp';
   CMPV=d.cmp&&typeof d.cmp=='object'?{...d.cmp}:{};CMPK='';      // the units typed in Compare belong to the tab
 }
