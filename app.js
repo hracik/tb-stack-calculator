@@ -2888,9 +2888,9 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
   const BAN=new Set(),build=strict=>{const stops=[],cnt=cnt0.slice(),used=new Set([s1.i]),allow=i=>!isE[i]&&!BAN.has(i)&&!used.has(i)&&cnt[i]==0&&(!strict||safe(i));let prev=Infinity;
     // 3. the stopping strikes
     for(let j=1;j<K.length;j++){const T=K[j],alive=rd.army.filter(x=>!K.slice(0,j).includes(x)),cs=[];
-      const tab=stopTab(P,PK,T,alive);
-      names.forEach((n,i)=>{if(!allow(i))return;const e=tab.get(n);if(!e)return;const dT=e.dT;let q=Math.min(e.q,Math.floor((prev-1)/st1[i].str));if(q<1)return;
-        cs.push({i,n:q,dT,rem:Math.max(0,pool(T)-q*dT)/pool(T)})});
+      const tab=stopTab(P,PK,T,alive),early=[K[0]].concat(H.slice(0,j));      // 23.2.65 (K[0] strikes first when the enemy starts) a true stopper is not hit by the enemy stacks that strike before it (the user): none of them has a bonus against it
+      for(const strictStop of[true,false]){names.forEach((n,i)=>{if(!allow(i))return;const e=tab.get(n);if(!e)return;if(strictStop&&early.some(h=>bonF(h,i)>1+1e-9))return;const dT=e.dT;let q=Math.min(e.q,Math.floor((prev-1)/st1[i].str));if(q<1)return;
+        cs.push({i,n:q,dT,rem:Math.max(0,pool(T)-q*dT)/pool(T)})});if(cs.length)break}      // true stoppers first; only when there is none, a troop that an earlier enemy stack hits (it is paid for in the fight)
       if(!cs.length)continue;
       const good=cs.filter(x=>x.rem<=0.1),use=good.length?good:[cs.reduce((m,x)=>x.rem<m.rem?x:m,cs[0])],ch=pick(use,x=>-x.dT,opt['s'+(j+1)]);if(j<=3&&AV['s'+(j+1)]===undefined)AV['s'+(j+1)]=use.length>1;
       cnt[ch.i]=ch.n;stops.push({i:ch.i,T});used.add(ch.i);prev=ch.n*st1[ch.i].str}
@@ -2918,7 +2918,7 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
     const w=names.map((n,i)=>cnt[i]>0?cnt[i]*cost[i]:0);w.cnt=cnt;w.v=cur;w.one=cur<ONE;w.ug=UG;return w};
   // 23.2.48 a monster of ours must not die: a monster that loses units in the fight is not used (the recipe is built again without it)
   for(let t=0;t<6;t++){const w=build(true);if(!w)return w;const L=mk(w.cnt),r=battle(L,E,null,{first:'A',mon:true,expect:true}),bad=L.map((x,j)=>[x,j]).filter(([x,j])=>TRN[x.name].pool=='M'&&r.lostBy[j]>0).map(([x])=>names.indexOf(x.name));if(!bad.length||t==5)return w;bad.forEach(i=>BAN.add(i))}}      // only troops that no enemy stack which STRIKES at full strength has more bonus against than against the first striker (the stacks we stop are wounded when they strike: a Fire Phoenix wounds the Bear and the Bear's hit does not kill it); no other troops are brought in
-return{hitDmg,pickTarget,monRead,monRecipe,monScore,quick,template,search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone}})();
+return{stopTab,hitDmg,pickTarget,monRead,monRecipe,monScore,quick,template,search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone}})();
 // ---- the screen of the theoretical stacks (One v. One): Find stacks, Rank tier choices, a fight with re-roll. Until stacks are found the Result is replaced by the card; once found the Result is live with them ----
 let THEOWAIT=false,THEOGEN=0,THEORUN=0,THEOCUR=null,THEOTC=null,THEOW={sig:'',m:new Map()};const THEOC=new Map(),THEOT=new Map();      // THEOGEN: a newer run / a change cancels the one that runs; THEOC / THEOT: finished searches and tier checks by input
 const tfm=x=>Math.round(x).toLocaleString('en-US'),tpc=x=>Math.round(x*100)+'%',tsg=x=>(x>=0?'+':'−')+Math.abs(Math.round(x*100))+'%';
