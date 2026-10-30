@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.65';
+const APP_VERSION='23.2.66';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2859,6 +2859,13 @@ function stopTab(P,pk,T,alive){const key=pk+'|'+T.name+'|'+alive.map(x=>x.name).
     let q;if(hit(hi))q=Math.ceil(T.n*T.hp/dT*1.25);else{while(hi-lo>1){const md=Math.floor((lo+hi)/2);if(hit(md))lo=md;else hi=md}q=lo}      // the most units that still hit T (never flips: a bit more than it takes to kill T)
     m.set(n,{dT,q})}
   STOPTAB.set(key,m);return m}
+// 23.2.66 the battle plans of an enemy (the user): worked out ONCE when the enemy is there, for the whole army as if every troop were available. Per plan and per stopped stack: the TRUE stoppers (names only): troops that send the strike to that stack and that no enemy stack which strikes before them has a bonus against (the first stack we kill strikes first when the enemy starts). The tiers ticked then only decide which plan can be done: every stopped stack needs one of its stoppers
+const PLANROLES=new Map();
+function planRoles(P,pk,rd){const key=pk+'|'+rd.plans.map(p=>p.K.map(x=>x.name+x.n)+'/'+p.H.map(x=>x.name)).join(';');let r=PLANROLES.get(key);if(r)return r;
+  r=rd.plans.map(pl=>pl.K.map((T,j)=>{if(!j)return null;const alive=rd.army.filter(x=>!pl.K.slice(0,j).includes(x)),tab=stopTab(P,pk,T,alive),early=[pl.K[0]].concat(pl.H.slice(0,j)),set=new Set();
+    for(const n of tab.keys()){const s1=mkStack(n,1,P);if(!early.some(h=>h.evs&&evBonus(h.evs,s1)>1e-9))set.add(n)}return set}));
+  PLANROLES.set(key,r);return r}
+const planFeasible=(roles,pi,names)=>roles[pi].every((set,j)=>!j||names.some(n=>TRN[n].cls!='E'&&set.has(n)));      // the first plan (in order) that the ticked tiers can do: -1 when none
 function monRecipe(P,names,Es,opt){opt=opt||{};
   const E=Es[0],nm=names.length,cost=names.map(n=>TRN[n].cost),pl=names.map(n=>TRN[n].pool||'A'),isM=names.map(n=>TRN[n].cls=='M'),isE=names.map(n=>TRN[n].cls=='E'),isU=pl.map(p=>p=='U'),gd=names.map(n=>TRN[n].gold||1),tier=i=>TRN[names[i]].tier||0;      // pl: the pool a troop is paid from: A Leadership, M Dominance, U Authority (the mercenaries)
   const rd=monRead(E);if(!rd.army.length)return null;
@@ -2871,7 +2878,7 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
   const PK=JSON.stringify(Object.assign({},P,{capA:0,capM:0,capU:0}));
   const pl0=rd.plans[opt.pl||0]||rd.plans[0],K=pl0.K,H=pl0.H,T1=K[0],hitOn=(h,i)=>hitDmg(h,st1[i],null,true);
   // 23.2.64 another plan than the first is only built when the troops that are on can stop every stack it stops (looked up in the stopper table): no troop can send a strike to a stack = that plan cannot be done
-  if(opt.pl>0){for(let j=1;j<K.length;j++){const alive=rd.army.filter(x=>!K.slice(0,j).includes(x)),tab=stopTab(P,PK,K[j],alive);if(!names.some((n,i)=>!isE[i]&&tab.has(n)))return null}}
+  const ROLES=planRoles(P,PK,rd)[opt.pl||0];if(opt.pl>0&&!planFeasible(planRoles(P,PK,rd),opt.pl,names))return null;
   // 1. the wall
   const cnt0=names.map(()=>0);
   if(rd.walls.length){const wp=rd.walls.reduce((q,w)=>q+pool(w),0);let bi=-1,bd=0;
@@ -2889,7 +2896,7 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
     // 3. the stopping strikes
     for(let j=1;j<K.length;j++){const T=K[j],alive=rd.army.filter(x=>!K.slice(0,j).includes(x)),cs=[];
       const tab=stopTab(P,PK,T,alive),early=[K[0]].concat(H.slice(0,j));      // 23.2.65 (K[0] strikes first when the enemy starts) a true stopper is not hit by the enemy stacks that strike before it (the user): none of them has a bonus against it
-      for(const strictStop of[true,false]){names.forEach((n,i)=>{if(!allow(i))return;const e=tab.get(n);if(!e)return;if(strictStop&&early.some(h=>bonF(h,i)>1+1e-9))return;const dT=e.dT;let q=Math.min(e.q,Math.floor((prev-1)/st1[i].str));if(q<1)return;
+      for(const strictStop of[true,false]){names.forEach((n,i)=>{if(!allow(i))return;const e=tab.get(n);if(!e)return;if(strictStop&&!ROLES[j].has(n))return;const dT=e.dT;let q=Math.min(e.q,Math.floor((prev-1)/st1[i].str));if(q<1)return;
         cs.push({i,n:q,dT,rem:Math.max(0,pool(T)-q*dT)/pool(T)})});if(cs.length)break}      // true stoppers first; only when there is none, a troop that an earlier enemy stack hits (it is paid for in the fight)
       if(!cs.length)continue;
       const good=cs.filter(x=>x.rem<=0.1),use=good.length?good:[cs.reduce((m,x)=>x.rem<m.rem?x:m,cs[0])],ch=pick(use,x=>-x.dT,opt['s'+(j+1)]);if(j<=3&&AV['s'+(j+1)]===undefined)AV['s'+(j+1)]=use.length>1;
@@ -2918,7 +2925,7 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
     const w=names.map((n,i)=>cnt[i]>0?cnt[i]*cost[i]:0);w.cnt=cnt;w.v=cur;w.one=cur<ONE;w.ug=UG;return w};
   // 23.2.48 a monster of ours must not die: a monster that loses units in the fight is not used (the recipe is built again without it)
   for(let t=0;t<6;t++){const w=build(true);if(!w)return w;const L=mk(w.cnt),r=battle(L,E,null,{first:'A',mon:true,expect:true}),bad=L.map((x,j)=>[x,j]).filter(([x,j])=>TRN[x.name].pool=='M'&&r.lostBy[j]>0).map(([x])=>names.indexOf(x.name));if(!bad.length||t==5)return w;bad.forEach(i=>BAN.add(i))}}      // only troops that no enemy stack which STRIKES at full strength has more bonus against than against the first striker (the stacks we stop are wounded when they strike: a Fire Phoenix wounds the Bear and the Bear's hit does not kill it); no other troops are brought in
-return{stopTab,hitDmg,pickTarget,monRead,monRecipe,monScore,quick,template,search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone}})();
+return{planRoles,planFeasible,stopTab,hitDmg,pickTarget,monRead,monRecipe,monScore,quick,template,search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone}})();
 // ---- the screen of the theoretical stacks (One v. One): Find stacks, Rank tier choices, a fight with re-roll. Until stacks are found the Result is replaced by the card; once found the Result is live with them ----
 let THEOWAIT=false,THEOGEN=0,THEORUN=0,THEOCUR=null,THEOTC=null,THEOW={sig:'',m:new Map()};const THEOC=new Map(),THEOT=new Map();      // THEOGEN: a newer run / a change cancels the one that runs; THEOC / THEOT: finished searches and tier checks by input
 const tfm=x=>Math.round(x).toLocaleString('en-US'),tpc=x=>Math.round(x*100)+'%',tsg=x=>(x>=0?'+':'−')+Math.abs(Math.round(x*100))+'%';
@@ -2965,6 +2972,8 @@ function monBest(P,names,memo){
   const full=theoEs(P,names);let rb=null;
   const seen=new Map(),av={},skip=o=>(o.s1&&!av.s1)||(o.s2&&!av.s2)||(o.s3&&!o.s2&&!av.s3)||(o.pl&&o.pl>=av.pls);      // a variant that takes the next best of a choice that had only one candidate (seen in the first run) is the same layout: not built
   const pk=JSON.stringify([Object.assign({},P,{capA:0,capM:0,capU:0}),names,[...XS].sort()]),pc=MONPLAN.get(pk);      // 23.2.45 the plan (the variant: which enemy stacks are stopped, by which troops) is chosen once per enemy and tiers, then reused: the army size changes the counts, not the plan
+  {const rd=THEO.monRead(full[0]),PK=JSON.stringify(Object.assign({},P,{capA:0,capM:0,capU:0})),roles=THEO.planRoles(P,PK,rd);let fp=-1;for(let pi=0;pi<rd.plans.length&&fp<0;pi++)if(THEO.planFeasible(roles,pi,names))fp=pi;
+    if(fp>=0){let rb2=null;const av2={};for(const o of[{},{s1:1},{s2:1},{s3:1},{s2:1,s3:1}]){if((o.s1&&!av2.s1)||(o.s2&&!av2.s2)||(o.s3&&!o.s2&&!av2.s3))continue;const w=THEO.monRecipe(P,names,full,Object.assign({pl:fp},o,o.s1||o.s2||o.s3?{}:{av:av2}));if(!w)continue;const sk=names.map((n,i)=>w.cnt[i]>0?n+':'+w.cnt[i]:'').join(',')+'|'+w.ug;let m=memo&&memo.get(sk);if(m===undefined){m=THEO.monScore(P,names,full,w.cnt,w.ug);if(memo)memo.set(sk,m)}if(!rb2||m<rb2.m)rb2={w,m}}if(rb2)return rb2.w}}      // 23.2.66 the best plan the ticked tiers can do is built, no other is tried; only when none can be done the old search over the variants runs
   if(pc!==undefined){const w=THEO.monRecipe(P,names,full,pc==0?{av}:MONVAR[pc]);if(w)return w}
   let bi=-1;
   for(let oi=0;oi<MONVAR.length;oi++){const o=MONVAR[oi];if(skip(o))continue;const w=THEO.monRecipe(P,names,full,o==MONVAR[0]?{av}:o);if(!w)continue;const sk=names.map((n,i)=>w.cnt[i]>0?n+':'+w.cnt[i]:'').join(',')+'|'+w.ug;let m=seen.get(sk);if(m===undefined){m=memo&&memo.get(sk);if(m===undefined){m=THEO.monScore(P,names,full,w.cnt,w.ug);if(memo)memo.set(sk,m)}seen.set(sk,m)}if(!rb||m<rb.m){rb={w,m};bi=oi}}
