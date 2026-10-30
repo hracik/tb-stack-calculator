@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.46';
+const APP_VERSION='23.2.47';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2845,6 +2845,7 @@ function monRead(E){const key=E.map(s=>[s.name,s.n,s.hp,s.str,s.wall?1:0,s.cat,J
   const plans=[],rec=(U,Kp,Hp)=>{if(!U.length){plans.push({K:Kp,H:Hp});return}
     for(const x of(Kp.length?U:[U[0]])){const U2=U.filter(y=>y!==x);if(!U2.length){plans.push({K:Kp.concat([x]),H:Hp});continue}rec(U2.slice(1),Kp.concat([x]),Hp.concat([U2[0]]))}};
   rec(army.slice(),[],[]);
+  {const ok=plans.filter(p=>p.K.every((x,i)=>!i||p.K[i-1].n*p.K[i-1].str>=x.n*x.str));if(ok.length)plans.splice(0,plans.length,...ok)}      // 23.2.46 the stopped stacks go in the order of their strength (a stack is not stopped before a stronger one that is stopped as well: the user: that is no plan)
   r={walls:E.filter(s=>s.wall&&s.n>0),army,K,H,plans};MONREAD.set(key,r);return r}
 const MONSTK=0.6;      // what a stack must save in units lost to stay (the price of a stack)
 function monRecipe(P,names,Es,opt){opt=opt||{};
@@ -2904,7 +2905,7 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
       if(!did)break}
     const w=names.map((n,i)=>cnt[i]>0?cnt[i]*cost[i]:0);w.cnt=cnt;w.v=cur;w.one=cur<ONE;w.ug=UG;return w};
   return build(true)}      // only troops that no enemy stack which STRIKES at full strength has more bonus against than against the first striker (the stacks we stop are wounded when they strike: a Fire Phoenix wounds the Bear and the Bear's hit does not kill it); no other troops are brought in
-return{monRecipe,monScore,quick,template,search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone}})();
+return{monRead,monRecipe,monScore,quick,template,search,ENA,ENM,rngMk,mkStack,mkEnemy,battle,mc,layout,score,optimize,clone}})();
 // ---- the screen of the theoretical stacks (One v. One): Find stacks, Rank tier choices, a fight with re-roll. Until stacks are found the Result is replaced by the card; once found the Result is live with them ----
 let THEOWAIT=false,THEOGEN=0,THEORUN=0,THEOCUR=null,THEOTC=null,THEOW={sig:'',m:new Map()};const THEOC=new Map(),THEOT=new Map();      // THEOGEN: a newer run / a change cancels the one that runs; THEOC / THEOT: finished searches and tier checks by input
 const tfm=x=>Math.round(x).toLocaleString('en-US'),tpc=x=>Math.round(x*100)+'%',tsg=x=>(x>=0?'+':'−')+Math.abs(Math.round(x*100))+'%';
