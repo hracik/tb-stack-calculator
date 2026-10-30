@@ -245,7 +245,7 @@ function load(d){
   Object.entries(chk).forEach(([id,c])=>{const el=$(id);if(el)el.checked=c});
   fmtAll();
   O=(d.O||[]).slice();XS=new Set(d.X||[]);SO=(d.S||[]).slice();
-  ATK=d.atk=='players'?d.atk:'epics';      // tabs saved before this existed open in Attack epic monsters, in the 4-stack mode      // 23.2.82 Attack monsters is switched off for now (its code stays); a tab saved in it opens in Attack epic monsters
+  ATK=d.atk=='players'||d.atk=='monsters'?d.atk:'epics';      // tabs saved before this existed open in Attack epic monsters, in the 4-stack mode
   $('mode').value=d.mode||'max';$('enemy').value=d.enemy||'4';LASTE=d.le?{...d.le}:{mode:'max',enemy:'4'};LASTP=d.lp||'cp';
   CMPV=d.cmp&&typeof d.cmp=='object'?{...d.cmp}:{};CMPK='';      // the units typed in Compare belong to the tab
 }
