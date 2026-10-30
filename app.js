@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.63';
+const APP_VERSION='23.2.64';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2850,6 +2850,15 @@ function monRead(E){const key=E.map(s=>[s.name,s.n,s.hp,s.str,s.wall?1:0,s.cat,J
   {const ok=plans.filter(p=>p.K.every((x,i)=>!i||p.K[i-1].n*p.K[i-1].str>=x.n*x.str));if(ok.length)plans.splice(0,plans.length,...ok)}      // 23.2.46 the stopped stacks go in the order of their strength (a stack is not stopped before a stronger one that is stopped as well: the user: that is no plan)
   r={walls:E.filter(s=>s.wall&&s.n>0),army,K,H,plans};MONREAD.set(key,r);return r}
 const MONSTK=0.6;      // what a stack must save in units lost to stay (the price of a stack)
+// 23.2.64 the stopper table (the user: the stopper troops are worked out once when the enemy is there, no searching on the go): for an enemy stack T that is still to be stopped, with the stacks still alive, every troop of the game: its damage per unit against T and the most units that still send the strike to T (a strike goes where it does the most real damage). Worked out for ALL troops on the first need, then looked up: the Tier check and the Result only look it up
+const STOPTAB=new Map();
+function stopTab(P,pk,T,alive){const key=pk+'|'+T.name+'|'+alive.map(x=>x.name).join(',');let m=STOPTAB.get(key);if(m)return m;m=new Map();
+  for(const n of Object.keys(TRN)){const t=TRN[n];if(t.cls=='E')continue;const s1=mkStack(n,1,P);s1.ef=1;s1.pc=0;s1.pt=0;const dT=hitDmg(s1,T,null,true);if(!(dT>0))continue;
+    const hit=q=>pickTarget(Object.assign({},s1,{n:q}),alive)===T;if(!hit(1))continue;
+    let lo=1,hi=2;while(hit(hi)){lo=hi;hi*=2;if(hi>1e8)break}
+    let q;if(hit(hi))q=Math.ceil(T.n*T.hp/dT*1.25);else{while(hi-lo>1){const md=Math.floor((lo+hi)/2);if(hit(md))lo=md;else hi=md}q=lo}      // the most units that still hit T (never flips: a bit more than it takes to kill T)
+    m.set(n,{dT,q})}
+  STOPTAB.set(key,m);return m}
 function monRecipe(P,names,Es,opt){opt=opt||{};
   const E=Es[0],nm=names.length,cost=names.map(n=>TRN[n].cost),pl=names.map(n=>TRN[n].pool||'A'),isM=names.map(n=>TRN[n].cls=='M'),isE=names.map(n=>TRN[n].cls=='E'),isU=pl.map(p=>p=='U'),gd=names.map(n=>TRN[n].gold||1),tier=i=>TRN[names[i]].tier||0;      // pl: the pool a troop is paid from: A Leadership, M Dominance, U Authority (the mercenaries)
   const rd=monRead(E);if(!rd.army.length)return null;
@@ -2859,7 +2868,10 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
   const mk=c=>{const L=[];for(let i=0;i<nm;i++)if(c[i]>0){const s=mkStack(names[i],c[i],P);s.ef=1;s.pc=0;s.pt=0;L.push(s)}return L};
   let s1i=-1,UG=1;const ONE=4000,val=c=>{const L=mk(c),pos=L.findIndex(s=>s.name==names[s1i]);let t=0;for(const f of['A','B']){const r=battle(L,E,null,{first:f,mon:true,expect:true});t+=r.win>0?r.lostBy.reduce((q,n,j)=>q+n*(L[j].gold||0)*(j==pos?1:5),0)/UG+(r.rd>1?1e4*(1+r.rem1):0):1e9*(1+r.remB)}return t/2};      // 23.2.41 in units of the first striker's gold: the gold of the units lost (a unit lost anywhere but in the first striker counts 5 times its gold)      // the first striker is the one that takes the losses (a unit lost anywhere else counts 5), an extra round costs 10000 (and the enemy health left after round 1) in either start, a loss costs more
   const pick=(cs,key,k)=>{cs.sort((a,b)=>key(a)-key(b));const b0=cs[0],near=cs.filter(x=>key(x)<=key(b0)+Math.abs(key(b0))*0.005+1e-12).sort((a,b)=>tier(b.i)-tier(a.i)||key(a)-key(b));return near.concat(cs.filter(x=>!near.includes(x)))[Math.min(k||0,cs.length-1)]};      // the best by `key`, a tie (within 0.5 %): the higher tier; k = the next best (the variants)
+  const PK=JSON.stringify(Object.assign({},P,{capA:0,capM:0,capU:0}));
   const pl0=rd.plans[opt.pl||0]||rd.plans[0],K=pl0.K,H=pl0.H,T1=K[0],hitOn=(h,i)=>hitDmg(h,st1[i],null,true);
+  // 23.2.64 another plan than the first is only built when the troops that are on can stop every stack it stops (looked up in the stopper table): no troop can send a strike to a stack = that plan cannot be done
+  if(opt.pl>0){for(let j=1;j<K.length;j++){const alive=rd.army.filter(x=>!K.slice(0,j).includes(x)),tab=stopTab(P,PK,K[j],alive);if(!names.some((n,i)=>!isE[i]&&tab.has(n)))return null}}
   // 1. the wall
   const cnt0=names.map(()=>0);
   if(rd.walls.length){const wp=rd.walls.reduce((q,w)=>q+pool(w),0);let bi=-1,bd=0;
@@ -2876,11 +2888,8 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
   const BAN=new Set(),build=strict=>{const stops=[],cnt=cnt0.slice(),used=new Set([s1.i]),allow=i=>!isE[i]&&!BAN.has(i)&&!used.has(i)&&cnt[i]==0&&(!strict||safe(i));let prev=Infinity;
     // 3. the stopping strikes
     for(let j=1;j<K.length;j++){const T=K[j],alive=rd.army.filter(x=>!K.slice(0,j).includes(x)),cs=[];
-      names.forEach((n,i)=>{if(!allow(i))return;const dT=dpu(i,T);if(!(dT>0))return;
-        const hit=q=>pickTarget(Object.assign({},st1[i],{n:q}),alive)===T;if(!hit(1))return;
-        let lo=1,hi=2;while(hit(hi)){lo=hi;hi*=2;if(hi>1e8)break}
-        let q;if(hit(hi))q=Math.ceil(pool(T)/dT*1.25);else{while(hi-lo>1){const m=Math.floor((lo+hi)/2);if(hit(m))lo=m;else hi=m}q=lo}      // the most units that still hit T (never flips: a bit more than it takes to kill T)
-        q=Math.min(q,Math.floor((prev-1)/st1[i].str));if(q<1)return;
+      const tab=stopTab(P,PK,T,alive);
+      names.forEach((n,i)=>{if(!allow(i))return;const e=tab.get(n);if(!e)return;const dT=e.dT;let q=Math.min(e.q,Math.floor((prev-1)/st1[i].str));if(q<1)return;
         cs.push({i,n:q,dT,rem:Math.max(0,pool(T)-q*dT)/pool(T)})});
       if(!cs.length)continue;
       const good=cs.filter(x=>x.rem<=0.1),use=good.length?good:[cs.reduce((m,x)=>x.rem<m.rem?x:m,cs[0])],ch=pick(use,x=>-x.dT,opt['s'+(j+1)]);if(j<=3&&AV['s'+(j+1)]===undefined)AV['s'+(j+1)]=use.length>1;
