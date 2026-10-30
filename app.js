@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.51';
+const APP_VERSION='23.2.52';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2937,13 +2937,8 @@ function theoWarm(P,tiers){const sig=JSON.stringify(P);if(THEOW.sig!==sig){THEOW
 function theoKeep(P,names,res,keep){if(!keep)return;const set=[...new Set(names.map(n=>TRN[n].tier))].sort((a,b)=>b-a),sig=JSON.stringify(P);if(THEOW.sig!==sig)THEOW={sig,m:new Map()};
   const k=set.join(),o=THEOW.m.get(k);if(!o||res.net>o.net)THEOW.m.set(k,{set,net:res.net,map:Object.fromEntries(res.names.map((n,i)=>[n,res.w[i]]))})}
 const theoKey=(P,names)=>JSON.stringify([P,names]);
-// 23.2.51 more than 3 tier numbers ticked: the game allows 3, so the best 3 are chosen (not the top 3): more ticks are more options and never a worse army (the user: adding M8 dropped tier 5, the Manticore, and the cost rose). Attack monsters only; the best = the lowest score of the recipe
-const TOP3=new Map();
-function theoTop3(P,sel){const all=theoTiers(sel);if(!P.mon||all.length<=3)return all.slice(0,3);
-  const key=JSON.stringify([Object.assign({},P,{capA:P.capA,capM:P.capM,capU:P.capU}),sel.slice().sort(),[...XS].sort()]);let r=TOP3.get(key);if(r)return r;
-  let best=null;const memo=new Map(),n=all.length;
-  for(let a=0;a<n;a++)for(let b=a+1;b<n;b++)for(let c=b+1;c<n;c++){const tr=[all[a],all[b],all[c]],names=theoNames(sel,tr);if(!names.length)continue;const w=monBest(P,names,memo);if(!w)continue;const m=THEO.monScore(P,names,theoEs(P,names),w.cnt,w.ug)/(w.ug||1);if(!best||m<best.m-1e-9)best={m,tr}}
-  r=best?best.tr:all.slice(0,3);TOP3.set(key,r);return r}
+// 23.2.52 Attack monsters has NO limit of 3 tiers (the user): every ticked tier is used. The other modes keep the top 3
+function theoTop3(P,sel){const all=theoTiers(sel);return P.mon?all:all.slice(0,3)}
 function theoFix(P){const sel=theoSel(),names=theoNames(sel,theoTop3(P,sel));return THEOC.get(theoKey(P,names))||null}      // the found stacks for exactly these inputs
 function theoApply(fx,st,U){const m={};fx.res.stacks.forEach(s=>m[s.name]=s.n);      // the found units go into the Result: the same stacks, the same cards, the same buttons
   st.forEach(s=>{s.n=m[s.name]||0});U.all.forEach(s=>{s.n=0});U.list=[];U.ord=[];U.used=0;
