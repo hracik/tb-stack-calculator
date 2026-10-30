@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.79';
+const APP_VERSION='23.2.80';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2888,7 +2888,9 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
   const c1=[];
   names.forEach((n,i)=>{if(isM[i]||isE[i]||isU[i])return;const d=dpu(i,T1);if(!(d>0))return;const hp=st1[i].hp,w=(H.reduce((q,h)=>q+hitOn(h,i),0)+hitOn(T1,i))/hp;c1.push({i,L:(w-0.5*hitOn(T1,i)/hp)*gd[i],w,nk:Math.ceil(pool(T1)/d)})});
   if(!c1.length)return null;
-  const AV=opt.av||{};AV.s1=c1.length>1;AV.pls=rd.plans.length;const s1=pick(c1,x=>x.L,opt.s1);s1i=s1.i;UG=gd[s1i];      // the first striker is the one with the lowest GOLD lost to the hits that cannot be stopped
+  // 23.2.80 THE SIMPLE RECIPE (the user): the enemy that can strike us (the stack we kill first, when the enemy starts, and the stacks that strike) has a bonus against some troops: the first striker, the cleaners are only troops it has NO bonus against, in the order 9s to 1s, within a tier G, S, E, M, mercenaries. The plan is chosen by the stoppers that are ticked; then the first striker, the stoppers and the cleaners are the first of those lists that do the job in round 1
+  const SM=!!opt.simple,RKW={G:4,S:3,E:2,M:1},rankOf=i=>tier(i)*10+(isU[i]?0:(RKW[TRN[names[i]].cls]||0)),UNX=i=>![T1].concat(H).some(h=>h.evs&&evBonus(h.evs,st1[i])>1e-9);
+  const AV=opt.av||{};AV.s1=c1.length>1;AV.pls=rd.plans.length;const s1=SM?(()=>{const u=c1.filter(x=>UNX(x.i)),l=(u.length?u:c1).slice().sort((a,b)=>rankOf(b.i)-rankOf(a.i)||a.L-b.L);return l[Math.min(opt.s1||0,l.length-1)]})():pick(c1,x=>x.L,opt.s1);s1i=s1.i;UG=gd[s1i];      // the first striker is the one with the lowest GOLD lost to the hits that cannot be stopped
   // an enemy stack hits the stack it has a bonus against: the stacks that are not the first striker must be troops that the enemy stacks which WILL strike (all but the ones we stop after the first) have no more bonus against than against the first striker
   const strikers=rd.army.filter(x=>!K.slice(1).includes(x)),bonF=(h,i)=>1+(h.evs?evBonus(h.evs,st1[i]):0),safe=i=>!isM[i]?true:strikers.every(h=>bonF(h,i)<=bonF(h,s1.i)+1e-12);      // 23.2.48 the safety rule is for the monsters (they must not die); an army troop that gets hit is paid for in the score (a unit lost outside the first striker counts 5 times)
   const _safe=safe;
@@ -2899,14 +2901,19 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
       for(const strictStop of[true,false]){names.forEach((n,i)=>{if(!allow(i))return;const e=tab.get(n);if(!e)return;if(strictStop&&!ROLES[j].has(n))return;const dT=e.dT;let q=Math.min(e.q,Math.floor((prev-1)/st1[i].str));if(q<1)return;
         cs.push({i,n:q,dT,rem:Math.max(0,pool(T)-q*dT)/pool(T)})});if(cs.length)break}      // true stoppers first; only when there is none, a troop that an earlier enemy stack hits (it is paid for in the fight)
       if(!cs.length)continue;
-      const good=cs.filter(x=>x.rem<=0.1),use=good.length?good:[cs.reduce((m,x)=>x.rem<m.rem?x:m,cs[0])],ch=pick(use,x=>-x.dT,opt['s'+(j+1)]);if(j<=3&&AV['s'+(j+1)]===undefined)AV['s'+(j+1)]=use.length>1;
+      const good=cs.filter(x=>x.rem<=0.1),use=good.length?good:[cs.reduce((m,x)=>x.rem<m.rem?x:m,cs[0])],ch=SM?use.slice().sort((a,b)=>rankOf(b.i)-rankOf(a.i)||b.dT-a.dT)[Math.min(opt['s'+(j+1)]||0,use.length-1)]:pick(use,x=>-x.dT,opt['s'+(j+1)]);if(j<=3&&AV['s'+(j+1)]===undefined)AV['s'+(j+1)]=use.length>1;
       cnt[ch.i]=ch.n;stops.push({i:ch.i,T});used.add(ch.i);prev=ch.n*st1[ch.i].str}
     // the first striker: provisional size (killing T1 + the hits that cannot be stopped), final size below
     const s1n=l=>s1.nk+Math.ceil(1.5*l)+10;cnt[s1.i]=s1n(s1.w);if(prev===Infinity)prev=cnt[s1.i]*st1[s1.i].str;
     // 4. the cleaners
-    const C=prev-1,cl=[];names.forEach((n,i)=>{if(!allow(i))return;if(opt.nx&&bonF(K[0],i)>1+1e-9)return;const q=Math.floor(C/st1[i].str);if(q>=1)cl.push({i,q})});      // 23.2.70 variant nx: no cleaner that the first stack we kill has a bonus against (it hits first when the enemy starts: the Dragon kills the Mounted)cl.sort((a,b)=>tier(b.i)-tier(a.i));
+    const C=prev-1,cl=[];names.forEach((n,i)=>{if(!allow(i))return;if((opt.nx||SM)&&bonF(K[0],i)>1+1e-9)return;const q=Math.floor(C/st1[i].str);if(q>=1)cl.push({i,q})});      // 23.2.70 variant nx: no cleaner that the first stack we kill has a bonus against (it hits first when the enemy starts: the Dragon kills the Mounted)cl.sort((a,b)=>tier(b.i)-tier(a.i));
     let cur=val(cnt);
-    for(const pass of[0,1,3,2])      // 23.2.69 first the cleaners as strong as the stack before allows; only when the enemy is still alive after round 1, a cleaner may be smaller: the crumbs of a stack (the Bear that the Phoenix leaves) are finished by a small stack, it does not matter who
+    if(SM){const ord=cl.slice().sort((a,b)=>rankOf(b.i)-rankOf(a.i));
+      for(const x of ord){if(cur<ONE)break;if(cnt[x.i]>0)continue;if(!UNX(x.i))continue;
+        let bq=0,bv=Infinity;for(let q=x.q;q>=1;q=q<=1?0:Math.floor(q/3)){const c=cnt.slice();c[x.i]=q;if(!ok(c))continue;const v=val(c);if(v<bv-1e-9){bv=v;bq=q}}
+        if(bq&&bv<cur-1e-9){cnt[x.i]=bq;cur=bv}}
+      for(const x of[]);}
+    for(const pass of(SM?[3,2]:[0,1,3,2]))      // 23.2.69 first the cleaners as strong as the stack before allows; only when the enemy is still alive after round 1, a cleaner may be smaller: the crumbs of a stack (the Bear that the Phoenix leaves) are finished by a small stack, it does not matter who
     for(let g=0;g<16&&!(cur<ONE);g++){const cs=[];
       for(const x of cl){if(cnt[x.i]>0)continue;if(pass<2&&[K[0]].concat(H).some(h=>bonF(h,x.i)>1+1e-9))continue;let bq=0,bv=Infinity;for(let q=x.q;q>=1;q=!(pass&1)||q<=1?0:Math.floor(q/3)){const c=cnt.slice();c[x.i]=q;if(!ok(c))continue;const v=val(c);if(v<bv-1e-9){bv=v;bq=q}}if(bq&&bv<cur-1e-9)cs.push({i:x.i,v:bv,q:bq})}
       if(!cs.length)break;
@@ -2969,11 +2976,13 @@ const MONVAR=[{},{s1:1},{s2:1},{s3:1},{s2:1,s3:1},{pl:1},{pl:2}];      // the re
 // the Attack monsters layout: THE RECIPE (about 20 ms): the enemy is read once, the bonuses only decide the unit counts; a layout that finishes the enemy in one round is better than any other
 // 23.2.41 faster: a layout is scored once (the same layout from two variants, and, with `memo` (the Tier check: the inputs do not change inside one check), the same layout from two sets of tiers: unused tiers do not change the layout)
 const MONPLAN=new Map();
-function monBest(P,names,memo){
+let OLDREC=false;function monBest(P,names,memo){const opt0=OLDREC;
   const full=theoEs(P,names);let rb=null;
   const seen=new Map(),av={},skip=o=>(o.s1&&!av.s1)||(o.s2&&!av.s2)||(o.s3&&!o.s2&&!av.s3)||(o.pl&&o.pl>=av.pls);      // a variant that takes the next best of a choice that had only one candidate (seen in the first run) is the same layout: not built
   const pk=JSON.stringify([Object.assign({},P,{capA:0,capM:0,capU:0}),names,[...XS].sort()]),pc=MONPLAN.get(pk);      // 23.2.45 the plan (the variant: which enemy stacks are stopped, by which troops) is chosen once per enemy and tiers, then reused: the army size changes the counts, not the plan
   {const rd=THEO.monRead(full[0]),PK=JSON.stringify(Object.assign({},P,{capA:0,capM:0,capU:0})),roles=THEO.planRoles(P,PK,rd);const fps=[];for(let pi=0;pi<rd.plans.length;pi++)if(THEO.planFeasible(roles,pi,names))fps.push(pi);
+    if(fps.length){let rs=null;for(const fp of fps)for(const k1 of[0,1,2]){const w=THEO.monRecipe(P,names,full,{pl:fp,simple:1,s1:k1,av:{}});if(!w)continue;const sk=names.map((n,i)=>w.cnt[i]>0?n+':'+w.cnt[i]:'').join(',')+'|'+w.ug;let m=memo&&memo.get(sk);if(m===undefined){m=THEO.monScore(P,names,full,w.cnt,w.ug);if(memo)memo.set(sk,m)}if(!rs||m<rs.m)rs={w,m}}
+      if(rs&&!opt0)return rs.w}
     if(fps.length){let rb2=null;const CW={G:2,S:1,M:0},qa=w=>{let t=0,c=0;names.forEach((n,i)=>{if(w.cnt[i]>0&&TRN[n].cls!='E'){t+=TRN[n].tier*3+(CW[TRN[n].cls]||0);c++}});return c?t/c:0};      /* 23.2.75 the quality of a layout: the average tier of the troops it uses; on the same tier Guardsmen before Specialists before monsters (the user) */
     for(const fp of fps){const av2={};for(const o of[{},{s1:1},{s2:1},{s3:1},{s2:1,s3:1},{nx:1},{nx:1,s1:1}]){if((o.s1&&!av2.s1)||(o.s2&&!av2.s2)||(o.s3&&!o.s2&&!av2.s3))continue;const w=THEO.monRecipe(P,names,full,Object.assign({pl:fp},o,o.s1||o.s2||o.s3?{}:{av:av2}));if(!w)continue;const sk=names.map((n,i)=>w.cnt[i]>0?n+':'+w.cnt[i]:'').join(',')+'|'+w.ug;let m=memo&&memo.get(sk);if(m===undefined){m=THEO.monScore(P,names,full,w.cnt,w.ug);if(memo)memo.set(sk,m)}if(!rb2||m<rb2.m*0.995||(m<=rb2.m*1.005&&(qa(w)>qa(rb2.w)+1e-9||Math.abs(qa(w)-qa(rb2.w))<=1e-9&&m<rb2.m)))rb2={w,m,fp,o}}}
     // 23.2.73 the same result with higher tiers (the user): the lowest tier that is used is tried without (the recipe is built again without that troop); kept when the result stays (within 0.5 %) and the tiers go up
