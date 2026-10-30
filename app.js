@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.59';
+const APP_VERSION='23.2.60';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -3044,7 +3044,7 @@ function theoFightData(c,plain){const P=c.P,E=THEO.mkEnemy(P,1,1),L=THEO.layout(
 const tnum=v=>Math.round(v).toLocaleString('en-US'),tic=n=>ICD[n]?`<img class="ic2" src="${ICD[n]}" alt="">`:'';
 // the hitting order: our stacks in the order they strike in round 1 (the most total strength first: units x strength with your bonuses)
 function theoHits(c){const d=theoFightData(c,true),L=d.L.slice().sort((a,b)=>b.n*b.str-a.n*a.str);
-  return L.map((s,i)=>`<div class="oi"><span class="no${i>98?' wd':''}">${i+1}</span>${tic(s.name)}<span class="nm">${esc(s.name)} <small class="mu">${theoInfo(s,d.P)}</small></span></div>`).join('')+'<p class="mu bf">The strike order in round 1: the stack with the most total strength strikes first.</p>'}
+  return L.map((s,i)=>`<div class="oi"><span class="no${i>98?' wd':''}">${i+1}</span>${tic(s.name)}<span class="nm">${esc(s.name)} <small class="mu">${theoInfo(s,d.P)}</small></span></div>`).join('')}
 // the order of being hit: the order the enemy hits our stacks for the first time in the fight of the Battle report; the stacks that are never hit come last. (Against epics a hit stack dies, so there it is the target order; against players the enemy chooses where to strike.)
 // the same facts as the stacks of the epic modes: class and tier, the bonus against the enemy, strength per health, the totals of health, strength and damage
 const theoInfo=(s,P)=>factsHtml(s.name,P,s.n,s.hp);
