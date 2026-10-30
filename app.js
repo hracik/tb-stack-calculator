@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.67';
+const APP_VERSION='23.2.68';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2862,7 +2862,7 @@ function stopTab(P,pk,T,alive){const key=pk+'|'+T.name+'|'+alive.map(x=>x.name).
 // 23.2.66 the battle plans of an enemy (the user): worked out ONCE when the enemy is there, for the whole army as if every troop were available. Per plan and per stopped stack: the TRUE stoppers (names only): troops that send the strike to that stack and that no enemy stack which strikes before them has a bonus against (the first stack we kill strikes first when the enemy starts). The tiers ticked then only decide which plan can be done: every stopped stack needs one of its stoppers
 const PLANROLES=new Map();
 function planRoles(P,pk,rd){const key=pk+'|'+rd.plans.map(p=>p.K.map(x=>x.name+x.n)+'/'+p.H.map(x=>x.name)).join(';');let r=PLANROLES.get(key);if(r)return r;
-  r=rd.plans.map(pl=>pl.K.map((T,j)=>{if(!j)return null;const alive=rd.army.filter(x=>!pl.K.slice(0,j).includes(x)),tab=stopTab(P,pk,T,alive),early=[pl.K[0]].concat(pl.H.slice(0,j)),set=new Set();
+  r=rd.plans.map(pl=>pl.K.map((T,j)=>{if(!j)return null;const alive=rd.army.filter(x=>!pl.K.slice(0,j).includes(x)),tab=stopTab(P,pk,T,alive),early=[pl.K[0]].concat(pl.H),set=new Set();      // 23.2.68 no enemy stack that strikes in the fight (before or after) has a bonus against a true stopper: Ruby Golem is hit by the Pegasus after it stops the Bear and a monster must not die (the user)
     for(const n of tab.keys()){const s1=mkStack(n,1,P);if(!early.some(h=>h.evs&&evBonus(h.evs,s1)>1e-9))set.add(n)}return set}));
   PLANROLES.set(key,r);return r}
 const planFeasible=(roles,pi,names)=>roles[pi].every((set,j)=>!j||names.some(n=>TRN[n].cls!='E'&&set.has(n)));      // the first plan (in order) that the ticked tiers can do: -1 when none
