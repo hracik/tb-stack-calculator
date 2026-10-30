@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.80';
+const APP_VERSION='23.2.81';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2913,7 +2913,7 @@ function monRecipe(P,names,Es,opt){opt=opt||{};
         let bq=0,bv=Infinity;for(let q=x.q;q>=1;q=q<=1?0:Math.floor(q/3)){const c=cnt.slice();c[x.i]=q;if(!ok(c))continue;const v=val(c);if(v<bv-1e-9){bv=v;bq=q}}
         if(bq&&bv<cur-1e-9){cnt[x.i]=bq;cur=bv}}
       for(const x of[]);}
-    for(const pass of(SM?[3,2]:[0,1,3,2]))      // 23.2.69 first the cleaners as strong as the stack before allows; only when the enemy is still alive after round 1, a cleaner may be smaller: the crumbs of a stack (the Bear that the Phoenix leaves) are finished by a small stack, it does not matter who
+    for(const pass of(SM?[0,1]:[0,1,3,2]))      // 23.2.69 first the cleaners as strong as the stack before allows; only when the enemy is still alive after round 1, a cleaner may be smaller: the crumbs of a stack (the Bear that the Phoenix leaves) are finished by a small stack, it does not matter who
     for(let g=0;g<16&&!(cur<ONE);g++){const cs=[];
       for(const x of cl){if(cnt[x.i]>0)continue;if(pass<2&&[K[0]].concat(H).some(h=>bonF(h,x.i)>1+1e-9))continue;let bq=0,bv=Infinity;for(let q=x.q;q>=1;q=!(pass&1)||q<=1?0:Math.floor(q/3)){const c=cnt.slice();c[x.i]=q;if(!ok(c))continue;const v=val(c);if(v<bv-1e-9){bv=v;bq=q}}if(bq&&bv<cur-1e-9)cs.push({i:x.i,v:bv,q:bq})}
       if(!cs.length)break;
@@ -2982,7 +2982,7 @@ let OLDREC=false;function monBest(P,names,memo){const opt0=OLDREC;
   const pk=JSON.stringify([Object.assign({},P,{capA:0,capM:0,capU:0}),names,[...XS].sort()]),pc=MONPLAN.get(pk);      // 23.2.45 the plan (the variant: which enemy stacks are stopped, by which troops) is chosen once per enemy and tiers, then reused: the army size changes the counts, not the plan
   {const rd=THEO.monRead(full[0]),PK=JSON.stringify(Object.assign({},P,{capA:0,capM:0,capU:0})),roles=THEO.planRoles(P,PK,rd);const fps=[];for(let pi=0;pi<rd.plans.length;pi++)if(THEO.planFeasible(roles,pi,names))fps.push(pi);
     if(fps.length){let rs=null;for(const fp of fps)for(const k1 of[0,1,2]){const w=THEO.monRecipe(P,names,full,{pl:fp,simple:1,s1:k1,av:{}});if(!w)continue;const sk=names.map((n,i)=>w.cnt[i]>0?n+':'+w.cnt[i]:'').join(',')+'|'+w.ug;let m=memo&&memo.get(sk);if(m===undefined){m=THEO.monScore(P,names,full,w.cnt,w.ug);if(memo)memo.set(sk,m)}if(!rs||m<rs.m)rs={w,m}}
-      if(rs&&!opt0)return rs.w}
+      if(rs&&!opt0&&rs.w.one)return rs.w}
     if(fps.length){let rb2=null;const CW={G:2,S:1,M:0},qa=w=>{let t=0,c=0;names.forEach((n,i)=>{if(w.cnt[i]>0&&TRN[n].cls!='E'){t+=TRN[n].tier*3+(CW[TRN[n].cls]||0);c++}});return c?t/c:0};      /* 23.2.75 the quality of a layout: the average tier of the troops it uses; on the same tier Guardsmen before Specialists before monsters (the user) */
     for(const fp of fps){const av2={};for(const o of[{},{s1:1},{s2:1},{s3:1},{s2:1,s3:1},{nx:1},{nx:1,s1:1}]){if((o.s1&&!av2.s1)||(o.s2&&!av2.s2)||(o.s3&&!o.s2&&!av2.s3))continue;const w=THEO.monRecipe(P,names,full,Object.assign({pl:fp},o,o.s1||o.s2||o.s3?{}:{av:av2}));if(!w)continue;const sk=names.map((n,i)=>w.cnt[i]>0?n+':'+w.cnt[i]:'').join(',')+'|'+w.ug;let m=memo&&memo.get(sk);if(m===undefined){m=THEO.monScore(P,names,full,w.cnt,w.ug);if(memo)memo.set(sk,m)}if(!rb2||m<rb2.m*0.995||(m<=rb2.m*1.005&&(qa(w)>qa(rb2.w)+1e-9||Math.abs(qa(w)-qa(rb2.w))<=1e-9&&m<rb2.m)))rb2={w,m,fp,o}}}
     // 23.2.73 the same result with higher tiers (the user): the lowest tier that is used is tried without (the recipe is built again without that troop); kept when the result stays (within 0.5 %) and the tiers go up
