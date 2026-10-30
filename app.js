@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.2.78';
+const APP_VERSION='23.2.79';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -3018,8 +3018,8 @@ async function tierHintMon(gen,body){
   const TN=[9,8,7,6,5,4,3,2,1],Ts=[];TN.forEach(a=>{Ts.push([a]);TN.forEach(b=>{if(b<a){Ts.push([a,b]);TN.forEach(c=>{if(c<b)Ts.push([a,b,c])})}})});
   for(const T of Ts){const f=all.filter(x=>x[0]!='E'&&T.includes(+x.slice(1)));if(!(await tick([...new Set([...sel,...f])])))return}
   // 23.2.38 a better choice must show in what is shown: the fight ends in round 1 when the current one does not, or the gold lost is lower by more than GMARG (OPEN, fitted). A better score alone is no advice.
-  const GMARG=0.02,tol=cur?Math.max(2*GU,0.02*q(cur)):2*GU,ce=eff(sel),cand=[...cs.values()].filter(c=>c.o);
-  const adds=c=>c.set.filter(x=>!sel.includes(x)),rems=c=>ce.filter(x=>!c.set.includes(x)),imp=o=>!cur||(isOne(o)!=isOne(cur)?isOne(o):o.lostG<cur.lostG*(1-GMARG));
+  const GMARG=0.005,IMPM=1e-4,tol=cur?Math.max(2*GU,0.02*q(cur)):2*GU,ce=eff(sel),cand=[...cs.values()].filter(c=>c.o);
+  const adds=c=>c.set.filter(x=>!sel.includes(x)),rems=c=>ce.filter(x=>!c.set.includes(x)),imp=o=>!cur||(isOne(o)!=isOne(cur)?isOne(o):o.lostG<cur.lostG*(1-IMPM));
   const ic0=cand.filter(c=>imp(c.o)),ic=ic0.some(c=>isOne(c.o))?ic0.filter(c=>isOne(c.o)):ic0,bG=ic.length?Math.min(...ic.map(c=>c.o.lostG)):0;
   const cut=c=>{const keep=c.set.filter(x=>c.o.used.includes(x)||sel.includes(x));if(keep.length==c.set.length||!keep.length)return c;const o2=ev(keep);return o2&&isOne(o2)==isOne(c.o)&&o2.lostG<=c.o.lostG*1.02&&Q(o2)<=Q(c.o)+tol?{set:eff(keep),o:o2,full:c.full||c.set}:c};      // the ticks that bring no unit into the battle are dropped (when the fight is no worse): no second engineer tier, no tier that is not used
   const ts=c=>adds(c).reduce((q,x)=>q+ +x.slice(1),0),same=c=>c.o.lostG<=bG*(1+GMARG),pool=ic.filter(same).sort((a,b)=>Q(a.o)-Q(b.o)).slice(0,80).map(cut).filter(c=>imp(c.o)&&same(c));      // choices with about the same gold lost are the same objective: then the fewest changes and the higher tiers decide
