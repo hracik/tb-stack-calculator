@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.3.1';
+const APP_VERSION='23.3.2';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -133,7 +133,7 @@ document.addEventListener('click',e=>{
   if(e.target.closest('.tctab'))return;      // the Tier check tabs have their own handler (their .vb class and data-t must not reach the view / tab handlers)
   if(tabClick(e))return;
   const ab=e.target.closest('.ab');if(ab){if(ab.disabled)return;if(ab.dataset.a!=ATK){ATK=ab.dataset.a;refresh()}return}      // Attack epic monsters / Attack players
-  const sb=e.target.closest('.sb');if(sb&&!sb.disabled){if(sb.dataset.sh=='train'&&!(v('foodP')>0))FMPREV={cmp:SHOWCMP,shw:$('shw').value};if(SHOWCMP){SHOWCMP=false;try{localStorage.setItem('sc_cmp','0')}catch(x){}}$('shw').value=sb.dataset.sh;calc();if(sb.dataset.sh=='train'&&!(v('foodP')>0)){FMP=true;drawFM()}return}
+  const sb=e.target.closest('.sb');if(sb&&!sb.disabled){if(sb.dataset.sh=='train'&&!(v('foodP')>0)&&!fixRev())FMPREV={cmp:SHOWCMP,shw:$('shw').value};if(SHOWCMP){SHOWCMP=false;try{localStorage.setItem('sc_cmp','0')}catch(x){}}$('shw').value=sb.dataset.sh;calc();if(sb.dataset.sh=='train'&&!(v('foodP')>0)&&!fixRev()){FMP=true;drawFM()}return}
   if(e.target.closest('.tc')){if(!e.target.closest('.tc').disabled){tierBubble();e.target.closest('.tc').blur()}return}      // the Tier check button
   const vb=e.target.closest('.vb');if(vb&&vb.id=='cmpbtn'){SHOWCMP=true;try{localStorage.setItem('sc_cmp',SHOWCMP?'1':'0')}catch(x){}calc();return}
   if(vb){if(!vb.disabled&&vb.dataset.v!=VIEW){VIEW=vb.dataset.v;try{localStorage.setItem('sc_view',VIEW)}catch(x){}calc()}return}
@@ -156,8 +156,8 @@ const templeLv=()=>Math.min(45,Math.floor(v('temple')+1e-9));      // the level 
 const FOODADD=0.9;  // % added to the Food production box before the hits are counted (the training calculations use the box x 1.009)
 const FOODCUT=25;  // % less food consumption for every unit (the food values stored with the troops are the plain JSON values)
 const foodOf=n=>(TRN[n].food||0)*(100-FOODCUT)/100;      // food consumption of one unit of the troop n, after the cut
-const REVCASES=[['none','none'],['top','top line'],['mon','monsters'],['montop','monsters + top line'],['all','all']];      // the Training cases, in the order of the buttons
-const revives=(s,mode)=>{const t=TRN[s.name];if(!t)return false;const top=t.tier==TOPT[t.pool],mon=t.cls=='M';return mode=='all'||(mode=='top'&&top)||(mode=='mon'&&mon)||(mode=='montop'&&(mon||top))};      // does this stack come back (90 %)? mon = the monster stacks, also the mercenary monsters
+const REVCASES=[['none','none'],['top','top line'],['mon','monsters'],['montop','monsters + top line'],['all','all']],REVFIX=[['all10','full revive, 10 hits'],['all60','full revive, 60 hits']],FIXHIT={all10:10,all60:60},fixRev=()=>FIXHIT[$('revm')?$('revm').value:'']||0;      // 23.3.2 two Revive choices with a fixed number of hits (10 or 60), full revive, whatever the Food production is      // the Training cases, in the order of the buttons
+const revives=(s,mode)=>{const t=TRN[s.name];if(!t)return false;const top=t.tier==TOPT[t.pool],mon=t.cls=='M';return mode=='all'||!!FIXHIT[mode]||(mode=='top'&&top)||(mode=='mon'&&mon)||(mode=='montop'&&(mon||top))};      // does this stack come back (90 %)? mon = the monster stacks, also the mercenary monsters
 const lossOf=(s,mode)=>{const n=s.n||0;return revives(s,mode)?n-Math.floor(n*REV/100):n};      // units of the stack that have to be trained again for the next hit
 const hitsFor=(F,fp,list,mode)=>{      // hits the food production fp pays for: the first hit trains the whole army (food F), every next hit only the units that are not revived (food R); rounded DOWN to 2 decimals
   if(!(fp>0&&F>0))return 0;
@@ -786,7 +786,7 @@ function drawFM(){
     +'<div class="fg">'
     +'<label class="bi"><span>Food prod.</span><input id="fmFood" type="text" inputmode="decimal" value="'+($('foodP')?$('foodP').value:'')+'" placeholder="0"></label>'
     +'<label class="bi"><span>Revive</span><select id="fmRev">'
-    +REVCASES.map(c=>'<option value="'+c[0]+'"'+(c[0]==($('revm')?$('revm').value:'top')?' selected':'')+'>'+esc(c[1])+'</option>').join('')
+    +REVCASES.concat(REVFIX).map(c=>'<option value="'+c[0]+'"'+(c[0]==($('revm')?$('revm').value:'top')?' selected':'')+'>'+esc(c[1])+'</option>').join('')
     +'</select></label>'
     +'<label class="bi"><span>Temple</span><select id="fmTemple">'
     +Array.from({length:46},(_,i)=>'<option value="'+i+'"'+(i==templeLv()?' selected':'')+'>'+i+'</option>').join('')
@@ -2603,13 +2603,13 @@ function calcRun0(){
   drawBR();      // the battle report (drawn only while it is open)
   const food=[...A,...Mo,...U.list].reduce((q,s)=>q+(s.n||0)*foodOf(s.name),0);      // total food consumption of all the units, 25 % less than the plain values (mercenaries use none)
   const noFood=!(v('foodP')>0);      // no Food production: there are no hits to train for, so the Preparation button is off (the choice itself stays saved and comes back when the production is filled in)
-  REVM=REVCASES.some(c=>c[0]==$('revm').value)?$('revm').value:'top';SHOWTR=$('shw').value=='train'&&!noFood;
+  REVM=REVCASES.concat(REVFIX).some(c=>c[0]==$('revm').value)?$('revm').value:'top';SHOWTR=$('shw').value=='train'&&(!noFood||fixRev()>0);
   const hl=[...A,...Mo,...U.list];
   TOPT={A:0,M:0,U:0};hl.forEach(s=>{if((s.n||0)>0){const t=TRN[s.name];if(t.tier>TOPT[t.pool])TOPT[t.pool]=t.tier}});      // the top line = the highest tier in use, for the Army, the Monsters and the Mercenaries
   const {rv,dies}=fullRevive(P,hl,[...st.so,...U.ord]);      // 13.1, 13.3, 14.12: the revival gold of the whole hit in the full revive (see fullRevive)
   const tl=templeLv(),tf=tl>=1?TEMPLE[tl-1]:1,rcost=(rv.A+rv.M+rv.U)/tf;      // the Temple divides the cost
   const rvs=hl.filter(s=>dies(s)&&revives(s,REVM)).reduce((g,s)=>{const t=TRN[s.name];if(t&&(s.n||0)>0)g[t.pool]+=Math.floor(s.n*REV/100)*(t.gold||0);return g},{A:0,M:0,U:0}),scost=(rvs.A+rvs.M+rvs.U)/tf;      // 13.4: the same, only for the stacks that the Revive select brings back (none: 0, all: the same as the full revive)
-  const HIT={};REVCASES.forEach(([k])=>HIT[k]=hitsFor(food,v('foodP')*(100+FOODADD)/100,hl,k));      // hits the Food production pays for in every Training case
+  const HIT={};REVCASES.forEach(([k])=>HIT[k]=hitsFor(food,v('foodP')*(100+FOODADD)/100,hl,k));REVFIX.forEach(([k])=>HIT[k]=FIXHIT[k]);      // hits the Food production pays for in every Training case
   {const w=$('prepw'),low=SHOWTR&&food>0&&!(HIT[REVM]>=1);w.hidden=!low||SHOWCMP;if(low)w.textContent='Food production is too low: it pays for less than 1 hit ('+(HIT[REVM]||0).toFixed(2)+'). The numbers show the whole stacks.'}
   MUL=HIT[REVM]>1?HIT[REVM]:1;      // the chosen Revive: the hits it pays for (1 = the food pays for one hit or less: the units to train are the stack itself)
   document.querySelectorAll('.sb').forEach(b=>b.classList.toggle('on',!SHOWCMP&&(b.dataset.sh=='train')==($('shw').value=='train')));
