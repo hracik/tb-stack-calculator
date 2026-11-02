@@ -316,6 +316,7 @@ h1 .lg{height:104px;width:auto;display:block;-webkit-user-drag:none;user-select:
 .epl{display:flex;flex-direction:column;gap:8px;margin:10px 0 0}
 .epl button{display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit;cursor:pointer;text-align:left;align-items:center;-webkit-tap-highlight-color:transparent;outline:0}
 .epl button.on{border-color:var(--ac)}
+.epl .eplh{margin:6px 2px 0;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--mu)}
 .epl small{color:var(--mu);margin-left:auto;align-self:center;text-align:right}
 .epl .epn{min-width:0;flex:1 1 auto}
 .epe{border-color:transparent!important}
