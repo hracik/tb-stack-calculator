@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.3.25';
+const APP_VERSION='23.3.26';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1192,7 +1192,7 @@ function cpdOrder(P,names,c){
   const noB=a=>a.filter(t=>!bon(t)).sort((x,y)=>cpSH(x,P)-cpSH(y,P)||cpBonusX(x,P)-cpBonusX(y,P)||tie(x,y));                                    // no bonus: the smaller SH ratio first
   const withB=a=>a.filter(bon).sort((x,y)=>cpBonusX(x,P)-cpBonusX(y,P)||cpSH(x,P)-cpSH(y,P)||tie(x,y));             // with a bonus: the lowest bonus first, then the smaller SH ratio first
   const both=a=>[...noB(a),...withB(a)];
-  if(P.ov){const by=(x,y)=>cpBonusX(x,P)-cpBonusX(y,P)||cpSH(x,P)-cpSH(y,P)||tie(x,y);return[...eng,...[...army.filter(t=>t.cls=='G'),...mon.filter(t=>sp.full.has(t.tier))].sort(by),...army.filter(t=>t.cls=='S').sort(by),...mon.filter(t=>!sp.full.has(t.tier)).sort(by)].map(t=>t.name)}      // One v. One (21.4.4): the Specialists die last by force, the lowest monster tier is the PARTIAL one as in the epic modes (it takes what the Dominance still allows) and stands behind the Specialists; inside the two blocks the lowest squad bonus dies first, the better bonuses die later (then the smaller SH ratio first); health AND strength fall along this order (MD.ovo)
+  if(P.ov||P.lava){const by=(x,y)=>cpBonusX(x,P)-cpBonusX(y,P)||cpSH(x,P)-cpSH(y,P)||tie(x,y);return[...eng,...[...army.filter(t=>t.cls=='G'),...mon.filter(t=>sp.full.has(t.tier))].sort(by),...army.filter(t=>t.cls=='S').sort(by),...mon.filter(t=>!sp.full.has(t.tier)).sort(by)].map(t=>t.name)}      // One v. One (21.4.4): the Specialists die last by force, the lowest monster tier is the PARTIAL one as in the epic modes (it takes what the Dominance still allows) and stands behind the Specialists; inside the two blocks the lowest squad bonus dies first, the better bonuses die later (then the smaller SH ratio first); health AND strength fall along this order (MD.ovo)
   return[...eng,...both([...army.filter(t=>t.cls=='G'),...mon.filter(t=>sp.full.has(t.tier))]),...both(army.filter(t=>t.cls=='S')),...both(mon.filter(t=>!sp.full.has(t.tier)))].map(t=>t.name);
 }
 // ---- THE MODES: ONE engine runs all of them. This table is the only place that says how they differ; everything else (the rules above, the sizing helpers, the score) is shared.
@@ -1226,6 +1226,8 @@ const MD={
     order:(P,{live,mkOut,nT})=>{const mkCP=(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)+(s.pt?'|p':'')+'|'+s.name});return o};return byTiers(nT,c=>tierTry(P,P.cpd?cpdOrder(P,live,c):cpOrder(P,live),mkCP,c),mkCP)}},
   ovo:{kn1:false,ho:false,size:allocTight,      // One v. One: the order of CP death by the squad bonus only; health AND total strength fall along it, no exceptions
     order:(P,{live,mkOut,nT})=>{const mkCP=(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)+(s.pt?'|p':'')+'|'+s.name});return o};const c=Math.max(1,nT-1),so=cpdOrder(P,live,c);return{so,out:mkCP(so,c)}}},      // 21.4.4: the lowest monster tier is ALWAYS the partial one (it takes what the Dominance still allows), the tiers above it are full
+  lava:{kn1:false,ho:false,size:(P,live)=>{const a=allocTight(P,live.filter(s=>s.p!='M')),m=allocTight(P,live.filter(s=>s.p=='M'));return{A:a.A,Mo:m.Mo}},      // Lava: the army and the monsters are sized apart, each in its own pool, as the One v. One order (the Specialists after the Guardsmen and the monsters, health AND strength fall inside each pool); the monsters and the mercenaries have no limit from the army, they stand by their health afterwards (lavaPlace)
+    order:(P,{live,mkOut,nT})=>{const mkCP=(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)+(s.pt?'|p':'')+'|'+s.name});return o};const c=Math.max(1,nT-1),so=cpdOrder(P,live,c);return{so,out:mkCP(so,c)}}},
   ren:{kn1:false,ho:false,size:allocRen,        // Renegades: fixed rule, nothing is refined; the lowest tier is the partial one when 3 or more tiers are chosen
     order:(P,{live,mkOut,nT})=>{
       const so=renOrder(P,live),out=mkOut(so,nT>=3?nT-1:nT);
@@ -1234,7 +1236,7 @@ const MD={
       out.forEach(s=>{s.buf=false;s.grp=so.head.has(s.name)?s.name:so.bufN.has(s.name)?(s.buf=true,'BUF'):'REST'});
       return{so,out};}}
 };
-const modeOf=P=>rgm(P)?MD.epic:P.ov?MD.ovo:P.cp?MD.cp:P.kill?MD.kill:MD.ren;
+const modeOf=P=>rgm(P)?MD.epic:P.lava?MD.lava:P.ov?MD.ovo:P.cp?MD.cp:P.kill?MD.kill:MD.ren;
 function buildStacks(P,order,X){
   const mk=(t,i)=>{const[mh,ms]=mults(t,P);
     return{r:t.cls+t.tier,p:t.pool,c:t.pool=='M'?t.type:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i,dh:dhf(t,P)}};
@@ -1698,22 +1700,33 @@ const cloneSt=st=>{const c=st.map(s=>({...s}));c.so=st.so.slice();return c};    
 function solve1(P,order,zeroPt,PS,stIn,light){const st=stIn?cloneSt(stIn):buildStacks(PS||P,order,XS),{A,Mo}=allocate(P,st.filter(s=>!s.off));      // PS: the settings the ORDER is searched with (the search without the mercenaries keeps the Leadership and the monsters as flat as it is with 0 Authority)
   if(zeroPt)Mo.forEach(s=>{if(s.pt)s.n=0});      // the partial tier (and the tiers below it) is taken out: the mercenaries are sized first, the stacks come back behind them (dominanceTail)
   const U=allocMerc(P,[...A,...Mo],st.so,XS);
-  if(rgm(P)||P.cpd||P.cp)dominanceTail(P,st,A,Mo,U,light);
+  if((rgm(P)||P.cpd||P.cp)&&!P.lava)dominanceTail(P,st,A,Mo,U,light);
   growMain(P,st,A,Mo,U);
   polishWeak(P,st,A,Mo,U);
   if(P.lava&&U.ord.length)lavaPlace(P,st,A,Mo,U);
   return{st,A,Mo,U}}
-function lavaPlace(P,st,A,Mo,U){      // Lava: the mercenaries have no size limit, so they stand where their HEALTH puts them: the target order is the declining health order (the enemy never strikes a small stack first), so every mercenary goes in front of the first stack that has less total health
-  const mx=Math.max(0,...U.list.map(x=>tot(x.n,x.hp)));
-  U.list.forEach(x=>{if(x.n>0&&tot(x.n,x.hp)<mx*0.01)x.n=0});      // a mercenary that got only the crumbs left over by the others (a stack of 1 % of the biggest) is dropped: its Authority goes to the strong ones
-  U.list=U.list.filter(x=>x.n>0);U.ord=U.ord.filter(n=>U.list.some(x=>x.name==n));U.used=U.list.reduce((q,x)=>q+x.n*x.cost,0);
-  const all=[...A,...Mo,...U.list],mer=new Set(U.ord),by=new Map(all.map(x=>[x.name,x])),H=n=>{const x=by.get(n);return x&&x.n>0?tot(x.n,x.hp):-1};
-  const place=()=>{const cur=st.so.filter(n=>!mer.has(n));[...U.ord].sort((a,b)=>H(b)-H(a)).forEach(m=>{const h=H(m);let k=cur.findIndex(n=>H(n)>=0&&H(n)<h);if(k<0)k=cur.length;cur.splice(k,0,m)});return cur};
-  const left=(P.capU||0)-U.used;
-  if(left>0&&U.list.length){      // the Authority that is left goes to the mercenary where it adds the most damage
-    let best=null,bd=score(P,all,place(),true).dmg;
-    U.list.forEach(x=>{const add=Math.floor(left/x.cost);if(add<1)return;x.n+=add;const d=score(P,all,place(),true).dmg;x.n-=add;if(d>bd){bd=d;best={x,add}}});
-    if(best){best.x.n+=best.add;U.used+=best.add*best.x.cost}
+function lavaPlace(P,st,A,Mo,U){      // Lava: the monsters and the mercenaries have no limit from the army (each pool is spent in full at its own level), so they stand where their HEALTH puts them: the target order is the declining health order (the enemy never strikes a small stack first)
+  const dmgOf=()=>score(P,[...A,...Mo,...U.list],place(),true).dmg;
+  const all=()=>[...A,...Mo,...U.list],free=new Set([...Mo.map(x=>x.name),...U.ord]);
+  const H=n=>{const x=all().find(y=>y.name==n);return x&&x.n>0?tot(x.n,x.hp):-1};
+  const place=()=>{const cur=st.so.filter(n=>!free.has(n));[...free].filter(n=>H(n)>0).sort((a,b)=>H(b)-H(a)).forEach(m=>{const h=H(m);let k=cur.findIndex(n=>H(n)>=0&&H(n)<h);if(k<0)k=cur.length;cur.splice(k,0,m)});return cur};
+  const left=()=>(P.capU||0)-U.list.reduce((q,x)=>q+x.n*x.cost,0);
+  const top=(skip)=>{      // the Authority that is left goes to the mercenary where it adds the most damage
+    const l=left();let best=null,bd=dmgOf();
+    U.list.forEach(x=>{if(x===skip||!(x.n>0))return;const add=Math.floor(l/x.cost);if(add<1)return;x.n+=add;const d=dmgOf();x.n-=add;if(d>bd){bd=d;best={x,add}}});
+    if(best)best.x.n+=best.add;return bd};
+  if(U.list.length){
+    let cur=top();
+    for(let g=0;g<U.list.length;g++){      // a mercenary stack is kept only if it earns its Authority: without it (the Authority going to the other mercenaries) the damage would not be higher
+      let dropped=false;
+      for(const x of [...U.list].sort((a,b)=>tot(a.n,a.hp)-tot(b.n,b.hp))){
+        if(!(x.n>0)||U.list.filter(y=>y.n>0).length<2)continue;
+        const n0=x.n,sv=U.list.map(y=>y.n);x.n=0;const d=top(x);
+        if(d>=cur*(1-1e-12)){cur=d;dropped=true;break}
+        U.list.forEach((y,k)=>{y.n=sv[k]});x.n=n0}
+      if(!dropped)break}
+    U.list=U.list.filter(x=>x.n>0);U.ord=U.ord.filter(n=>U.list.some(x=>x.name==n));U.used=U.list.reduce((q,x)=>q+x.n*x.cost,0);
+    free.clear();[...Mo.map(x=>x.name),...U.ord].forEach(n=>free.add(n));
   }
   st.so=place();U.ord=[];
 }
