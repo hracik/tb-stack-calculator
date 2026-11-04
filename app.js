@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.3.24';
+const APP_VERSION='23.3.25';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1704,10 +1704,18 @@ function solve1(P,order,zeroPt,PS,stIn,light){const st=stIn?cloneSt(stIn):buildS
   if(P.lava&&U.ord.length)lavaPlace(P,st,A,Mo,U);
   return{st,A,Mo,U}}
 function lavaPlace(P,st,A,Mo,U){      // Lava: the mercenaries have no size limit, so they stand where their HEALTH puts them: the target order is the declining health order (the enemy never strikes a small stack first), so every mercenary goes in front of the first stack that has less total health
-  const by=new Map([...A,...Mo,...U.list].map(s=>[s.name,s])),mer=new Set(U.ord),H=n=>{const s=by.get(n);return s&&s.n>0?tot(s.n,s.hp):-1};
-  const cur=st.so.filter(n=>!mer.has(n));
-  U.ord.forEach(m=>{const h=H(m);let k=cur.findIndex(n=>H(n)>=0&&H(n)<h);if(k<0)k=cur.length;cur.splice(k,0,m)});
-  st.so=cur;U.ord=[];
+  const mx=Math.max(0,...U.list.map(x=>tot(x.n,x.hp)));
+  U.list.forEach(x=>{if(x.n>0&&tot(x.n,x.hp)<mx*0.01)x.n=0});      // a mercenary that got only the crumbs left over by the others (a stack of 1 % of the biggest) is dropped: its Authority goes to the strong ones
+  U.list=U.list.filter(x=>x.n>0);U.ord=U.ord.filter(n=>U.list.some(x=>x.name==n));U.used=U.list.reduce((q,x)=>q+x.n*x.cost,0);
+  const all=[...A,...Mo,...U.list],mer=new Set(U.ord),by=new Map(all.map(x=>[x.name,x])),H=n=>{const x=by.get(n);return x&&x.n>0?tot(x.n,x.hp):-1};
+  const place=()=>{const cur=st.so.filter(n=>!mer.has(n));[...U.ord].sort((a,b)=>H(b)-H(a)).forEach(m=>{const h=H(m);let k=cur.findIndex(n=>H(n)>=0&&H(n)<h);if(k<0)k=cur.length;cur.splice(k,0,m)});return cur};
+  const left=(P.capU||0)-U.used;
+  if(left>0&&U.list.length){      // the Authority that is left goes to the mercenary where it adds the most damage
+    let best=null,bd=score(P,all,place(),true).dmg;
+    U.list.forEach(x=>{const add=Math.floor(left/x.cost);if(add<1)return;x.n+=add;const d=score(P,all,place(),true).dmg;x.n-=add;if(d>bd){bd=d;best={x,add}}});
+    if(best){best.x.n+=best.add;U.used+=best.add*best.x.cost}
+  }
+  st.so=place();U.ord=[];
 }
 let TCCACHE=null;      // the Tier check solves the same selection again and again (the damage, then the revive gold): while it runs, a selection is solved once (a Map: key -> solution); nothing else uses it
 function solveTC(P,order){
