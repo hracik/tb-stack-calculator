@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.3.15';
+const APP_VERSION='23.3.16';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -108,7 +108,7 @@ EPICS.forEach(e=>{if(e.st)e.st.forEach(x=>{if(x[3]==null)x[3]=Math.round(x[1]/3)
 let K4OK=false,K4LO=3;      // 21.8.19: the army kills the chosen epic from a state that still has all 4 stacks: a 3-stack hit is of no use then (the 3-stack mode is switched off)
 let KSLITE=false,KAUTO4=false;      // 21.8.3: the ONE Killshot mode picks its rules by itself: the 4-stack rules when the army kills the epic from its 4-stack state, else the 3-stack rules (calcRun)
 const enemyNow=()=>{const m=$('mode').value;return m=='kill'?(((EPICS.find(x=>x.n==$('epic').value)||{}).st||[]).length>4?(KAUTO4?8:6):(KAUTO4?4:3)):m=='kill4'?4:m=='ren'?8:m=='ovo'?12:m=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4},      // the number of enemy stacks of the chosen attack mode
-  epOk=e=>$('mode').value=='kill'?(!!e.wd&&(e.ks||e.en.includes(3)||e.en.includes(4))):e.en.includes(enemyNow()),epCur=()=>EPICS.find(x=>x.n==$('epic').value)||null;      // an epic counts only in the modes it can be hit in
+  epOk=e=>$('mode').value=='kill'?(!!e.wd&&(e.ks||e.en.includes(3)||e.en.includes(4))):e.en.includes(enemyNow()),epCur=()=>{const e=EPICS.find(x=>x.n==$('epic').value)||null;if(e&&e.hw&&!hwOn()){$('epic').value='';return null}return e};      // 23.3.16 outside its dates a chosen Halloween epic turns into no epic      // an epic counts only in the modes it can be hit in
 $('epic').innerHTML='<option value="">None</option>'+EPICS.map(e=>`<option value="${e.n}">${e.n}</option>`).join('');
 const DHV=Array.from({length:11},(_,i)=>i/2);                // Double strike: 0 - 5 % in steps of 0.5
 const snapDH=x=>{x=parseFloat(String(x).replace(',','.'));if(!isFinite(x))x=0;return Math.min(5,Math.max(0,Math.round(x*2)/2))};
@@ -771,7 +771,7 @@ function drawEP(){
     +'<div class="epl">'+none+(eb=>EPICS.filter(e=>!e.hw&&!e.ol&&!e.se).map(eb).join('')+'<div class="eplh">Olympus</div>'+EPICS.filter(e=>e.ol).map(eb).join('')+'<div class="eplh">Season</div>'+EPICS.filter(e=>e.se).map(eb).join('')+(hwOn()?'<div class="eplh">Halloween</div>'+EPICS.filter(e=>e.hw).map(eb).join(''):''))(e=>'<button type="button" data-act="epick" data-e="'+esc(e.n)+'"'+(e.n==cur?' class="on"':'')+'>'+(epImg(e,'epi')||'<span class="epi epe"></span>')+'<span class="epn">'+esc(e.n)+'</span><small>'+(e.score?sh0(e.tot||e.score)+' score':'score not set yet')+'</small></button>')+'</div>';      // 23.3.7 the Olympus epics (Basilisk, Briareus, Chimera) stand under their own title, then the Season epics, then the Halloween epics (in the game only at Halloween) last
   mIn('#epp',was);
 }
-const hwOn=(d=new Date())=>{const y=d.getFullYear();return d>=new Date(y,9,15)&&d<new Date(y,10,3)};      // 23.3.12 the Halloween epics are listed only around Halloween: from 16 days before 31 October (15 October; 2 weeks + 2 days) until 2 days after it (2 November), every year (outside it the section is hidden, even when one of them is the chosen epic)
+function hwOn(d=new Date()){const y=d.getFullYear();return d>=new Date(y,9,15)&&d<new Date(y,10,3)}      // 23.3.12 the Halloween epics are listed only around Halloween: from 16 days before 31 October (15 October; 2 weeks + 2 days) until 2 days after it (2 November), every year (outside it the section is hidden, even when one of them is the chosen epic)
 const epImg=(e,c)=>e&&e.ic&&EPIC_IC[e.ic]?'<img class="'+c+'" src="'+EPIC_IC[e.ic]+'" alt="">':'';
 const sh0=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3)).toString()+' '+u[i]};
 const epShut=()=>{if(EPM||MOM){EPM=false;MOM=false;drawEP()}};
