@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.7.3';
+const APP_VERSION='23.7.4';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2665,6 +2665,7 @@ function calcRun0(){
   drawBR();      // the battle report (drawn only while it is open)
   const food=[...A,...Mo,...U.list].reduce((q,s)=>q+(s.n||0)*foodOf(s.name),0);      // total food consumption of all the units, 25 % less than the plain values (mercenaries use none)
   const noFood=!(v('foodP')>0);      // no Food production: there are no hits to train for, so the Preparation button is off (the choice itself stays saved and comes back when the production is filled in)
+  {const rs=$('revm');if(rs){rs.querySelectorAll('option').forEach(o=>{if(FIXHIT[o.value]){o.hidden=!DEV;o.disabled=!DEV}});if(!DEV&&FIXHIT[rs.value])rs.value='top'}}      // the full revive with 10 / 60 hits: debug mode only (a choice left in it falls back to top line)
   REVM=REVCASES.concat(REVFIX).some(c=>c[0]==$('revm').value)?$('revm').value:'top';SHOWTR=$('shw').value=='train'&&(!noFood||fixRev()>0);
   const hl=[...A,...Mo,...U.list];
   TOPT={A:0,M:0,U:0};hl.forEach(s=>{if((s.n||0)>0){const t=TRN[s.name];if(t.tier>TOPT[t.pool])TOPT[t.pool]=t.tier}});      // the top line = the highest tier in use, for the Army, the Monsters and the Mercenaries
