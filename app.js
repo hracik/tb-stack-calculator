@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.4.5';
+const APP_VERSION='23.4.6';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1698,10 +1698,11 @@ function polishWeak(P,st,A,Mo,U){
 function allocate(P,live){const md=modeOf(P);HO=md.ho;return md.size(P,live)}      // the sizing of the mode (HO: health only, read by the shared helpers)
 // the whole calculation of the engine: the order, the Leadership / Dominance stacks, then the mercenaries (they come last: the numbers before are final)
 const cloneSt=st=>{const c=st.map(s=>({...s}));c.so=st.so.slice();return c};      // the allocation writes the counts into the stacks: every variant gets its own copy of the searched stacks
+const cpKill=P=>!!(P.one&&!P.cpd&&!P.pm);      // CP kill: the partial monster tier and the Dominance tail go behind the mercenaries (the user, 2026-11-05)
 function solve1(P,order,zeroPt,PS,stIn,light){const st=stIn?cloneSt(stIn):buildStacks(PS||P,order,XS),{A,Mo}=allocate(P,st.filter(s=>!s.off));      // PS: the settings the ORDER is searched with (the search without the mercenaries keeps the Leadership and the monsters as flat as it is with 0 Authority)
   if(zeroPt)Mo.forEach(s=>{if(s.pt)s.n=0});      // the partial tier (and the tiers below it) is taken out: the mercenaries are sized first, the stacks come back behind them (dominanceTail)
   const U=allocMerc(P,[...A,...Mo],st.so,XS);
-  if(rgm(P))dominanceTail(P,st,A,Mo,U,light);
+  if(rgm(P)||cpKill(P))dominanceTail(P,st,A,Mo,U,light);
   growMain(P,st,A,Mo,U);
   polishWeak(P,st,A,Mo,U);
   if(mercFree(P)&&U.ord.length)lavaPlace(P,st,A,Mo,U);
@@ -1740,7 +1741,7 @@ function solveTC(P,order){
 // 21.5.9: ONE order search, the one WITHOUT the mercenaries (Authority 0): the Leadership and the monsters keep the layout they have with 0 Authority. The partial monster stacks are left to the Dominance tail (dominanceTail),
 // which puts them behind the mercenaries when the Authority allows it, before them when it does not. No variants are compared.
 function solve(P,order,light){
-  if(!rgm(P))return solve1(P,order);
+  if(!rgm(P)&&!cpKill(P))return solve1(P,order);
   return solve1(P,order,true,P.capU>0?{...P,capU:0}:P,null,light)}
 // 21.5.2: the Dominance that is LEFT over. The monster chain stops when the stacks reach the level of the army (health and strength fall along the order), so a lower monster tier (the one below the partial tier) gets no units
 // while part of the Dominance stays unspent. These stacks (the lower tier) take the leftover Dominance. There is no single good place for them, so BOTH are tried and the one with the most damage is kept:
