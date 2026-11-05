@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.5.3';
+const APP_VERSION='23.5.4';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1699,7 +1699,11 @@ function allocate(P,live){const md=modeOf(P);HO=md.ho;return md.size(P,live)}   
 // the whole calculation of the engine: the order, the Leadership / Dominance stacks, then the mercenaries (they come last: the numbers before are final)
 const cloneSt=st=>{const c=st.map(s=>({...s}));c.so=st.so.slice();return c};      // the allocation writes the counts into the stacks: every variant gets its own copy of the searched stacks
 const cpKill=P=>!!(P.one&&!P.cpd&&!P.pm);      // CP kill: the partial monster tier and the Dominance tail go behind the mercenaries (the user, 2026-11-05)
-function solve1(P,order,zeroPt,PS,stIn,light){const st=stIn?cloneSt(stIn):buildStacks(PS||P,order,XS),{A,Mo}=allocate(P,st.filter(s=>!s.off));      // PS: the settings the ORDER is searched with (the search without the mercenaries keeps the Leadership and the monsters as flat as it is with 0 Authority)
+function solve1(...args){const P=args[0];
+  if(!(P.one&&P.cpd&&P.capU>0))return solve10(...args);
+  const run=w=>{CPWEAKF=w;try{const r=solve10(...args);r.d=score(P,[...r.A,...r.Mo,...r.U.list],r.st.so,true).dmg;return r}finally{CPWEAKF=null}};
+  const a=run(false),b=run(true);return b.d>a.d*(1+1e-9)?b:a}
+function solve10(P,order,zeroPt,PS,stIn,light){const st=stIn?cloneSt(stIn):buildStacks(PS||P,order,XS),{A,Mo}=allocate(P,st.filter(s=>!s.off));      // PS: the settings the ORDER is searched with (the search without the mercenaries keeps the Leadership and the monsters as flat as it is with 0 Authority)
   if(zeroPt)Mo.forEach(s=>{if(s.pt)s.n=0});      // the partial tier (and the tiers below it) is taken out: the mercenaries are sized first, the stacks come back behind them (dominanceTail)
   const U=allocMerc(P,[...A,...Mo],st.so,XS);
   if(rgm(P)||cpKill(P))dominanceTail(P,st,A,Mo,U,light);
@@ -2478,7 +2482,13 @@ function sizeChain(P,seq,H,T,idx,X,fr,fw){      // fr: the place from which the 
   return ns;
 }
 let PRIO=true;      // 21.9.6 the Authority goes to the real mercenaries first, Ariel / Grace take the rest (false: the old way, the damage decides how much the weak stacks take)
-function allocMerc(P,ld,so,X){
+let CPWEAK=false,CPWEAKF=null;
+function allocMerc(P,ld,so,X){      // CP kill / CP death: both ways are tried - Ariel and Grace by their damage like the others, or last with only the Authority that is left (as against epics) - and the one with the more damage is kept (the user, 2026-11-05: keep the best damage)
+  if(!P.one||!(P.capU>0))return allocMerc0(P,ld,so,X);
+  if(P.cpd){CPWEAK=CPWEAKF===true;try{return allocMerc0(P,ld,so,X)}finally{CPWEAK=false}}      // CP death: solve1 tries both ways on the final result (after the mercenaries are placed by their health)
+  const run=w=>{CPWEAK=w;try{const r=allocMerc0(P,ld,so,X);r.d=score(P,[...ld,...r.list],[...so,...r.ord],true).dmg;return r}finally{CPWEAK=false}};
+  const a=run(false),b=run(true);return b.d>a.d*(1+1e-9)?b:a}
+function allocMerc0(P,ld,so,X){
   mercSync();const all=MT.map(t=>mkM(t,P,X)),res={all,list:[],ord:[],used:0};
   if(P.ren)all.forEach(s=>s.grp='REST');      // 14.14 Renegades: the mercenaries stand in the one block with the rest of the Leadership and the monsters
   const act=MT.filter(t=>!X.has(t.name));
@@ -2539,7 +2549,7 @@ function allocMerc(P,ld,so,X){
   // 21.4.4: ORDER BY GROUPS OF SH RATIO (strength per health). Health AND total strength fall along the chain, so the stacks have to go by the SH ratio (the highest first) or a stack with a low one caps every stack behind it
   // (Ariel in the middle of the chain cut the others to half the health). The stacks with a similar SH ratio (within 2 %) are ONE group, and inside the group the squad bonus rules (the smaller one dies first, the order above).
   // Two exceptions: the Epic monster hunters (the highest SH ratio, but the biggest bonus) stand just before the weak-strength stacks, and the weak-strength stacks (below 80 % of the median SH ratio: Ariel) stand last; Grace always counts as one and stands at the very end, like a partial stack: it takes the Authority that is left and limits nobody.
-  const sh=s=>s.str/s.hp,med=seq.map(sh).sort((x,y)=>x-y)[seq.length>>1],weak=s=>sh(s)<0.8*med||s.name=='Grace',hunt=s=>!P.one&&s.cat=='Epic Monster Hunter'&&!weak(s);      // CP kill / CP death (one enemy stack): the health decides, the strength does not have to fall - no SH groups, no separate place for the hunters; Ariel and Grace stand last and get only the Authority that is left, as against epics (the user, 2026-11-05)
+  const sh=s=>s.str/s.hp,med=seq.map(sh).sort((x,y)=>x-y)[seq.length>>1],weak=s=>(!P.one||CPWEAK)&&(sh(s)<0.8*med||s.name=='Grace'),hunt=s=>!P.one&&s.cat=='Epic Monster Hunter'&&!weak(s);      // CP kill / CP death (one enemy stack): the health decides, the strength does not have to fall - no SH groups, no separate place for the hunters, no weak stacks at the end: Ariel and Grace stand by their damage like the others, a cheap stack in front adds a strike round for all behind it (the user, 2026-11-05: keep the best damage)
   const main=seq.filter(s=>!weak(s)&&!hunt(s)).sort((x,y)=>P.one?0:sh(y)-sh(x)),grp=[];
   main.forEach(s=>{const g=grp[grp.length-1];if(g&&(P.one||sh(s)>=0.98*g.top))g.l.push(s);else grp.push({top:sh(s),l:[s]})});
   const mainSeq=grp.flatMap(g=>g.l.sort((x,y)=>seq.indexOf(x)-seq.indexOf(y))),head=[...mainSeq,...seq.filter(hunt)],wkA=seq.filter(s=>weak(s)&&s.name!='Grace'),wkG=seq.filter(s=>s.name=='Grace'),chain=[...head,...wkA,...wkG];
