@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.8.1';
+const APP_VERSION='23.8.2';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -186,19 +186,21 @@ const unitsTxt=s=>{      // units to train: the first hit all of them, every nex
   return (lo<hi?`<span class="nb">${t(lo)}</span> <span class="nb">– ${t(hi)}</span>`:`<span class="nb">${t(hi)}</span>`)+tp};      // the pieces never break inside; a narrow card breaks only between them
 const rangeOf=s=>{const n=s.n||0,L=lossOf(s,REVM),f=h=>Math.ceil(n+(h-1)*L-1e-7),lo=f(Math.floor(MUL+1e-9));
   return{lo,hi:FRX[s.name]!=null?lo+Math.ceil(FRX[s.name]-1e-7):f(MUL)}};      // the units to train: lo = for the whole hits, hi = for all the hits (the upper end: the food of the fractional hit is spread as the SAME share of every stack, see fracSpread)
-const roundIn=(lo,hi)=>{for(let e=Math.floor(Math.log10(Math.max(hi,1)));e>=0;e--)for(const m of [5,2,1]){const st=m*10**e,x=Math.ceil(lo/st-1e-9)*st;if(x<=hi)return{x,st}}return{x:lo,st:1}};      // the roundest number between lo and hi (a step of 5, 2 or 1 x 10^e, the biggest that fits) and its step
-// TIPS (Preparation): one round number per tier - the army troops of the same tier AND the same Leadership cost share it, the monsters of the same tier share it (mercenaries eat no food: no tip).
-// Each group starts at the roundest number between the highest lower end and the highest upper end of its stacks (the cheapest such number); the food all the upper ends need is the budget,
-// and the food left over raises the groups one step at a time (the group furthest below its upper end first) while it pays for the step - so a tip may stand above the upper end.
+const roundIn=(lo,hi,m=1)=>{for(let e=Math.floor(Math.log10(Math.max(hi,1)));e>=0;e--)for(const k of [5,2,1]){const st=k*10**e;if(st%m)continue;const x=Math.ceil(lo/st-1e-9)*st;if(x<=hi)return{x,st}}return{x:Math.ceil(lo/m-1e-9)*m,st:m}};      // the roundest number between lo and hi (a step of 5, 2 or 1 x 10^e, the biggest that fits, a multiple of m) and its step
+// TIPS (Preparation): one round BASE number per army tier - the units of that tier get the base / their Leadership cost (cost 2: half of it, an engineer of cost 10: a tenth), so the tips follow the Leadership;
+// one round number per monster tier, the same for all its monsters (mercenaries eat no food: no tip). The base starts at the roundest number between the highest lower end and the highest upper end
+// (each counted back to the base: x the cost) - the cheapest such number, a multiple of every cost of the tier so that every tip is whole; the food all the upper ends need is the budget,
+// and the food left over raises the tiers one step at a time (the tier furthest below its upper end first) while it pays for the step - so a tip may stand above the upper end.
+const gcd=(a,b)=>b?gcd(b,a%b):a,lcm=(a,b)=>a/gcd(a,b)*b;
 const tipsFor=list=>{
   const out={},G=new Map();if(!(MUL>1))return out;
-  list.filter(s=>(s.n||0)>0&&!s.off&&TRN[s.name]&&TRN[s.name].pool!='U').forEach(s=>{const t=TRN[s.name],k=t.pool+t.tier+(t.pool=='A'?'|'+t.cost:''),r=rangeOf(s),f=foodOf(s.name);
-    if(!G.has(k))G.set(k,{u:[],lo:0,hi:0,f:0});const g=G.get(k);g.u.push(s.name);g.lo=Math.max(g.lo,r.lo);g.hi=Math.max(g.hi,r.hi);g.f+=f;g.b=(g.b||0)+r.hi*f});
+  list.filter(s=>(s.n||0)>0&&!s.off&&TRN[s.name]&&TRN[s.name].pool!='U').forEach(s=>{const t=TRN[s.name],k=t.pool+t.tier,c=t.pool=='A'?Math.max(1,t.cost||1):1,r=rangeOf(s),f=foodOf(s.name);
+    if(!G.has(k))G.set(k,{u:[],lo:0,hi:0,f:0,b:0,m:1});const g=G.get(k);g.u.push([s.name,c]);g.lo=Math.max(g.lo,r.lo*c);g.hi=Math.max(g.hi,r.hi*c);g.f+=f/c;g.b+=r.hi*f;g.m=lcm(g.m,c)});
   const gs=[...G.values()];if(!gs.some(g=>g.lo<g.hi))return out;
   let left=gs.reduce((q,g)=>q+g.b,0);
-  gs.forEach(g=>{const r=roundIn(g.lo,g.hi);g.x=r.x;g.st=r.st;left-=g.x*g.f});
+  gs.forEach(g=>{const r=roundIn(g.lo,g.hi,g.m);g.x=r.x;g.st=r.st;left-=g.x*g.f});
   for(;;){const c=gs.filter(g=>g.f>0&&g.st*g.f<=left+1e-6).sort((a,b)=>a.x/a.hi-b.x/b.hi)[0];if(!c)break;c.x+=c.st;left-=c.st*c.f}
-  gs.forEach(g=>g.u.forEach(n=>out[n]=g.x));return out};      // the pieces never break inside; a narrow card breaks only between them
+  gs.forEach(g=>g.u.forEach(([n,c])=>out[n]=g.x/c));return out};      // the pieces never break inside; a narrow card breaks only between them
 const shown=(s,n)=>s.off?'off':SHOWTR?unitsTxt(s):n;      // the number on a card / line: the units to hit with (Hitting) or the units to train (Training)
 const cnt=(s,n)=>SHOWTR&&!s.off?`<span class="n nw">${unitsTxt(s)}</span>`:`<br><span class="n">${shown(s,n)}</span>`;      // on a card the units to train may wrap into two lines (the cell itself does not wrap)
 let EBINFO='';   // the stack split (army / full monster / partial monster / engineer), part of the result summary line
