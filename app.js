@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.4.3';
+const APP_VERSION='23.4.4';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -184,7 +184,7 @@ const pct=m=>Math.round(m*100).toLocaleString('en-US')+'%';   // bonus ratio -> 
 const num=x=>Math.round(x).toLocaleString('en-US');                // whole number with thousands separators
 let SOPOS={},BUFN={};      // BUFN: the stacks of the Renegades buffer zone (name -> 1)
 // the bonus text of an order row: "+333% vs. mounted" = the troop's best bonus against a class of the enemy (the best one that counts in this mode; when none counts, its best one anyway)
-function G5(t){return t.cls=='G'&&t.cat=='Mounted'&&t.name!='Quicksand'}      // the +5 % Double damage of the Guardsmen mounted units: all of them, except the Quicksand (the user, 2026-11-05)
+function G5(t){return t.cls=='G'&&t.cat=='Mounted'&&t.name!='Quicksand'&&t.name!='Combat Anteater Leader'}      // the +5 % Double damage of the Guardsmen mounted units: all of them, except the mercenaries Quicksand and Combat Anteater Leader (the user, 2026-11-05)
 function vsText(t,P){return vsText0(t,P)+(P.pm&&t.cls=='S'&&t.cat!='Scout'?' · double damage':'')+(G5(t)?' · +5 % double damage':'')}      // PvP Max damage: the Specialists deal double damage, too
 function vsText0(t,P){
   if(P.one){const f=(t.vs[3]||0)+(t.vt&&t.vt.Human||0);return(f>0?'+'+pct(f)+' vs. flying':'no bonus')+(t.cls=='S'&&t.cat!='Scout'?' · double damage':'')}
