@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.7.0';
+const APP_VERSION='23.7.1';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -959,6 +959,7 @@ let WEAKMONO=true;      // v328: the full monster tiers have outliers too: a mon
 let WEAKPERM=true;      // 8.2: the weak groups of the order above (army AND monster outliers) are also tried in every other sequence on the places Kn+1: a weak monster may stand on the FIRST such place, not only behind the weak army troops; the damage decides
 let WEAKFRONT=false;     // 8.6: OFF. Weak troops (army and monsters) as a block on the FIRST places with the other weak groups on the places Kn+1 behind it (8.4 whole monster groups, 8.5 single troops) gave a little more damage (Ari_3 +1.8 %) but made the calculation 3-10 times slower (Ari_3 30 ms against 3 ms). The code stays as an idea and a benchmark: set it to true to see how much damage the order search leaves, when a new idea is tested
 const FRONTPOOL=5,FRONTLEN=3;      // the block in front is taken from the FRONTPOOL weakest troops, at most FRONTLEN of them
+let TIERBLK=true;      // inside each block of K places (not the places Kn+1) the tiers are also tried in another sequence: higher tier last / first (army and monsters apart); the damage decides
 let WEAKSLOTS=true;     // the weakest groups (lowest ratio first) stand on the places Kn+1, one troop per place; the rest of the army follows on the other places
 function ratioGroups(P,arr,split,tol=GTOL){                                           // split: army and monsters never share a group; tol: troops within this relative SH distance of the lowest of the group join it (default: equal SH only)
   const q6=x=>Math.round(x*1e6),ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(...t.vs);
@@ -1134,7 +1135,24 @@ function fourSearch(P,live,mkOut,CC,quick){     // CC = the number of full monst
     rec(m-1,0);
   };
   groupings.forEach(gs=>search(gs));                                                                        // army groups and monster groups apart
+  if(TIERBLK&&best)tierBlocks();
   return best;
+  // TIER BLOCKS: K of our stacks die each round, so inside one block of K places (1-K, K+1-2K ...) the tiers may stand in another sequence. On the best order: inside each block,
+  // the places that are not Kn+1 are re-sorted by tier, the army among its own places and the monsters among theirs (engineers stay), higher tier last, then higher tier first. The damage decides (0.05 %).
+  function tierBlocks(){      // block by block from the front (army, then monsters): the sequence of a block is kept only when the whole order gives clearly more damage
+    const K=P.enemy,byN=new Map(TR.map(t=>[t.name,t]));let o=best.names.map(n=>byN.get(n));
+    for(let s=0;s<Ft;s+=K)for(const pl of ['A','M']){
+      const ix=[];for(let i=s;i<Math.min(s+K,Ft);i++)if(!kn1Place(P,i)&&o[i]&&o[i].pool==pl&&o[i].cat!='Engineer')ix.push(i);
+      if(ix.length<2)continue;
+      const u=ix.map(i=>o[i]);
+      for(const dir of [1,-1]){
+        const srt=u.map((t,j)=>({t,j})).sort((a,b)=>dir*(a.t.tier-b.t.tier)||a.j-b.j).map(x=>x.t);
+        if(srt.every((t,j)=>t===u[j]))continue;
+        const c=o.slice();ix.forEach((i,j)=>{c[i]=srt[j]});
+        const e=ev(c,CC);e.k=e.d;if(better(e,best)){best=e;o=c;break}
+      }
+    }
+  }
 }
 // Killshot (v287, monsters tier by tier v288): the same rule as the 3-stack mode for the places Kn+1 - the WEAKEST troops (the lowest SH, engineers, Beast units ... one troop per place, the weakest first, weakSplit) stand on them.
 // The other places are filled by blocks, whatever the SH of the groups: the 9s (Specialists, Guardsmen, engineers ... of tier 9), then the 8s, and so on down, then the monsters, tier by tier from the top (M9 before M8 ...).
