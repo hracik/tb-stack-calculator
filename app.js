@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.6.0';
+const APP_VERSION='23.6.1';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -152,6 +152,7 @@ document.addEventListener('click',e=>{
 });
 
 let VIEW='grouped';try{const sv=localStorage.getItem('sc_view');if(sv=='mobile'||sv=='computer')VIEW=sv}catch(e){}      // result view: Grouped (cards in groups), Mobile (one unit per line) or Computer (two units per line, same order as Mobile). One setting for all tabs.
+let FRX={};
 let MUL=1,REVM='top',SHOWTR=false,TOPT={A:0,M:0,U:0};      // MUL = the hits the Food production pays for with the chosen Revive (rounded DOWN to 2 decimals). REVM = the Revive choice: none / top (the top line) / mon (monsters only) / montop (monsters and top line) / all. SHOWTR = the Preparation button: show the units to prepare instead of the units to hit with. TOPT = the top line: the highest tier in use in the Army (with the engineers), in the Monsters and in the Mercenaries
 const REV=90;      // % of a revived stack that comes back after a hit (rounded down per stack)
 const TEMPLE=[1.04,1.06,1.08,1.11,1.13,1.16,1.19,1.22,1.27,1.33,1.36,1.40,1.44,1.48,1.53,1.58,1.63,1.68,1.74,1.81,1.91,2.02,2.15,2.31,2.51,2.68,2.88,3.13,3.44,3.84,3.93,4.03,4.13,4.23,4.34,4.46,4.59,4.72,4.87,5.02,5.17,5.34,5.52,5.71,5.91];      // 13.1: Temple level 1..45 -> "Troop revival cost is decreased by" (times), from the in-game Temple table. The revival gold of a troop is divided by it.
@@ -171,10 +172,17 @@ const hitsFor=(F,fp,list,mode)=>{      // hits the food production fp pays for: 
   if(fp<F)return Math.floor(fp/F*100+1e-9)/100;
   const R=list.reduce((q,s)=>q+lossOf(s,mode)*foodOf(s.name),0);
   return R>0?Math.floor((1+(fp-F)/R)*100+1e-9)/100:0};
+const fracSpread=(list,mul)=>{      // the food of the fractional part of the hits (MUL - whole hits) buys the SAME share p of every stack's units (at most the stack's loss of one hit); p is found by bisection. Mercenaries eat no food: no upper end.
+  const out={},fr=mul-Math.floor(mul+1e-9);if(!(fr>1e-9))return out;
+  const L=list.filter(s=>(s.n||0)>0&&TRN[s.name]&&TRN[s.name].pool!='U').map(s=>({k:s.name,n:s.n,l:lossOf(s,REVM),f:foodOf(s.name)}));
+  const R=L.reduce((q,x)=>q+x.l*x.f,0),T=fr*R;if(!(R>0))return out;
+  const g=p=>L.reduce((q,x)=>q+Math.min(x.l,p*x.n)*x.f,0);let a=0,b=Math.max(...L.map(x=>x.l/x.n));
+  for(let i=0;i<60;i++){const m=(a+b)/2;if(g(m)<T)a=m;else b=m}
+  L.forEach(x=>out[x.k]=Math.min(x.l,b*x.n));return out};
 const unitsTxt=s=>{      // units to train: the first hit all of them, every next hit only the ones not revived. A range "for the whole hits - for all the hits": e.g. 2.09 hits -> units for 2 hits - units for 2.09 hits (one number when they are the same; the stack itself when the food pays for 1 hit or less; between 1 and 2 hits the lower number is the stack itself)
   const n=s.n||0,L=lossOf(s,REVM),f=h=>Math.ceil(n+(h-1)*L-1e-7),t=x=>x.toLocaleString();
   if(!(MUL>1))return`<span class="nb">${t(n)}</span>`;
-  const hi=f(MUL),lo=f(Math.floor(MUL+1e-9));
+  const lo=f(Math.floor(MUL+1e-9)),hi=FRX[s.name]!=null?lo+Math.ceil(FRX[s.name]-1e-7):f(MUL);      // the upper end: the food of the fractional hit is spread as the SAME share of every stack (see fracSpread)
   if(lo<hi&&TRN[s.name]&&TRN[s.name].pool=='U')return`<span class="nb">${t(lo)}+</span>`;      // a mercenary eats no food, so no upper end: just the lower number and a +
   return lo<hi?`<span class="nb">${t(lo)}</span> <span class="nb">– ${t(hi)}</span>`:`<span class="nb">${t(hi)}</span>`};      // the pieces never break inside; a narrow card breaks only between them
 const shown=(s,n)=>s.off?'off':SHOWTR?unitsTxt(s):n;      // the number on a card / line: the units to hit with (Hitting) or the units to train (Training)
@@ -2667,7 +2675,7 @@ function calcRun0(){
   const rvs=hl.filter(s=>dies(s)&&revives(s,REVM)).reduce((g,s)=>{const t=TRN[s.name];if(t&&(s.n||0)>0)g[t.pool]+=Math.floor(s.n*REV/100)*(t.gold||0);return g},{A:0,M:0,U:0}),scost=(rvs.A+rvs.M+rvs.U)/tf;      // 13.4: the same, only for the stacks that the Revive select brings back (none: 0, all: the same as the full revive)
   const HIT={};REVCASES.forEach(([k])=>HIT[k]=hitsFor(food,v('foodP')*(100+FOODADD)/100,hl,k));REVFIX.forEach(([k])=>HIT[k]=FIXHIT[k]);      // hits the Food production pays for in every Training case
   {const w=$('prepw'),low=SHOWTR&&food>0&&!(HIT[REVM]>=1);w.hidden=!low||SHOWCMP;if(low)w.textContent='Food production is too low: it pays for less than 1 hit ('+(HIT[REVM]||0).toFixed(2)+'). The numbers show the whole stacks.'}
-  MUL=HIT[REVM]>1?HIT[REVM]:1;      // the chosen Revive: the hits it pays for (1 = the food pays for one hit or less: the units to train are the stack itself)
+  MUL=HIT[REVM]>1?HIT[REVM]:1;FRX=MUL>1?fracSpread(hl,MUL):{};      // the chosen Revive: the hits it pays for (1 = the food pays for one hit or less: the units to train are the stack itself)
   document.querySelectorAll('.sb').forEach(b=>b.classList.toggle('on',!SHOWCMP&&(b.dataset.sh=='train')==($('shw').value=='train')));
   if(FMP&&!noFood)fmShut();      // 14.27: close the Food modal if the user entered food elsewhere while it was open
   {const live=[...A,...Mo].filter(x=>x.n>0),eng=live.filter(x=>x.cat=='Engineer').length,mon=live.filter(x=>x.p=='M'),army=live.filter(x=>x.p=='A'&&x.cat!='Engineer').length;
