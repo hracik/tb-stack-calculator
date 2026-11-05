@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.3.31';
+const APP_VERSION='23.3.32';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -833,7 +833,7 @@ function getP(){
   ['G','S','M','E','Epic','Players','Giant','Elemental','Dragon','Beast','Melee','Mounted','Ranged','Flying','Scout','EMH'].forEach(k=>{p['h'+k]=$('bh_'+k)?v('bh_'+k):0;p['s'+k]=$('bs_'+k)?v('bs_'+k):0});
   ['Giant','Elemental','Dragon','Beast'].forEach(k=>{p['dh'+k]=$('dh_'+k)?snapDH($('dh_'+k).value):0});
   p.mon=$('mode').value=='mon';p.monN=$('monster')?$('monster').value:MONSTERS[0].n;      // 22.8 Attack monsters: the plain monster (Elven Citadel ...): no bonus against epics, none against players
-  p.arena=$('mode').value=='arena';      // 23.3.27 Arena PvP: Lava without any mercenary
+  p.arena=$('mode').value=='arena';      // 23.3.27 Arena: Lava without any mercenary
   if(p.arena)p.capU=0;
   p.lava=$('mode').value=='lava'||p.arena;      // 23.3.22 Lava: PvP Max damage against 12 enemy stacks (a full city), the mercenaries have no limit (no chain from the army)
   p.pm=$('mode').value=='pvpmax'||p.lava;                // PvP Max damage: a fully equipped enemy (4 stacks, every kind of troop), all bonuses and the Double strike count, no Epic strength
@@ -2119,7 +2119,7 @@ function runBest(n){                                     // Max vs. 3 stack / fu
   refresh();
 }
 const PV1=true;                                          // Pv1 modes (CP kill, CP death): on. Set false to switch them off: their buttons are greyed out and a tab that was left in one falls back to the 4-stack mode.
-const PVM=()=>DEV;      // 23.3.30 Max damage, Renegades, Lava, Arena PvP and Attack monsters: only in debug mode (an admin with the debug switch on), everyone else gets the greyed-out button
+const PVM=()=>DEV;      // 23.3.30 Max damage, Renegades, Lava, Arena and Attack monsters: only in debug mode (an admin with the debug switch on), everyone else gets the greyed-out button
 const PVM_OLD=()=>typeof SY!=='undefined'&&SY.role=='admin';        // PvMany modes (Max damage): for the admin only (the account role) for now; everyone else gets the greyed-out button. Set to ()=>true to switch Max damage on for everyone.
 const RENEGADES=()=>DEV;   // Renegades: for the admin only (the account role) for now (off for everyone else since 14.30). Set to ()=>true to switch back on for everyone.
 function runRen(){                                       // Renegades: fixed rule, nothing is refined
@@ -2131,7 +2131,7 @@ function runPM(){ if(!PVM())return;                                        // Pv
   $('mode').value='pvpmax';SO=[];
   refresh();
 }
-function runArena(){      // Arena PvP: the Lava rules, no mercenaries at all
+function runArena(){      // Arena: the Lava rules, no mercenaries at all
   $('mode').value='arena';SO=[];
   refresh();
 }
