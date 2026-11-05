@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.5.1';
+const APP_VERSION='23.5.2';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2534,7 +2534,8 @@ function allocMerc(P,ld,so,X){
   const q6=x=>Math.round(x*1e6),ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(...t.vs);
   // The bonus against epic enemies counts against EVERY enemy stack, a class bonus only against the stacks of that class: at the same size the epic one is the better one and dies later.
   const bk=t=>q6(sqb(t,P).tot+(veOf(t,P)>0?1e-3:0));
-  const seq=act.slice().sort((a,b)=>bk(a)-bk(b)||nom(a)-nom(b)||ci(a)-ci(b)||b.tier-a.tier).map(t=>by[t.name]);
+  const dh=t=>{const m=by[t.name];return m?q6(dpu(m)/m.hp*1e3):0};      // CP kill / CP death: the damage per health decides (the bonus against the enemy AND the Specialists' double damage against players): the least damage dies first, the best last
+  const seq=act.slice().sort((a,b)=>(P.one?dh(a)-dh(b):0)||bk(a)-bk(b)||nom(a)-nom(b)||ci(a)-ci(b)||b.tier-a.tier).map(t=>by[t.name]);
   // 21.4.4: ORDER BY GROUPS OF SH RATIO (strength per health). Health AND total strength fall along the chain, so the stacks have to go by the SH ratio (the highest first) or a stack with a low one caps every stack behind it
   // (Ariel in the middle of the chain cut the others to half the health). The stacks with a similar SH ratio (within 2 %) are ONE group, and inside the group the squad bonus rules (the smaller one dies first, the order above).
   // Two exceptions: the Epic monster hunters (the highest SH ratio, but the biggest bonus) stand just before the weak-strength stacks, and the weak-strength stacks (below 80 % of the median SH ratio: Ariel) stand last; Grace always counts as one and stands at the very end, like a partial stack: it takes the Authority that is left and limits nobody.
