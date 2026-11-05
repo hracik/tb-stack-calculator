@@ -587,3 +587,5 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 .hg .hgb{flex:0 0 150px;scroll-snap-align:start}
 
 .trow[hidden],#ttc[hidden],.tcw[hidden]{display:none!important}
+
+.intro{display:none}html.dev .intro{display:block}      /* 23.3.29 the How to use bubble only in debug mode */
