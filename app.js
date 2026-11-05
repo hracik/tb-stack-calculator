@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.8.2';
+const APP_VERSION='23.8.3';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -191,7 +191,9 @@ const roundIn=(lo,hi,m=1)=>{for(let e=Math.floor(Math.log10(Math.max(hi,1)));e>=
 // one round number per monster tier, the same for all its monsters (mercenaries eat no food: no tip). The base starts at the roundest number between the highest lower end and the highest upper end
 // (each counted back to the base: x the cost) - the cheapest such number, a multiple of every cost of the tier so that every tip is whole; the food all the upper ends need is the budget,
 // and the food left over raises the tiers one step at a time (the tier furthest below its upper end first) while it pays for the step - so a tip may stand above the upper end.
+// A step is the roundness of the number itself (850 -> 900, 900 -> 1,000): a raise never gives a less round number (900 is never raised to 950).
 const gcd=(a,b)=>b?gcd(b,a%b):a,lcm=(a,b)=>a/gcd(a,b)*b;
+const roundness=(x,m=1)=>{for(let e=Math.floor(Math.log10(Math.max(x,1)));e>=0;e--)for(const k of [5,2,1]){const st=k*10**e;if(!(st%m)&&!(x%st))return st}return m};      // the biggest round step (5, 2 or 1 x 10^e, a multiple of m) that divides x: 900 -> 100, 850 -> 50
 const tipsFor=list=>{
   const out={},G=new Map();if(!(MUL>1))return out;
   list.filter(s=>(s.n||0)>0&&!s.off&&TRN[s.name]&&TRN[s.name].pool!='U').forEach(s=>{const t=TRN[s.name],k=t.pool+t.tier,c=t.pool=='A'?Math.max(1,t.cost||1):1,r=rangeOf(s),f=foodOf(s.name);
@@ -199,7 +201,7 @@ const tipsFor=list=>{
   const gs=[...G.values()];if(!gs.some(g=>g.lo<g.hi))return out;
   let left=gs.reduce((q,g)=>q+g.b,0);
   gs.forEach(g=>{const r=roundIn(g.lo,g.hi,g.m);g.x=r.x;g.st=r.st;left-=g.x*g.f});
-  for(;;){const c=gs.filter(g=>g.f>0&&g.st*g.f<=left+1e-6).sort((a,b)=>a.x/a.hi-b.x/b.hi)[0];if(!c)break;c.x+=c.st;left-=c.st*c.f}
+  for(;;){gs.forEach(g=>g.st=roundness(g.x,g.m));const c=gs.filter(g=>g.f>0&&g.st*g.f<=left+1e-6).sort((a,b)=>a.x/a.hi-b.x/b.hi)[0];if(!c)break;c.x+=c.st;left-=c.st*c.f}
   gs.forEach(g=>g.u.forEach(([n,c])=>out[n]=g.x/c));return out};      // the pieces never break inside; a narrow card breaks only between them
 const shown=(s,n)=>s.off?'off':SHOWTR?unitsTxt(s):n;      // the number on a card / line: the units to hit with (Hitting) or the units to train (Training)
 const cnt=(s,n)=>SHOWTR&&!s.off?`<span class="n nw">${unitsTxt(s)}</span>`:`<br><span class="n">${shown(s,n)}</span>`;      // on a card the units to train may wrap into two lines (the cell itself does not wrap)
