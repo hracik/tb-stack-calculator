@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.3.29';
+const APP_VERSION='23.3.30';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2122,10 +2122,11 @@ function runBest(n){                                     // Max vs. 3 stack / fu
   refresh();
 }
 const PV1=true;                                          // Pv1 modes (CP kill, CP death): on. Set false to switch them off: their buttons are greyed out and a tab that was left in one falls back to the 4-stack mode.
-const PVM=()=>typeof SY!=='undefined'&&SY.role=='admin';        // PvMany modes (Max damage): for the admin only (the account role) for now; everyone else gets the greyed-out button. Set to ()=>true to switch Max damage on for everyone.
+const PVM=()=>DEV;      // 23.3.30 Max damage, Renegades, Lava, Arena PvP and Attack monsters: only in debug mode (an admin with the debug switch on), everyone else gets the greyed-out button
+const PVM_OLD=()=>typeof SY!=='undefined'&&SY.role=='admin';        // PvMany modes (Max damage): for the admin only (the account role) for now; everyone else gets the greyed-out button. Set to ()=>true to switch Max damage on for everyone.
 const ovoOn=()=>typeof SY!=='undefined'&&SY.role=='admin';      // One v. One is for the admin only (the account role); everyone else does not get the button
 let OVOP=null;
-const RENEGADES=()=>typeof SY!=='undefined'&&SY.role=='admin';   // Renegades: for the admin only (the account role) for now (off for everyone else since 14.30). Set to ()=>true to switch back on for everyone.
+const RENEGADES=()=>DEV;   // Renegades: for the admin only (the account role) for now (off for everyone else since 14.30). Set to ()=>true to switch back on for everyone.
 function runRen(){                                       // Renegades: fixed rule, nothing is refined
   if(!RENEGADES())return;
   $('mode').value='ren';SO=[];
@@ -2582,7 +2583,7 @@ const MODEINFO={
   'kill':['Sniper \u00b7 Killshot','You finish off an epic monster. The calculator checks how much of the epic your army can still kill and sets everything up for that. The damage is a bit smaller than in the regular modes, but reviving and training cost much less, so this mode is very cost-effective.'],
   'cp':['Pv1 · CP kill','You hit another player who has only one flying troop type in the city, and your army is strong enough to kill it quickly. The total damage to the enemy is smaller than in the CP death mode, but the cost of reviving and training is significantly lower, which makes this mode very cost-effective.'],
   'ovo':['Pv1 · One v. One','You fight another player with 12 equally distributed enemy stacks, 3 of each type. The stacks are built to win the fight, not to deal the most damage: the top tier in about equal stacks, the monsters biggest, the second tier as small extras, fewer mounted. They are tuned to your bonuses against full enemy cities, so they work against different enemies.'],
-  'arena':['PvMany · Arena PvP','The Lava rules (a fully equipped enemy city with 12 enemy stacks, 3 of each type, Specialists after the Guardsmen and the monsters, no limit for the monsters), but no mercenaries are used at all: only the Leadership army and the monsters.'],
+  'arena':['PvMany · Arena','The Lava rules (a fully equipped enemy city with 12 enemy stacks, 3 of each type, Specialists after the Guardsmen and the monsters, no limit for the monsters), but no mercenaries are used at all: only the Leadership army and the monsters.'],
   'lava':['PvMany · Lava','You hit another player who has every kind of troop in the city, with 12 enemy stacks (3 of each type), so it is a total battle. Stacks are created with the goal of maximizing damage, using the Specialists\' double damage. The mercenaries have no limit: they are not held below the army.'],
   'pm':['PvMany · Max damage','You hit another player who has every kind of troop in the city, so it is a total battle. Win or lose, stacks are created with the goal of maximizing damage, using the Specialists\' double damage.'],
   'cpd':['Pv1 · CP death','You hit another player who has only one flying troop type in the city, but a very large one, and your army is not strong enough to kill it. Stacks are created with the goal of maximizing damage, using the Specialists\' double damage and the bonuses against flying enemies.']
@@ -2608,10 +2609,12 @@ function calcRun(){
   if(K4OK&&ATK=='epics'&&$('mode').value=='max'&&+$('enemy').value==K4LO){$('enemy').value=String(K4LO==3?4:8);SO=[];calcRun0()}}      // the 3-stack mode is off while the army kills from 4 stacks: the 4-stack mode instead
 function calcRun0(){
   epAuto();
-  const pvOK=m=>m=='cp'||m=='cpd'?PV1:m=='pvpmax'?PVM():m=='lava'||m=='arena'?true:m=='ovo'?ovoOn():m=='ren'?RENEGADES():false,okP=PVMODES.filter(pvOK);      // okP = the PvP modes that are switched on
+  const pvOK=m=>m=='cp'||m=='cpd'?PV1:m=='pvpmax'?PVM():m=='lava'||m=='arena'?DEV:m=='ovo'?ovoOn():m=='ren'?RENEGADES():false,okP=PVMODES.filter(pvOK);      // okP = the PvP modes that are switched on
   if(PVMODES.includes($('mode').value)&&!pvOK($('mode').value)){$('mode').value='max';SO=[]}      // a mode that is off: a tab left in it falls back to the 4-stack mode
   document.querySelectorAll('.cm[data-m=cp],.cm[data-m=cpd]').forEach(b=>{b.disabled=!PV1});
   document.querySelectorAll('.cm[data-m=pvpmax]').forEach(b=>{b.disabled=!PVM()});
+  document.querySelectorAll('.cm[data-m=lava],.cm[data-m=arena]').forEach(b=>{b.disabled=!DEV});
+  {const mb=document.querySelector('.ab[data-a=monsters]');if(mb)mb.disabled=!DEV;if(!DEV&&ATK=='monsters'){ATK='epics';SO=[]}}      // Attack monsters: debug mode only
   document.querySelectorAll('.cm[data-m=ovo]').forEach(b=>{b.disabled=!ovoOn();b.hidden=!ovoOn()});
   if(ATK=='monsters'){if($('mode').value!='mon'){if(!PVMODES.includes($('mode').value))LASTE={mode:$('mode').value,enemy:$('enemy').value};$('mode').value='mon';SO=[]}}      // 22.8: the Attack monsters view has ONE mode (the fewest losses)
   else if($('mode').value=='mon'){$('mode').value=LASTE.mode;$('enemy').value=LASTE.enemy;SO=[]}
