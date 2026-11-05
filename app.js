@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.3.30';
+const APP_VERSION='23.3.31';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -107,7 +107,7 @@ EPICS.forEach(e=>{if(e.at>1&&e.score){e.tot=e.score;e.score/=e.at}});      // 23
 EPICS.forEach(e=>{if(e.st)e.st.forEach(x=>{if(x[3]==null)x[3]=Math.round(x[1]/3)})});      // 21.9.2 an enemy stack without a given strength has 1/3 of its health per unit (the game's own numbers for Arachne and Doomsday are exactly that), so every epic wounds
 let K4OK=false,K4LO=3;      // 21.8.19: the army kills the chosen epic from a state that still has all 4 stacks: a 3-stack hit is of no use then (the 3-stack mode is switched off)
 let KSLITE=false,KAUTO4=false;      // 21.8.3: the ONE Killshot mode picks its rules by itself: the 4-stack rules when the army kills the epic from its 4-stack state, else the 3-stack rules (calcRun)
-const enemyNow=()=>{const m=$('mode').value;return m=='kill'?(((EPICS.find(x=>x.n==$('epic').value)||{}).st||[]).length>4?(KAUTO4?8:6):(KAUTO4?4:3)):m=='kill4'?4:m=='ren'?8:m=='ovo'||m=='lava'||m=='arena'?12:m=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4},      // the number of enemy stacks of the chosen attack mode
+const enemyNow=()=>{const m=$('mode').value;return m=='kill'?(((EPICS.find(x=>x.n==$('epic').value)||{}).st||[]).length>4?(KAUTO4?8:6):(KAUTO4?4:3)):m=='kill4'?4:m=='ren'?8:m=='lava'||m=='arena'?12:m=='max'&&[3,6,8].includes(+$('enemy').value)?+$('enemy').value:4},      // the number of enemy stacks of the chosen attack mode
   epOk=e=>$('mode').value=='kill'?(!!e.wd&&(e.ks||e.en.includes(3)||e.en.includes(4))):e.en.includes(enemyNow()),epCur=()=>{const e=EPICS.find(x=>x.n==$('epic').value)||null;if(e&&e.hw&&!hwOn()){$('epic').value='';return null}return e};      // 23.3.16 outside its dates a chosen Halloween epic turns into no epic      // an epic counts only in the modes it can be hit in
 $('epic').innerHTML='<option value="">None</option>'+EPICS.map(e=>`<option value="${e.n}">${e.n}</option>`).join('');
 const DHV=Array.from({length:11},(_,i)=>i/2);                // Double strike: 0 - 5 % in steps of 0.5
@@ -144,7 +144,7 @@ document.addEventListener('click',e=>{
   if(e.target.closest('.tc')){if(!e.target.closest('.tc').disabled){tierBubble();e.target.closest('.tc').blur()}return}      // the Tier check button
   const vb=e.target.closest('.vb');if(vb&&vb.id=='cmpbtn'){SHOWCMP=true;try{localStorage.setItem('sc_cmp',SHOWCMP?'1':'0')}catch(x){}calc();return}
   if(vb){if(!vb.disabled&&vb.dataset.v!=VIEW){VIEW=vb.dataset.v;try{localStorage.setItem('sc_view',VIEW)}catch(x){}calc()}return}
-  const cm=e.target.closest('.cm');if(cm){if(!cm.disabled){if(cm.dataset.m=='kill')runKill();else if(cm.dataset.m=='ren')runRen();else if(cm.dataset.m=='cp')runCP();else if(cm.dataset.m=='cpd')runCPD();else if(cm.dataset.m=='pvpmax')runPM();else if(cm.dataset.m=='ovo')runOVO();else if(cm.dataset.m=='lava')runLava();else if(cm.dataset.m=='arena')runArena()}return}
+  const cm=e.target.closest('.cm');if(cm){if(!cm.disabled){if(cm.dataset.m=='kill')runKill();else if(cm.dataset.m=='ren')runRen();else if(cm.dataset.m=='cp')runCP();else if(cm.dataset.m=='cpd')runCPD();else if(cm.dataset.m=='pvpmax')runPM();else if(cm.dataset.m=='lava')runLava();else if(cm.dataset.m=='arena')runArena()}return}
   const eb=e.target.closest('.eb');if(eb){runBest(+eb.dataset.e);return}
   const tc=e.target.closest('[data-troop]');if(tc){const nm=tc.dataset.troop;if(XS.has(nm))XS.delete(nm);else XS.add(nm);calc();return}
   const pb=e.target.closest('.pb');
@@ -364,7 +364,7 @@ function tabClick(e){
 // The text: a title line, then  key=value  pieces (one space between them). A box that holds the blank value (0) is left out, a number has no thousands commas, a space in a name is _ ; the key is short:
 // L Leadership, U Authority, D Dominance, F Food prod., R Revive, Tp Temple level (13.1; left out when it is 45), A Action; hG / sG = health / strength bonus of Guardsmen (S, M, E, and Gi El Dr Be Me Mo Ra Fl Ep Pl the same way), dGi = Double strike; T = the ticked tiers (E89S89G89M789 = E8 E9 S8 S9 G8 G9 M7 M8 M9);
 // n = name, x = switched-off troops (3 characters each, see xcode), at = Attack players, mo / en / le / lp = attack mode. Text of the first version (JSON, "Stack Calculator inputs") is still read.
-const XMODES=['max','ren','ovo','lava','arena','pvpmax','cpd','cp','kill','kill4','mon'],XENEMY=['3','4','6','8'],XHEAD='Krappy Calculator',XFIX={capA:'L',capU:'U',capM:'D',foodP:'F',revm:'R',shw:'A',temple:'Tp',renLv:'Lv',epic:'E'},XSUF={Epic:'Ep',Players:'Pl',Giant:'Gi',Elemental:'El',Dragon:'Dr',Beast:'Be',Melee:'Me',Mounted:'Mo',Ranged:'Ra',Flying:'Fl',Scout:'Sc',EMH:'EM'};
+const XMODES=['max','ren','lava','arena','pvpmax','cpd','cp','kill','kill4','mon'],XENEMY=['3','4','6','8'],XHEAD='Krappy Calculator',XFIX={capA:'L',capU:'U',capM:'D',foodP:'F',revm:'R',shw:'A',temple:'Tp',renLv:'Lv',epic:'E'},XSUF={Epic:'Ep',Players:'Pl',Giant:'Gi',Elemental:'El',Dragon:'Dr',Beast:'Be',Melee:'Me',Mounted:'Mo',Ranged:'Ra',Flying:'Fl',Scout:'Sc',EMH:'EM'};
 const xkey=id=>{const m=/^(bh|bs|dh)_(.+)$/.exec(id);return XFIX[id]||(m?{bh:'h',bs:'s',dh:'d'}[m[1]]+(XSUF[m[2]]||m[2]):id)};      // bh_G -> hG, bs_G -> sG, dh_Giant -> dGi, bs_Epic -> sEp
 const xep=n=>String(n).slice(0,3).toLowerCase(),xepn=c=>{const e=EPICS.find(q=>q.n===c)||EPICS.find(q=>xep(q.n)==String(c).slice(0,3).toLowerCase());return e?e.n:c};      // 20.5.1: the epic in the export is its first 3 letters (arm = Armageddon/Basilisk); the full name of an older export is still read
 const xhash=q=>{let h=2166136261;for(let i=0;i<q.length;i++){h^=q.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return h};
@@ -444,7 +444,7 @@ function importText(txt){
   d.atk=r.atk=='players'||r.atk=='monsters'?r.atk:'epics';
   d.mode=XMODES.includes(r.mode)?r.mode:'max';d.enemy=XENEMY.includes(String(r.enemy))?String(r.enemy):'4';
   d.le=r.le&&typeof r.le=='object'&&XMODES.includes(r.le.mode)&&XENEMY.includes(String(r.le.enemy))?{mode:r.le.mode,enemy:String(r.le.enemy)}:{mode:'max',enemy:'4'};
-  d.lp=['cp','cpd','ovo','lava','arena','pvpmax','ren'].includes(r.lp)?r.lp:'cp';
+  d.lp=['cp','cpd','lava','arena','pvpmax','ren'].includes(r.lp)?r.lp:'cp';
   let nm=typeof r.name=='string'&&r.name.trim()?r.name.trim().slice(0,24):'Imported';const base=nm;let k=2;
   while(tabs.some(t=>t.name===nm))nm=base.slice(0,20)+' '+k++;
   save();tabs.push({name:nm,data:d});active=tabs.length-1;delPending=false;load(d);drawTabs();refresh();
@@ -720,7 +720,7 @@ function drawMenu(){      // the menu row above the tabs: one button (signed out
   const t=$('mnt');m.hidden=!(FB.key||m.querySelector('.don:not([hidden]),.hlp:not([hidden])'));m.classList.toggle('open',MM&&!m.hidden);if(t){t.hidden=m.hidden;t.setAttribute('aria-expanded',String(MM&&!m.hidden))}
 }
 function drawAP(){      // the account window: a centred modal over the page (sign in / create account / the account / the choice when the account and this browser differ)
-  if(syncDebug()||(OVOP!==ovoOn()&&(OVOP=ovoOn(),true)))setTimeout(calc,0);      // the account became (or stopped being) an admin: the details appear or go
+  if(syncDebug())setTimeout(calc,0);      // the account became (or stopped being) an admin: the details appear or go
   const p=$('ap'),w=$('apw');if(!p)return;const open=!!(AP&&FB.key);p.hidden=!open;if(w)w.hidden=!open;document.documentElement.classList.toggle('mlock',open||HP||FMP);
   if(!open){p.innerHTML='';APO=false;return}
   p.classList.toggle('wide',!!SY.conf);
@@ -833,11 +833,10 @@ function getP(){
   ['G','S','M','E','Epic','Players','Giant','Elemental','Dragon','Beast','Melee','Mounted','Ranged','Flying','Scout','EMH'].forEach(k=>{p['h'+k]=$('bh_'+k)?v('bh_'+k):0;p['s'+k]=$('bs_'+k)?v('bs_'+k):0});
   ['Giant','Elemental','Dragon','Beast'].forEach(k=>{p['dh'+k]=$('dh_'+k)?snapDH($('dh_'+k).value):0});
   p.mon=$('mode').value=='mon';p.monN=$('monster')?$('monster').value:MONSTERS[0].n;      // 22.8 Attack monsters: the plain monster (Elven Citadel ...): no bonus against epics, none against players
-  p.ov=$('mode').value=='ovo';      // 21.5.0 One v. One: Max damage against 12 enemy stacks (3 of each type), the Specialists die last by force
   p.arena=$('mode').value=='arena';      // 23.3.27 Arena PvP: Lava without any mercenary
   if(p.arena)p.capU=0;
   p.lava=$('mode').value=='lava'||p.arena;      // 23.3.22 Lava: PvP Max damage against 12 enemy stacks (a full city), the mercenaries have no limit (no chain from the army)
-  p.pm=$('mode').value=='pvpmax'||p.ov||p.lava;                // PvP Max damage: a fully equipped enemy (4 stacks, every kind of troop), all bonuses and the Double strike count, no Epic strength
+  p.pm=$('mode').value=='pvpmax'||p.lava;                // PvP Max damage: a fully equipped enemy (4 stacks, every kind of troop), all bonuses and the Double strike count, no Epic strength
   p.cpd=$('mode').value=='cpd'||p.pm;            // CP death: the order that gives the most damage (PvP Max damage uses the same rules)
   p.one=$('mode').value=='cp'||$('mode').value=='cpd';   // CP kill and CP death (PvP): ONE flying enemy stack - only the bonus against flying counts, the Double strike is unused
   p.cp=p.one||p.pm;                              // the PvP engine of the CP modes: tight stacks by health only, groups of equals
@@ -1194,7 +1193,7 @@ function cpdOrder(P,names,c){
   const noB=a=>a.filter(t=>!bon(t)).sort((x,y)=>cpSH(x,P)-cpSH(y,P)||cpBonusX(x,P)-cpBonusX(y,P)||tie(x,y));                                    // no bonus: the smaller SH ratio first
   const withB=a=>a.filter(bon).sort((x,y)=>cpBonusX(x,P)-cpBonusX(y,P)||cpSH(x,P)-cpSH(y,P)||tie(x,y));             // with a bonus: the lowest bonus first, then the smaller SH ratio first
   const both=a=>[...noB(a),...withB(a)];
-  if(P.ov||P.lava){const by=(x,y)=>cpBonusX(x,P)-cpBonusX(y,P)||cpSH(x,P)-cpSH(y,P)||tie(x,y);return[...eng,...[...army.filter(t=>t.cls=='G'),...mon.filter(t=>sp.full.has(t.tier))].sort(by),...army.filter(t=>t.cls=='S').sort(by),...mon.filter(t=>!sp.full.has(t.tier)).sort(by)].map(t=>t.name)}      // One v. One (21.4.4): the Specialists die last by force, the lowest monster tier is the PARTIAL one as in the epic modes (it takes what the Dominance still allows) and stands behind the Specialists; inside the two blocks the lowest squad bonus dies first, the better bonuses die later (then the smaller SH ratio first); health AND strength fall along this order (MD.ovo)
+  if(P.lava){const by=(x,y)=>cpBonusX(x,P)-cpBonusX(y,P)||cpSH(x,P)-cpSH(y,P)||tie(x,y);return[...eng,...[...army.filter(t=>t.cls=='G'),...mon.filter(t=>sp.full.has(t.tier))].sort(by),...army.filter(t=>t.cls=='S').sort(by),...mon.filter(t=>!sp.full.has(t.tier)).sort(by)].map(t=>t.name)}      // One v. One (21.4.4): the Specialists die last by force, the lowest monster tier is the PARTIAL one as in the epic modes (it takes what the Dominance still allows) and stands behind the Specialists; inside the two blocks the lowest squad bonus dies first, the better bonuses die later (then the smaller SH ratio first); health AND strength fall along this order
   return[...eng,...both([...army.filter(t=>t.cls=='G'),...mon.filter(t=>sp.full.has(t.tier))]),...both(army.filter(t=>t.cls=='S')),...both(mon.filter(t=>!sp.full.has(t.tier)))].map(t=>t.name);
 }
 // ---- THE MODES: ONE engine runs all of them. This table is the only place that says how they differ; everything else (the rules above, the sizing helpers, the score) is shared.
@@ -1226,8 +1225,6 @@ const MD={
     order:(P,{live,mkOut,nT})=>byTiers(nT,c=>tierTry(P,killOrder(P,live,c),mkOut,c),mkOut)},
   cp:{kn1:false,ho:true,size:allocTight,        // CP kill / CP death / Max damage: the order is fixed, the troops of the same class and bonus are one group of equals
     order:(P,{live,mkOut,nT})=>{const mkCP=(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)+(s.pt?'|p':'')+'|'+s.name});return o};return byTiers(nT,c=>tierTry(P,P.cpd?cpdOrder(P,live,c):cpOrder(P,live),mkCP,c),mkCP)}},
-  ovo:{kn1:false,ho:false,size:allocTight,      // One v. One: the order of CP death by the squad bonus only; health AND total strength fall along it, no exceptions
-    order:(P,{live,mkOut,nT})=>{const mkCP=(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)+(s.pt?'|p':'')+'|'+s.name});return o};const c=Math.max(1,nT-1),so=cpdOrder(P,live,c);return{so,out:mkCP(so,c)}}},      // 21.4.4: the lowest monster tier is ALWAYS the partial one (it takes what the Dominance still allows), the tiers above it are full
   lava:{kn1:false,ho:false,size:(P,live)=>{const a=allocTight(P,live.filter(s=>s.p!='M')),m=allocTight(P,live.filter(s=>s.p=='M'));return{A:a.A,Mo:m.Mo}},      // Lava: the army and the monsters are sized apart, each in its own pool, as the One v. One order (the Specialists after the Guardsmen and the monsters, health AND strength fall inside each pool); the monsters and the mercenaries have no limit from the army, they stand by their health afterwards (lavaPlace)
     order:(P,{live,mkOut,nT})=>{const mkCP=(s2,c)=>{const o=mkOut(s2,c);o.forEach(s=>{s.grp=cpGroup(TRN[s.name],P)+(s.pt?'|p':'')+'|'+s.name});return o};const c=Math.max(1,nT-1),so=cpdOrder(P,live,c);return{so,out:mkCP(so,c)}}},
   ren:{kn1:false,ho:false,size:allocRen,        // Renegades: fixed rule, nothing is refined; the lowest tier is the partial one when 3 or more tiers are chosen
@@ -1238,7 +1235,7 @@ const MD={
       out.forEach(s=>{s.buf=false;s.grp=so.head.has(s.name)?s.name:so.bufN.has(s.name)?(s.buf=true,'BUF'):'REST'});
       return{so,out};}}
 };
-const modeOf=P=>rgm(P)?MD.epic:P.lava?MD.lava:P.ov?MD.ovo:P.cp?MD.cp:P.kill?MD.kill:MD.ren;
+const modeOf=P=>rgm(P)?MD.epic:P.lava?MD.lava:P.cp?MD.cp:P.kill?MD.kill:MD.ren;
 function buildStacks(P,order,X){
   const mk=(t,i)=>{const[mh,ms]=mults(t,P);
     return{r:t.cls+t.tier,p:t.pool,c:t.pool=='M'?t.type:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i,dh:dhf(t,P)}};
@@ -2124,8 +2121,6 @@ function runBest(n){                                     // Max vs. 3 stack / fu
 const PV1=true;                                          // Pv1 modes (CP kill, CP death): on. Set false to switch them off: their buttons are greyed out and a tab that was left in one falls back to the 4-stack mode.
 const PVM=()=>DEV;      // 23.3.30 Max damage, Renegades, Lava, Arena PvP and Attack monsters: only in debug mode (an admin with the debug switch on), everyone else gets the greyed-out button
 const PVM_OLD=()=>typeof SY!=='undefined'&&SY.role=='admin';        // PvMany modes (Max damage): for the admin only (the account role) for now; everyone else gets the greyed-out button. Set to ()=>true to switch Max damage on for everyone.
-const ovoOn=()=>typeof SY!=='undefined'&&SY.role=='admin';      // One v. One is for the admin only (the account role); everyone else does not get the button
-let OVOP=null;
 const RENEGADES=()=>DEV;   // Renegades: for the admin only (the account role) for now (off for everyone else since 14.30). Set to ()=>true to switch back on for everyone.
 function runRen(){                                       // Renegades: fixed rule, nothing is refined
   if(!RENEGADES())return;
@@ -2142,10 +2137,6 @@ function runArena(){      // Arena PvP: the Lava rules, no mercenaries at all
 }
 function runLava(){      // Lava: the Max damage rules against 12 enemy stacks, the mercenaries are not limited by the army
   $('mode').value='lava';SO=[];
-  refresh();
-}
-function runOVO(){ if(!ovoOn())return;                                      // One v. One: Max damage against 12 enemy stacks (3 of each type), the Specialists die last
-  $('mode').value='ovo';SO=[];
   refresh();
 }
 function runCPD(){ if(!PV1)return;                          // CP death (PvP): the rule decides the order, nothing is refined
@@ -2582,13 +2573,12 @@ const MODEINFO={
   '6':['Sniper · 6-stack','You hit a weakened epic monster with the goal of maximizing damage. The mounted units have already been killed or significantly weakened. Stacks are slightly different from the 8-stack mode, to reflect that there are no mounted units and only 6 enemies.'],
   'kill':['Sniper \u00b7 Killshot','You finish off an epic monster. The calculator checks how much of the epic your army can still kill and sets everything up for that. The damage is a bit smaller than in the regular modes, but reviving and training cost much less, so this mode is very cost-effective.'],
   'cp':['Pv1 · CP kill','You hit another player who has only one flying troop type in the city, and your army is strong enough to kill it quickly. The total damage to the enemy is smaller than in the CP death mode, but the cost of reviving and training is significantly lower, which makes this mode very cost-effective.'],
-  'ovo':['Pv1 · One v. One','You fight another player with 12 equally distributed enemy stacks, 3 of each type. The stacks are built to win the fight, not to deal the most damage: the top tier in about equal stacks, the monsters biggest, the second tier as small extras, fewer mounted. They are tuned to your bonuses against full enemy cities, so they work against different enemies.'],
   'arena':['PvMany · Arena','The Lava rules (a fully equipped enemy city with 12 enemy stacks, 3 of each type, Specialists after the Guardsmen and the monsters, no limit for the monsters), but no mercenaries are used at all: only the Leadership army and the monsters.'],
   'lava':['PvMany · Lava','You hit another player who has every kind of troop in the city, with 12 enemy stacks (3 of each type), so it is a total battle. Stacks are created with the goal of maximizing damage, using the Specialists\' double damage. The mercenaries have no limit: they are not held below the army.'],
   'pm':['PvMany · Max damage','You hit another player who has every kind of troop in the city, so it is a total battle. Win or lose, stacks are created with the goal of maximizing damage, using the Specialists\' double damage.'],
   'cpd':['Pv1 · CP death','You hit another player who has only one flying troop type in the city, but a very large one, and your army is not strong enough to kill it. Stacks are created with the goal of maximizing damage, using the Specialists\' double damage and the bonuses against flying enemies.']
 };
-const PVMODES=['cp','cpd','ovo','lava','arena','pvpmax','ren'];      // the modes of the Attack players view; every other mode belongs to Attack epic monsters
+const PVMODES=['cp','cpd','lava','arena','pvpmax','ren'];      // the modes of the Attack players view; every other mode belongs to Attack epic monsters
 let ATK='epics',LASTE={mode:'max',enemy:'4'},LASTP='cp';      // ATK = the view (stored in the tab, like the inputs; a new tab starts in Attack epic monsters). LASTE / LASTP = the last mode of each view, so switching back returns to it.
 function calc(){const t0=performance.now();clearTimeout(CALCT);syncDebug();try{calcRun()}finally{CALCMS=performance.now()-t0}}      // every calculation measures itself: the wait after typing follows it
 let EPPREV='';
@@ -2609,13 +2599,12 @@ function calcRun(){
   if(K4OK&&ATK=='epics'&&$('mode').value=='max'&&+$('enemy').value==K4LO){$('enemy').value=String(K4LO==3?4:8);SO=[];calcRun0()}}      // the 3-stack mode is off while the army kills from 4 stacks: the 4-stack mode instead
 function calcRun0(){
   epAuto();
-  const pvOK=m=>m=='cp'||m=='cpd'?PV1:m=='pvpmax'?PVM():m=='lava'||m=='arena'?DEV:m=='ovo'?ovoOn():m=='ren'?RENEGADES():false,okP=PVMODES.filter(pvOK);      // okP = the PvP modes that are switched on
+  const pvOK=m=>m=='cp'||m=='cpd'?PV1:m=='pvpmax'?PVM():m=='lava'||m=='arena'?DEV:m=='ren'?RENEGADES():false,okP=PVMODES.filter(pvOK);      // okP = the PvP modes that are switched on
   if(PVMODES.includes($('mode').value)&&!pvOK($('mode').value)){$('mode').value='max';SO=[]}      // a mode that is off: a tab left in it falls back to the 4-stack mode
   document.querySelectorAll('.cm[data-m=cp],.cm[data-m=cpd]').forEach(b=>{b.disabled=!PV1});
   document.querySelectorAll('.cm[data-m=pvpmax]').forEach(b=>{b.disabled=!PVM()});
   document.querySelectorAll('.cm[data-m=lava],.cm[data-m=arena]').forEach(b=>{b.disabled=!DEV});
   {const mb=document.querySelector('.ab[data-a=monsters]');if(mb)mb.disabled=!DEV;if(!DEV&&ATK=='monsters'){ATK='epics';SO=[]}}      // Attack monsters: debug mode only
-  document.querySelectorAll('.cm[data-m=ovo]').forEach(b=>{b.disabled=!ovoOn();b.hidden=!ovoOn()});
   if(ATK=='monsters'){if($('mode').value!='mon'){if(!PVMODES.includes($('mode').value))LASTE={mode:$('mode').value,enemy:$('enemy').value};$('mode').value='mon';SO=[]}}      // 22.8: the Attack monsters view has ONE mode (the fewest losses)
   else if($('mode').value=='mon'){$('mode').value=LASTE.mode;$('enemy').value=LASTE.enemy;SO=[]}
   if(okP.length&&ATK!='monsters'){const pv=PVMODES.includes($('mode').value);      // the mode follows the view
@@ -2634,14 +2623,14 @@ function calcRun0(){
   if(!RENEGADES()&&$('mode').value=='ren'){$('mode').value='max';SO=[]}      // Renegades is off: a tab saved in it falls back to Max damage
   {const rb=document.querySelector('.cm[data-m=ren]');if(rb){rb.disabled=!RENEGADES()}}
   const P=getP(),{st,A,Mo,U}=solve(P,O);
-  const fx0=P.ov||P.mon?theoFix(P):null,fx=fx0&&!fx0.res.none?fx0:null;if(fx0)theoApply(fx0,st,U);      // 21.6.2 One v. One: the stacks the simulator found go into the Result. fx0.res.none (Attack monsters, 23.2.32): no army can be built - the Result stays, with 0 units everywhere, so a troop that was turned off can be turned on again
+  const fx0=P.mon?theoFix(P):null,fx=fx0&&!fx0.res.none?fx0:null;if(fx0)theoApply(fx0,st,U);      // 21.6.2 One v. One: the stacks the simulator found go into the Result. fx0.res.none (Attack monsters, 23.2.32): no army can be built - the Result stays, with 0 units everywhere, so a troop that was turned off can be turned on again
   {const rl=$('renlv'),tg=P.ren?renTarget():0,nt=$('renlt');if(rl)rl.hidden=!P.ren;if(nt)nt.textContent=tg?'Damage to reach: '+tg.toLocaleString('en-US'):'No level: the Tier check looks for the most damage per gold of the full revive.'}      // 14.19: the Level box is shown in Renegades only
   SO=st.so;
   {const sx=[...st,...U.all];sx.so=[...st.so,...U.ord];drawSO(sx,P)}                  // after the allocation: the list shows the unit counts
   document.querySelectorAll('.pb').forEach(b=>b.classList.toggle('on',TY.every(t=>v('bh_'+t)==+b.dataset.p&&v('bs_'+t)==+b.dataset.p)));
   document.querySelectorAll('.eb').forEach(b=>b.classList.toggle('on',!P.kill&&!P.ren&&!P.cp&&+b.dataset.e==P.enemy));
-  document.querySelectorAll('.cm').forEach(b=>b.classList.toggle('on',(P.kill&&b.dataset.m=='kill')||(P.ren&&b.dataset.m=='ren')||(P.one&&!P.cpd&&b.dataset.m=='cp')||(P.one&&P.cpd&&b.dataset.m=='cpd')||(P.pm&&!P.ov&&!P.lava&&b.dataset.m=='pvpmax')||(P.lava&&!P.arena&&b.dataset.m=='lava')||(P.arena&&b.dataset.m=='arena')||(P.ov&&b.dataset.m=='ovo')));
-  {const m=P.mon?null:MODEINFO[P.kill?'kill':P.ov?'ovo':P.arena?'arena':P.lava?'lava':P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)],el=$('mdi');if(el){el.hidden=!m&&!pvOff;if(pvOff)el.innerHTML='<b>Attack players</b> - The PvP modes are switched off for now.';else if(m){const ik=({'4':'reg','8':'reg','3':'sn','6':'sn',kill:'sn',kill4:'sn',cp:'pv1',cpd:'pv1'})[P.kill?(P.kill4?'kill4':'kill'):P.ov?'ovo':P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)]||'pvm',ic=document.querySelector('#mics [data-i="'+ik+'"] svg');el.innerHTML=(ic?ic.outerHTML:'')+'<span><b>'+m[0].replace(/^(Regular|Sniper|Pv1|PvMany) \u00b7 /,'')+'</b>'+(P.ov?' <span class="tg">work in progress</span>':'')+' - '+m[1]+'</span>'}}}      // the explanation under the mode buttons (the tier tips under Tiers to use are fixed text, both are always shown)
+  document.querySelectorAll('.cm').forEach(b=>b.classList.toggle('on',(P.kill&&b.dataset.m=='kill')||(P.ren&&b.dataset.m=='ren')||(P.one&&!P.cpd&&b.dataset.m=='cp')||(P.one&&P.cpd&&b.dataset.m=='cpd')||(P.pm&&!P.lava&&b.dataset.m=='pvpmax')||(P.lava&&!P.arena&&b.dataset.m=='lava')||(P.arena&&b.dataset.m=='arena')));
+  {const m=P.mon?null:MODEINFO[P.kill?'kill':P.arena?'arena':P.lava?'lava':P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)],el=$('mdi');if(el){el.hidden=!m&&!pvOff;if(pvOff)el.innerHTML='<b>Attack players</b> - The PvP modes are switched off for now.';else if(m){const ik=({'4':'reg','8':'reg','3':'sn','6':'sn',kill:'sn',kill4:'sn',cp:'pv1',cpd:'pv1'})[P.kill?(P.kill4?'kill4':'kill'):P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)]||'pvm',ic=document.querySelector('#mics [data-i="'+ik+'"] svg');el.innerHTML=(ic?ic.outerHTML:'')+'<span><b>'+m[0].replace(/^(Regular|Sniper|Pv1|PvMany) \u00b7 /,'')+'</b>'+''+' - '+m[1]+'</span>'}}}      // the explanation under the mode buttons (the tier tips under Tiers to use are fixed text, both are always shown)
   const sc=score(P,[...A,...Mo,...U.list],[...st.so,...U.ord]);
   trackUse(P);
   BRD={P,list:[...A,...Mo,...U.list],order:[...st.so,...U.ord],sc,fx};
@@ -2685,11 +2674,11 @@ function calcRun0(){
     ...(P.capA>0?[[`Soldiers — Leadership ${usedOf(A).toLocaleString()} / ${P.capA.toLocaleString()}`,Aall.length?(mob?mobList(prepComp(prepTier(ord(flatOrder(Aall),COMPA))),prepMob()&&VIEW=='mobile'):table(Aall)):'<p class="mu">No army tiers selected.</p>']]:[])].sort((x,y)=>prepMob()||(SHOWTR&&VIEW=='computer')?secRank(x[0])-secRank(y[0]):0).map(([t,b],k)=>`<h2${k?' class="sh2"':''}>${t}</h2>${b}`).join('');
   const hitsRow=Math.max(...REVCASES.map(c=>HIT[c[0]]))>1;      // the hits of every revive mode, after the food consumption in the second row (only when one of them pays for more than 1 hit)
   {const rc=$('rtitle').closest('.card');if(rc)rc.hidden=!(!pvOff&&(P.capA>0||P.capM>0||P.capU>0))}
-  THEOWAIT=!!((P.ov||P.mon)&&(P.capA>0||P.capM>0)&&!fx0);      // One v. One: until the stacks are found the block shows the text and the buttons instead of the Result content
+  THEOWAIT=!!(P.mon&&(P.capA>0||P.capM>0)&&!fx0);      // One v. One: until the stacks are found the block shows the text and the buttons instead of the Result content
   {const rc=$('rtitle').closest('.card');if(rc)rc.querySelectorAll(':scope > #rsm,:scope > .ctl,:scope > #res').forEach(e=>e.classList.toggle('thd',THEOWAIT))}      // Leadership, Dominance and Authority all 0: nothing to show, the whole Result section is hidden
   const tgt=P.ren?renTarget():0,lvN=Math.floor(+$('renLv').value);      // 14.19: Renegades with a Level: is the target reached?
   const kmb=x=>{let v=Math.abs(x),i=0;const up=t=>{if(t<=0)return 0;const p=Math.pow(10,Math.floor(Math.log10(t))-2);return Math.round(+(t/p).toFixed(6))*p};while(v>=1e3&&i<3){v/=1e3;i++}let c=i?up(v):Math.round(v);if(c>=1e3&&i<3){c=up(c/1e3);i++}return (x<0?'-':'')+(i?(+c.toPrecision(3)).toString()+'KMB'[i-1]:String(c))};      // 19.0.30: normal rounding to 3 digits: 1,900,949 -> 1.9M, 626,252 -> 626K, 42,300 -> 42.3K, 8,650 -> 8.65K, 999,999 -> 1M
-  const enTxt=P.one?'one flying enemy stack':P.ov||P.lava?'12 enemy stacks (3 of each type)':P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks';
+  const enTxt=P.one?'one flying enemy stack':P.lava?'12 enemy stacks (3 of each type)':P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks';
   const RZ=1.96,rg=(a,b)=>{const A=fmt(a).split(' '),B=fmt(b).split(' ');return A[1]==B[1]?A[0]+'\u2013'+B[0]+(B[1]?' '+B[1]:''):fmt(a)+' \u2013 '+fmt(b)};      // 19.0.16: a range, e.g. 4.90\u20135.30 T
   const dRange=sc.sd>0?[Math.max(0,sc.dmg-RZ*sc.sd),sc.dmg+RZ*sc.sd]:null,hRange=sc.hsd>0?[Math.max(0,sc.hits-RZ*sc.hsd),sc.hits+RZ*sc.hsd]:null;
   const tile=(c,l,v,sub)=>`<div class="stt ${c}"><div class="stl">${l}</div><div class="stv">${v}</div>${sub?`<div class="sts">${sub}</div>`:''}</div>`;
@@ -3192,7 +3181,7 @@ function theoTab(rows){const el=$('ttab');if(!rows||!rows.length){el.innerHTML='
   const rk=rows.slice().sort((a,b)=>b.res.net-a.res.net);
   el.innerHTML=`<h3 class="tth">Tier choices, best first</h3><div class="tsc"><table><tr><th>Tiers</th><th>Stacks</th><th>Win 1st</th><th>Win 2nd</th><th>Net</th></tr>${rk.map((x,i)=>`<tr${i==0?' class="tbest"':''}><td>${x.set.map(t=>'T'+t).join(' + ')}</td><td class="tn">${x.res.stacks.length}</td><td class="tn">${tpc(x.res.winA)}</td><td class="tn">${tpc(x.res.winB)}</td><td class="tn"><b>${tsg(x.res.net)}</b></td></tr>`).join('')}</table></div><p class="mu">Ranked by the net health left in the two fights together, averaged over enemies with 100%, 105%, 110% and 120% of your Leadership and Dominance. Quick search, so the numbers can move a few points; Find stacks gives the precise ones for the tiers you ticked. Only the top tier plus up to two more are tried (the game allows 3).</p>`}
 function theoSync(P,fx){const c=$('theo');if(!c)return;
-  {const ti=$('tintro');if(ti&&ti.dataset.m!==String(!!P.mon)){ti.dataset.m=String(!!P.mon);ti.innerHTML=P.mon?'<p class="mu">Find the army that kills the monster with the fewest losses.</p>':''}const tb=$('ttc');if(tb)tb.hidden=!!P.mon;{const tr=document.querySelector('#theo .trow');if(tr)tr.hidden=!!P.mon}const cb=$('cmpbtn');if(cb)cb.hidden=!!P.mon;if(P.mon&&SHOWCMP){SHOWCMP=false}}const on=(P.ov||P.mon)&&(P.capA>0||P.capM>0);c.hidden=!on;if(!on){THEOGEN++;return}
+  {const ti=$('tintro');if(ti&&ti.dataset.m!==String(!!P.mon)){ti.dataset.m=String(!!P.mon);ti.innerHTML=P.mon?'<p class="mu">Find the army that kills the monster with the fewest losses.</p>':''}const tb=$('ttc');if(tb)tb.hidden=!!P.mon;{const tr=document.querySelector('#theo .trow');if(tr)tr.hidden=!!P.mon}const cb=$('cmpbtn');if(cb)cb.hidden=!!P.mon;if(P.mon&&SHOWCMP){SHOWCMP=false}}const on=P.mon&&(P.capA>0||P.capM>0);c.hidden=!on;if(!on){THEOGEN++;return}
   const sel=theoSel(),key=theoKey(P,theoNames(sel,theoTop3(P,sel)));
   if(c.dataset.last!==key){if(THEORUN)THEOGEN++;c.dataset.last=key;THEOTC=THEOT.get(JSON.stringify([P,sel]))||null;theoTab(THEOTC)}      // the inputs changed: a running search is out of date
   if(P.mon&&!fx)theoAuto();      // 22.8 against a monster there are no buttons: the army is searched as soon as the inputs are there

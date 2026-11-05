@@ -15,7 +15,7 @@ You type in what you have (Leadership, Dominance, Authority and your bonuses). I
 ## Attack modes
 
 - **Epics:** 3-stack, 4-stack, 6-stack and 8-stack, plus Killshot v. 3 and v. 4, which give up a little damage for a much cheaper revive and training.
-- **Players:** CP kill, CP death, One v. One, Max damage and Renegades.
+- **Players:** CP kill, CP death, Arena, Lava, Max damage and Renegades.
 
 ## Handy to know
 
