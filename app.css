@@ -1,4 +1,4 @@
-:root{--af:#d9a441;--bub:#2a2112;--bg:#0f0e0b;--card:#1b1912;--tx:#e8dcc0;--mu:#a89a78;--ac:#d9a441;--bd:#4a3d22;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--lw:78px;--rg:8px;--tl:#2b2416;--tlt:var(--tx);--tlb:#5e4a26;--tlm:#b3a27c}      /* the result tiles: dark in the dark theme, cream in the light one */
+:root{--af:#d9a441;--bub:#2a2112;--bg:#0f0e0b;--card:#1b1912;--tx:#e8dcc0;--mu:#a89a78;--ac:#d9a441;--bd:#4a3d22;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--lw:78px;--rg:8px;--tl:#3b311d;--tlt:var(--tx);--tlb:#8a6a2c;--tlm:#c2b088}      /* the result tiles: dark in the dark theme, cream in the light one */
 html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 64px)}
 body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 'EB Garamond',Georgia,serif;padding:16px}
 main{max-width:960px;margin:auto}
