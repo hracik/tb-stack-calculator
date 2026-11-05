@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.6.2';
+const APP_VERSION='23.6.3';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -172,13 +172,13 @@ const hitsFor=(F,fp,list,mode)=>{      // hits the food production fp pays for: 
   if(fp<F)return Math.floor(fp/F*100+1e-9)/100;
   const R=list.reduce((q,s)=>q+lossOf(s,mode)*foodOf(s.name),0);
   return R>0?Math.floor((1+(fp-F)/R)*100+1e-9)/100:0};
-const fracSpread=(list,mul)=>{      // the food of the fractional part of the hits (MUL - whole hits) buys the SAME Leadership / Dominance X of every stack (units = X / the cost of one unit, at most the stack's loss of one hit); X is found by bisection. Mercenaries eat no food: no upper end.
+const fracSpread=(list,mul)=>{      // the food of the fractional part of the hits (MUL - whole hits) is shared EQUALLY: every stack gets the same amount of food Y (units = Y / the food of one unit, at most the stack's loss of one hit; what a capped stack can not use goes to the others); Y is found by bisection. Mercenaries eat no food: no upper end.
   const out={},fr=mul-Math.floor(mul+1e-9);if(!(fr>1e-9))return out;
   const L=list.filter(s=>(s.n||0)>0&&TRN[s.name]&&TRN[s.name].pool!='U').map(s=>({k:s.name,n:s.n,l:lossOf(s,REVM),f:foodOf(s.name),c:TRN[s.name].cost||1}));
   const R=L.reduce((q,x)=>q+x.l*x.f,0),T=fr*R;if(!(R>0))return out;
-  const g=X=>L.reduce((q,x)=>q+Math.min(x.l,X/x.c)*x.f,0);let a=0,b=Math.max(...L.map(x=>x.l*x.c));
+  const g=Y=>L.reduce((q,x)=>q+Math.min(x.l*x.f,Y),0);let a=0,b=Math.max(...L.map(x=>x.l*x.f));
   for(let i=0;i<60;i++){const m=(a+b)/2;if(g(m)<T)a=m;else b=m}
-  L.forEach(x=>out[x.k]=Math.min(x.l,b/x.c));return out};
+  L.forEach(x=>out[x.k]=Math.min(x.l,b/x.f));return out};
 const unitsTxt=s=>{      // units to train: the first hit all of them, every next hit only the ones not revived. A range "for the whole hits - for all the hits": e.g. 2.09 hits -> units for 2 hits - units for 2.09 hits (one number when they are the same; the stack itself when the food pays for 1 hit or less; between 1 and 2 hits the lower number is the stack itself)
   const n=s.n||0,L=lossOf(s,REVM),f=h=>Math.ceil(n+(h-1)*L-1e-7),t=x=>x.toLocaleString();
   if(!(MUL>1))return`<span class="nb">${t(n)}</span>`;
