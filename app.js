@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.4.2';
+const APP_VERSION='23.4.3';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -184,7 +184,8 @@ const pct=m=>Math.round(m*100).toLocaleString('en-US')+'%';   // bonus ratio -> 
 const num=x=>Math.round(x).toLocaleString('en-US');                // whole number with thousands separators
 let SOPOS={},BUFN={};      // BUFN: the stacks of the Renegades buffer zone (name -> 1)
 // the bonus text of an order row: "+333% vs. mounted" = the troop's best bonus against a class of the enemy (the best one that counts in this mode; when none counts, its best one anyway)
-function vsText(t,P){return vsText0(t,P)+(P.pm&&t.cls=='S'&&t.cat!='Scout'?' · double damage':'')+(t.cls=='G'&&t.cat=='Mounted'?' · +5 % double damage':'')}      // PvP Max damage: the Specialists deal double damage, too
+function G5(t){return t.cls=='G'&&t.cat=='Mounted'&&t.name!='Quicksand'}      // the +5 % Double damage of the Guardsmen mounted units: all of them, except the Quicksand (the user, 2026-11-05)
+function vsText(t,P){return vsText0(t,P)+(P.pm&&t.cls=='S'&&t.cat!='Scout'?' · double damage':'')+(G5(t)?' · +5 % double damage':'')}      // PvP Max damage: the Specialists deal double damage, too
 function vsText0(t,P){
   if(P.one){const f=(t.vs[3]||0)+(t.vt&&t.vt.Human||0);return(f>0?'+'+pct(f)+' vs. flying':'no bonus')+(t.cls=='S'&&t.cat!='Scout'?' · double damage':'')}
   const CL=['melee','ranged','mounted','flying'],use=NOMT(P)?[0,1,3]:[0,1,2,3],ve=veOf(t,P);
@@ -873,7 +874,7 @@ const TRN={};TR.forEach(t=>TRN[t.name]=t);
 // Strength per health is the strength multiplier divided by the health multiplier (Beast army units carry +Beast health, so they hit a little
 // less per health). The modes only differ in the BLOCKS they cut the army into; inside a block the weakest value dies first, strictly.
 // Only troops with exactly the same value are ordered by: smaller unused bonus, then Melee -> Ranged -> Mounted -> Flying, then the lower tier.
-const ddc=(t,P)=>(P['dd'+t.cls]||0)+(t.cls=='G'&&t.cat=='Mounted'?5:0);      // the Double damage chance of the class; all Guardsmen mounted units have +5 % on top, all the time (the user, 2026-10-27)
+const ddc=(t,P)=>(P['dd'+t.cls]||0)+(G5(t)?5:0);      // the Double damage chance of the class; all Guardsmen mounted units have +5 % on top, all the time (the user, 2026-10-27)
 const ddp=(t,P)=>Math.min(1,(ddc(t,P)+(P.ddA||0))/100);      // the Double damage chance of a troop = the SUM of the chances given (the class's incl. the +5 % of the mounted Guardsmen, and the army's), one roll, applied once (the user, 2026-10-28)
 const ddf=(t,P)=>1+ddp(t,P);      // the average Double damage factor: a Double damage strike deals twice
 const dsp=(t,P)=>P.one?0:t.cls=='M'?(P['dh'+t.type]||0)/100:t.beast?(P.dhBeast||0)/100:0;      // 19.0.17: the Double strike chance of a monster / Beast unit
@@ -1167,7 +1168,7 @@ function renOrder(P,names){
 // The squad bonus is the bonus against flying ONLY. The Double strike is unused in the CP modes (one enemy stack, no second enemy to hit - see dhf), so the Beast units
 // (Royal Lion, Battle Griffin) and the monsters count as troops without a bonus when they have none against flying.
 const cpBonus=(t,P)=>P.pm?sqb(t,P).tot:vsRatio(t,P);      // PvP Max damage: the features against the enemy AND the random effects (Double damage, Double strike) = the damage side of the DH ratio (the user, 2026-10-28: damage is counted with features and random effects); CP kill / CP death: the bonus against flying
-const cpBonusX=(t,P)=>cpBonus(t,P)+(!P.pm&&t.cls=='G'&&t.cat=='Mounted'?(mults(t,P)[2]+vsRatio(t,P))*0.05*(1+(P.ddA||0)/100):0);      // the order ranks the features by size: the +5 % Double damage chance of the Guardsmen mounted units counts as a feature (CP kill, CP death); whether a troop HAS a bonus against flying (bon) is still cpBonus
+const cpBonusX=(t,P)=>cpBonus(t,P)+(!P.pm&&G5(t)?(mults(t,P)[2]+vsRatio(t,P))*0.05*(1+(P.ddA||0)/100):0);      // the order ranks the features by size: the +5 % Double damage chance of the Guardsmen mounted units counts as a feature (CP kill, CP death); whether a troop HAS a bonus against flying (bon) is still cpBonus
 const cpSH=(t,P)=>Math.round(ratioOf(t,P)*1e9);       // strength per health with your multipliers only (no squad bonus, no Double strike)
 // Group of equals = the troops with the same squad bonus AND the same SH ratio (strength per health): they get about the same health and share their places. The troops with a different
 // SH ratio are NOT forced to the same health - the SH ratio decides the order first (the smaller ratio first, see cpdOrder), only the troops with the same ratio form a group.
