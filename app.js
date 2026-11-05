@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.8.3';
+const APP_VERSION='23.8.4';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -182,7 +182,7 @@ const unitsTxt=s=>{      // units to train: the first hit all of them, every nex
   if(!(MUL>1))return`<span class="nb">${t(n)}</span>`;
   const {lo,hi}=rangeOf(s);
   if(lo<hi&&TRN[s.name]&&TRN[s.name].pool=='U')return`<span class="nb">${t(lo)}+</span>`;      // a mercenary eats no food, so no upper end: just the lower number and a +
-  const tp=TIPS[s.name]!=null?`<span class="tip">tip ${t(TIPS[s.name])}</span>`:'';      // the round number to train (see tipsFor), under the range
+  const tp=TIPS[s.name]!=null?`<span class="tip">${t(TIPS[s.name])}</span>`:'';      // the round number to train (see tipsFor), under the range
   return (lo<hi?`<span class="nb">${t(lo)}</span> <span class="nb">– ${t(hi)}</span>`:`<span class="nb">${t(hi)}</span>`)+tp};      // the pieces never break inside; a narrow card breaks only between them
 const rangeOf=s=>{const n=s.n||0,L=lossOf(s,REVM),f=h=>Math.ceil(n+(h-1)*L-1e-7),lo=f(Math.floor(MUL+1e-9));
   return{lo,hi:FRX[s.name]!=null?lo+Math.ceil(FRX[s.name]-1e-7):f(MUL)}};      // the units to train: lo = for the whole hits, hi = for all the hits (the upper end: the food of the fractional hit is spread as the SAME share of every stack, see fracSpread)
