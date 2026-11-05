@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.3.27';
+const APP_VERSION='23.3.28';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1702,14 +1702,15 @@ const cloneSt=st=>{const c=st.map(s=>({...s}));c.so=st.so.slice();return c};    
 function solve1(P,order,zeroPt,PS,stIn,light){const st=stIn?cloneSt(stIn):buildStacks(PS||P,order,XS),{A,Mo}=allocate(P,st.filter(s=>!s.off));      // PS: the settings the ORDER is searched with (the search without the mercenaries keeps the Leadership and the monsters as flat as it is with 0 Authority)
   if(zeroPt)Mo.forEach(s=>{if(s.pt)s.n=0});      // the partial tier (and the tiers below it) is taken out: the mercenaries are sized first, the stacks come back behind them (dominanceTail)
   const U=allocMerc(P,[...A,...Mo],st.so,XS);
-  if((rgm(P)||P.cpd||P.cp)&&!P.lava)dominanceTail(P,st,A,Mo,U,light);
+  if(rgm(P))dominanceTail(P,st,A,Mo,U,light);
   growMain(P,st,A,Mo,U);
   polishWeak(P,st,A,Mo,U);
-  if(P.lava&&U.ord.length)lavaPlace(P,st,A,Mo,U);
+  if(mercFree(P)&&U.ord.length)lavaPlace(P,st,A,Mo,U);
   return{st,A,Mo,U}}
+const mercFree=P=>!!(P.lava||(P.one&&P.cpd));      // Lava and CP death: the mercenaries have no limit from the army and stand where their health puts them (CP kill and the other modes: behind the army, as usual)
 function lavaPlace(P,st,A,Mo,U){      // Lava: the monsters and the mercenaries have no limit from the army (each pool is spent in full at its own level), so they stand where their HEALTH puts them: the target order is the declining health order (the enemy never strikes a small stack first)
   const dmgOf=()=>score(P,[...A,...Mo,...U.list],place(),true).dmg;
-  const all=()=>[...A,...Mo,...U.list],free=new Set([...Mo.map(x=>x.name),...U.ord]);
+  const all=()=>[...A,...Mo,...U.list],free=new Set([...(P.lava?Mo:[]).map(x=>x.name),...U.ord]);
   const H=n=>{const x=all().find(y=>y.name==n);return x&&x.n>0?tot(x.n,x.hp):-1};
   const place=()=>{const cur=st.so.filter(n=>!free.has(n));[...free].filter(n=>H(n)>0).sort((a,b)=>H(b)-H(a)).forEach(m=>{const h=H(m);let k=cur.findIndex(n=>H(n)>=0&&H(n)<h);if(k<0)k=cur.length;cur.splice(k,0,m)});return cur};
   const left=()=>(P.capU||0)-U.list.reduce((q,x)=>q+x.n*x.cost,0);
@@ -1728,7 +1729,7 @@ function lavaPlace(P,st,A,Mo,U){      // Lava: the monsters and the mercenaries 
         U.list.forEach((y,k)=>{y.n=sv[k]});x.n=n0}
       if(!dropped)break}
     U.list=U.list.filter(x=>x.n>0);U.ord=U.ord.filter(n=>U.list.some(x=>x.name==n));U.used=U.list.reduce((q,x)=>q+x.n*x.cost,0);
-    free.clear();[...Mo.map(x=>x.name),...U.ord].forEach(n=>free.add(n));
+    free.clear();[...(P.lava?Mo:[]).map(x=>x.name),...U.ord].forEach(n=>free.add(n));
   }
   st.so=place();U.ord=[];
 }
@@ -1740,7 +1741,7 @@ function solveTC(P,order){
 // 21.5.9: ONE order search, the one WITHOUT the mercenaries (Authority 0): the Leadership and the monsters keep the layout they have with 0 Authority. The partial monster stacks are left to the Dominance tail (dominanceTail),
 // which puts them behind the mercenaries when the Authority allows it, before them when it does not. No variants are compared.
 function solve(P,order,light){
-  if(!rgm(P)&&!P.cpd&&!P.cp)return solve1(P,order);
+  if(!rgm(P))return solve1(P,order);
   return solve1(P,order,true,P.capU>0?{...P,capU:0}:P,null,light)}
 // 21.5.2: the Dominance that is LEFT over. The monster chain stops when the stacks reach the level of the army (health and strength fall along the order), so a lower monster tier (the one below the partial tier) gets no units
 // while part of the Dominance stays unspent. These stacks (the lower tier) take the leftover Dominance. There is no single good place for them, so BOTH are tried and the one with the most damage is kept:
@@ -2488,7 +2489,7 @@ function allocMerc(P,ld,so,X){
   const act=MT.filter(t=>!X.has(t.name));
   if(!(P.capU>0)||!act.length)return res;
   const ix={};so.forEach((n,i)=>ix[n]=i);
-  const L=P.lava?[]:ld.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);      // Lava: no chain from the last army / monster stack, the mercenaries have no limit
+  const L=mercFree(P)?[]:ld.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);      // Lava: no chain from the last army / monster stack, the mercenaries have no limit
   let H=Infinity,T=Infinity;
   L.forEach(s=>{H=tot(s.n,s.hp);if(strRef(s))T=tot(s.n,s.str)});   // the last Leadership / Dominance stack: the chain goes on from its health and total strength
   if(P.ren){      // 14.14, 14.16 Renegades: the mercenaries are in the block with the rest of the Leadership and the monsters: the same health level, no step between them. Below the buffer zone in health, below the last of the first 16 in strength
