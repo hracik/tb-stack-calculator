@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.9.14';
+const APP_VERSION='23.9.15';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -152,7 +152,7 @@ document.addEventListener('click',e=>{
 });
 
 let VIEW='grouped';try{const sv=localStorage.getItem('sc_view');if(sv=='mobile'||sv=='computer')VIEW=sv}catch(e){}      // result view: Grouped (cards in groups), Mobile (one unit per line) or Computer (two units per line, same order as Mobile). One setting for all tabs.
-let FRX={},TIPS={},STD={h:0,fr:{}},STDN=0,STDT={};
+let FRX={},TIPS={},STD={h:0,fr:{}},STDN=0,STDT={},STDR={};
 let MUL=1,REVM='top',SHOWTR=false,TOPT={A:0,M:0,U:0};      // MUL = the hits the Food production pays for with the chosen Revive (rounded DOWN to 2 decimals). REVM = the Revive choice: none / top (the top line) / mon (monsters only) / montop (monsters and top line) / all. SHOWTR = the Preparation button: show the units to prepare instead of the units to hit with. TOPT = the top line: the highest tier in use in the Army (with the engineers), in the Monsters and in the Mercenaries
 const REV=90;      // % of a revived stack that comes back after a hit (rounded down per stack)
 const TEMPLE=[1.04,1.06,1.08,1.11,1.13,1.16,1.19,1.22,1.27,1.33,1.36,1.40,1.44,1.48,1.53,1.58,1.63,1.68,1.74,1.81,1.91,2.02,2.15,2.31,2.51,2.68,2.88,3.13,3.44,3.84,3.93,4.03,4.13,4.23,4.34,4.46,4.59,4.72,4.87,5.02,5.17,5.34,5.52,5.71,5.91];      // 13.1: Temple level 1..45 -> "Troop revival cost is decreased by" (times), from the in-game Temple table. The revival gold of a troop is divided by it.
@@ -178,11 +178,12 @@ const fracSpread=(list,mul)=>{      // the food of the fractional part of the hi
   const R=L.reduce((q,x)=>q+x.l*x.f,0);if(!(R>0&&L.length))return out;
   const Y=fr*R/L.length;L.forEach(x=>out[x.k]=x.f>0?Y/x.f:0);return out};
 const roundLast=(a,b)=>{for(const st of [100000,50000,10000,5000,1000,500,100,50,10,5]){const x=Math.ceil(a/st)*st;if(x<=b)return x}return a};      // the roundest whole number between a and b
-const brkTip=(s,lo,hi,pre='')=>{      // Barracks tip (under the round number): the units to train as FULL trainings (+ the last one). The barracks train at most the typed Leadership (army, engineers) / Dominance (monsters) per training: capacity / the cost of one unit = the units of a full training. A number between lo and hi that is a whole number of full trainings is best (the fewest trainings); when there is none, the full trainings under the range plus a last training, the roundest number that lands inside the range. Mercenaries: no tip.
+const brkTip=(s,lo,hi,pre='',ra=null)=>{      // Barracks tip (under the round number): the units to train as FULL trainings (+ the last one). The barracks train at most the typed Leadership (army, engineers) / Dominance (monsters) per training: capacity / the cost of one unit = the units of a full training. A number between lo and hi that is a whole number of full trainings is best (the fewest trainings); when there is none, the full trainings under the range plus a last training, the roundest number that lands inside the range. Mercenaries: no tip.
   const t=TRN[s.name];if(!t||t.pool=='U')return'';
   const cap=v(t.pool=='M'?'brkD':'brkL'),c=Math.floor(cap/(t.cost||1));if(!(cap>0)||c<1||!(lo>0))return'';
   const T=x=>x.toLocaleString(),k=Math.ceil(lo/c);
   if(k*c<=hi)return`<span class="nt">${pre}${k} × ${T(c)}</span>`;
+  if(ra!=null&&ra>0){const f2=Math.max(0,Math.ceil((lo-ra)/c)),tt=f2*c+ra;if(tt>=lo&&tt<=hi)return`<span class="nt">${pre}${f2>0?f2+' × '+T(c)+' + ':''}${T(ra)}</span>`}      // the monsters of a tier: the same addition as in the retraining, when it fits the range
   const f=Math.floor(lo/c),r=roundLast(lo-f*c,hi-f*c);
   return`<span class="nt">${pre}${f>0?f+' × '+T(c)+' + ':''}${T(r)}</span>`};
 const brkTot=(s,lo,hi)=>{      // the units of the barracks tip (full trainings + the last one) as ONE number, 0 when there is no tip (same rule as brkTip)
@@ -201,7 +202,7 @@ const unitsTxt=s=>{      // units to train: the first hit all of them, every nex
   const {lo,hi}=rangeOf(s);
   if(lo<hi&&TRN[s.name]&&TRN[s.name].pool=='U')return`<span class="nb">${t(lo)}+</span>`;      // a mercenary eats no food, so no upper end: just the lower number and a +
   const tp=TIPS[s.name]!=null?`<span class="tip">${t(TIPS[s.name])}</span>`:'';      // the round number to train (see tipsFor), under the range
-  const f1=(lo<hi?`<span class="nb">${t(lo)}</span> <span class="nb">– ${t(hi)}</span>`:`<span class="nb">${t(hi)}</span>`)+tp+brkTip(s,lo,hi);
+  const f1=(lo<hi?`<span class="nb">${t(lo)}</span> <span class="nb">– ${t(hi)}</span>`:`<span class="nb">${t(hi)}</span>`)+tp+brkTip(s,lo,hi,'',STDR[s.name]!=null?STDR[s.name]:null);
   const q=stdOf(s);if(!(STD.h>0)||(TRN[s.name]&&TRN[s.name].pool=='U'))return f1;      // the next trainings (a line under the first one); also for the stacks that are not revived (the same numbers: they are trained again whole)
   const T=stdT(s,q);      // line 1: the first training (above); line 2: the retraining = the number every next training trains; line 3: how many retrainings, then the adjusting one
   return f1+(brkTip(s,T,T,'↻ ')||`<span class="nt">↻ ${t(T)}</span>`)+cycTxt(s,q.lo,T)};
@@ -211,7 +212,7 @@ const STDSUR=3;      // the most surplus per training (% of the need) for the ti
 const stdTop=q=>Math.max(q.lo,Math.min(q.hi,Math.floor(q.lo*(1+STDSUR/100))));      // the tip of the next trainings stays close above the need (the surplus per training at most STDSUR %), so the same training repeats as many times as possible
 const stdT=(s,q)=>STDT[s.name]!=null?STDT[s.name]:roundLast(q.lo,stdTop(q));      // the number to train in every next training (see stdTs)
 const stdTs=list=>{      // the number of the next trainings per stack: the army stacks of one tier with the same cost, food and health get the SAME number of units, e.g. Corax and Royal Lion, Purifier and Punisher (the monsters of one tier too, e.g. all the M9). Window: from the biggest need of the tier to 3 % above it (and not above the food of any stack); the roundest number in it: whole barracks trainings when they fit, else full trainings + the roundest last one.
-  const out={},G=new Map();
+  STDR={};const out={},G=new Map();
   list.filter(s=>(s.n||0)>0&&!s.off&&TRN[s.name]&&TRN[s.name].pool!='U').forEach(s=>{const t=TRN[s.name],k=t.pool=='A'?'A'+t.tier+'/'+(t.cost||1)+'/'+(t.food||0)+'/'+t.hp:'M'+t.tier,c=t.pool=='A'?Math.max(1,t.cost||1):1,q=stdOf(s);
     if(!G.has(k))G.set(k,{u:[],lo:0,top:Infinity,m:1,pool:t.pool,cost:t.cost||1,mem:[]});const g=G.get(k);g.u.push([s.name,c]);g.mem.push({n:s.name,lo:q.lo,hi:Math.max(q.hi,stdTop(q)),c:Math.floor(v('brkD')/(t.cost||1))});g.lo=Math.max(g.lo,q.lo*c);g.top=Math.min(g.top,Math.max(q.hi,stdTop(q))*c);g.m=lcm(g.m,c)});
   G.forEach(g=>{if(g.pool=='M'&&g.mem.every(m=>m.c>0)){      // the monsters of a tier: full trainings (each its own: Dominance / cost) + the SAME round last training r for the whole tier; the surplus per training as small as possible (3 %, then 6, 10, 15 %), then the roundest r
@@ -219,7 +220,7 @@ const stdTs=list=>{      // the number of the next trainings per stack: the army
       for(let r=0;r<mc;r++){const T=g.mem.map(m=>Math.ceil(Math.max(0,m.lo-r)/m.c)*m.c+r);
         if(!g.mem.every((m,i)=>T[i]<=Math.max(m.hi,m.lo)))continue;
         const w=Math.max(...g.mem.map((m,i)=>(T[i]-m.lo)/Math.max(1,m.lo)));if(!best||w<best.w-1e-12)best={w,T}}
-      const done=!!best;if(done)g.mem.forEach((m,i)=>out[m.n]=best.T[i]);
+      const done=!!best;if(done)g.mem.forEach((m,i)=>{out[m.n]=best.T[i];STDR[m.n]=best.T[i]%m.c});
       if(done)return}
     const top=Math.max(g.lo,Math.min(g.top,Math.floor(g.lo*(1+STDSUR/100)))),cap=g.pool=='M'?0:Math.floor(v('brkL')/g.m)*g.m;      // the army: the units of a full training in Leadership (T is in units x cost); the monsters of a tier get one round number of units (their costs differ, so no full trainings)let x;
     if(cap>0){const k=Math.ceil(g.lo/cap);if(k*cap<=top)x=k*cap;else{const f=Math.floor(g.lo/cap);x=f*cap+roundIn(g.lo-f*cap,top-f*cap,g.m).x}}
