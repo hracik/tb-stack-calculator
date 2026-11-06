@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.9.13';
+const APP_VERSION='23.9.14';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -215,11 +215,11 @@ const stdTs=list=>{      // the number of the next trainings per stack: the army
   list.filter(s=>(s.n||0)>0&&!s.off&&TRN[s.name]&&TRN[s.name].pool!='U').forEach(s=>{const t=TRN[s.name],k=t.pool=='A'?'A'+t.tier+'/'+(t.cost||1)+'/'+(t.food||0)+'/'+t.hp:'M'+t.tier,c=t.pool=='A'?Math.max(1,t.cost||1):1,q=stdOf(s);
     if(!G.has(k))G.set(k,{u:[],lo:0,top:Infinity,m:1,pool:t.pool,cost:t.cost||1,mem:[]});const g=G.get(k);g.u.push([s.name,c]);g.mem.push({n:s.name,lo:q.lo,hi:Math.max(q.hi,stdTop(q)),c:Math.floor(v('brkD')/(t.cost||1))});g.lo=Math.max(g.lo,q.lo*c);g.top=Math.min(g.top,Math.max(q.hi,stdTop(q))*c);g.m=lcm(g.m,c)});
   G.forEach(g=>{if(g.pool=='M'&&g.mem.every(m=>m.c>0)){      // the monsters of a tier: full trainings (each its own: Dominance / cost) + the SAME round last training r for the whole tier; the surplus per training as small as possible (3 %, then 6, 10, 15 %), then the roundest r
-      const mc=Math.max(...g.mem.map(m=>m.c));let done=false;
-      for(const sur of [STDSUR,2*STDSUR,10,15,25]){const cand=[];for(let r=0;r<mc;r+=5)cand.push(r);cand.sort((a,b)=>(b?roundness(b):1e9)-(a?roundness(a):1e9)||a-b);
-        for(const r of cand){const T=g.mem.map(m=>Math.ceil(Math.max(0,m.lo-r)/m.c)*m.c+r);
-          if(g.mem.every((m,i)=>T[i]>=m.lo&&T[i]-m.lo<=m.lo*sur/100+1e-9&&T[i]<=Math.max(m.hi,m.lo))){g.mem.forEach((m,i)=>out[m.n]=T[i]);done=true;break}}
-        if(done)break}
+      const mc=Math.max(...g.mem.map(m=>m.c));let best=null;      // any r from 0 to the biggest full training: the one with the smallest surplus of the tier (the biggest surplus of any stack, in % of its need)
+      for(let r=0;r<mc;r++){const T=g.mem.map(m=>Math.ceil(Math.max(0,m.lo-r)/m.c)*m.c+r);
+        if(!g.mem.every((m,i)=>T[i]<=Math.max(m.hi,m.lo)))continue;
+        const w=Math.max(...g.mem.map((m,i)=>(T[i]-m.lo)/Math.max(1,m.lo)));if(!best||w<best.w-1e-12)best={w,T}}
+      const done=!!best;if(done)g.mem.forEach((m,i)=>out[m.n]=best.T[i]);
       if(done)return}
     const top=Math.max(g.lo,Math.min(g.top,Math.floor(g.lo*(1+STDSUR/100)))),cap=g.pool=='M'?0:Math.floor(v('brkL')/g.m)*g.m;      // the army: the units of a full training in Leadership (T is in units x cost); the monsters of a tier get one round number of units (their costs differ, so no full trainings)let x;
     if(cap>0){const k=Math.ceil(g.lo/cap);if(k*cap<=top)x=k*cap;else{const f=Math.floor(g.lo/cap);x=f*cap+roundIn(g.lo-f*cap,top-f*cap,g.m).x}}
