@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.9.1';
+const APP_VERSION='23.9.2';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -152,7 +152,7 @@ document.addEventListener('click',e=>{
 });
 
 let VIEW='grouped';try{const sv=localStorage.getItem('sc_view');if(sv=='mobile'||sv=='computer')VIEW=sv}catch(e){}      // result view: Grouped (cards in groups), Mobile (one unit per line) or Computer (two units per line, same order as Mobile). One setting for all tabs.
-let FRX={},TIPS={};
+let FRX={},TIPS={},STD={h:0,fr:{}};
 let MUL=1,REVM='top',SHOWTR=false,TOPT={A:0,M:0,U:0};      // MUL = the hits the Food production pays for with the chosen Revive (rounded DOWN to 2 decimals). REVM = the Revive choice: none / top (the top line) / mon (monsters only) / montop (monsters and top line) / all. SHOWTR = the Preparation button: show the units to prepare instead of the units to hit with. TOPT = the top line: the highest tier in use in the Army (with the engineers), in the Monsters and in the Mercenaries
 const REV=90;      // % of a revived stack that comes back after a hit (rounded down per stack)
 const TEMPLE=[1.04,1.06,1.08,1.11,1.13,1.16,1.19,1.22,1.27,1.33,1.36,1.40,1.44,1.48,1.53,1.58,1.63,1.68,1.74,1.81,1.91,2.02,2.15,2.31,2.51,2.68,2.88,3.13,3.44,3.84,3.93,4.03,4.13,4.23,4.34,4.46,4.59,4.72,4.87,5.02,5.17,5.34,5.52,5.71,5.91];      // 13.1: Temple level 1..45 -> "Troop revival cost is decreased by" (times), from the in-game Temple table. The revival gold of a troop is divided by it.
@@ -191,9 +191,12 @@ const unitsTxt=s=>{      // units to train: the first hit all of them, every nex
   const {lo,hi}=rangeOf(s);
   if(lo<hi&&TRN[s.name]&&TRN[s.name].pool=='U')return`<span class="nb">${t(lo)}+</span>`;      // a mercenary eats no food, so no upper end: just the lower number and a +
   const tp=TIPS[s.name]!=null?`<span class="tip">${t(TIPS[s.name])}</span>`:'';      // the round number to train (see tipsFor), under the range
-  return (lo<hi?`<span class="nb">${t(lo)}</span> <span class="nb">– ${t(hi)}</span>`:`<span class="nb">${t(hi)}</span>`)+tp+brkTip(s,lo,hi)};      // the pieces never break inside; a narrow card breaks only between them
+  const f1=(lo<hi?`<span class="nb">${t(lo)}</span> <span class="nb">– ${t(hi)}</span>`:`<span class="nb">${t(hi)}</span>`)+tp+brkTip(s,lo,hi);
+  const q=stdOf(s);if(!(STD.h>0)||(q.lo==lo&&q.hi==hi)||(TRN[s.name]&&TRN[s.name].pool=='U'))return f1;      // the next trainings (a line under the first one); nothing when they are the same
+  return f1+`<span class="st" title="Every next training: starts from the units left after the max hits and the revive">↻ ${q.lo<q.hi?t(q.lo)+' – '+t(q.hi):t(q.hi)}</span>`+brkTip(s,q.lo,q.hi)};      // the pieces never break inside; a narrow card breaks only between them
 const rangeOf=s=>{const n=s.n||0,L=lossOf(s,REVM),f=h=>Math.ceil(n+(h-1)*L-1e-7),lo=f(Math.floor(MUL+1e-9));
   return{lo,hi:FRX[s.name]!=null?lo+Math.ceil(FRX[s.name]-1e-7):f(MUL)}};      // the units to train: lo = for the whole hits, hi = for all the hits (the upper end: the food of the fractional hit is spread as the SAME share of every stack, see fracSpread)
+const stdOf=s=>{const n=s.n||0,L=lossOf(s,REVM),h=Math.max(1,Math.floor(STD.h+1e-9)),lo=Math.ceil(h*L-1e-7);return{lo,hi:STD.fr[s.name]!=null?lo+Math.ceil(STD.fr[s.name]-1e-7):lo}};      // the 2nd and every later training starts from the units left after the max hits and the revive (S = n - loss): a hit needs S >= n, so every hit only needs the loss back, hits per training = Food production / the food of the loss (STD.h, a few more than the first training); units for the whole hits = hits x loss, the upper end = the food of the fractional hit shared equally (as in the first training). It does not depend on how many trainings came before.
 const roundIn=(lo,hi,m=1)=>{for(let e=Math.floor(Math.log10(Math.max(hi,1)));e>=0;e--)for(const k of [5,2,1]){const st=k*10**e;if(st%m)continue;const x=Math.ceil(lo/st-1e-9)*st;if(x<=hi)return{x,st}}return{x:Math.ceil(lo/m-1e-9)*m,st:m}};      // the roundest number between lo and hi (a step of 5, 2 or 1 x 10^e, the biggest that fits, a multiple of m) and its step
 // TIPS (Preparation): one round BASE number per army tier - the units of that tier get the base / their Leadership cost (cost 2: half of it, an engineer of cost 10: a tenth), so the tips follow the Leadership;
 // one round number per monster tier, the same for all its monsters (mercenaries eat no food: no tip). The base starts at the roundest number between the highest lower end and the highest upper end
@@ -2704,7 +2707,7 @@ function calcRun0(){
   const rvs=hl.filter(s=>dies(s)&&revives(s,REVM)).reduce((g,s)=>{const t=TRN[s.name];if(t&&(s.n||0)>0)g[t.pool]+=Math.floor(s.n*REV/100)*(t.gold||0);return g},{A:0,M:0,U:0}),scost=(rvs.A+rvs.M+rvs.U)/tf;      // 13.4: the same, only for the stacks that the Revive select brings back (none: 0, all: the same as the full revive)
   const HIT={};REVCASES.forEach(([k])=>HIT[k]=hitsFor(food,v('foodP')*(100+FOODADD)/100,hl,k));REVFIX.forEach(([k])=>HIT[k]=FIXHIT[k]);      // hits the Food production pays for in every Training case
   {const w=$('prepw'),low=SHOWTR&&food>0&&!(HIT[REVM]>=1);w.hidden=!low||SHOWCMP;if(low)w.textContent='Food production is too low: it pays for less than 1 hit ('+(HIT[REVM]||0).toFixed(2)+'). The numbers show the whole stacks.'}
-  MUL=HIT[REVM]>1?HIT[REVM]:1;FRX=MUL>1?fracSpread(hl,MUL):{};TIPS=tipsFor(hl);      // the chosen Revive: the hits it pays for (1 = the food pays for one hit or less: the units to train are the stack itself)
+  MUL=HIT[REVM]>1?HIT[REVM]:1;FRX=MUL>1?fracSpread(hl,MUL):{};TIPS=tipsFor(hl);{const fp=v('foodP')*(100+FOODADD)/100,R=hl.reduce((q,x)=>q+lossOf(x,REVM)*foodOf(x.name),0);STD.h=MUL>1&&R>0?Math.floor(fp/R*100+1e-9)/100:0;STD.fr=STD.h>1?fracSpread(hl,STD.h):{}}      // the chosen Revive: the hits it pays for (1 = the food pays for one hit or less: the units to train are the stack itself)
   document.querySelectorAll('.sb').forEach(b=>b.classList.toggle('on',!SHOWCMP&&(b.dataset.sh=='train')==($('shw').value=='train')));
   if(FMP&&!noFood)fmShut();      // 14.27: close the Food modal if the user entered food elsewhere while it was open
   {const live=[...A,...Mo].filter(x=>x.n>0),eng=live.filter(x=>x.cat=='Engineer').length,mon=live.filter(x=>x.p=='M'),army=live.filter(x=>x.p=='A'&&x.cat!='Engineer').length;

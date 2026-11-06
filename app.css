@@ -591,3 +591,5 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 
 .intro{display:none}html.dev .intro{display:block}      /* 23.3.29 the How to use bubble only in debug mode */
 .nt{display:block;margin-top:1px;font-size:12px;font-weight:400;opacity:.8;white-space:nowrap}      /* Preparation: the barracks tip (full trainings + the last one), under the round number */
+
+.st{display:block;margin-top:2px;font-size:12px;font-weight:400;color:var(--mut,inherit);opacity:.85;white-space:nowrap}      /* Preparation: the numbers for the next trainings (from the units left after the max hits), under the first line */
