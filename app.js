@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.9.5';
+const APP_VERSION='23.9.6';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -201,7 +201,7 @@ const unitsTxt=s=>{      // units to train: the first hit all of them, every nex
   if(lo<hi&&TRN[s.name]&&TRN[s.name].pool=='U')return`<span class="nb">${t(lo)}+</span>`;      // a mercenary eats no food, so no upper end: just the lower number and a +
   const tp=TIPS[s.name]!=null?`<span class="tip">${t(TIPS[s.name])}</span>`:'';      // the round number to train (see tipsFor), under the range
   const f1=(lo<hi?`<span class="nb">${t(lo)}</span> <span class="nb">– ${t(hi)}</span>`:`<span class="nb">${t(hi)}</span>`)+tp+brkTip(s,lo,hi);
-  const q=stdOf(s);if(!(STD.h>0)||(q.lo==lo&&q.hi==hi)||(TRN[s.name]&&TRN[s.name].pool=='U'))return f1;      // the next trainings (a line under the first one); nothing when they are the same
+  const q=stdOf(s);if(!(STD.h>0)||(TRN[s.name]&&TRN[s.name].pool=='U'))return f1;      // the next trainings (a line under the first one); also for the stacks that are not revived (the same numbers: they are trained again whole)
   const h2=Math.max(q.lo,Math.min(q.hi,Math.floor(q.lo*(1+STDSUR/100))));      // the tip of the next trainings stays close above the need (the surplus per training at most STDSUR %), so the same training repeats as many times as possible
   return f1+`<span class="st" title="Every next training: starts from the units left after the max hits and the revive">↻ ${q.lo<q.hi?t(q.lo)+' – '+t(q.hi):t(q.hi)}</span>`+brkTip(s,q.lo,h2)+cycTxt(s,q.lo,h2)};      // the pieces never break inside; a narrow card breaks only between them
 const rangeOf=s=>{const n=s.n||0,L=lossOf(s,REVM),f=h=>Math.ceil(n+(h-1)*L-1e-7),lo=f(Math.floor(MUL+1e-9));
