@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.9.11';
+const APP_VERSION='23.9.12';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -204,17 +204,17 @@ const unitsTxt=s=>{      // units to train: the first hit all of them, every nex
   const f1=(lo<hi?`<span class="nb">${t(lo)}</span> <span class="nb">– ${t(hi)}</span>`:`<span class="nb">${t(hi)}</span>`)+tp+brkTip(s,lo,hi);
   const q=stdOf(s);if(!(STD.h>0)||(TRN[s.name]&&TRN[s.name].pool=='U'))return f1;      // the next trainings (a line under the first one); also for the stacks that are not revived (the same numbers: they are trained again whole)
   const T=stdT(s,q);      // line 1: the first training (above); line 2: the retraining = the number every next training trains; line 3: how many retrainings, then the adjusting one
-  return f1+(brkTip(s,T,T,'↻ ')||`<span class="nt">↻ ${t(T)}</span>`)+cycTxt(s,q.lo,T)};
+  return f1+((TRN[s.name].pool=='A'&&brkTip(s,T,T,'↻ '))||`<span class="nt">↻ ${t(T)}</span>`)+cycTxt(s,q.lo,T)};
 const rangeOf=s=>{const n=s.n||0,L=lossOf(s,REVM),f=h=>Math.ceil(n+(h-1)*L-1e-7),lo=f(Math.floor(MUL+1e-9));
   return{lo,hi:FRX[s.name]!=null?lo+Math.ceil(FRX[s.name]-1e-7):f(MUL)}};      // the units to train: lo = for the whole hits, hi = for all the hits (the upper end: the food of the fractional hit is spread as the SAME share of every stack, see fracSpread)
 const STDSUR=3;      // the most surplus per training (% of the need) for the tip of the next trainings: 15,570 -> 16,000 (2.8 %), not 20,000 (28 %)
 const stdTop=q=>Math.max(q.lo,Math.min(q.hi,Math.floor(q.lo*(1+STDSUR/100))));      // the tip of the next trainings stays close above the need (the surplus per training at most STDSUR %), so the same training repeats as many times as possible
 const stdT=(s,q)=>STDT[s.name]!=null?STDT[s.name]:roundLast(q.lo,stdTop(q));      // the number to train in every next training (see stdTs)
-const stdTs=list=>{      // the number of the next trainings per stack: the army stacks of one tier with the same cost, food and health get the SAME number of units, e.g. Corax and Royal Lion, Purifier and Punisher (the monsters each their own). Window: from the biggest need of the tier to 3 % above it (and not above the food of any stack); the roundest number in it: whole barracks trainings when they fit, else full trainings + the roundest last one.
+const stdTs=list=>{      // the number of the next trainings per stack: the army stacks of one tier with the same cost, food and health get the SAME number of units, e.g. Corax and Royal Lion, Purifier and Punisher (the monsters of one tier too, e.g. all the M9). Window: from the biggest need of the tier to 3 % above it (and not above the food of any stack); the roundest number in it: whole barracks trainings when they fit, else full trainings + the roundest last one.
   const out={},G=new Map();
-  list.filter(s=>(s.n||0)>0&&!s.off&&TRN[s.name]&&TRN[s.name].pool!='U').forEach(s=>{const t=TRN[s.name],k=t.pool=='A'?'A'+t.tier+'/'+(t.cost||1)+'/'+(t.food||0)+'/'+t.hp:s.name,c=t.pool=='A'?Math.max(1,t.cost||1):1,q=stdOf(s);
+  list.filter(s=>(s.n||0)>0&&!s.off&&TRN[s.name]&&TRN[s.name].pool!='U').forEach(s=>{const t=TRN[s.name],k=t.pool=='A'?'A'+t.tier+'/'+(t.cost||1)+'/'+(t.food||0)+'/'+t.hp:'M'+t.tier,c=t.pool=='A'?Math.max(1,t.cost||1):1,q=stdOf(s);
     if(!G.has(k))G.set(k,{u:[],lo:0,top:Infinity,m:1,pool:t.pool,cost:t.cost||1});const g=G.get(k);g.u.push([s.name,c]);g.lo=Math.max(g.lo,q.lo*c);g.top=Math.min(g.top,Math.max(q.hi,stdTop(q))*c);g.m=lcm(g.m,c)});
-  G.forEach(g=>{const top=Math.max(g.lo,Math.min(g.top,Math.floor(g.lo*(1+STDSUR/100)))),cap=g.pool=='M'?Math.floor(v('brkD')/g.cost):Math.floor(v('brkL')/g.m)*g.m;      // the units of a full training: the monsters Dominance / their cost (T is in units), the army in Leadership (T is in units x cost)let x;
+  G.forEach(g=>{const top=Math.max(g.lo,Math.min(g.top,Math.floor(g.lo*(1+STDSUR/100)))),cap=g.pool=='M'?0:Math.floor(v('brkL')/g.m)*g.m;      // the army: the units of a full training in Leadership (T is in units x cost); the monsters of a tier get one round number of units (their costs differ, so no full trainings)let x;
     if(cap>0){const k=Math.ceil(g.lo/cap);if(k*cap<=top)x=k*cap;else{const f=Math.floor(g.lo/cap);x=f*cap+roundIn(g.lo-f*cap,top-f*cap,g.m).x}}
     else x=roundIn(g.lo,top,g.m).x;
     g.u.forEach(([n,c])=>out[n]=x/c)});
