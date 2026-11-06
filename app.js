@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.9.9';
+const APP_VERSION='23.9.10';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -192,8 +192,9 @@ const brkTot=(s,lo,hi)=>{      // the units of the barracks tip (full trainings 
   const f=Math.floor(lo/c);return f*c+roundLast(lo-f*c,hi-f*c)};
 const cycTxt=(s,lo,T)=>{      // the cycle of the next trainings: every training adds the number T, but only lo units are needed, so the surplus d = T - lo piles up in stock. ALL the stacks make the same number of trainings N (STDN = the most that every stack can do: the smallest floor(lo / d) of all the stacks); then ONE training with lo - N x d uses up the surplus (it is 0 after it) and the same N trainings follow again
   if(!(T>0&&STDN>0))return'';
-  const r=lo-STDN*(T-lo),x=n=>n.toLocaleString();
-  return`<span class="nt" title="Retrain ${STDN} times, then one adjusting training that uses up the surplus units in stock; then the same again">↺ ${STDN} × → ${x(Math.max(0,r))}</span>`};
+  const r=Math.max(0,lo-STDN*(T-lo)),x=n=>n.toLocaleString(),t=TRN[s.name],cap=t&&t.pool!='U'?v(t.pool=='M'?'brkD':'brkL'):0,c=cap>0?Math.floor(cap/(t.cost||1)):0;
+  const adj=c>0&&r>c?(Math.floor(r/c)+' × '+x(c)+(r%c?' + '+x(r%c):'')):x(r);      // the adjusting training is more than the barracks train at once: full trainings + the last one
+  return`<span class="nt" title="Retrain ${STDN} times, then one adjusting training that uses up the surplus units in stock; then the same again">↺ ${STDN} × → ${adj}</span>`};
 const unitsTxt=s=>{      // units to train: the first hit all of them, every next hit only the ones not revived. A range "for the whole hits - for all the hits": e.g. 2.09 hits -> units for 2 hits - units for 2.09 hits (one number when they are the same; the stack itself when the food pays for 1 hit or less; between 1 and 2 hits the lower number is the stack itself)
   const n=s.n||0,t=x=>x.toLocaleString();
   if(!(MUL>1))return`<span class="nb">${t(n)}</span>`+brkTip(s,n,n);
