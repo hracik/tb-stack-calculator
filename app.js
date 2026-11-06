@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.9.10';
+const APP_VERSION='23.9.11';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -213,8 +213,8 @@ const stdT=(s,q)=>STDT[s.name]!=null?STDT[s.name]:roundLast(q.lo,stdTop(q));    
 const stdTs=list=>{      // the number of the next trainings per stack: the army stacks of one tier with the same cost, food and health get the SAME number of units, e.g. Corax and Royal Lion, Purifier and Punisher (the monsters each their own). Window: from the biggest need of the tier to 3 % above it (and not above the food of any stack); the roundest number in it: whole barracks trainings when they fit, else full trainings + the roundest last one.
   const out={},G=new Map();
   list.filter(s=>(s.n||0)>0&&!s.off&&TRN[s.name]&&TRN[s.name].pool!='U').forEach(s=>{const t=TRN[s.name],k=t.pool=='A'?'A'+t.tier+'/'+(t.cost||1)+'/'+(t.food||0)+'/'+t.hp:s.name,c=t.pool=='A'?Math.max(1,t.cost||1):1,q=stdOf(s);
-    if(!G.has(k))G.set(k,{u:[],lo:0,top:Infinity,m:1,pool:t.pool});const g=G.get(k);g.u.push([s.name,c]);g.lo=Math.max(g.lo,q.lo*c);g.top=Math.min(g.top,Math.max(q.hi,stdTop(q))*c);g.m=lcm(g.m,c)});
-  G.forEach(g=>{const top=Math.max(g.lo,Math.min(g.top,Math.floor(g.lo*(1+STDSUR/100)))),cap=Math.floor(v(g.pool=='M'?'brkD':'brkL')/g.m)*g.m;let x;
+    if(!G.has(k))G.set(k,{u:[],lo:0,top:Infinity,m:1,pool:t.pool,cost:t.cost||1});const g=G.get(k);g.u.push([s.name,c]);g.lo=Math.max(g.lo,q.lo*c);g.top=Math.min(g.top,Math.max(q.hi,stdTop(q))*c);g.m=lcm(g.m,c)});
+  G.forEach(g=>{const top=Math.max(g.lo,Math.min(g.top,Math.floor(g.lo*(1+STDSUR/100)))),cap=g.pool=='M'?Math.floor(v('brkD')/g.cost):Math.floor(v('brkL')/g.m)*g.m;      // the units of a full training: the monsters Dominance / their cost (T is in units), the army in Leadership (T is in units x cost)let x;
     if(cap>0){const k=Math.ceil(g.lo/cap);if(k*cap<=top)x=k*cap;else{const f=Math.floor(g.lo/cap);x=f*cap+roundIn(g.lo-f*cap,top-f*cap,g.m).x}}
     else x=roundIn(g.lo,top,g.m).x;
     g.u.forEach(([n,c])=>out[n]=x/c)});
