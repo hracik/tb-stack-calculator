@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.9.3';
+const APP_VERSION='23.9.4';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -185,6 +185,15 @@ const brkTip=(s,lo,hi)=>{      // Barracks tip (under the round number): the uni
   if(k*c<=hi)return`<span class="nt">${k} × ${T(c)}</span>`;
   const f=Math.floor(lo/c),r=roundLast(lo-f*c,hi-f*c);
   return`<span class="nt">${f>0?f+' × '+T(c)+' + ':''}${T(r)}</span>`};
+const brkTot=(s,lo,hi)=>{      // the units of the barracks tip (full trainings + the last one) as ONE number, 0 when there is no tip (same rule as brkTip)
+  const t=TRN[s.name];if(!t||t.pool=='U')return 0;
+  const cap=v(t.pool=='M'?'brkD':'brkL'),c=Math.floor(cap/(t.cost||1));if(!(cap>0)||c<1||!(lo>0))return 0;
+  const k=Math.ceil(lo/c);if(k*c<=hi)return k*c;
+  const f=Math.floor(lo/c);return f*c+roundLast(lo-f*c,hi-f*c)};
+const cycTxt=(s,lo,hi)=>{      // the cycle of the next trainings: every training adds the tip number T, but only lo units are needed, so the surplus d = T - lo piles up in stock; after j = floor(lo / d) trainings the surplus pays for the most of the next one, which trains only lo - j x d (then the surplus is 0 and the same j trainings follow again)
+  const T=brkTot(s,lo,hi),d=T-lo;if(!(T>0&&d>0))return'';
+  const j=Math.floor(lo/d),r=lo-j*d,x=n=>n.toLocaleString();
+  return`<span class="nt" title="Repeat: the trainings with the tip number, then the one that uses up the surplus units in stock">↺ ${j} × ${x(T)} → ${r>0?x(r):'0'}</span>`};
 const unitsTxt=s=>{      // units to train: the first hit all of them, every next hit only the ones not revived. A range "for the whole hits - for all the hits": e.g. 2.09 hits -> units for 2 hits - units for 2.09 hits (one number when they are the same; the stack itself when the food pays for 1 hit or less; between 1 and 2 hits the lower number is the stack itself)
   const n=s.n||0,t=x=>x.toLocaleString();
   if(!(MUL>1))return`<span class="nb">${t(n)}</span>`+brkTip(s,n,n);
@@ -193,7 +202,7 @@ const unitsTxt=s=>{      // units to train: the first hit all of them, every nex
   const tp=TIPS[s.name]!=null?`<span class="tip">${t(TIPS[s.name])}</span>`:'';      // the round number to train (see tipsFor), under the range
   const f1=(lo<hi?`<span class="nb">${t(lo)}</span> <span class="nb">– ${t(hi)}</span>`:`<span class="nb">${t(hi)}</span>`)+tp+brkTip(s,lo,hi);
   const q=stdOf(s);if(!(STD.h>0)||(q.lo==lo&&q.hi==hi)||(TRN[s.name]&&TRN[s.name].pool=='U'))return f1;      // the next trainings (a line under the first one); nothing when they are the same
-  return f1+`<span class="st" title="Every next training: starts from the units left after the max hits and the revive">↻ ${q.lo<q.hi?t(q.lo)+' – '+t(q.hi):t(q.hi)}</span>`+brkTip(s,q.lo,q.hi)};      // the pieces never break inside; a narrow card breaks only between them
+  return f1+`<span class="st" title="Every next training: starts from the units left after the max hits and the revive">↻ ${q.lo<q.hi?t(q.lo)+' – '+t(q.hi):t(q.hi)}</span>`+brkTip(s,q.lo,q.hi)+cycTxt(s,q.lo,q.hi)};      // the pieces never break inside; a narrow card breaks only between them
 const rangeOf=s=>{const n=s.n||0,L=lossOf(s,REVM),f=h=>Math.ceil(n+(h-1)*L-1e-7),lo=f(Math.floor(MUL+1e-9));
   return{lo,hi:FRX[s.name]!=null?lo+Math.ceil(FRX[s.name]-1e-7):f(MUL)}};      // the units to train: lo = for the whole hits, hi = for all the hits (the upper end: the food of the fractional hit is spread as the SAME share of every stack, see fracSpread)
 const stdOf=s=>{const n=s.n||0,L=lossOf(s,REVM),h=Math.max(1,Math.floor(STD.h+1e-9)),lo=Math.ceil(h*L-1e-7);return{lo,hi:STD.fr[s.name]!=null?lo+Math.ceil(STD.fr[s.name]-1e-7):lo}};      // the 2nd and every later training starts from the units left after the max hits and the revive (S = n - loss): a hit needs S >= n, so every hit only needs the loss back, the hits per training stay the same as in the first training (MUL: the food of the revived units still counts, the hits never change from training to training); units for the whole hits = hits x loss, the upper end = the food of the fractional hit shared equally (as in the first training). It does not depend on how many trainings came before.
