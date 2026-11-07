@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.11.1';
+const APP_VERSION='23.11.2';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -195,13 +195,12 @@ const fracSpread=(list,mul)=>{      // the food of the fractional part of the hi
   const R=L.reduce((q,x)=>q+x.l*x.f,0);if(!(R>0&&L.length))return out;
   const Y=fr*R/L.length;L.forEach(x=>out[x.k]=x.f>0?Y/x.f:0);return out};
 const roundLast=(a,b)=>{for(const st of [100000,50000,10000,5000,1000,500,100,50,10,5]){const x=Math.ceil(a/st)*st;if(x<=b)return x}return a};      // the roundest whole number between a and b
-// 23.11.1 the Training plan (Preparation): many hits with few clicks. A session = change the captains (14 clicks), then for every troop that is due: select it (3 clicks) and train FULL barracks (4 clicks each; the number field always shows the barracks maximum, so no typing). Between the sessions H hits. A troop keeps a stock: it is due only when its stock does not cover the next H hits (n + (H-1) x loss units); then it trains the fewest full barracks that cover them, the rest stays in stock for the later sessions. Never a trimmed stack. Mercenaries are not trained.
+// 23.11.1 the Training plan (Preparation): many hits with few clicks. A session = change the captains (14 clicks), then for every troop that is due: select it (3 clicks) and train FULL barracks (4 clicks each; the number field always shows the barracks maximum, so no typing). Between the sessions H hits: the whole hits the chosen Revive mode pays for (at least 1). A troop keeps a stock: it is due only when its stock does not cover the next H hits (n + (H-1) x loss units); then it trains the fewest full barracks that cover them, the rest stays in stock for the later sessions. Never a trimmed stack. Mercenaries are not trained.
 const TPC={cap:14,sel:3,tr:4};      // the clicks of the game: change the captains, select a unit, one training at the barracks maximum (and back to the unit selection)
-let TPH=null;try{const x=+localStorage.getItem('tp_h');if(x>=1)TPH=Math.round(x)}catch(e){}
 function trainPlan(hl){
-  const H=TPH||Math.max(4,Math.floor(MUL)),dg=x=>String(Math.round(x)).length;
+  const H=Math.max(1,Math.floor(MUL+1e-9)),dg=x=>String(Math.round(x)).length;      // 23.11.2 the hits of a session = the whole hits the chosen Revive mode pays for (Hits per revive mode), at least 1
   const T=hl.filter(s=>(s.n||0)>0&&!s.off&&TRN[s.name]&&TRN[s.name].pool!='U').map(s=>{const t=TRN[s.name],c=Math.floor(brkCap(t.pool)/(t.cost||1));return{nm:s.name,n:s.n,L:lossOf(s,REVM),c,f:foodOf(s.name)}});
-  const inp=`<label class="bi tph"><span>Hits between trainings</span><input id="tpH" type="text" inputmode="numeric" value="${H}"></label>`;
+  const inp=`<p class="tpsum">${H} ${H==1?'hit':'hits'} per session</p>`;
   if(!T.length)return inp;
   if(T.some(x=>!(x.c>=1)))return inp+'<p class="mu">Type the Barracks Leadership (Food settings) to get the plan.</p>';
   const need=x=>x.n+(H-1)*x.L,R=T.reduce((q,x)=>q+x.L*x.f,0),fp=v('foodP')*(100+FOODADD)/100,J=60,rows=[];let S=T.map(()=>0),clk=0,clkX=0,food=0,bal=0;
@@ -2864,7 +2863,7 @@ function calcRun0(){
     const sub=(dRange||kk?'95 % score range<br>':'')+P.enemy+'-stack avg. '+sh(avg).join(' ')+(ki?' \u00b7 '+(kk?'killshot avg. '+sh(kk.av).join(' '):'Killshot: the army can not kill it'):'');
     return tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span>',rngTxt?(ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub):a+' '+ua,sub).replace('<div class="stt',eoAct).replace('class="stt','data-ksd="1" class="stt')};scoreTile=mkST(!ksD);ksLater=ksD}
   $('rsm').innerHTML=`<div class="stl stch">Summary</div><div class="stg">${scoreTile}${tile('','Revive cost',scost==rcost?kmb(scost):`${kmb(scost)} <span class="stu">/</span> ${kmb(rcost)}`,'')}${tile(ATK=='epics'?'':'std','Estimated damage',dRange?rg(dRange[0],dRange[1]):fmt(sc.dmg),dRange?'95 % range \u00b7 average '+fmt(sc.dmg):tgt?`level ${lvN} ${sc.dmg>=tgt?'reached':'short by '+((1-sc.dmg/tgt)*100).toFixed(1)+' %'}`:'')}${tile('','Strikes',hRange?Math.round(hRange[0])+'\u2013'+Math.round(hRange[1]):Math.round(sc.hits),hRange?'95 % range \u00b7 average '+Math.round(sc.hits):'')}</div>${hitsRow?`<div class="stl stch">Hits per revive mode</div><div class="stc">${REVCASES.map(([k,l])=>`<div class="stt${k==REVM?' stm':''}"><div class="stv">${HIT[k].toFixed(2)}</div><div class="sts">${l}</div></div>`).join('')}</div>`:''}`;      // 19.0.2: the summary as tiles (damage, strikes, stacks, revive cost); the army / monster / engineer count is gone
-  $('res').innerHTML=secs+(SHOWTR&&MUL>1&&!SHOWCMP?'<h2 class="sh2">Training plan</h2>'+trainPlan(hl):'');      // 23.11.1 the Training plan under the stacks
+  $('res').innerHTML=secs+(SHOWTR&&!SHOWCMP?'<h2 class="sh2">Training plan</h2>'+trainPlan(hl):'');      // 23.11.1 the Training plan under the stacks
   if(!PICSOK&&!PICSP)setTimeout(()=>picsLoad(),1500);      // 23.9.38 the pictures come in the background after the first result
   {const q=++KSDSEQ;if(ksLater&&mkST)setTimeout(()=>{if(q!==KSDSEQ)return;const el=document.querySelector('#rsm [data-ksd]');if(el){const h=mkST(true);if(h)el.outerHTML=h}},30)}      // 23.9.38 the killshot number later (a newer calculation cancels it)
   {const r=$('rsm');if(r)r.hidden=!!P.mon}      // 22.8: the Summary tiles (damage, strikes, epic score) mean nothing against a monster: the win chance and the losses are under Calculation
@@ -3536,7 +3535,7 @@ document.addEventListener('input',e=>{const t=e.target;if(t.classList&&t.classLi
 document.addEventListener('focusin',e=>{const t=e.target;if(!(t.matches&&t.matches(NUMBOX)))return;t._typed=false;if(t.value!==''&&parseFloat(String(t.value).replace(/,/g,''))===0){t.placeholder='0';t.value=''}});
 document.addEventListener('input',e=>{if(e.target.matches&&e.target.matches(NUMBOX))e.target._typed=true});
 document.addEventListener('focusout',e=>{const t=e.target;if(!(t.matches&&t.matches(NUMBOX)))return;if(t.value.trim()===''){t.value='0';if(t._typed){clearTimeout(CALCT);calc()}}t._typed=false});
-document.addEventListener('change',e=>{if(e.target.id=='tpH'){const x=Math.round(+e.target.value);TPH=x>=1?x:null;try{localStorage.setItem('tp_h',TPH?String(TPH):'')}catch(z){}calc();return}if(e.target.classList&&e.target.classList.contains('tabin'))return;if(e.target.id=='xfile'){const f=e.target.files&&e.target.files[0];e.target.value='';if(f)xShot(f);return}if(e.target.id=='xt')return;if(e.target.type=='checkbox')refresh();else calc()});      // leaving a box (or a tick, a list) calculates at once
+document.addEventListener('change',e=>{if(e.target.classList&&e.target.classList.contains('tabin'))return;if(e.target.id=='xfile'){const f=e.target.files&&e.target.files[0];e.target.value='';if(f)xShot(f);return}if(e.target.id=='xt')return;if(e.target.type=='checkbox')refresh();else calc()});      // leaving a box (or a tick, a list) calculates at once
 document.addEventListener('keydown',e=>{if(e.key=='Enter'&&e.target.matches&&e.target.matches(NUMBOX)){e.preventDefault();calc()}});      // Enter in a number box = calculate now, without waiting
 document.addEventListener('dblclick',e=>{const t=e.target.closest&&e.target.closest('.tab[data-t]');if(t)rename(+t.dataset.t)});
 // start: target order for a full enemy stack, with the default tiers
