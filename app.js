@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.9.18';
+const APP_VERSION='23.9.19';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -104,6 +104,12 @@ const EPICS=[      // the epic monsters, alphabetical: n = name, score = the tot
   {n:'Sands of Eternity',wd:[0.45,0.60],ic:'sands',score:4.8e9,st:[[309887858,210000,0,70000],[301279861,216000,1,72000],[253075085,300000,3,100000],[380564036,171000,2,57000]],en:[3,4],eb:0.5,bo:{0:[2,0.45],1:[3,0.5],3:[0,0.8],2:[1,0.6]}},      // 23.3.14 given by the user 2026-11-04 (Epic Ashen Squad, Eternal Legion troops): melee Sand Exarch, ranged Temple Archer, flying Solar Sentinel, mounted Desert Stinger; score 4.8 B, not a Raid epic, double strike 40 % / double damage 60 %
   {n:'Shadow City',wd:[0.30,0.44],ic:'shadow',score:13.5e9,st:[[1.25e9,29760,0],[1.25e9,29760,1],[625e6,59520,2],[125e6,297600,3]],en:[3,4],eb:0.5}];      // 21.20.2 Shadow Invasion epic, given by the user 2026-10-24: score 13.5 B; 4 stacks in this order: melee 1.25 B units x 29760 health, ranged 1.25 B x 29760, mounted 625 M x 59520, flying 125 M x 297600 (every stack has 37.2 T health in total)
 EPICS.forEach(e=>{if(e.at>1&&e.score){e.tot=e.score;e.score/=e.at}});      // 23.3.5 a Raid epic (at = the attackers of the Raid): its score is the total for all of them, one attacker gets his share (750 M / 5 = 150 M)
+const RAIDK=[0.98,0.99,1,1.01,1.02];      // 23.10 a Raid: 5 attackers with different Leadership, Dominance and Authority: -2 %, -1 %, me, +1 %, +2 % (the same army, the units scaled)
+const raidArm=(L,k)=>k==1?L:L.map(s=>({...s,n:Math.floor((s.n||0)*k)}));
+const raidHp=L=>L.reduce((q,s)=>q+((s.n||0)>0?s.n*s.hp:0),0);
+const raidShare=L=>{const h=RAIDK.map(k=>raidHp(raidArm(L,k))),t=h.reduce((a,b)=>a+b,0);return t>0?h[2]/t:1/RAIDK.length};      // my part of the score = my health / the health of all the attackers
+const raidOf=(P,L,order)=>{const sc=RAIDK.map(k=>score(P,raidArm(L,k),order));return{D:sc.reduce((q,x)=>q+x.dmg,0),sd:Math.sqrt(sc.reduce((q,x)=>q+x.sd*x.sd,0)),share:raidShare(L)}};      // the total damage of the 5 attackers (each its own rolls: the spreads add up as variances)
+const raidPts=(EP,th,d,sh)=>sh*Math.min(1,d/sh/th)*EP.tot;      // my score from MY damage d: the 5 attackers deal d / my share together, the total score = that part of the epic's health x the Raid's total score, mine = my share of it
 EPICS.forEach(e=>{if(e.st)e.st.forEach(x=>{if(x[3]==null)x[3]=Math.round(x[1]/3)})});      // 21.9.2 an enemy stack without a given strength has 1/3 of its health per unit (the game's own numbers for Arachne and Doomsday are exactly that), so every epic wounds
 let K4OK=false,K4LO=3;      // 21.8.19: the army kills the chosen epic from a state that still has all 4 stacks: a 3-stack hit is of no use then (the 3-stack mode is switched off)
 let KSLITE=false,KAUTO4=false;      // 21.8.3: the ONE Killshot mode picks its rules by itself: the 4-stack rules when the army kills the epic from its 4-stack state, else the 3-stack rules (calcRun)
@@ -2160,7 +2166,7 @@ function battleHtml(P,list,order,sc){
   h+='</div>';
   
   const e=epCur(),th=e&&e.st&&e.score&&ATK=='epics'&&!P.cp&&!P.ren&&!P.one?e.st.filter(x=>!((P.enemy==3||P.enemy==6)&&x[2]==2)).reduce((q,x)=>q+x[0]*x[1],0):0,u=['','K','M','B','T'],fm=x=>{let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3)).toString()+u[i]};      // 118000000 -> 118M
-  const sm=brFxBox(ex,[[nd,ed,'double damage'],[ns,es,'double strikes']],ex?'':(()=>{const cp=(v,a)=>Math.abs(v-a)<=0.005*a?'= avg.':(v>a?'+':'\u2212')+fm(Math.abs(v-a))+' vs. avg.',p1=th?(KSROLLF!=null?KSROLLF:Math.min(1,td/th))*e.score:0,p2=KSAVGF!=null&&e?KSAVGF*e.score:th?Math.min(1,ad/th)*e.score:0;return th?`<div><b>${fm(p1)}</b> points (${cp(p1,p2)})</div>`:`<div>total <b>${fm(td)}</b> (${cp(td,ad)})</div>`})());
+  const sm=brFxBox(ex,[[nd,ed,'double damage'],[ns,es,'double strikes']],ex?'':(()=>{const cp=(v,a)=>Math.abs(v-a)<=0.005*a?'= avg.':(v>a?'+':'\u2212')+fm(Math.abs(v-a))+' vs. avg.',rs=e&&e.raid&&e.tot&&KSROLLF==null&&KSAVGF==null?raidShare(L):0,p1=th?(rs?raidPts(e,th,td,rs):(KSROLLF!=null?KSROLLF:Math.min(1,td/th))*e.score):0,p2=KSAVGF!=null&&e?KSAVGF*e.score:th?(rs?raidPts(e,th,ad,rs):Math.min(1,ad/th)*e.score):0;return th?`<div><b>${fm(p1)}</b> points (${cp(p1,p2)})</div>`:`<div>total <b>${fm(td)}</b> (${cp(td,ad)})</div>`})());
   BRFXH=sm;return h;      // the Random effects block is shown in the summary, above the Battle in detail buttons
 }
 // The hitting order: who hits the enemy in round 1, in that order (the same battle as the report: strikes() with a log)
@@ -2403,7 +2409,7 @@ function cmpUpdate(){
   const chips=Object.entries(CMPPOOL).filter(([k,[,c]])=>use[k]>0||P[c]>0).map(([k,[nm,c]])=>`<span>${nm} <b>${use[k].toLocaleString()}</b>${use[k]!=(P[c]||0)?' <small>(typed above: '+(P[c]||0).toLocaleString()+')</small>':''}</span>`).join('');
   const scf=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3))+' '+u[i]},
     d=(a,b,low)=>{if(!(b>0))return'<td></td>';const p=(a/b-1)*100,t=Math.abs(p)<0.05,pb=!t&&(low?p>0:p<0);return`<td data-w="${pb?'p':'y'}" class="${t?'':pb?'cmg':'cmb'}">${p>0?'+':''}${p.toFixed(1)} %</td>`};
-  const EPS=X.EP&&X.EP.st&&X.EP.score?X.EP:null,th=EPS?EPS.st.reduce((q,x)=>q+x[0]*x[1],0):0,f=x=>Math.min(1,x/th)*(EPS?EPS.score:0);
+  const EPS=X.EP&&X.EP.st&&X.EP.score?X.EP:null,th=EPS?EPS.st.reduce((q,x)=>q+x[0]*x[1],0):0,f=x=>EPS&&EPS.raid&&EPS.tot?raidPts(EPS,th,x,1/RAIDK.reduce((a,b)=>a+b,0)):Math.min(1,x/th)*(EPS?EPS.score:0);      // a Raid: my share of the 5 attackers' total score
   const Z=1.96,lo=(m,sd)=>Math.max(0,m-Z*sd),hi=(m,sd)=>m+Z*sd,rn=(a,b,fm)=>sd0(a,b)?'':`<small class="cmr">${fm(a)}\u2013${fm(b)}</small>`,sd0=(a,b)=>!(b>a),
     cell=(m,sd,fm,fr)=>fm(fr(m))+(sd>0?rn(fr(lo(m,sd)),fr(hi(m,sd)),fm):'');
   const rows=[['Estimated damage',cell(pr.sc.dmg,pr.sc.sd,fmt,x=>x),cell(sc.dmg,sc.sd,fmt,x=>x),d(sc.dmg,pr.sc.dmg)]];
@@ -2775,6 +2781,11 @@ function calcRun0(){
   if(KEP&&KEP.st&&KEP.score)scoreTile=KSLITE?'':ksTile(P,BRD.list,BRD.order);
   else if(KEP&&!(KEP.st&&KEP.score))scoreTile=tile('std','<span class="eph">'+epImg(KEP,'epi')+'<span><b>'+esc(KEP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span>','\u2013',KEP.score?'stacks not set yet':'score not set yet').replace('<div class="stt',eoAct);
   if(EP&&!(EP.st&&EP.score))scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span>','\u2013',EP.score?'stacks not set yet':'score not set yet').replace('<div class="stt',eoAct);
+  else if(EP&&EP.raid&&EP.tot){const th=EP.st.reduce((q,x)=>q+x[0]*x[1],0),R=raidOf(P,[...A,...Mo,...U.list],[...st.so,...U.ord]),T=x=>Math.min(1,x/th)*EP.tot;      // 23.10 a Raid: the 5 attackers' total damage gives the total score (range), mine is my health's share of it
+    const tl=T(Math.max(0,R.D-RZ*R.sd)),thi=T(R.D+RZ*R.sd),lo=tl*R.share,hi=thi*R.share,avg=T(R.D)*R.share;
+    const [a,ua]=sh(lo),[b,ub]=sh(hi),rngTxt=(a!=b||ua!=ub),[c,uc]=sh(tl),[d2,ud]=sh(thi);
+    const sub=(rngTxt?'95 % score range<br>':'')+P.enemy+'-stack avg. '+sh(avg).join(' ')+'<br>Raid total '+(c!=d2||uc!=ud?(uc==ud?c+'\u2013'+d2+' '+ud:c+uc+' \u2013 '+d2+ud):c+' '+uc)+' \u00b7 my share '+(R.share*100).toFixed(1)+' %';
+    scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span>',rngTxt?(ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub):a+' '+ua,sub).replace('<div class="stt',eoAct)}
   else if(EP){const th=EP.st.reduce((q,x)=>q+x[0]*x[1],0),f=d=>Math.min(1,d/th)*EP.score,ki=ksInfo(P,BRD.list,BRD.order,EP),kk=ki&&!ki.none?ki:null;
     let lo=f(dRange?dRange[0]:sc.dmg),hi=f(dRange?dRange[1]:sc.dmg);const avg=f(sc.dmg);
     if(kk){lo=Math.min(lo,kk.lo);hi=Math.max(hi,kk.hi)}      // the main number covers both: the hit on a healthy epic and the killshot with the same stacks
