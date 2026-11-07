@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.9.35';
+const APP_VERSION='23.9.36';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1985,7 +1985,10 @@ let BRD=null,BRFXH='';
 // the 2nd strike of a Double strike (no squad bonus) goes by the same rule, but never to the stack of the 1st hit, and on a tie in damage to the healthiest stack (the bigger bonus against the attacker decides only the 1st hit), the damage past the health of a stack is lost. The enemy kills as many of our stacks per round as it has living stacks. dice: roll the Double damage and the Double strike, else the averages.
 const ARB={1:3,3:0,0:2,2:1},ARCAT={Melee:0,Ranged:1,Mounted:2,Flying:3};      // the +50 % of an Arachne stack: its type -> the troop type it has the bonus against (enemy type 0 melee, 1 ranged, 2 mounted, 3 flying)
 const epBn=(EP,ty,cat)=>{const b=EP.bo&&EP.bo[ty];if(b)return ARCAT[cat]===b[0]?b[1]:0;return EP.eb&&ARCAT[cat]===ARB[ty]?EP.eb:0};      // 23.2.85 the bonus of an enemy stack (type ty) against a troop category: an epic with its own bonuses (bo: {enemy type: [troop type it is strong against, bonus]}, given by the user) uses them, the others the +50 % cycle (ranged v flying, flying v melee, melee v mounted, mounted v ranged)
-function epicSim(P,L,EP,dice,rng,trace,first,plain){      // first: who starts round 1 ('o' us, 'e' the enemy): a coin toss (Battle rules): with dice it is rolled from rng, without dice the numbers are the average of both starts
+let ESM=new Map();      // 23.9.36 the average battles (no dice, both starts) already fought: the same army against the same epic is fought once (the summary and the battle report, the Killshot searches)
+function epicSim(P,L,EP,dice,rng,trace,first,plain){if(dice||rng||trace||first||plain)return epicSim0(P,L,EP,dice,rng,trace,first,plain);
+  const k=JSON.stringify(P)+'|'+EP.n+'|'+JSON.stringify(EP.st)+'|'+L.map(s=>s.name+':'+s.n+':'+s.hp+':'+s.str+':'+(s.f||1)).join(',');if(ESM.has(k))return ESM.get(k);const r=epicSim0(P,L,EP,dice,rng,trace,first,plain);if(ESM.size>400)ESM=new Map();ESM.set(k,r);return r}
+function epicSim0(P,L,EP,dice,rng,trace,first,plain){      // first: who starts round 1 ('o' us, 'e' the enemy): a coin toss (Battle rules): with dice it is rolled from rng, without dice the numbers are the average of both starts
   if(first)return epicSimS(P,L,EP,dice,rng,trace,first,plain);
   if(dice)return epicSimS(P,L,EP,dice,rng,trace,rng()<0.5?'o':'e');
   const a=epicSimS(P,L,EP,dice,rng,trace,'o'),b=epicSimS(P,L,EP,dice,rng,trace,'e'),r={...a};['td','nd','ns','ed','es','pot','pex','pvar'].forEach(k=>{r[k]=(a[k]+b[k])/2});return r}
@@ -2063,8 +2066,8 @@ function ksAvg(P,L,EP){const av=killState(P,L,EP);return av?{...av,f:ksF(P,L,EP,
 function ksSg(P,L,EP){const av=killState(P,L,EP);if(!av)return 0;const sd=epicSim(P,L,av.EPS,false,null);return sd.pex>0?Math.sqrt(Math.max(0,sd.pvar))/sd.pex:0}
 function ksF(P,L,EP,lam){
   const key='G'+EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA,P.enemy>4,P.kill4,P.dmgScale]);
-  if(KSG.k!=key){const gs=[],fs=[];let best=0;const sg=ksSg(P,L,EP),k0=Math.max(0,Math.floor((1-1.96*sg-0.04-0.8)/0.02+1e-9)),k1=Math.min(24,Math.ceil((1+1.96*sg+0.04-0.8)/0.02-1e-9));for(let k=k0;k<=k1;k++){const l=0.8+0.02*k;const r=killState({...P,dmgScale:(P.dmgScale||1)*l},L,EP,0,true);best=Math.max(best,r?r.f:0);gs.push(l);fs.push(best)}const sm=fs.map((_,i)=>{let t=0,c=0;for(let j=Math.max(0,i-2);j<=Math.min(fs.length-1,i+2);j++){t+=fs[j];c++}return t/c});KSG={k:key,g:gs,f:sm}}      // smoothed over a few neighbouring luck levels: the fight is chaotic, so single levels jump in steps; the average of the neighbours is a smooth curve
-  const g=KSG.g,f=KSG.f;if(lam<=g[0])return f[0];if(lam>=g[g.length-1])return f[f.length-1];
+  if(KSG.k!=key){const sg=ksSg(P,L,EP),z=1.96,gs=[...new Set([Math.max(0.8,1-z*sg),1,Math.min(1.28,1+z*sg)].map(x=>Math.round(x*1e4)/1e4))].sort((a,b)=>a-b),fs=[];let best=0;for(const l of gs){const r=killState({...P,dmgScale:(P.dmgScale||1)*l},L,EP,0,true);best=Math.max(best,r?r.f:0);fs.push(best)}KSG={k:key,g:gs,f:fs}}      // 23.9.36 only 3 luck levels: the 95 % bad roll, the average, the 95 % good roll (was up to 25 levels, ~800 battles); a rolled fight in between is interpolated, more luck is never worse
+  const g=KSG.g,f=KSG.f;if(g.length==1||lam<=g[0])return f[0];if(lam>=g[g.length-1])return f[f.length-1];
   let i=0;while(g[i+1]<lam)i++;return f[i]+(f[i+1]-f[i])*(lam-g[i])/(g[i+1]-g[i])}
 function ksCps(P,L,EP){const key=EP.n+'|'+L.map(s=>s.name+':'+s.n).join(',')+'|'+JSON.stringify([P.hG,P.sG,P.ddA,P.dsA,P.enemy>4]);if(KSC.k!=key)KSC={k:key,cps:epicPath(P,L,EP)};return KSC.cps}
 let KSM=new Map();
@@ -2199,7 +2202,7 @@ function battleHtml(P,list,order,sc){
   });
   h+='</div>';
   
-  const e=epCur(),th=e&&e.st&&e.score&&ATK=='epics'&&!P.cp&&!P.ren&&!P.one?e.st.filter(x=>!((P.enemy==3||P.enemy==6)&&x[2]==2)).reduce((q,x)=>q+x[0]*x[1],0):0,u=['','K','M','B','T'],fm=x=>{let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3)).toString()+u[i]};      // 118000000 -> 118M
+  const e=epCur(),th=e&&e.st&&e.score&&ATK=='epics'&&!P.cp&&!P.ren&&!P.one?e.st.reduce((q,x)=>q+x[0]*x[1],0):0,u=['','K','M','B','T'],fm=x=>{let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3)).toString()+u[i]};      // 118000000 -> 118M
   const sm=brFxBox(ex,[[nd,ed,'double damage'],[ns,es,'double strikes']],ex?'':(()=>{const cp=(v,a)=>Math.abs(v-a)<=0.005*a?'= avg.':(v>a?'+':'\u2212')+fm(Math.abs(v-a))+' vs. avg.',rs=e&&e.raid&&e.tot&&KSROLLF==null&&KSAVGF==null&&!RJ?raidShare(L):0,thA=RJ?e.st.reduce((q,x)=>q+x[0]*x[1],0):0,rjp=x=>RAIDX.share*Math.min(1,x/thA)*e.tot,rks=RJ&&P.kill&&e.tot?raidShare(ordL(list,order))*e.tot:0,p1=th?(rks&&KSROLLF!=null?KSROLLF*rks:RJ&&RAIDX&&!P.kill?rjp(td):rs?raidPts(e,th,td,rs):(KSROLLF!=null?KSROLLF:Math.min(1,td/th))*e.score):0,p2=rks&&KSAVGF!=null?KSAVGF*rks:KSAVGF!=null&&e?KSAVGF*e.score:th?(RJ&&RAIDX&&!P.kill?rjp(ad):rs?raidPts(e,th,ad,rs):Math.min(1,ad/th)*e.score):0;return th?`<div><b>${fm(p1)}</b> points (${cp(p1,p2)})</div>`:`<div>total <b>${fm(td)}</b> (${cp(td,ad)})</div>`})());
   BRFXH=sm;return h;      // the Random effects block is shown in the summary, above the Battle in detail buttons
 }
@@ -2223,7 +2226,7 @@ function drawBR(){
   document.querySelectorAll('.ob').forEach(b=>{const on=b.dataset.o===OVK;b.classList.toggle('on',on);b.setAttribute('aria-expanded',String(on))});
   if(!BRD){BRFXH='';fxPlace();return}
   if(KSLITE){BRFXH='';return}      // the first Killshot pass only finds the army: no report, no Random effects (the pass that is drawn builds them)
-  BRFXH='';const rep=BRD.fx?theoReport(BRD):battleHtml(BRD.P,BRD.list,BRD.order,BRD.sc);      // always built: it also gives the Random effects block of the summary (One v. One with found stacks: a fight against the known enemy)
+  BRFXH='';const rep=BRD.fx?theoReport(BRD):OVK==='rep'?battleHtml(BRD.P,BRD.list,BRD.order,BRD.sc):'';      // 23.9.36 the battle report is built only while it is open (the Random effects block is inside it)      // always built: it also gives the Random effects block of the summary (One v. One with found stacks: a fight against the known enemy)
   {const kt=document.querySelector('#rsm [data-kt]');if(kt&&BRD.P.kill){const h=ksTile(BRD.P,BRD.list,BRD.order);if(h)kt.outerHTML=h}}      // the Killshot score follows the roll
   fxPlace();requestAnimationFrame(fxPlace);      // again after the summary is drawn
   if(OVK==='rep')$('br').innerHTML=(BRFXH&&fxOn(BRD.P)?BRFXH:'')+rep;      // the Random effects bubble (buttons, double damage, double strikes, points) sits at the top of the opened report
@@ -2710,7 +2713,10 @@ function epAuto(){      // the epic is optional (Choose epic): none = all the st
   if(ATK!='epics')return;const ce=EPICS.find(x=>x.n==$('epic').value);
   if(!ce){if($('mode').value=='kill'){$('mode').value='max';SO=[]}return}
   if(!epOk(ce)){const w=+$('enemy').value||4,t=ce.en.includes(w)?w:ce.en.includes(({3:6,4:8,6:3,8:4})[w])?({3:6,4:8,6:3,8:4})[w]:ce.en[ce.en.length-1];$('mode').value='max';$('enemy').value=String(t);SO=[]}}
-function calcRun(){
+let CALCMEMO=null;      // 23.9.36 the armies solved in this calculation: the two Killshot passes with the same rules solve once
+const solveM=(P,O)=>{const k=JSON.stringify(P)+'|'+JSON.stringify(O)+'|'+ATK;if(CALCMEMO&&CALCMEMO.has(k))return CALCMEMO.get(k);const r=solve(P,O);if(CALCMEMO)CALCMEMO.set(k,r);return r};
+function calcRun(){CALCMEMO=new Map();try{return calcRun1()}finally{CALCMEMO=null}}
+function calcRun1(){
   if($('mode').value=='kill4'){$('mode').value='kill';SO=[]}      // one Killshot mode: an old tab or import in v. 4 is the same mode now
   KAUTO4=false;KSLITE=false;
   if($('mode').value=='kill'&&ATK=='epics'){
@@ -2746,20 +2752,21 @@ function calcRun0(){
   //      // the Against box that does not count in the chosen view is hidden and its inputs are disabled
   if(!RENEGADES()&&$('mode').value=='ren'){$('mode').value='max';SO=[]}      // Renegades is off: a tab saved in it falls back to Max damage
   {const rb=document.querySelector('.cm[data-m=ren]');if(rb){rb.disabled=!RENEGADES()}}
-  const P=getP(),{st,A,Mo,U}=solve(P,O);
+  const P=getP(),{st,A,Mo,U}=solveM(P,O);
   const fx0=P.mon?theoFix(P):null,fx=fx0&&!fx0.res.none?fx0:null;if(fx0)theoApply(fx0,st,U);      // 21.6.2 One v. One: the stacks the simulator found go into the Result. fx0.res.none (Attack monsters, 23.2.32): no army can be built - the Result stays, with 0 units everywhere, so a troop that was turned off can be turned on again
   {const rl=$('renlv'),tg=P.ren?renTarget():0,nt=$('renlt');if(rl)rl.hidden=!P.ren;if(nt)nt.textContent=tg?'Damage to reach: '+tg.toLocaleString('en-US'):'No level: the Tier check looks for the most damage per gold of the full revive.'}      // 14.19: the Level box is shown in Renegades only
   SO=st.so;
-  {const sx=[...st,...U.all];sx.so=[...st.so,...U.ord];drawSO(sx,P)}                  // after the allocation: the list shows the unit counts
+  if(!KSLITE){const sx=[...st,...U.all];sx.so=[...st.so,...U.ord];drawSO(sx,P)}      // 23.9.36 not in the first Killshot pass (nothing of it is shown)                  // after the allocation: the list shows the unit counts
   document.querySelectorAll('.pb').forEach(b=>b.classList.toggle('on',TY.every(t=>v('bh_'+t)==+b.dataset.p&&v('bs_'+t)==+b.dataset.p)));
   document.querySelectorAll('.eb').forEach(b=>b.classList.toggle('on',!P.kill&&!P.ren&&!P.cp&&+b.dataset.e==P.enemy));
   document.querySelectorAll('.cm').forEach(b=>b.classList.toggle('on',(P.kill&&b.dataset.m=='kill')||(P.ren&&b.dataset.m=='ren')||(P.one&&!P.cpd&&b.dataset.m=='cp')||(P.one&&P.cpd&&b.dataset.m=='cpd')||(P.pm&&!P.lava&&b.dataset.m=='pvpmax')||(P.lava&&!P.arena&&b.dataset.m=='lava')||(P.arena&&b.dataset.m=='arena')));
   {const m=P.mon?null:MODEINFO[P.kill?'kill':P.arena?'arena':P.lava?'lava':P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)],el=$('mdi');if(el){el.hidden=!m&&!pvOff;if(pvOff)el.innerHTML='<b>Attack players</b> - The PvP modes are switched off for now.';else if(m){const ik=({'4':'reg','8':'reg','3':'sn','6':'sn',kill:'sn',kill4:'sn',cp:'pv1',cpd:'pv1'})[P.kill?(P.kill4?'kill4':'kill'):P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)]||'pvm',ic=document.querySelector('#mics [data-i="'+ik+'"] svg');el.innerHTML=(ic?ic.outerHTML:'')+'<span><b>'+m[0].replace(/^(Regular|Sniper|Pv1|PvMany) \u00b7 /,'')+'</b>'+''+' - '+m[1]+'</span>'}}}      // the explanation under the mode buttons (the tier tips under Tiers to use are fixed text, both are always shown)
   const sc=score(P,[...A,...Mo,...U.list],[...st.so,...U.ord]);
-  trackUse(P);
   BRD={P,list:[...A,...Mo,...U.list],order:[...st.so,...U.ord],sc,fx};
+  if(KSLITE)return;      // 23.9.36 the first Killshot pass only finds the army (which rules the Killshot uses): nothing more is built
+  trackUse(P);
   K4OK=false;K4LO=3;{const e=ATK=='epics'&&!P.ren&&!P.cp&&!P.one&&!P.pm?EPICS.find(x=>x.n==$('epic').value):null;
-    if(e&&e.st&&e.score&&e.en.length==2){K4LO=e.en[0];const k=killState({...P,kill:true,kill4:true},ordL(BRD.list,BRD.order),e);K4OK=!!(k&&k.alive==e.st.length)}}
+    if(e&&e.st&&e.score&&e.en.length==2&&!e.raid){K4LO=e.en[0];const k=killState({...P,kill:true,kill4:true},ordL(BRD.list,BRD.order),e);K4OK=!!(k&&k.alive==e.st.length)}}
   {const mcd=$('mcard');if(mcd){mcd.hidden=ATK!='monsters';if(ATK=='monsters')drawMon(P)}const am=document.querySelector('.card[data-help=mode]');if(am)am.hidden=ATK=='monsters'}
   {const ce=ATK=='epics'?EPICS.find(x=>x.n==$('epic').value):null,ec=$('ecard');if(ec)ec.hidden=ATK!='epics';
     {const eb=$('ebtn');if(eb){const k=ce?ce.n:'';if(eb.dataset.k!==k){eb.dataset.k=k;eb.innerHTML=ce?epImg(ce,'epi')+'<span class="epn">'+esc(ce.n)+'</span><span class="epc">\u25be</span>':'<span class="epn">Choose epic</span><span class="epc">\u25be</span>'}}}
@@ -3494,7 +3501,7 @@ function helpHtml(h,pl){return(pl&&h.tp?h.tp:h.t).map(x=>'<p class="ht"><i class
   {const rc=document.querySelector('details[data-help=rare]');      // 20.1.1: opening the Rare bonuses card shows its help, unless the user closed it last time
     if(rc)rc.addEventListener('toggle',()=>{if(!rc.open)return;let pr='1';try{pr=localStorage.getItem('sc_rarehelp')||'1'}catch(x){}const p=$('hp-rare'),b=rc.querySelector('.hq');if(pr=='1'&&p&&p.hidden){p.hidden=false;if(b){b.setAttribute('aria-expanded','true')}}})}
 })();
-document.addEventListener('input',e=>{const t=e.target;if(t.classList&&t.classList.contains('tabin'))return;if(!(t.matches&&t.matches(NUMBOX)))return;fmtBox(t);clearTimeout(CALCT);clearTimeout(SAVET);if(t.value.trim()===''){CALCT=0;SAVET=setTimeout(save,400);return}CALCT=setTimeout(calc,Math.min(1200,Math.max(500,4*CALCMS)))});      // ANY change of a number box (typing, Backspace, cut, paste, drop ...): the number is formatted at once, the calculation waits until the typing has stopped (0.5 s, longer on a slow device); an emptied box starts nothing (a new number is coming)
+document.addEventListener('input',e=>{const t=e.target;if(t.classList&&t.classList.contains('tabin'))return;if(!(t.matches&&t.matches(NUMBOX)))return;fmtBox(t);clearTimeout(CALCT);clearTimeout(SAVET);if(t.value.trim()===''){CALCT=0;SAVET=setTimeout(save,400);return}CALCT=setTimeout(calc,Math.min(600,Math.max(200,2*CALCMS)))});      // ANY change of a number box (typing, Backspace, cut, paste, drop ...): the number is formatted at once, the calculation waits until the typing has stopped (0.2 s, up to 0.6 s on a slow device; 23.9.36 was 0.5-1.2 s); an emptied box starts nothing (a new number is coming)
 // A number box that holds 0 empties when you click into it (a grey 0 stays as the hint), so only your own digits end up in it. Leave it without typing and the 0 comes back; the same when you type and then erase everything.
 document.addEventListener('focusin',e=>{const t=e.target;if(!(t.matches&&t.matches(NUMBOX)))return;t._typed=false;if(t.value!==''&&parseFloat(String(t.value).replace(/,/g,''))===0){t.placeholder='0';t.value=''}});
 document.addEventListener('input',e=>{if(e.target.matches&&e.target.matches(NUMBOX))e.target._typed=true});
