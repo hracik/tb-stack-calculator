@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.9.33';
+const APP_VERSION='23.9.34';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -112,7 +112,7 @@ const raidOf=(P,L,order,rw=1)=>{      // 23.9.21 ONE battle: the stacks of all 5
   const ix={};order.forEach((n,i)=>ix[n]=i);const mine=L.filter(s=>(s.n||0)>0).sort((a,b)=>ix[a.name]-ix[b.name]);
   const sc=score({...P,enemy:P.enemy*rw},raidList(L,order),null),me=score(P,mine,order).dmg;      // the epic of a Raid has every stack rw times (4 rows of the army screen): in the joint battle it kills P.enemy x rw of our stacks per round
   return{D:sc.dmg,sd:sc.sd,share:raidShare(L),rc:me>0?sc.dmg/me:1/raidShare(L)}};
-const raidOn=(P,EP)=>!!(EP&&EP.raid&&EP.rw&&P&&!P.kill&&!P.cp&&!P.ren&&!P.one&&!P.pm&&!P.mon&&ATK=='epics');      // 23.9.24 the joint Raid battle is shown (target order, hitting order, battle report) in the normal hit of a Raid epic
+const raidOn=(P,EP)=>!!(EP&&EP.raid&&EP.rw&&P&&!P.cp&&!P.ren&&!P.one&&!P.pm&&!P.mon&&ATK=='epics');      // 23.9.24 the joint Raid battle is shown (target order, hitting order, battle report) for a Raid epic (23.9.34: in the Killshot too)
 const raidBadge=s=>s&&s.rt?` <span class="rtg${s.rk==1?' me':''}">${s.rt}</span>`:'';
 const raidTag=k=>k==1?'you':(k>1?'+':'\u2212')+(+(Math.abs(k-1)*100).toFixed(1))+' %';
 const raidList=(L,order)=>{const ix={};order.forEach((n,i)=>ix[n]=i);const ks=RAIDK.slice().sort((a,b)=>b-a),out=[];
@@ -2115,19 +2115,20 @@ function ksRange(P,L,EP){      // the 95 % range: the average fight tells how mu
   return{lo:Math.max(0,Math.min(av.f,lo)),hi:Math.min(1,Math.max(av.f,hi)),sg}}
 // 23.9.26 the Killshot of a Raid: the 5 attackers in ONE battle (raidList) against the worn-down epic (every stack rw times, the health of a stack split evenly over its rows); the biggest state on the way down that they kill (at most 3 or 4 living stacks), as in killState. Returns the share of the epic's health (f) for the average fight and the 95 % luck window.
 let RKSM=new Map();
-function raidKs(P,Lme,EP){
+function raidKs(P,Lme,EP){      // 23.9.34 also the state it kills (EPS: every stack rw times) and the luck curve for a rolled fight (fr)
   if(!EP||!EP.wd||!EP.rw)return null;const key=EP.n+'|'+Lme.map(x=>x.name+':'+x.n).join(',')+'|'+JSON.stringify(P)+'|'+RAIDK.join(',');if(RKSM.has(key))return RKSM.get(key);
   const cps=ksCps(P,Lme,EP),K=P.kill4?4:3,al=c=>c.hp.filter(x=>x>1e-6).length,cand=cps.filter(c=>al(c)<=K),tot=cps[0].left,RL=raidList(Lme,Lme.map(s=>s.name));
   const mk=c=>({...EP,st:EP.st.flatMap((x,i)=>c.hp[i]>1e-6?Array.from({length:EP.rw},()=>[c.hp[i]/x[1]/EP.rw,x[1],x[2],x[3],i]):[])});
   const find=lam=>{const Pl={...P,dmgScale:(P.dmgScale||1)*lam},ok=c=>epicSim(Pl,RL,mk(c),false,null).td>=c.left*(1-1e-6);
-    if(!cand.length||!ok(cand[cand.length-1]))return 0;let lo=0,hi=cand.length-1;while(lo<hi){const m=(lo+hi)>>1;if(ok(cand[m]))hi=m;else lo=m+1}
+    if(!cand.length||!ok(cand[cand.length-1]))return{f:0,c:null};let lo=0,hi=cand.length-1;while(lo<hi){const m=(lo+hi)>>1;if(ok(cand[m]))hi=m;else lo=m+1}
     let c=cand[lo];if(lo>0){let A=cand[lo-1],B=c;for(let k=0;k<10;k++){const hp=A.hp.map((x,i)=>(x+B.hp[i])/2),m={hp,left:hp.reduce((q,x)=>q+x,0)};if(ok(m))B=m;else A=m}c=B}
-    const c0=cand[0];let left=c.left;if(c!==c0){const td0=epicSim(Pl,RL,mk(c0),false,null).td;left=Math.max(left,Math.min(td0,c0.left))}      // a hit that does not kill scores the damage it deals (a killshot never scores less than a hit)
-    return left/tot};
-  const f=find(1);let r=null;
-  if(f>0){const st=cand.find(c=>c.left<=f*tot+1e-6)||cand[cand.length-1],sd=epicSim(P,RL,mk(st),false,null),sg=sd.pex>0?Math.sqrt(Math.max(0,sd.pvar))/sd.pex:0;
-    r={f,lo:Math.min(f,find(1-1.96*sg)),hi:Math.max(f,find(1+1.96*sg)),share:raidShare(Lme)}}
+    const c0=cand[0];let left=c.left;if(c!==c0){const td0=epicSim(Pl,RL,mk(c0),false,null).td,pt=Math.min(td0,c0.left);if(pt>left){left=pt;c=c0}}      // a hit that does not kill scores the damage it deals (a killshot never scores less than a hit)
+    return{f:left/tot,c}};
+  const F=find(1);let r=null;
+  if(F.f>0){const EPS=mk(F.c),sd=epicSim(P,RL,EPS,false,null),sg=sd.pex>0?Math.sqrt(Math.max(0,sd.pvar))/sd.pex:0,fl=new Map(),fr=lam=>{const q=Math.round(lam*200)/200;if(!fl.has(q))fl.set(q,Math.max(0,find(q).f));return fl.get(q)};
+    r={f:F.f,lo:Math.min(F.f,find(1-1.96*sg).f),hi:Math.max(F.f,find(1+1.96*sg).f),share:raidShare(Lme),EPS,RL,fr,sg}}
   if(RKSM.size>40)RKSM=new Map();RKSM.set(key,r);return r}
+const raidKsRoll=(rk,P,seed)=>{if(!rk)return null;const sd=epicSim(P,rk.RL,rk.EPS,true,THEO.rngMk(seed)),lam=sd.pex>0?sd.pot/sd.pex:1;return lam>=1?Math.max(rk.f,rk.fr(lam)):Math.min(rk.f,rk.fr(lam))};      // 23.9.34 a rolled Killshot of a Raid: the luck of the dice on the fight at the average killshot state (what its strikes were worth against the average) gives the state the 5 attackers kill with that luck; more luck is never worse
 // the score tile of a Killshot: the average fight with its range, or the rolled fight (Roll the dice)
 function ksTile(P,list,order){
   const EP=epCur();if(!EP||!EP.st||!EP.score)return'';
@@ -2165,9 +2166,10 @@ function battleHtml(P,list,order,sc){
   const EPK=epCur(),known=ATK=='epics'&&!P.cp&&!P.ren&&!P.one&&!P.pm&&(P.enemy==4||P.enemy==3||P.enemy==6||P.enemy==8)&&EPK&&EPK.st&&(EPK.st.length==4||EPK.st.length==8)&&EPK.score;      // an epic with known stacks: the report follows its stacks (type, units, units killed)
   if(known){
     const unIc=ty=>EPIC_UN[EPK.ic]&&EPIC_UN[EPK.ic][ty]?`<img class="ic2" src="${EPIC_UN[EPK.ic][ty]}" alt="">`:EN.ic;
-    KSAVGF=P.kill?(ksAvg(P,L,EPK)||{f:0}).f:null;      // the score of the average fight: what a rolled Killshot is compared with
-    const ks=P.kill?killState(P,L,EPK,ex?0:THEOSEED):null,EPS=ks?(ks.EPSR||(ks.avg?ks.avg.EPS:ks.EPS)):RJ?raidEP(EPK,P):(P.enemy==3||P.enemy==6)?{...EPK,st:EPK.st.filter(x=>x[2]!=2)}:EPK;      // the 3-stack mode has no mounted enemy stack; the Killshot starts at the biggest state the army kills (killState)
-    KSROLLF=ks?ks.f:null;      // the score of the rolled fight (the Random effects points)
+    const rkB=RJ&&P.kill?raidKs(P,ordL(list,order),EPK):null;      // 23.9.34 a Raid Killshot: the 5 attackers against the worn-down epic (the state they kill)
+    KSAVGF=rkB?rkB.f:P.kill&&!RJ?(ksAvg(P,L,EPK)||{f:0}).f:null;      // the score of the average fight: what a rolled Killshot is compared with
+    const ks=P.kill&&!RJ?killState(P,L,EPK,ex?0:THEOSEED):null,EPS=rkB?rkB.EPS:ks?(ks.EPSR||(ks.avg?ks.avg.EPS:ks.EPS)):RJ?raidEP(EPK,P):(P.enemy==3||P.enemy==6)?{...EPK,st:EPK.st.filter(x=>x[2]!=2)}:EPK;      // the 3-stack mode has no mounted enemy stack; the Killshot starts at the biggest state the army kills (killState)
+    KSROLLF=rkB?(ex?rkB.f:raidKsRoll(rkB,P,THEOSEED)):ks?ks.f:null;      // the score of the rolled fight (the Random effects points)
     const sim=epicSim(P,L,EPS,!ex,ks&&ks.seed?THEO.rngMk(ks.seed):rng,undefined,ex?'o':undefined,ex),avg=epicSim(P,L,EPS,false,null);td=sim.td;ad=avg.td;nd=sim.nd;ns=sim.ns;ed=sim.ed;es=sim.es;
     sim.ev.forEach(x=>{
       if(x.r!==rd){rd=x.r;h+=`<div class="brh">Round ${x.r+1}</div>`}
@@ -2198,12 +2200,12 @@ function battleHtml(P,list,order,sc){
   h+='</div>';
   
   const e=epCur(),th=e&&e.st&&e.score&&ATK=='epics'&&!P.cp&&!P.ren&&!P.one?e.st.filter(x=>!((P.enemy==3||P.enemy==6)&&x[2]==2)).reduce((q,x)=>q+x[0]*x[1],0):0,u=['','K','M','B','T'],fm=x=>{let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3)).toString()+u[i]};      // 118000000 -> 118M
-  const sm=brFxBox(ex,[[nd,ed,'double damage'],[ns,es,'double strikes']],ex?'':(()=>{const cp=(v,a)=>Math.abs(v-a)<=0.005*a?'= avg.':(v>a?'+':'\u2212')+fm(Math.abs(v-a))+' vs. avg.',rs=e&&e.raid&&e.tot&&KSROLLF==null&&KSAVGF==null&&!RJ?raidShare(L):0,thA=RJ?e.st.reduce((q,x)=>q+x[0]*x[1],0):0,rjp=x=>RAIDX.share*Math.min(1,x/thA)*e.tot,p1=th?(RJ&&RAIDX?rjp(td):rs?raidPts(e,th,td,rs):(KSROLLF!=null?KSROLLF:Math.min(1,td/th))*e.score):0,p2=KSAVGF!=null&&e?KSAVGF*e.score:th?(RJ&&RAIDX?rjp(ad):rs?raidPts(e,th,ad,rs):Math.min(1,ad/th)*e.score):0;return th?`<div><b>${fm(p1)}</b> points (${cp(p1,p2)})</div>`:`<div>total <b>${fm(td)}</b> (${cp(td,ad)})</div>`})());
+  const sm=brFxBox(ex,[[nd,ed,'double damage'],[ns,es,'double strikes']],ex?'':(()=>{const cp=(v,a)=>Math.abs(v-a)<=0.005*a?'= avg.':(v>a?'+':'\u2212')+fm(Math.abs(v-a))+' vs. avg.',rs=e&&e.raid&&e.tot&&KSROLLF==null&&KSAVGF==null&&!RJ?raidShare(L):0,thA=RJ?e.st.reduce((q,x)=>q+x[0]*x[1],0):0,rjp=x=>RAIDX.share*Math.min(1,x/thA)*e.tot,rks=RJ&&P.kill&&e.tot?raidShare(ordL(list,order))*e.tot:0,p1=th?(rks&&KSROLLF!=null?KSROLLF*rks:RJ&&RAIDX&&!P.kill?rjp(td):rs?raidPts(e,th,td,rs):(KSROLLF!=null?KSROLLF:Math.min(1,td/th))*e.score):0,p2=rks&&KSAVGF!=null?KSAVGF*rks:KSAVGF!=null&&e?KSAVGF*e.score:th?(RJ&&RAIDX&&!P.kill?rjp(ad):rs?raidPts(e,th,ad,rs):Math.min(1,ad/th)*e.score):0;return th?`<div><b>${fm(p1)}</b> points (${cp(p1,p2)})</div>`:`<div>total <b>${fm(td)}</b> (${cp(td,ad)})</div>`})());
   BRFXH=sm;return h;      // the Random effects block is shown in the summary, above the Battle in detail buttons
 }
 // The hitting order: who hits the enemy in round 1, in that order (the same battle as the report: strikes() with a log)
 function hitHtml(P,list,order){
-  const EPr=epCur(),RJ=raidOn(P,EPr),K=RJ?raidEP(EPr,P).st.length:P.enemy,ix={};order.forEach((n,i)=>ix[n]=i);
+  const EPr=epCur(),RJ=raidOn(P,EPr),rkH=RJ&&P.kill?raidKs(P,ordL(list,order),EPr):null,K=RJ?(rkH?rkH.EPS.st.length:raidEP(EPr,P).st.length):P.enemy,ix={};order.forEach((n,i)=>ix[n]=i);
   const L=RJ?raidList(list,order):list.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);      // a Raid: the joint battle (all the attackers' stacks, the epic with every stack 4 times)
   if(!L.length)return '<p class="mu">No units.</p>';
   const log=[];strikes(L,K,log,P.ren?1:Infinity);
