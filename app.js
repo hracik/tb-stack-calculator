@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.9.21';
+const APP_VERSION='23.9.22';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -104,11 +104,11 @@ const EPICS=[      // the epic monsters, alphabetical: n = name, score = the tot
   {n:'Sands of Eternity',wd:[0.45,0.60],ic:'sands',score:4.8e9,st:[[309887858,210000,0,70000],[301279861,216000,1,72000],[253075085,300000,3,100000],[380564036,171000,2,57000]],en:[3,4],eb:0.5,bo:{0:[2,0.45],1:[3,0.5],3:[0,0.8],2:[1,0.6]}},      // 23.3.14 given by the user 2026-11-04 (Epic Ashen Squad, Eternal Legion troops): melee Sand Exarch, ranged Temple Archer, flying Solar Sentinel, mounted Desert Stinger; score 4.8 B, not a Raid epic, double strike 40 % / double damage 60 %
   {n:'Shadow City',wd:[0.30,0.44],ic:'shadow',score:13.5e9,st:[[1.25e9,29760,0],[1.25e9,29760,1],[625e6,59520,2],[125e6,297600,3]],en:[3,4],eb:0.5}];      // 21.20.2 Shadow Invasion epic, given by the user 2026-10-24: score 13.5 B; 4 stacks in this order: melee 1.25 B units x 29760 health, ranged 1.25 B x 29760, mounted 625 M x 59520, flying 125 M x 297600 (every stack has 37.2 T health in total)
 EPICS.forEach(e=>{if(e.at>1&&e.score){e.tot=e.score;e.score/=e.at}});      // 23.3.5 a Raid epic (at = the attackers of the Raid): its score is the total for all of them, one attacker gets his share (750 M / 5 = 150 M)
-const RAIDK=[0.98,0.99,1,1.01,1.02];      // 23.10 a Raid: 5 attackers with different Leadership, Dominance and Authority: -2 %, -1 %, me, +1 %, +2 % (the same army, the units scaled)
+const RAIDK=[0.95,0.975,1,1.025,1.05];      // 23.9.22 a Raid: 5 attackers with different Leadership, Dominance and Authority: -5 %, -2.5 %, me, +2.5 %, +5 % (the same army, the units scaled)
 const raidArm=(L,k)=>k==1?L:L.map(s=>({...s,n:Math.floor((s.n||0)*k)}));
 const raidHp=L=>L.reduce((q,s)=>q+((s.n||0)>0?s.n*s.hp:0),0);
 const raidShare=L=>{const h=RAIDK.map(k=>raidHp(raidArm(L,k))),t=h.reduce((a,b)=>a+b,0);return t>0?h[2]/t:1/RAIDK.length};      // my part of the score = my health / the health of all the attackers
-const raidOf=(P,L,order,rw=1)=>{      // 23.9.21 ONE battle: the stacks of all 5 attackers are one army and fight by the regular rules, every stack on its own (no merging); the copies of one of my stacks stand next to each other, the strongest first (+2 % ... -2 %), so the bigger copies die first
+const raidOf=(P,L,order,rw=1)=>{      // 23.9.21 ONE battle: the stacks of all 5 attackers are one army and fight by the regular rules, every stack on its own (no merging); the copies of one of my stacks stand next to each other, the strongest first (+5 % ... -5 %), so the bigger copies die first
   const ix={};order.forEach((n,i)=>ix[n]=i);const mine=L.filter(s=>(s.n||0)>0).sort((a,b)=>ix[a.name]-ix[b.name]),ks=RAIDK.slice().sort((a,b)=>b-a);
   const all=[];mine.forEach(s=>ks.forEach(k=>{const n=k==1?s.n:Math.floor(s.n*k);if(n>0)all.push({...s,n})}));
   const sc=score({...P,enemy:P.enemy*rw},all,order),me=score(P,mine,order).dmg;      // the epic of a Raid has every stack rw times (4 rows of the army screen): in the joint battle it kills P.enemy x rw of our stacks per round      // the sort inside score() keeps the copies in this order (same name, stable sort)
