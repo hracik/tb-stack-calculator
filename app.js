@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.9.22';
+const APP_VERSION='23.9.23';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2788,8 +2788,8 @@ function calcRun0(){
   if(EP&&!(EP.st&&EP.score))scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span>','\u2013',EP.score?'stacks not set yet':'score not set yet').replace('<div class="stt',eoAct);
   else if(EP&&EP.raid&&EP.tot){const th=EP.st.reduce((q,x)=>q+x[0]*x[1],0),R=raidOf(P,[...A,...Mo,...U.list],[...st.so,...U.ord],EP.rw||1),_r=(RAIDX={share:R.share,rc:R.rc}),T=x=>Math.min(1,x/th)*EP.tot;      // 23.10 a Raid: the 5 attackers' total damage gives the total score (range), mine is my health's share of it
     const tl=T(Math.max(0,R.D-RZ*R.sd)),thi=T(R.D+RZ*R.sd),lo=tl*R.share,hi=thi*R.share,avg=T(R.D)*R.share;
-    const [a,ua]=sh(lo),[b,ub]=sh(hi),rngTxt=(a!=b||ua!=ub),[c,uc]=sh(tl),[d2,ud]=sh(thi);
-    const sub=(rngTxt?'95 % score range<br>':'')+P.enemy+'-stack avg. '+sh(avg).join(' ')+'<br>Raid total '+(c!=d2||uc!=ud?(uc==ud?c+'\u2013'+d2+' '+ud:c+uc+' \u2013 '+d2+ud):c+' '+uc)+' \u00b7 my share '+(R.share*100).toFixed(1)+' %';
+    const [a,ua]=sh(lo),[b,ub]=sh(hi),rngTxt=(a!=b||ua!=ub);
+    const sub=(rngTxt?'95 % score range<br>':'')+P.enemy+'-stack avg. '+sh(avg).join(' ');      // 23.9.23 no Raid total / share note (the user)
     scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span>',rngTxt?(ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub):a+' '+ua,sub).replace('<div class="stt',eoAct)}
   else if(EP){const th=EP.st.reduce((q,x)=>q+x[0]*x[1],0),f=d=>Math.min(1,d/th)*EP.score,ki=ksInfo(P,BRD.list,BRD.order,EP),kk=ki&&!ki.none?ki:null;
     let lo=f(dRange?dRange[0]:sc.dmg),hi=f(dRange?dRange[1]:sc.dmg);const avg=f(sc.dmg);
