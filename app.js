@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.10.0';
+const APP_VERSION='23.11.0';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -195,9 +195,10 @@ const fracSpread=(list,mul)=>{      // the food of the fractional part of the hi
   const R=L.reduce((q,x)=>q+x.l*x.f,0);if(!(R>0&&L.length))return out;
   const Y=fr*R/L.length;L.forEach(x=>out[x.k]=x.f>0?Y/x.f:0);return out};
 const roundLast=(a,b)=>{for(const st of [100000,50000,10000,5000,1000,500,100,50,10,5]){const x=Math.ceil(a/st)*st;if(x<=b)return x}return a};      // the roundest whole number between a and b
+const brkCap=pool=>pool=='M'?v('brkL')/4:v('brkL');      // 23.10.1 the barracks train Leadership; the Dominance they train is always 1/4 of it (one input)
 const brkTip=(s,lo,hi,pre='',ra=null)=>{      // Barracks tip (under the round number): the units to train as FULL trainings (+ the last one). The barracks train at most the typed Leadership (army, engineers) / Dominance (monsters) per training: capacity / the cost of one unit = the units of a full training. A number between lo and hi that is a whole number of full trainings is best (the fewest trainings); when there is none, the full trainings under the range plus a last training, the roundest number that lands inside the range. Mercenaries: no tip.
   const t=TRN[s.name];if(!t||t.pool=='U')return'';
-  const cap=v(t.pool=='M'?'brkD':'brkL'),c=Math.floor(cap/(t.cost||1));if(!(cap>0)||c<1||!(lo>0))return'';
+  const cap=brkCap(t.pool),c=Math.floor(cap/(t.cost||1));if(!(cap>0)||c<1||!(lo>0))return'';
   const T=x=>x.toLocaleString(),k=Math.ceil(lo/c);
   if(k*c<=hi)return`<span class="nt">${pre}${k} × ${T(c)}</span>`;
   if(ra!=null&&ra>0){const f2=Math.max(0,Math.ceil((lo-ra)/c)),tt=f2*c+ra;if(tt>=lo&&tt<=hi)return`<span class="nt">${pre}${f2>0?f2+' × '+T(c)+' + ':''}${T(ra)}</span>`}      // the monsters of a tier: the same addition as in the retraining, when it fits the range
@@ -205,12 +206,12 @@ const brkTip=(s,lo,hi,pre='',ra=null)=>{      // Barracks tip (under the round n
   return`<span class="nt">${pre}${f>0?f+' × '+T(c)+' + ':''}${T(r)}</span>`};
 const brkTot=(s,lo,hi)=>{      // the units of the barracks tip (full trainings + the last one) as ONE number, 0 when there is no tip (same rule as brkTip)
   const t=TRN[s.name];if(!t||t.pool=='U')return 0;
-  const cap=v(t.pool=='M'?'brkD':'brkL'),c=Math.floor(cap/(t.cost||1));if(!(cap>0)||c<1||!(lo>0))return 0;
+  const cap=brkCap(t.pool),c=Math.floor(cap/(t.cost||1));if(!(cap>0)||c<1||!(lo>0))return 0;
   const k=Math.ceil(lo/c);if(k*c<=hi)return k*c;
   const f=Math.floor(lo/c);return f*c+roundLast(lo-f*c,hi-f*c)};
 const cycTxt=(s,lo,T)=>{      // the cycle of the next trainings: every training adds the number T, but only lo units are needed, so the surplus d = T - lo piles up in stock. ALL the stacks make the same number of trainings N (STDN = the most that every stack can do: the smallest floor(lo / d) of all the stacks); then ONE training with lo - N x d uses up the surplus (it is 0 after it) and the same N trainings follow again
   if(!(T>0&&STDN>0))return'';
-  const r=Math.max(0,lo-STDN*(T-lo)),x=n=>n.toLocaleString(),t=TRN[s.name],cap=t&&t.pool!='U'?v(t.pool=='M'?'brkD':'brkL'):0,c=cap>0?Math.floor(cap/(t.cost||1)):0;
+  const r=Math.max(0,lo-STDN*(T-lo)),x=n=>n.toLocaleString(),t=TRN[s.name],cap=t&&t.pool!='U'?brkCap(t.pool):0,c=cap>0?Math.floor(cap/(t.cost||1)):0;
   const adj=c>0&&r>c?(Math.floor(r/c)+' × '+x(c)+(r%c?' + '+x(r%c):'')):x(r);      // the adjusting training is more than the barracks train at once: full trainings + the last one
   return`<span class="nt" title="Retrain ${STDN} times, then one adjusting training that uses up the surplus units in stock; then the same again">↺ ${STDN} × → ${adj}</span>`};
 const unitsTxt=s=>{      // units to train: the first hit all of them, every next hit only the ones not revived. A range "for the whole hits - for all the hits": e.g. 2.09 hits -> units for 2 hits - units for 2.09 hits (one number when they are the same; the stack itself when the food pays for 1 hit or less; between 1 and 2 hits the lower number is the stack itself)
@@ -231,7 +232,7 @@ const stdT=(s,q)=>STDT[s.name]!=null?STDT[s.name]:roundLast(q.lo,stdTop(q));    
 const stdTs=list=>{      // the number of the next trainings per stack: the army stacks of one tier with the same cost, food and health get the SAME number of units, e.g. Corax and Royal Lion, Purifier and Punisher (the monsters of one tier too, e.g. all the M9). Window: from the biggest need of the tier to 3 % above it (and not above the food of any stack); the roundest number in it: whole barracks trainings when they fit, else full trainings + the roundest last one.
   STDR={};const out={},G=new Map();
   list.filter(s=>(s.n||0)>0&&!s.off&&TRN[s.name]&&TRN[s.name].pool!='U').forEach(s=>{const t=TRN[s.name],k=t.pool=='A'?'A'+t.tier+'/'+(t.cost||1)+'/'+(t.food||0)+'/'+t.hp:'M'+t.tier,c=t.pool=='A'?Math.max(1,t.cost||1):1,q=stdOf(s);
-    if(!G.has(k))G.set(k,{u:[],lo:0,top:Infinity,m:1,pool:t.pool,cost:t.cost||1,mem:[]});const g=G.get(k);g.u.push([s.name,c]);g.mem.push({n:s.name,lo:q.lo,hi:Math.max(q.hi,stdTop(q)),c:Math.floor(v('brkD')/(t.cost||1))});g.lo=Math.max(g.lo,q.lo*c);g.top=Math.min(g.top,Math.max(q.hi,stdTop(q))*c);g.m=lcm(g.m,c)});
+    if(!G.has(k))G.set(k,{u:[],lo:0,top:Infinity,m:1,pool:t.pool,cost:t.cost||1,mem:[]});const g=G.get(k);g.u.push([s.name,c]);g.mem.push({n:s.name,lo:q.lo,hi:Math.max(q.hi,stdTop(q)),c:Math.floor(brkCap('M')/(t.cost||1))});g.lo=Math.max(g.lo,q.lo*c);g.top=Math.min(g.top,Math.max(q.hi,stdTop(q))*c);g.m=lcm(g.m,c)});
   G.forEach(g=>{if(g.pool=='M'&&g.mem.every(m=>m.c>0)){      // the monsters of a tier: full trainings (each its own: Dominance / cost) + the SAME round last training r for the whole tier; the surplus per training as small as possible (3 %, then 6, 10, 15 %), then the roundest r
       const mc=Math.max(...g.mem.map(m=>m.c));let best=null;      // any r from 0 to the biggest full training: the one with the smallest surplus of the tier (the biggest surplus of any stack, in % of its need)
       for(let r=0;r<mc;r++){const T=g.mem.map(m=>Math.ceil(Math.max(0,m.lo-r)/m.c)*m.c+r);
@@ -427,7 +428,7 @@ function tabClick(e){
     else if(k=='epick'){$('epic').value=a.dataset.e||'';{const pe=EPICS.find(x=>x.n==$('epic').value);$('mode').value='max';$('enemy').value=pe&&!pe.en.includes(4)?String(pe.en[pe.en.length-1]):'4';SO=[]}      // a new choice starts in the full-health mode: 4-stack (8-stack for Arachne), 4-stack with no epic
     epShut();$('epic').dispatchEvent(new Event('change',{bubbles:true}))}
     else if(k=='fclose')fmShut();
-    else if(k=='fapply'){const fp=$('fmFood'),fr=$('fmRev'),ft=$('fmTemple');if(fp&&$('foodP'))$('foodP').value=fp.value;{const bl=$('fmBL'),bd=$('fmBD');if(bl&&$('brkL'))$('brkL').value=bl.value;if(bd&&$('brkD'))$('brkD').value=bd.value}if(fr&&$('revm'))$('revm').value=fr.value;if(ft&&$('temple'))$('temple').value=ft.value;fmShut(true);calc()}
+    else if(k=='fapply'){const fp=$('fmFood'),fr=$('fmRev'),ft=$('fmTemple');if(fp&&$('foodP'))$('foodP').value=fp.value;{const bl=$('fmBL');if(bl&&$('brkL'))$('brkL').value=bl.value}if(fr&&$('revm'))$('revm').value=fr.value;if(ft&&$('temple'))$('temple').value=ft.value;fmShut(true);calc()}
     else if(k=='hcopy')hCopy();
     else if(k=='agoog')aGoogle();
     else if(k=='aclose'){AP=false;ANE=false;drawAP();drawTabs()}
@@ -453,7 +454,7 @@ function tabClick(e){
 // The text: a title line, then  key=value  pieces (one space between them). A box that holds the blank value (0) is left out, a number has no thousands commas, a space in a name is _ ; the key is short:
 // L Leadership, U Authority, D Dominance, F Food prod., R Revive, Tp Temple level (13.1; left out when it is 45), A Action; hG / sG = health / strength bonus of Guardsmen (S, M, E, and Gi El Dr Be Me Mo Ra Fl Ep Pl the same way), dGi = Double strike; T = the ticked tiers (E89S89G89M789 = E8 E9 S8 S9 G8 G9 M7 M8 M9);
 // n = name, x = switched-off troops (3 characters each, see xcode), at = Attack players, mo / en / le / lp = attack mode. Text of the first version (JSON, "Stack Calculator inputs") is still read.
-const XMODES=['max','ren','lava','arena','pvpmax','cpd','cp','kill','kill4','mon'],XENEMY=['3','4','6','8'],XHEAD='Krappy Calculator',XFIX={capA:'L',capU:'U',capM:'D',foodP:'F',brkL:'BL',brkD:'BD',revm:'R',shw:'A',temple:'Tp',renLv:'Lv',epic:'E'},XSUF={Epic:'Ep',Players:'Pl',Giant:'Gi',Elemental:'El',Dragon:'Dr',Beast:'Be',Melee:'Me',Mounted:'Mo',Ranged:'Ra',Flying:'Fl',Scout:'Sc',EMH:'EM'};
+const XMODES=['max','ren','lava','arena','pvpmax','cpd','cp','kill','kill4','mon'],XENEMY=['3','4','6','8'],XHEAD='Krappy Calculator',XFIX={capA:'L',capU:'U',capM:'D',foodP:'F',brkL:'BL',revm:'R',shw:'A',temple:'Tp',renLv:'Lv',epic:'E'},XSUF={Epic:'Ep',Players:'Pl',Giant:'Gi',Elemental:'El',Dragon:'Dr',Beast:'Be',Melee:'Me',Mounted:'Mo',Ranged:'Ra',Flying:'Fl',Scout:'Sc',EMH:'EM'};
 const xkey=id=>{const m=/^(bh|bs|dh)_(.+)$/.exec(id);return XFIX[id]||(m?{bh:'h',bs:'s',dh:'d'}[m[1]]+(XSUF[m[2]]||m[2]):id)};      // bh_G -> hG, bs_G -> sG, dh_Giant -> dGi, bs_Epic -> sEp
 const xep=n=>String(n).slice(0,3).toLowerCase(),xepn=c=>{const e=EPICS.find(q=>q.n===c)||EPICS.find(q=>xep(q.n)==String(c).slice(0,3).toLowerCase());return e?e.n:c};      // 20.5.1: the epic in the export is its first 3 letters (arm = Armageddon/Basilisk); the full name of an older export is still read
 const xhash=q=>{let h=2166136261;for(let i=0;i<q.length;i++){h^=q.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return h};
@@ -883,7 +884,6 @@ function drawFM(){
     +'<div class="fg">'
     +'<label class="bi"><span>Food prod.</span><input id="fmFood" type="text" inputmode="decimal" value="'+($('foodP')?$('foodP').value:'')+'" placeholder="0"></label>'
     +'<label class="bi"><span>Barracks Leadership</span><input id="fmBL" type="text" inputmode="decimal" value="'+($('brkL')?$('brkL').value:'')+'" placeholder="0"></label>'
-    +'<label class="bi"><span>Barracks Dominance</span><input id="fmBD" type="text" inputmode="decimal" value="'+($('brkD')?$('brkD').value:'')+'" placeholder="0"></label>'
     +'<label class="bi"><span>Revive</span><select id="fmRev">'
     +REVCASES.concat(REVFIX).map(c=>'<option value="'+c[0]+'"'+(c[0]==($('revm')?$('revm').value:'top')?' selected':'')+'>'+esc(c[1])+'</option>').join('')
     +'</select></label>'
@@ -3524,7 +3524,7 @@ runBest(4);
 DEF=snap();DEF.X=['Grace'];      // Grace (a Scout) is switched off in every new tab; a tab that was saved keeps what it saved
 // Every tab starts blank: Leadership, Dominance, the basic bonuses, the monster bonuses (with the Double strike) and the Food production are all 0. BLANK is also the fallback for a saved tab that lacks a box (a box added by a newer version), so a release never puts a number of ours into a tab. The numbers a tab has saved are never replaced by a release: they live in localStorage under KEY, which must stay the same forever.
 const BLANK=clone(DEF);
-['capA','capM','foodP','brkL','brkD','bh_G','bs_G','bh_S','bs_S','bh_M','bs_M','bh_E','bs_E','bs_Epic','bh_Players','bs_Players',...['Giant','Elemental','Dragon','Beast'].flatMap(k=>['bh_'+k,'bs_'+k,'dh_'+k])].forEach(id=>{if(id in BLANK.vals)BLANK.vals[id]='0'});
+['capA','capM','foodP','brkL','bh_G','bs_G','bh_S','bs_S','bh_M','bs_M','bh_E','bs_E','bs_Epic','bh_Players','bs_Players',...['Giant','Elemental','Dragon','Beast'].flatMap(k=>['bh_'+k,'bs_'+k,'dh_'+k])].forEach(id=>{if(id in BLANK.vals)BLANK.vals[id]='0'});
 const START_TABS=['1 cap','3 cap','Hero','Hero+3 cap'];    // the tabs a new page starts with; they are ordinary tabs (rename, duplicate, delete)
 try{
   const r=JSON.parse(localStorage.getItem(KEY)||'null');
