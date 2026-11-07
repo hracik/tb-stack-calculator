@@ -599,12 +599,11 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 
 .oi small.mu,.oi .mu{color:var(--tlm)}      /* 23.9.27 the lists (target order, hitting order) follow the theme */
 
-/* 23.9.30 the lists (target order, strike order) and the battle report look like the stack cards: the troop name small and muted, the number big and bright, the same icon size */
+/* 23.9.31 the lists (target order, strike order) and the battle report: the troop name bright, the info under it smaller and muted, the same sizes everywhere */
 .oi{gap:12px;padding:6px 12px}
 .oi .ic2{width:48px;height:48px}
-.oi .nm{font-size:14px;color:var(--tlm);line-height:1.2}
-.oi small,.oi small.mu{font-size:12px;color:var(--tlm)}
-.oi .ov{display:block;font-size:17px;font-weight:700;color:var(--tlt);line-height:1.3}
-.bq .bnn,.bq .beg .bnn{font-size:14px;font-weight:400;color:var(--tlm)}
-.ba .bnn,.ba .beg .bnn{color:var(--mu)}
-.bq .bun{font-size:15px;font-weight:700;opacity:1}
+.oi .nm{font-size:15px;color:var(--tlt);line-height:1.25}
+.oi small,.oi small.mu{font-size:12px;color:var(--tlm);line-height:1.25}
+.bq .bnn,.bq .beg .bnn{font-size:15px;font-weight:400;color:var(--tlt)}
+.bq .bun{font-size:12px;font-weight:400;opacity:1;color:var(--tlm)}
+.ba .bun{color:var(--mu)}
