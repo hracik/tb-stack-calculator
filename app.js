@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.9.23';
+const APP_VERSION='23.9.24';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -113,6 +113,11 @@ const raidOf=(P,L,order,rw=1)=>{      // 23.9.21 ONE battle: the stacks of all 5
   const all=[];mine.forEach(s=>ks.forEach(k=>{const n=k==1?s.n:Math.floor(s.n*k);if(n>0)all.push({...s,n})}));
   const sc=score({...P,enemy:P.enemy*rw},all,order),me=score(P,mine,order).dmg;      // the epic of a Raid has every stack rw times (4 rows of the army screen): in the joint battle it kills P.enemy x rw of our stacks per round      // the sort inside score() keeps the copies in this order (same name, stable sort)
   return{D:sc.dmg,sd:sc.sd,share:raidShare(L),rc:me>0?sc.dmg/me:1/raidShare(L)}};
+const raidOn=(P,EP)=>!!(EP&&EP.raid&&EP.rw&&P&&!P.kill&&!P.cp&&!P.ren&&!P.one&&!P.pm&&!P.mon&&ATK=='epics');      // 23.9.24 the joint Raid battle is shown (target order, hitting order, battle report) in the normal hit of a Raid epic
+const raidTag=k=>k==1?'you':(k>1?'+':'\u2212')+(+(Math.abs(k-1)*100).toFixed(1))+' %';
+const raidList=(L,order)=>{const ix={};order.forEach((n,i)=>ix[n]=i);const ks=RAIDK.slice().sort((a,b)=>b-a),out=[];
+  L.filter(s=>(s.n||0)>0).sort((a,b)=>ix[a.name]-ix[b.name]).forEach(s=>ks.forEach(k=>{const n=k==1?s.n:Math.floor(s.n*k);if(n>0)out.push({...s,n,rk:k,rt:raidTag(k)})}));return out};      // all the stacks of the 5 attackers in the joint battle's order: the copies of one of my stacks together, the strongest first
+const raidEP=(EP,P)=>({...EP,st:EP.st.filter(x=>!((P.enemy==3||P.enemy==6)&&x[2]==2)).flatMap(x=>Array.from({length:EP.rw},()=>[x[0]/EP.rw,...x.slice(1)]))});      // the Raid epic in the battle: every stack rw times (one row each)
 let RAIDX=null;      // the last Raid result of the summary: my share and the ratio total damage / my damage alone (the battle report and the Compare card scale my damage by it)
 const raidPts=(EP,th,d,sh,rc)=>sh*Math.min(1,d*(rc||(RAIDX&&RAIDX.rc)||1/sh)/th)*EP.tot;      // my score from MY damage d: the 5 attackers deal d x rc together (rc from the joint battle of the summary), the total score = that part of the epic's health x the Raid's total score, mine = my share of it
 EPICS.forEach(e=>{if(e.st)e.st.forEach(x=>{if(x[3]==null)x[3]=Math.round(x[1]/3)})});      // 21.9.2 an enemy stack without a given strength has 1/3 of its health per unit (the game's own numbers for Arachne and Doomsday are exactly that), so every epic wounds
@@ -311,6 +316,7 @@ function drawSO(st,P){
     flush();if(BUFN[n]&&!bufHead){bufHead=true;html+='<div class="oz">Buffer zone</div>'}pos++;SOPOS[n]=pos;html+=one(n,pos);
   });
   flush();
+  {const EPr=epCur();if(raidOn(P,EPr)){const rl=raidList(st.so.filter(n=>sb[n]&&sb[n].n>0).map(n=>({...sb[n],name:n,n:sb[n].n})),st.so);html='<div class="oz">Raid: the 5 attackers in one battle</div>'+rl.map((x,i)=>`<div class="oi"><span class="no${i+1>99?' wd':''}">${i+1}</span>${ICD[x.name]?`<img class="ic2" src="${ICD[x.name]}" alt="">`:''}<span class="nm">${esc(x.name)} <b class="rtg">${x.rt}</b> <small class="mu">${x.n.toLocaleString()} units</small></span></div>`).join('')}}      // 23.9.24 a Raid: the target order of the joint battle (every stack of the 5 attackers)
   $('os').innerHTML=html;
 }
 
@@ -2127,8 +2133,8 @@ const ordL=(list,order)=>{const ix={};order.forEach((n,i)=>ix[n]=i);return list.
 let KSAVGF=null,KSROLLF=null;
 function battleHtml(P,list,order,sc){
   KSAVGF=null;KSROLLF=null;
-  const K=P.enemy,ix={};order.forEach((n,i)=>ix[n]=i);
-  const L=list.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);
+  const EPr=epCur(),RJ=raidOn(P,EPr),K=P.enemy,ix={};order.forEach((n,i)=>ix[n]=i);
+  const L=RJ?raidList(list,order):list.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);      // 23.9.24 a Raid: the joint battle of the 5 attackers
   if(!L.length)return '<p class="mu">No units.</p>';
   const ex=THEOEXP,rng=THEO.rngMk(THEOSEED),log=[];strikes(L,K,log,P.ren?1:Infinity,ex||rng()<0.5?'o':'e');      // we strike first; only the dice toss the coin (the same seed gives the same fight until Roll again)
   const num=x=>Math.round(x).toLocaleString();
@@ -2140,15 +2146,16 @@ function battleHtml(P,list,order,sc){
   if(known){
     const unIc=ty=>EPIC_UN[EPK.ic]&&EPIC_UN[EPK.ic][ty]?`<img class="ic2" src="${EPIC_UN[EPK.ic][ty]}" alt="">`:EN.ic;
     KSAVGF=P.kill?(ksAvg(P,L,EPK)||{f:0}).f:null;      // the score of the average fight: what a rolled Killshot is compared with
-    const ks=P.kill?killState(P,L,EPK,ex?0:THEOSEED):null,EPS=ks?(ks.EPSR||(ks.avg?ks.avg.EPS:ks.EPS)):(P.enemy==3||P.enemy==6)?{...EPK,st:EPK.st.filter(x=>x[2]!=2)}:EPK;      // the 3-stack mode has no mounted enemy stack; the Killshot starts at the biggest state the army kills (killState)
+    const ks=P.kill?killState(P,L,EPK,ex?0:THEOSEED):null,EPS=ks?(ks.EPSR||(ks.avg?ks.avg.EPS:ks.EPS)):RJ?raidEP(EPK,P):(P.enemy==3||P.enemy==6)?{...EPK,st:EPK.st.filter(x=>x[2]!=2)}:EPK;      // the 3-stack mode has no mounted enemy stack; the Killshot starts at the biggest state the army kills (killState)
     KSROLLF=ks?ks.f:null;      // the score of the rolled fight (the Random effects points)
     const sim=epicSim(P,L,EPS,!ex,ks&&ks.seed?THEO.rngMk(ks.seed):rng,undefined,ex?'o':undefined,ex),avg=epicSim(P,L,EPS,false,null);td=sim.td;ad=avg.td;nd=sim.nd;ns=sim.ns;ed=sim.ed;es=sim.es;
     sim.ev.forEach(x=>{
       if(x.r!==rd){rd=x.r;h+=`<div class="brh">Round ${x.r+1}</div>`}
       const s=L[x.i];
-      if(x.t=='o')h+=brRow({we:true,ourIc:brImg(s.name),ourName:esc(s.name),ourSub:num(x.un??s.n),enName:DEFCAT[x.ty]||'',enCnt:num(x.before),enIc:unIc(x.ty),enDead:x.dead,tg:x.tg,l2:`<b>+${num(x.dmg)}</b> damage \u00b7 ${num(x.killed)} killed`,sq:x.sq>=0.5?`squad bonus +${num(x.sq)}`:''});
-      else if(x.t=='w')h+=brRow({we:false,ourIc:brImg(s.name),ourName:esc(s.name),ourSub:num(x.un??s.n),enName:DEFCAT[x.ty]||'',enCnt:num(x.u),enIc:unIc(x.ty),l2:`<b>\u2212${num(x.dmg)}</b> damage \u00b7 wounded, still fighting`})
-      else h+=brRow({we:false,ourIc:brImg(s.name),ourDead:true,ourName:esc(s.name),ourSub:num(x.un??s.n),enName:DEFCAT[x.ty]||'',enCnt:num(x.u),enIc:unIc(x.ty),l2:`<b>\u2212${num(x.hl??tot(s.n,s.hp))}</b> damage`})})}
+      const nmR=esc(s.name)+(s.rt?` <b class="rtg">${s.rt}</b>`:'');
+      if(x.t=='o')h+=brRow({we:true,ourIc:brImg(s.name),ourName:nmR,ourSub:num(x.un??s.n),enName:DEFCAT[x.ty]||'',enCnt:num(x.before),enIc:unIc(x.ty),enDead:x.dead,tg:x.tg,l2:`<b>+${num(x.dmg)}</b> damage \u00b7 ${num(x.killed)} killed`,sq:x.sq>=0.5?`squad bonus +${num(x.sq)}`:''});
+      else if(x.t=='w')h+=brRow({we:false,ourIc:brImg(s.name),ourName:nmR,ourSub:num(x.un??s.n),enName:DEFCAT[x.ty]||'',enCnt:num(x.u),enIc:unIc(x.ty),l2:`<b>\u2212${num(x.dmg)}</b> damage \u00b7 wounded, still fighting`})
+      else h+=brRow({we:false,ourIc:brImg(s.name),ourDead:true,ourName:nmR,ourSub:num(x.un??s.n),enName:DEFCAT[x.ty]||'',enCnt:num(x.u),enIc:unIc(x.ty),l2:`<b>\u2212${num(x.hl??tot(s.n,s.hp))}</b> damage`})})}
   const eepic=ATK=='epics'&&!P.cp&&!P.ren&&!P.one&&!P.pm;      // epic modes: the epic is shown by its icon only
   (known?[]:log).forEach(([r,t,i])=>{
     if(r!==rd){rd=r;h+=`<div class="brh">Round ${r+1}</div>`}
@@ -2171,18 +2178,18 @@ function battleHtml(P,list,order,sc){
   h+='</div>';
   
   const e=epCur(),th=e&&e.st&&e.score&&ATK=='epics'&&!P.cp&&!P.ren&&!P.one?e.st.filter(x=>!((P.enemy==3||P.enemy==6)&&x[2]==2)).reduce((q,x)=>q+x[0]*x[1],0):0,u=['','K','M','B','T'],fm=x=>{let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3)).toString()+u[i]};      // 118000000 -> 118M
-  const sm=brFxBox(ex,[[nd,ed,'double damage'],[ns,es,'double strikes']],ex?'':(()=>{const cp=(v,a)=>Math.abs(v-a)<=0.005*a?'= avg.':(v>a?'+':'\u2212')+fm(Math.abs(v-a))+' vs. avg.',rs=e&&e.raid&&e.tot&&KSROLLF==null&&KSAVGF==null?raidShare(L):0,p1=th?(rs?raidPts(e,th,td,rs):(KSROLLF!=null?KSROLLF:Math.min(1,td/th))*e.score):0,p2=KSAVGF!=null&&e?KSAVGF*e.score:th?(rs?raidPts(e,th,ad,rs):Math.min(1,ad/th)*e.score):0;return th?`<div><b>${fm(p1)}</b> points (${cp(p1,p2)})</div>`:`<div>total <b>${fm(td)}</b> (${cp(td,ad)})</div>`})());
+  const sm=brFxBox(ex,[[nd,ed,'double damage'],[ns,es,'double strikes']],ex?'':(()=>{const cp=(v,a)=>Math.abs(v-a)<=0.005*a?'= avg.':(v>a?'+':'\u2212')+fm(Math.abs(v-a))+' vs. avg.',rs=e&&e.raid&&e.tot&&KSROLLF==null&&KSAVGF==null&&!RJ?raidShare(L):0,thA=RJ?e.st.reduce((q,x)=>q+x[0]*x[1],0):0,rjp=x=>RAIDX.share*Math.min(1,x/thA)*e.tot,p1=th?(RJ&&RAIDX?rjp(td):rs?raidPts(e,th,td,rs):(KSROLLF!=null?KSROLLF:Math.min(1,td/th))*e.score):0,p2=KSAVGF!=null&&e?KSAVGF*e.score:th?(RJ&&RAIDX?rjp(ad):rs?raidPts(e,th,ad,rs):Math.min(1,ad/th)*e.score):0;return th?`<div><b>${fm(p1)}</b> points (${cp(p1,p2)})</div>`:`<div>total <b>${fm(td)}</b> (${cp(td,ad)})</div>`})());
   BRFXH=sm;return h;      // the Random effects block is shown in the summary, above the Battle in detail buttons
 }
 // The hitting order: who hits the enemy in round 1, in that order (the same battle as the report: strikes() with a log)
 function hitHtml(P,list,order){
-  const K=P.enemy,ix={};order.forEach((n,i)=>ix[n]=i);
-  const L=list.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);
+  const EPr=epCur(),RJ=raidOn(P,EPr),K=RJ?raidEP(EPr,P).st.length:P.enemy,ix={};order.forEach((n,i)=>ix[n]=i);
+  const L=RJ?raidList(list,order):list.filter(s=>s.n>0).sort((a,b)=>ix[a.name]-ix[b.name]);      // a Raid: the joint battle (all the attackers' stacks, the epic with every stack 4 times)
   if(!L.length)return '<p class="mu">No units.</p>';
   const log=[];strikes(L,K,log,P.ren?1:Infinity);
   let h='',k=0;
   log.forEach(([r,t,i])=>{if(r!==0||t!=='o')return;const s=L[i];k++;
-    h+=`<div class="oi"><span class="no${k>99?' wd':''}">${k}</span>${ICD[s.name]?`<img class="ic2" src="${ICD[s.name]}" alt="">`:''}<span class="nm">${esc(s.name)} <small class="mu">${factsHtml(s.name,P,s.n,s.hp)}</small></span></div>`});
+    h+=`<div class="oi"><span class="no${k>99?' wd':''}">${k}</span>${ICD[s.name]?`<img class="ic2" src="${ICD[s.name]}" alt="">`:''}<span class="nm">${esc(s.name)}${s.rt?` <b class="rtg">${s.rt}</b>`:''} <small class="mu">${factsHtml(s.name,P,s.n,s.hp)}</small></span></div>`});
   return h;
 }
 // Under the mode buttons ONE of three lists is open at a time: the target order, the hitting order or the battle report (OVK; none at the start). The report and the hitting order are drawn only while they are open.
