@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.9.25';
+const APP_VERSION='23.9.26';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2113,12 +2113,31 @@ function ksRange(P,L,EP){      // the 95 % range: the average fight tells how mu
   const sg=ksSg(P,L,EP),z=1.96;
   const lo=ksF(P,L,EP,1-z*sg),hi=ksF(P,L,EP,1+z*sg);
   return{lo:Math.max(0,Math.min(av.f,lo)),hi:Math.min(1,Math.max(av.f,hi)),sg}}
+// 23.9.26 the Killshot of a Raid: the 5 attackers in ONE battle (raidList) against the worn-down epic (every stack rw times, the health of a stack split evenly over its rows); the biggest state on the way down that they kill (at most 3 or 4 living stacks), as in killState. Returns the share of the epic's health (f) for the average fight and the 95 % luck window.
+let RKSM=new Map();
+function raidKs(P,Lme,EP){
+  if(!EP||!EP.wd||!EP.rw)return null;const key=EP.n+'|'+Lme.map(x=>x.name+':'+x.n).join(',')+'|'+JSON.stringify(P)+'|'+RAIDK.join(',');if(RKSM.has(key))return RKSM.get(key);
+  const cps=ksCps(P,Lme,EP),K=P.kill4?4:3,al=c=>c.hp.filter(x=>x>1e-6).length,cand=cps.filter(c=>al(c)<=K),tot=cps[0].left,RL=raidList(Lme,Lme.map(s=>s.name));
+  const mk=c=>({...EP,st:EP.st.flatMap((x,i)=>c.hp[i]>1e-6?Array.from({length:EP.rw},()=>[c.hp[i]/x[1]/EP.rw,x[1],x[2],x[3],i]):[])});
+  const find=lam=>{const Pl={...P,dmgScale:(P.dmgScale||1)*lam},ok=c=>epicSim(Pl,RL,mk(c),false,null).td>=c.left*(1-1e-6);
+    if(!cand.length||!ok(cand[cand.length-1]))return 0;let lo=0,hi=cand.length-1;while(lo<hi){const m=(lo+hi)>>1;if(ok(cand[m]))hi=m;else lo=m+1}
+    let c=cand[lo];if(lo>0){let A=cand[lo-1],B=c;for(let k=0;k<10;k++){const hp=A.hp.map((x,i)=>(x+B.hp[i])/2),m={hp,left:hp.reduce((q,x)=>q+x,0)};if(ok(m))B=m;else A=m}c=B}
+    const c0=cand[0];let left=c.left;if(c!==c0){const td0=epicSim(Pl,RL,mk(c0),false,null).td;left=Math.max(left,Math.min(td0,c0.left))}      // a hit that does not kill scores the damage it deals (a killshot never scores less than a hit)
+    return left/tot};
+  const f=find(1);let r=null;
+  if(f>0){const st=cand.find(c=>c.left<=f*tot+1e-6)||cand[cand.length-1],sd=epicSim(P,RL,mk(st),false,null),sg=sd.pex>0?Math.sqrt(Math.max(0,sd.pvar))/sd.pex:0;
+    r={f,lo:Math.min(f,find(1-1.96*sg)),hi:Math.max(f,find(1+1.96*sg)),share:raidShare(Lme)}}
+  if(RKSM.size>40)RKSM=new Map();RKSM.set(key,r);return r}
 // the score tile of a Killshot: the average fight with its range, or the rolled fight (Roll the dice)
 function ksTile(P,list,order){
   const EP=epCur();if(!EP||!EP.st||!EP.score)return'';
   const L=ordL(list,order),sh=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}if(+v.toPrecision(3)>=1e3&&i<4){v/=1e3;i++}return[(+v.toPrecision(3)).toString(),u[i]]},
     ex=THEOEXP,av=ksAvg(P,L,EP),rl=ex?av:killState(P,L,EP,THEOSEED),eoMany=false,eoCar='';
   const fm=f=>sh(f*EP.score).join(' ');let v,sub;
+  if(EP.raid&&EP.rw&&EP.tot){const rk=raidKs(P,L,EP),g=f=>rk?f*EP.tot*rk.share:0;      // 23.9.26 a Raid: the 5 attackers kill it together, my share of the score
+    if(!rk)v='\u2013',sub='the 5 attackers can not kill it';
+    else{const[a,ua]=sh(g(rk.lo)),[b,ub]=sh(g(rk.hi));v=a==b&&ua==ub?a+' '+ua:ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub;sub='95 % score range<br>killshot avg. '+sh(g(rk.f)).join(' ')}
+    return'<div data-kt="1" class="stt std"><div class="stl"><span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b></span></span></div><div class="stv">'+v+'</div><div class="sts">'+sub+'</div></div>'}
   if(!av)v='\u2013',sub='the army can not kill it';
   else{const r=ksRange(P,L,EP);v=Math.abs(r.hi-r.lo)<1e-9?fm(av.f):(()=>{const[a,ua]=sh(r.lo*EP.score),[b,ub]=sh(r.hi*EP.score);return ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub})();
     sub='95 % score range<br>killshot avg. '+fm(av.f);
@@ -2795,9 +2814,11 @@ function calcRun0(){
   else if(KEP&&!(KEP.st&&KEP.score))scoreTile=tile('std','<span class="eph">'+epImg(KEP,'epi')+'<span><b>'+esc(KEP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span>','\u2013',KEP.score?'stacks not set yet':'score not set yet').replace('<div class="stt',eoAct);
   if(EP&&!(EP.st&&EP.score))scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span>','\u2013',EP.score?'stacks not set yet':'score not set yet').replace('<div class="stt',eoAct);
   else if(EP&&EP.raid&&EP.tot){const th=EP.st.reduce((q,x)=>q+x[0]*x[1],0),R=raidOf(P,[...A,...Mo,...U.list],[...st.so,...U.ord],EP.rw||1),_r=(RAIDX={share:R.share,rc:R.rc}),T=x=>Math.min(1,x/th)*EP.tot;      // 23.10 a Raid: the 5 attackers' total damage gives the total score (range), mine is my health's share of it
-    const tl=T(Math.max(0,R.D-RZ*R.sd)),thi=T(R.D+RZ*R.sd),lo=tl*R.share,hi=thi*R.share,avg=T(R.D)*R.share;
+    const tl=T(Math.max(0,R.D-RZ*R.sd)),thi=T(R.D+RZ*R.sd),avg=T(R.D)*R.share;let lo=tl*R.share,hi=thi*R.share;
+    const rk=EP.wd&&(P.enemy==3||P.enemy==4)?raidKs({...P,kill:true,kill4:P.enemy==4},ordL([...A,...Mo,...U.list],[...st.so,...U.ord]),EP):null,kav=rk?rk.f*EP.tot*rk.share:0;      // 23.9.26 the killshot of the 5 attackers counts too: the main number covers the hit on a healthy epic and the killshot
+    if(rk){lo=Math.min(lo,rk.lo*EP.tot*rk.share);hi=Math.max(hi,rk.hi*EP.tot*rk.share)}
     const [a,ua]=sh(lo),[b,ub]=sh(hi),rngTxt=(a!=b||ua!=ub);
-    const sub=(rngTxt?'95 % score range<br>':'')+P.enemy+'-stack avg. '+sh(avg).join(' ');      // 23.9.23 no Raid total / share note (the user)
+    const sub=(rngTxt?'95 % score range<br>':'')+P.enemy+'-stack avg. '+sh(avg).join(' ')+(EP.wd?' \u00b7 '+(rk?'killshot avg. '+sh(kav).join(' '):'Killshot: the 5 attackers can not kill it'):'');      // 23.9.23 no Raid total / share note (the user)
     scoreTile=tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span>',rngTxt?(ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub):a+' '+ua,sub).replace('<div class="stt',eoAct)}
   else if(EP){const th=EP.st.reduce((q,x)=>q+x[0]*x[1],0),f=d=>Math.min(1,d/th)*EP.score,ki=ksInfo(P,BRD.list,BRD.order,EP),kk=ki&&!ki.none?ki:null;
     let lo=f(dRange?dRange[0]:sc.dmg),hi=f(dRange?dRange[1]:sc.dmg);const avg=f(sc.dmg);
