@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.11.3';
+const APP_VERSION='23.11.4';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -197,23 +197,27 @@ const fracSpread=(list,mul)=>{      // the food of the fractional part of the hi
 const roundLast=(a,b)=>{for(const st of [100000,50000,10000,5000,1000,500,100,50,10,5]){const x=Math.ceil(a/st)*st;if(x<=b)return x}return a};      // the roundest whole number between a and b
 // 23.11.1 the Training plan (Preparation): many hits with few clicks. A session = change the captains (14 clicks), then for every troop that is due: select it (3 clicks) and train FULL barracks (4 clicks each; the number field always shows the barracks maximum, so no typing). Between the sessions H hits: the whole hits the chosen Revive mode pays for (at least 1). A troop keeps a stock: it is due only when its stock does not cover the next H hits (n + (H-1) x loss units); then it trains the fewest full barracks that cover them, the rest stays in stock for the later sessions. Never a trimmed stack. Mercenaries are not trained.
 const TPC={cap:14,sel:3,tr:4};      // the clicks of the game: change the captains, select a unit, one training at the barracks maximum (and back to the unit selection)
-function trainPlan(hl){
-  const H=Math.max(1,Math.floor(MUL+1e-9)),dg=x=>String(Math.round(x)).length;      // 23.11.2 the hits of a session = the whole hits the chosen Revive mode pays for (Hits per revive mode), at least 1
+function trainPlan(hl){      // 23.11.4 food = the consumption of ALL the units alive (the army and the stock): after a session's training it must stay within the Food production. A full barracks leaves a surplus in stock that eats food too; when the food is short, the last training of some troops is typed exactly (the troops whose surplus eats the most food per extra click first)
+  const H=Math.max(1,Math.floor(MUL+1e-9)),dg=x=>String(Math.round(x)).length;      // the hits of a session = the whole hits the chosen Revive mode pays for (Hits per revive mode), at least 1
   const T=hl.filter(s=>(s.n||0)>0&&!s.off&&TRN[s.name]&&TRN[s.name].pool!='U').map(s=>{const t=TRN[s.name],c=Math.floor(brkCap(t.pool)/(t.cost||1));return{nm:s.name,n:s.n,L:lossOf(s,REVM),c,f:foodOf(s.name)}});
   const inp=`<p class="tpsum">${H} ${H==1?'hit':'hits'} per session</p>`;
   if(!T.length)return inp;
   if(T.some(x=>!(x.c>=1)))return inp+'<p class="mu">Type the Barracks Leadership (Food settings) to get the plan.</p>';
-  const need=x=>x.n+(H-1)*x.L,R=T.reduce((q,x)=>q+x.L*x.f,0),fp=v('foodP')*(100+FOODADD)/100,J=60,rows=[];let S=T.map(()=>0),clk=0,clkX=0,food=0,bal=0;const nb=T.map(()=>0),ns=T.map(()=>0);
-  for(let j=0;j<=J;j++){const tr=[];let c=TPC.cap,fd=0;
-    T.forEach((x,i)=>{const d=need(x)-S[i];if(d>0){const k=Math.ceil(d/x.c);S[i]+=k*x.c;tr.push([x.nm,k]);if(j>0){nb[i]+=k;ns[i]++}c+=TPC.sel+TPC.tr*k;fd+=k*x.c*x.f}S[i]-=H*x.L});
-    if(j>0){clk+=c;food+=fd;bal+=H*R-fd;      // the exact way for comparison: every troop every session, the units of the H hits typed (the full barracks + one typed number: delete the maximum, type the rest)
-      let cx=TPC.cap;T.forEach(x=>{const u=H*x.L,k=Math.floor(u/x.c),r=u-k*x.c;cx+=TPC.sel+TPC.tr*k+(r>0?TPC.tr+dg(x.c)+dg(r):0)});clkX+=cx}
-    rows.push({j,tr,c,fd,bal})}
-  const K=x=>x.toLocaleString(),fm=x=>{const u=['','K','M','B','T'];let i=0;while(x>=1e3&&i<4){x/=1e3;i++}return(+x.toPrecision(3))+(u[i]?' '+u[i]:'')};
-  const pph=clk/(J*H),pphX=clkX/(J*H),avgF=food/J;
-  let h=inp+`<p class="tpsum">${(+pph.toFixed(1))} clicks per hit <span class="mu">(typing the exact numbers every time: ${(+pphX.toFixed(1))})</span><br><span class="mu">Food per session: ${fm(avgF)} on average (${(+(avgF/(fp||1)).toFixed(2))} × Food production)</span></p>`;
-  h+=`<div class="tps tpx">${T.map((x,i)=>`<div class="tpr"><span class="tpi">${ICD[x.nm]?`<img class="ic2" src="${ICD[x.nm]}" alt="">`:''}${esc(x.nm)}</span><span class="mu">−${K(x.L)} per hit${x.L<x.n?' (revived)':''} · ${ns[i]?(nb[i]/ns[i]%1?(+(nb[i]/ns[i]).toFixed(1)):nb[i]/ns[i])+'× every '+(J/ns[i]>1.05?(+(J/ns[i]).toFixed(1))+' sessions':'session'):'no training'}</span></div>`).join('')}</div>`;      // 23.11.3 per troop: the units it loses per hit (the revived troops only the part not revived) and how often it trains
-  h+=rows.slice(0,13).map(r=>`<div class="tps"><div class="tpt"><b>${r.j?'Session '+r.j:'First training'}</b><span class="mu">${r.tr.length?r.c+' clicks · '+fm(r.fd)+' food':'nothing to train'}</span></div>${r.tr.length?`<div class="tpl">${r.tr.map(([n,k])=>`<span class="tpi">${ICD[n]?`<img class="ic2" src="${ICD[n]}" alt="">`:''}${esc(n)} <b>×${k}</b></span>`).join('')}</div>`:''}</div>`).join('');
+  const need=x=>x.n+(H-1)*x.L,fp=v('foodP')*(100+FOODADD)/100,J=60,rows=[];let S=T.map(()=>0),clk=0,clkX=0,peak=0,short=0;const nb=T.map(()=>0),ns=T.map(()=>0),nt=T.map(()=>0);
+  for(let j=0;j<=J;j++){
+    const due=T.map((x,i)=>{const d=need(x)-S[i];if(!(d>0))return null;const k=Math.ceil(d/x.c);return{i,k,d,u:k*x.c-d,r:d-(k-1)*x.c,ex:false}}).filter(Boolean);
+    let cons=T.reduce((q,x,i)=>q+S[i]*x.f,0)+due.reduce((q,o)=>q+o.k*T[o.i].c*T[o.i].f,0);
+    if(fp>0&&cons>fp){const cand=due.filter(o=>o.u>0).map(o=>({o,g:o.u*T[o.i].f/(dg(T[o.i].c)+dg(o.r))})).sort((a,b)=>b.g-a.g);for(const {o} of cand){if(cons<=fp)break;o.ex=true;cons-=o.u*T[o.i].f}}      // too much food: type the last training exactly
+    if(fp>0&&cons>fp*(1+1e-9))short++;
+    let c=TPC.cap;const tr=due.map(o=>{const x=T[o.i];S[o.i]+=o.ex?o.d:o.k*x.c;c+=TPC.sel+TPC.tr*o.k+(o.ex?dg(x.c)+dg(o.r):0);if(j>0){nb[o.i]+=o.k;ns[o.i]++;if(o.ex)nt[o.i]++}return[x.nm,o.ex?o.k-1:o.k,o.ex?o.r:0]});
+    peak=Math.max(peak,cons);rows.push({j,tr,c,cons});
+    T.forEach((x,i)=>S[i]-=H*x.L);
+    if(j>0){clk+=c;let cx=TPC.cap;T.forEach(x=>{const u=H*x.L,k=Math.floor(u/x.c),r=u-k*x.c;cx+=TPC.sel+TPC.tr*k+(r>0?TPC.tr+dg(x.c)+dg(r):0)});clkX+=cx}}      // the exact way for comparison: every troop every session, the units of the H hits typed
+  const K=x=>Math.round(x).toLocaleString(),fm=x=>{const u=['','K','M','B','T'];let i=0;while(x>=1e3&&i<4){x/=1e3;i++}return(+x.toPrecision(3))+(u[i]?' '+u[i]:'')};
+  const pph=clk/(J*H),pphX=clkX/(J*H);
+  let h=inp+`<p class="tpsum">${(+pph.toFixed(1))} clicks per hit <span class="mu">(typing the exact numbers every time: ${(+pphX.toFixed(1))})</span><br><span class="mu">Food: all the units alive after a training eat up to ${fm(peak)} of the Food production ${fm(fp)}</span>${short?`<br><span class="mu">The Food production is too low for ${short} of ${J+1} sessions.</span>`:''}</p>`;
+  h+=`<div class="tps tpx">${T.map((x,i)=>`<div class="tpr"><span class="tpi">${ICD[x.nm]?`<img class="ic2" src="${ICD[x.nm]}" alt="">`:''}${esc(x.nm)}</span><span class="mu">−${K(x.L)} per hit${x.L<x.n?' (revived)':''} · ${ns[i]?(nb[i]/ns[i]%1?(+(nb[i]/ns[i]).toFixed(1)):nb[i]/ns[i])+'× every '+(J/ns[i]>1.05?(+(J/ns[i]).toFixed(1))+' sessions':'session'):'no training'}${nt[i]?' · '+nt[i]+' typed':''}</span></div>`).join('')}</div>`;      // per troop: the units it loses per hit (a revived troop only the part not revived), how often it trains and how often its last training is typed
+  h+=rows.slice(0,13).map(r=>`<div class="tps"><div class="tpt"><b>${r.j?'Session '+r.j:'First training'}</b><span class="mu">${r.tr.length?r.c+' clicks · ':''}food ${fm(r.cons)} / ${fm(fp)}${r.tr.length?'':' · nothing to train'}</span></div>${r.tr.length?`<div class="tpl">${r.tr.map(([n,k,t])=>`<span class="tpi">${ICD[n]?`<img class="ic2" src="${ICD[n]}" alt="">`:''}${esc(n)} <b>${k?'×'+k:''}${k&&t?' + ':''}${t?K(t):''}</b></span>`).join('')}</div>`:''}</div>`).join('');
   return h}
 const brkCap=pool=>pool=='M'?v('brkL')/4:v('brkL');      // 23.10.1 the barracks train Leadership; the Dominance they train is always 1/4 of it (one input)
 const brkTip=(s,lo,hi,pre='',ra=null)=>{      // Barracks tip (under the round number): the units to train as FULL trainings (+ the last one). The barracks train at most the typed Leadership (army, engineers) / Dominance (monsters) per training: capacity / the cost of one unit = the units of a full training. A number between lo and hi that is a whole number of full trainings is best (the fewest trainings); when there is none, the full trainings under the range plus a last training, the roundest number that lands inside the range. Mercenaries: no tip.
