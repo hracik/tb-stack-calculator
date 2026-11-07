@@ -84,7 +84,7 @@ select{width:auto}
 .oi.dg{opacity:.65;outline:2px solid var(--ac)}
 .oi .hd{cursor:grab;touch-action:none;font-weight:700;padding:2px 6px}
 .oi.dg .hd,.gs.ov.dg,#tabs.dg,#tabs.dg .tab{cursor:grabbing}
-.no{width:22px;height:22px;border-radius:50%;background:var(--tlt);color:var(--tl);display:inline-flex;align-items:center;justify-content:center;font-size:12px}
+.no{width:22px;height:22px;box-sizing:border-box;border-radius:50%;background:transparent;border:1px solid var(--ac);color:var(--ac);display:inline-flex;align-items:center;justify-content:center;font-size:12px}
 .oi.bz{border-left:5px solid #2c7480}
 .oi.bz .no{background:#2c7480;color:#fff}
 .oz{margin:12px 0 2px;color:#7cc2cc;font-size:13px}
@@ -594,7 +594,7 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 
 .st{display:block;margin-top:2px;font-size:12px;font-weight:400;color:var(--mut,inherit);opacity:.85;white-space:nowrap}      /* Preparation: the numbers for the next trainings (from the units left after the max hits), under the first line */
 
-.rtg{display:inline-block;font-style:normal;font-weight:600;font-size:11px;line-height:15px;border:1px solid currentColor;border-radius:8px;padding:0 6px;margin-left:2px;white-space:nowrap;vertical-align:1px;opacity:.9}      /* a Raid: which attacker the stack belongs to (+5 %, you, -5 %), a badge */
+.rtg{display:inline-block;font-style:normal;font-weight:600;font-size:11px;line-height:15px;border:1px solid var(--ac);color:var(--ac);border-radius:8px;padding:0 6px;margin-left:2px;white-space:nowrap;vertical-align:1px}      /* a Raid: which attacker the stack belongs to (+5 %, you, -5 %), a badge */
 .rtg.me{background:var(--ac);border-color:var(--ac);color:var(--bg);opacity:1}      /* my own stacks */
 
 .oi small.mu,.oi .mu{color:var(--tlm)}      /* 23.9.27 the lists (target order, hitting order) follow the theme */
