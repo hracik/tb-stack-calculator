@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.9.32';
+const APP_VERSION='23.9.33';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -107,7 +107,7 @@ EPICS.forEach(e=>{if(e.at>1&&e.score){e.tot=e.score;e.score/=e.at}});      // 23
 const RAIDK=[0.95,0.975,1,1.025,1.05];      // 23.9.22 a Raid: 5 attackers with different Leadership, Dominance and Authority: -5 %, -2.5 %, me, +2.5 %, +5 % (the same army, the units scaled)
 const raidArm=(L,k)=>k==1?L:L.map(s=>({...s,n:Math.floor((s.n||0)*k)}));
 const raidHp=L=>L.reduce((q,s)=>q+((s.n||0)>0?s.n*s.hp:0),0);
-const raidShare=L=>{if(RAIDA){const h=RAIDA.map(A=>raidHp(A.L)),t=h.reduce((a,b)=>a+b,0),m=RAIDA.findIndex(A=>A.k==1);return t>0?h[m]/t:0.2}const h=RAIDK.map(k=>raidHp(raidArm(L,k))),t=h.reduce((a,b)=>a+b,0);return t>0?h[2]/t:1/RAIDK.length};      // my part of the score = my health / the health of all the attackers
+const raidShare=L=>{const h=RAIDK.map(k=>raidHp(raidArm(L,k))),t=h.reduce((a,b)=>a+b,0);return t>0?h[2]/t:1/RAIDK.length};      // my part of the score = my health / the health of all the attackers
 const raidOf=(P,L,order,rw=1)=>{      // 23.9.21 ONE battle: the stacks of all 5 attackers are one army and fight by the regular rules, every stack on its own (no merging), in the target order by health (raidList)
   const ix={};order.forEach((n,i)=>ix[n]=i);const mine=L.filter(s=>(s.n||0)>0).sort((a,b)=>ix[a.name]-ix[b.name]);
   const sc=score({...P,enemy:P.enemy*rw},raidList(L,order),null),me=score(P,mine,order).dmg;      // the epic of a Raid has every stack rw times (4 rows of the army screen): in the joint battle it kills P.enemy x rw of our stacks per round
@@ -115,14 +115,10 @@ const raidOf=(P,L,order,rw=1)=>{      // 23.9.21 ONE battle: the stacks of all 5
 const raidOn=(P,EP)=>!!(EP&&EP.raid&&EP.rw&&P&&!P.kill&&!P.cp&&!P.ren&&!P.one&&!P.pm&&!P.mon&&ATK=='epics');      // 23.9.24 the joint Raid battle is shown (target order, hitting order, battle report) in the normal hit of a Raid epic
 const raidBadge=s=>s&&s.rt?` <span class="rtg${s.rk==1?' me':''}">${s.rt}</span>`:'';
 const raidTag=k=>k==1?'you':(k>1?'+':'\u2212')+(+(Math.abs(k-1)*100).toFixed(1))+' %';
-const raidList=(L,order)=>{if(RAIDA){const out=[];RAIDA.slice().sort((a,b)=>b.k-a.k).forEach((A,j)=>{const ix={};A.order.forEach((n,i)=>ix[n]=i);A.L.filter(s=>(s.n||0)>0).sort((a,b)=>ix[a.name]-ix[b.name]).forEach((s,o)=>out.push({...s,rk:A.k,rt:raidTag(A.k),rP:A.P,_o:o,_j:j}))});return out.sort((a,b)=>b.n*b.hp-a.n*a.hp||a._o-b._o||a._j-b._j)}      // the solved armies of the attackers
-  const ix={};order.forEach((n,i)=>ix[n]=i);const ks=RAIDK.slice().sort((a,b)=>b-a),out=[];
+const raidList=(L,order)=>{const ix={};order.forEach((n,i)=>ix[n]=i);const ks=RAIDK.slice().sort((a,b)=>b-a),out=[];
   L.filter(s=>(s.n||0)>0).sort((a,b)=>ix[a.name]-ix[b.name]).forEach((s,o)=>ks.forEach((k,j)=>{const n=k==1?s.n:Math.floor(s.n*k);if(n>0)out.push({...s,n,rk:k,rt:raidTag(k),_o:o,_j:j})}));
   return out.sort((a,b)=>b.n*b.hp-a.n*a.hp||a._o-b._o||a._j-b._j)};      // 23.9.25 all the stacks of the 5 attackers in the joint battle's target order: by HEALTH (the healthiest first, as in every battle), so the +5 % attacker's stacks mostly go first; a tie: my order
 const raidEP=(EP,P)=>({...EP,st:EP.st.filter(x=>!((P.enemy==3||P.enemy==6)&&x[2]==2)).flatMap(x=>Array.from({length:EP.rw},()=>[x[0]/EP.rw,...x.slice(1)]))});      // the Raid epic in the battle: every stack rw times (one row each)
-let RAIDA=null;      // 23.9.32 the armies of the 5 Raid attackers (each solved with its own Leadership, Dominance, Authority AND bonuses: x k, e.g. 2000 % -> 2100 % for +5 %): [{k, L, order, P}]
-const raidP=(P,k)=>{if(k==1)return P;const q={...P,capA:Math.floor((P.capA||0)*k),capM:Math.floor((P.capM||0)*k),capU:Math.floor((P.capU||0)*k)};Object.keys(P).forEach(x=>{if(/^[hs][A-Z]/.test(x)&&typeof P[x]=='number')q[x]=P[x]*k});return q};      // an attacker k: the capacities and every health / strength bonus x k (relative: 5 % of 2000 % is 100 %)
-const raidArmyOn=(P,EP)=>!!(EP&&EP.raid&&EP.rw&&P&&!P.cp&&!P.ren&&!P.one&&!P.pm&&!P.mon&&ATK=='epics');
 let RAIDX=null;      // the last Raid result of the summary: my share and the ratio total damage / my damage alone (the battle report and the Compare card scale my damage by it)
 const raidPts=(EP,th,d,sh,rc)=>sh*Math.min(1,d*(rc||(RAIDX&&RAIDX.rc)||1/sh)/th)*EP.tot;      // my score from MY damage d: the 5 attackers deal d x rc together (rc from the joint battle of the summary), the total score = that part of the epic's health x the Raid's total score, mine = my share of it
 EPICS.forEach(e=>{if(e.st)e.st.forEach(x=>{if(x[3]==null)x[3]=Math.round(x[1]/3)})});      // 21.9.2 an enemy stack without a given strength has 1/3 of its health per unit (the game's own numbers for Arachne and Doomsday are exactly that), so every epic wounds
@@ -321,7 +317,7 @@ function drawSO(st,P){
     flush();if(BUFN[n]&&!bufHead){bufHead=true;html+='<div class="oz">Buffer zone</div>'}pos++;SOPOS[n]=pos;html+=one(n,pos);
   });
   flush();
-  {const EPr=epCur();if(raidOn(P,EPr)){const rl=raidList(st.so.filter(n=>sb[n]&&sb[n].n>0).map(n=>({...sb[n],name:n,n:sb[n].n})),st.so);html=rl.map((x,i)=>`<div class="oi"><span class="no${i+1>99?' wd':''}">${i+1}</span>${ICD[x.name]?`<img class="ic2" src="${ICD[x.name]}" alt="">`:''}<span class="nm">${esc(x.name)}${raidBadge(x)} <small class="mu">${factsHtml(x.name,x.rP||P,x.n,x.hp)}</small></span></div>`).join('')}}      // 23.9.24 a Raid: the target order of the joint battle (every stack of the 5 attackers)
+  {const EPr=epCur();if(raidOn(P,EPr)){const rl=raidList(st.so.filter(n=>sb[n]&&sb[n].n>0).map(n=>({...sb[n],name:n,n:sb[n].n})),st.so);html=rl.map((x,i)=>`<div class="oi"><span class="no${i+1>99?' wd':''}">${i+1}</span>${ICD[x.name]?`<img class="ic2" src="${ICD[x.name]}" alt="">`:''}<span class="nm">${esc(x.name)}${raidBadge(x)} <small class="mu">${factsHtml(x.name,P,x.n,x.hp)}</small></span></div>`).join('')}}      // 23.9.24 a Raid: the target order of the joint battle (every stack of the 5 attackers)
   $('os').innerHTML=html;
 }
 
@@ -2213,7 +2209,7 @@ function hitHtml(P,list,order){
   const log=[];strikes(L,K,log,P.ren?1:Infinity);
   let h='',k=0;
   log.forEach(([r,t,i])=>{if(r!==0||t!=='o')return;const s=L[i];k++;
-    h+=`<div class="oi"><span class="no${k>99?' wd':''}">${k}</span>${ICD[s.name]?`<img class="ic2" src="${ICD[s.name]}" alt="">`:''}<span class="nm">${esc(s.name)}${raidBadge(s)} <small class="mu">${factsHtml(s.name,s.rP||P,s.n,s.hp)}</small></span></div>`});
+    h+=`<div class="oi"><span class="no${k>99?' wd':''}">${k}</span>${ICD[s.name]?`<img class="ic2" src="${ICD[s.name]}" alt="">`:''}<span class="nm">${esc(s.name)}${raidBadge(s)} <small class="mu">${factsHtml(s.name,P,s.n,s.hp)}</small></span></div>`});
   return h;
 }
 // Under the mode buttons ONE of three lists is open at a time: the target order, the hitting order or the battle report (OVK; none at the start). The report and the hitting order are drawn only while they are open.
@@ -2748,10 +2744,7 @@ function calcRun0(){
   //      // the Against box that does not count in the chosen view is hidden and its inputs are disabled
   if(!RENEGADES()&&$('mode').value=='ren'){$('mode').value='max';SO=[]}      // Renegades is off: a tab saved in it falls back to Max damage
   {const rb=document.querySelector('.cm[data-m=ren]');if(rb){rb.disabled=!RENEGADES()}}
-  const P=getP();
-  RAIDA=null;{const EPr=epCur();if(raidArmyOn(P,EPr)){const oth=RAIDK.filter(k=>k!=1).map(k=>{const Pk=raidP(P,k),r=solve(Pk,O);return{k,L:[...r.A,...r.Mo,...r.U.list].map(x=>({...x})),order:[...r.st.so,...r.U.ord],P:Pk}});RAIDA=oth}}      // 23.9.32 the other 4 attackers of a Raid, each solved with its own capacities and bonuses (before my own solve, so the globals it sets are mine)
-  const {st,A,Mo,U}=solve(P,O);
-  if(RAIDA)RAIDA.push({k:1,L:[...A,...Mo,...U.list],order:[...st.so,...U.ord],P});
+  const P=getP(),{st,A,Mo,U}=solve(P,O);
   const fx0=P.mon?theoFix(P):null,fx=fx0&&!fx0.res.none?fx0:null;if(fx0)theoApply(fx0,st,U);      // 21.6.2 One v. One: the stacks the simulator found go into the Result. fx0.res.none (Attack monsters, 23.2.32): no army can be built - the Result stays, with 0 units everywhere, so a troop that was turned off can be turned on again
   {const rl=$('renlv'),tg=P.ren?renTarget():0,nt=$('renlt');if(rl)rl.hidden=!P.ren;if(nt)nt.textContent=tg?'Damage to reach: '+tg.toLocaleString('en-US'):'No level: the Tier check looks for the most damage per gold of the full revive.'}      // 14.19: the Level box is shown in Renegades only
   SO=st.so;
