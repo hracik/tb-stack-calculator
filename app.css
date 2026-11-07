@@ -594,4 +594,5 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 
 .st{display:block;margin-top:2px;font-size:12px;font-weight:400;color:var(--mut,inherit);opacity:.85;white-space:nowrap}      /* Preparation: the numbers for the next trainings (from the units left after the max hits), under the first line */
 
-.rtg{font-weight:600;font-size:12px;opacity:.85;white-space:nowrap}      /* a Raid: which attacker the stack belongs to (+5 %, you, -5 %) */
+.rtg{display:inline-block;font-style:normal;font-weight:600;font-size:11px;line-height:15px;border:1px solid currentColor;border-radius:8px;padding:0 6px;margin-left:2px;white-space:nowrap;vertical-align:1px;opacity:.9}      /* a Raid: which attacker the stack belongs to (+5 %, you, -5 %), a badge */
+.rtg.me{background:var(--ac);border-color:var(--ac);color:var(--bg);opacity:1}      /* my own stacks */
