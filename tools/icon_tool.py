@@ -18,7 +18,7 @@
         the epic monster: the box is the golden frame of the epic picture (with its level badge). Writes the framed picture (120 px, the battle report)
         and the plain art (72 px, the picker and the summary).
 
-All results go straight into app.js (ICD for mercenaries, EPIC_UN / EPIC_FR / EPIC_IC for epics) - nothing to paste. Needs Pillow (with AVIF), numpy, opencv.
+All results go straight into app.js (ICD for mercenaries, EPIC_FR / EPIC_IC for epics) or pics.js (IC for troops, EPIC_UN for the epic troops) - nothing to paste. Needs Pillow (with AVIF), numpy, opencv.
 """
 import sys, re, io, os, base64, argparse
 import numpy as np
@@ -26,6 +26,7 @@ from PIL import Image, ImageDraw
 import cv2
 
 APP = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'app.js')
+PICS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'pics.js')      # 23.9.38 IC (troop pictures of the screenshot reader) and EPIC_UN (epic troop pictures) live in pics.js
 OUT = 112
 # the frame of the existing unit pictures, outside in, as they are in the app (sampled from them): RGBA - the two outer lines are (nearly) see-through,
 # the picture is 6 px inside; so there is no black rim on a dark or light background
@@ -111,7 +112,8 @@ def cmd_unit(a):
     im = Image.open(a.shot).convert('RGB'); x, y, r = get_badge(im, a.badge)
     crop = [float(v) for v in a.crop.split(',')] if a.crop else None
     ic = make_unit(im, x, y, r, a.style, crop); data = 'data:image/avif;base64,' + b64(ic, quality=75)
-    js = open(APP, encoding='utf-8').read(); kind, *rest = a.to.split(':')
+    kind, *rest = a.to.split(':'); FILE = PICS if kind in ('troop', 'epicunit') else APP
+    js = open(FILE, encoding='utf-8').read()
     if kind == 'preview':                         # only the picture (PNG, 112 px, see-through edge), nothing is written into app.js
         p = os.path.splitext(a.shot)[0] + '_' + re.sub(r'\W+', '_', rest[0]) + '.png'; ic.save(p); print('written', p); return
     if kind == 'merc':                            # a mercenary / unit picture: ICD
@@ -130,8 +132,8 @@ def cmd_unit(a):
             body = ','.join('%s:%s' % (k, parts[k]) for k in sorted(parts))
             js = js[:m.start()] + m.group(1) + body + '}' + js[m.end():]
         else: js = js.replace('const EPIC_UN={', 'const EPIC_UN={%s:{%s:"%s"},' % (key, ty, data), 1)
-    else: raise SystemExit('--to must be merc:NAME or epicunit:KEY:TYPE')
-    open(APP, 'w', encoding='utf-8').write(js)
+    else: raise SystemExit('--to must be merc:NAME, troop:NAME or epicunit:KEY:TYPE')
+    open(FILE, 'w', encoding='utf-8').write(js)
     p = os.path.splitext(a.shot)[0] + '_' + re.sub(r'\W+', '_', a.to) + '.png'; bg = Image.new('RGBA', (224, 224), (60, 60, 60, 255)); bg.alpha_composite(ic.resize((224, 224), Image.LANCZOS)); bg.convert('RGB').save(p)
     print('put into app.js:', a.to, '| preview', p)
 

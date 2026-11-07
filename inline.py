@@ -7,6 +7,7 @@ def sub(pat,fn):
 sub(r'<link rel="stylesheet" href="app\.css[^"]*">',lambda m:'<style>'+open('app.css').read()+'</style>')
 sub(r'<script src="app\.js[^"]*"></script>',lambda m:'<script>'+open('app.js').read().replace('</script','<\\/script')+'</script>')
 sub(r'<script src="i18n\.js[^"]*"></script>',lambda m:'<script>'+open('i18n.js').read().replace('</script','<\\/script')+'</script>')
+h=h.replace('</body>','<script>'+open('pics.js').read().replace('</script','<\\/script')+'</script></body>',1)      # 23.9.38 pics.js inlined too (loaded later on the live site)
 import base64
 def _d(m):
     return 'src="data:image/webp;base64,'+base64.b64encode(open(m.group(1),'rb').read()).decode()+'"'
