@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.11.6';
+const APP_VERSION='23.11.7';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -904,7 +904,7 @@ let FMP=false,FMPREV=null;      // 14.27: Food settings modal (opened when Prepa
 function drawFM(){
   const p=$('fmp'),w=$('fmw');if(!p)return;p.hidden=!FMP;if(w)w.hidden=!FMP;document.documentElement.classList.toggle('mlock',FMP||HP||!!(AP&&FB.key));
   if(!FMP){p.innerHTML='';return}
-  p.innerHTML='<div class="amh"><div class="amt">Food capacity &amp; revive settings</div><button class="amx" data-act="fclose" aria-label="Close">×</button></div>'
+  p.innerHTML='<div class="amh"><div class="amt">Troops preparation &amp; revive settings</div><button class="amx" data-act="fclose" aria-label="Close">×</button></div>'
     +'<div class="mu fmi">Enter your Food production to see the numbers to prepare for maximum hits per training.</div>'
     +'<div class="fg">'
     +'<label class="bi"><span>Food prod.</span><input id="fmFood" type="text" inputmode="decimal" value="'+($('foodP')?$('foodP').value:'')+'" placeholder="0"></label>'
