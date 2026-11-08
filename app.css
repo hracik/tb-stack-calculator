@@ -619,3 +619,4 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 .tpx .tpr{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center;padding:2px 0}
 .tpx .tpr .mu{color:var(--tlm);font-size:13px}
 .tpx .tpv{font-size:14px;color:var(--tlt);text-align:right}
+.tpsug{border-left:3px solid var(--ac);padding-left:10px}
