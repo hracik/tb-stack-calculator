@@ -607,16 +607,3 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 .bq .bnn,.bq .beg .bnn{font-size:15px;font-weight:400;color:var(--tlt)}
 .bq .bun{font-size:12px;font-weight:400;opacity:1;color:var(--tlm)}
 .ba .bun{color:var(--mu)}
-
-/* 23.11.1 the Training plan */
-.tpsum{margin:8px 0 10px;font-size:15px;line-height:1.4}
-.tps{background:var(--tl);color:var(--tlt);border:1px solid var(--tlb);border-radius:8px;padding:8px 12px;margin:6px 0}
-.tpt{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:15px}
-.tpt .mu{color:var(--tlm);font-size:13px}
-.tpl{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:6px}
-.tpi{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--tlt)}
-.tpi .ic2{width:32px;height:32px}
-.tpx .tpr{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center;padding:2px 0}
-.tpx .tpr .mu{color:var(--tlm);font-size:13px}
-.tpx .tpv{font-size:14px;color:var(--tlt);text-align:right}
-.tpsug{border-left:3px solid var(--ac);padding-left:10px}
