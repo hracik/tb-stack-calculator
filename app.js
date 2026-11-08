@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='23.11.11';
+const APP_VERSION='23.11.12';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -175,7 +175,7 @@ const REV=90;      // % of a revived stack that comes back after a hit (rounded 
 const TEMPLE=[1.04,1.06,1.08,1.11,1.13,1.16,1.19,1.22,1.27,1.33,1.36,1.40,1.44,1.48,1.53,1.58,1.63,1.68,1.74,1.81,1.91,2.02,2.15,2.31,2.51,2.68,2.88,3.13,3.44,3.84,3.93,4.03,4.13,4.23,4.34,4.46,4.59,4.72,4.87,5.02,5.17,5.34,5.52,5.71,5.91];      // 13.1: Temple level 1..45 -> "Troop revival cost is decreased by" (times), from the in-game Temple table. The revival gold of a troop is divided by it.
 // 14.19 Renegades: the damage the stacks must reach at each Level (1-45) - the total health of the enemy. TEMPORARY numbers (level 1 = 100 million, +20 % per level, rounded to 3 digits): replace them with the real ones, one per level, in this list.
 const RENLV=[100000000,120000000,144000000,173000000,207000000,249000000,299000000,358000000,430000000,516000000,619000000,743000000,892000000,1070000000,1280000000,1540000000,1850000000,2220000000,2660000000,3190000000,3830000000,4600000000,5520000000,6620000000,7950000000,9540000000,11400000000,13700000000,16500000000,19800000000,23700000000,28500000000,34200000000,41000000000,49200000000,59100000000,70900000000,85100000000,102000000000,122000000000,147000000000,176000000000,212000000000,254000000000,305000000000];
-const renTarget=()=>{const l=Math.floor(+$('renLv').value);return l>=1&&l<=RENLV.length?RENLV[l-1]:0};      // the target of the chosen Level; 0 = no Level chosen (the box is empty)
+const renTarget=()=>0;      // 23.11.12: the Level box is removed - no target (RENLV is kept for later)      // the target of the chosen Level; 0 = no Level chosen (the box is empty)
 const tempNorm=x=>{const n=parseFloat(String(x).replace(/,/g,''));return String(isFinite(n)&&n>0?Math.min(45,Math.floor(n+1e-9)):0)};      // 14.20: the Temple is a select 0-45 now; a value saved or imported by an older version (a typed number: 30.9, 100, empty) becomes what the box used to count: cut to a whole number, 45 at most, empty / 0 / not a number = 0
 const templeLv=()=>Math.min(45,Math.floor(v('temple')+1e-9));      // the level in the Temple box: 45 at most, 0 (or empty) = no Temple, no reduction
 const FOODADD=0.9;  // % added to the Food production box before the hits are counted (the training calculations use the box x 1.009)
@@ -2761,7 +2761,6 @@ function calcRun0(){
   {const rb=document.querySelector('.cm[data-m=ren]');if(rb){rb.disabled=!RENEGADES()}}
   const P=getP(),{st,A,Mo,U}=solveM(P,O);
   const fx0=P.mon?theoFix(P):null,fx=fx0&&!fx0.res.none?fx0:null;if(fx0)theoApply(fx0,st,U);      // 21.6.2 One v. One: the stacks the simulator found go into the Result. fx0.res.none (Attack monsters, 23.2.32): no army can be built - the Result stays, with 0 units everywhere, so a troop that was turned off can be turned on again
-  {const rl=$('renlv'),tg=P.ren?renTarget():0,nt=$('renlt');if(rl)rl.hidden=!P.ren;if(nt)nt.textContent=tg?'Damage to reach: '+tg.toLocaleString('en-US'):'No level: the Tier check looks for the most damage per gold of the full revive.'}      // 14.19: the Level box is shown in Renegades only
   SO=st.so;
   if(!KSLITE){const sx=[...st,...U.all];sx.so=[...st.so,...U.ord];drawSO(sx,P)}      // 23.9.36 not in the first Killshot pass (nothing of it is shown)                  // after the allocation: the list shows the unit counts
   document.querySelectorAll('.pb').forEach(b=>b.classList.toggle('on',TY.every(t=>v('bh_'+t)==+b.dataset.p&&v('bs_'+t)==+b.dataset.p)));
@@ -2815,7 +2814,7 @@ function calcRun0(){
   {const rc=$('rtitle').closest('.card');if(rc)rc.hidden=!(!pvOff&&(P.capA>0||P.capM>0||P.capU>0))}
   THEOWAIT=!!(P.mon&&(P.capA>0||P.capM>0)&&!fx0);      // One v. One: until the stacks are found the block shows the text and the buttons instead of the Result content
   {const rc=$('rtitle').closest('.card');if(rc)rc.querySelectorAll(':scope > #rsm,:scope > .ctl,:scope > #res').forEach(e=>e.classList.toggle('thd',THEOWAIT))}      // Leadership, Dominance and Authority all 0: nothing to show, the whole Result section is hidden
-  const tgt=P.ren?renTarget():0,lvN=Math.floor(+$('renLv').value);      // 14.19: Renegades with a Level: is the target reached?
+  const tgt=P.ren?renTarget():0,lvN=0;      // 14.19: Renegades with a Level: is the target reached?
   const kmb=x=>{let v=Math.abs(x),i=0;const up=t=>{if(t<=0)return 0;const p=Math.pow(10,Math.floor(Math.log10(t))-2);return Math.round(+(t/p).toFixed(6))*p};while(v>=1e3&&i<3){v/=1e3;i++}let c=i?up(v):Math.round(v);if(c>=1e3&&i<3){c=up(c/1e3);i++}return (x<0?'-':'')+(i?(+c.toPrecision(3)).toString()+'KMB'[i-1]:String(c))};      // 19.0.30: normal rounding to 3 digits: 1,900,949 -> 1.9M, 626,252 -> 626K, 42,300 -> 42.3K, 8,650 -> 8.65K, 999,999 -> 1M
   const enTxt=P.one?'one flying enemy stack':P.lava?'12 enemy stacks (3 of each type)':P.enemy==4?'a full enemy stack (4)':P.enemy+' enemy stacks';
   const RZ=1.96,rg=(a,b)=>{const A=fmt(a).split(' '),B=fmt(b).split(' ');return A[1]==B[1]?A[0]+'\u2013'+B[0]+(B[1]?' '+B[1]:''):fmt(a)+' \u2013 '+fmt(b)};      // 19.0.16: a range, e.g. 4.90\u20135.30 T
@@ -2849,7 +2848,7 @@ function calcRun0(){
   {const q=++KSDSEQ;if(ksLater&&mkST)setTimeout(()=>{if(q!==KSDSEQ)return;const el=document.querySelector('#rsm [data-ksd]');if(el){const h=mkST(true);if(h)el.outerHTML=h}},30)}      // 23.9.38 the killshot number later (a newer calculation cancels it)
   {const r=$('rsm');if(r)r.hidden=!!P.mon}      // 22.8: the Summary tiles (damage, strikes, epic score) mean nothing against a monster: the win chance and the losses are under Calculation
   cmpSet({P,Aall,Mall,mItems,ordp:[...st.so,...U.ord],O:O.slice(),sc,rcost,scost,EP});      // the Compare card under the Result
-  {const tcb=document.querySelector('.tc');if(tcb)tcb.disabled=pvOff||!(P.capA>0||P.capM>0)}      // the Tier check button: nothing to check without a capacity
+  {const tcb=document.querySelector('.tc');if(tcb){tcb.disabled=pvOff||!!P.ren||!(P.capA>0||P.capM>0);if(P.ren&&$('tca')&&$('tca').dataset.open=='1')closeBubble()}}      // 23.11.12: no Tier check in Renegades      // the Tier check button: nothing to check without a capacity
   {const a=$('tca');if(a&&a.dataset.open=='1')closeBubble()}      // any change makes an open check out of date
   theoSync(P,fx0);      // the Win chances card of One v. One
   {const bd=document.querySelector('.ob[data-o=die]');if(bd){bd.textContent='Target order'}}      // against players the order is the order of being hit, against epics it is the target order
@@ -3374,7 +3373,7 @@ async function tierHintRun(gen,body0){
   const run=async s=>{const k=kk(s);if(det.has(k))return det.get(k).m;n++;if(performance.now()-LY>40){body.innerHTML=`<p data-w=1>Checking the tiers... calculation ${n}</p>`;await new Promise(r=>setTimeout(r,0));LY=performance.now();if(gen!==HINTGEN)return null}      // the page is given back every 40 ms (not after every calculation: that was most of the time)
   const r=evalSel(s);det.set(k,r);return r.m};      // one step per timer tick: the page stays usable; closing the window cancels the check
   if(P.ren&&renTarget()>0){      // 14.19 Renegades with a Level: the damage must reach the Level's number with the cheapest revive. Every tier from the lowest up to your top tier of each type is the cheapest to revive (the weak low tiers take the Leadership but hardly die), so the check starts with all of them and takes the lowest ones out one by one - G1, S1, E1, G2, S2, E2 ... (monsters from tier 3) - until the damage is enough
-    const tg=renTarget(),lv=Math.floor(+$('renLv').value),lo0=c=>c=='M'?3:1,tops={},fg=x=>Math.round(x).toLocaleString('en-US'),pc=(a,b)=>((a/b-1)*100).toFixed(1),sg=x=>(x>=0?'+':'')+x;
+    const tg=renTarget(),lv=0,lo0=c=>c=='M'?3:1,tops={},fg=x=>Math.round(x).toLocaleString('en-US'),pc=(a,b)=>((a/b-1)*100).toFixed(1),sg=x=>(x>=0?'+':'')+x;
     types.forEach(([c])=>{const t=Math.max(0,...sel0.filter(x=>x[0]==c).map(x=>+x.slice(1)));if(t)tops[c]=t});
     if(!Object.keys(tops).length){body.innerHTML='<p>Nothing to check: tick some tiers first.</p>';return}
     let cur=[];Object.entries(tops).forEach(([c,t])=>{for(let i=t;i>=lo0(c);i--)cur.push(c+i)});
