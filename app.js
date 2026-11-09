@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='24.1.0';
+const APP_VERSION='24.1.1';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2741,7 +2741,7 @@ function calcRun0(){
   document.querySelectorAll('.cm[data-m=cp],.cm[data-m=cpd]').forEach(b=>{b.disabled=!PV1});
   document.querySelectorAll('.cm[data-m=pvpmax]').forEach(b=>{b.disabled=!PVM()});
   document.querySelectorAll('.cm[data-m=lava],.cm[data-m=arena]').forEach(b=>{b.disabled=!DEV});
-  {const mb=document.querySelector('.ab[data-a=monsters]');if(mb)mb.disabled=!DEV;if(!DEV&&ATK=='monsters'){ATK='epics';SO=[]}}      // Attack monsters: debug mode only (the admin), the preview artifact too
+  {const mon=DEV||!/\.github\.io$/.test(location.hostname),mb=document.querySelector('.ab[data-a=monsters]');if(mb)mb.disabled=!mon;if(!mon&&ATK=='monsters'){ATK='epics';SO=[]}}      // Attack monsters: debug mode only on the live site (github.io), on for everybody in the preview artifact
   if(ATK=='monsters'){if($('mode').value!='mon'){if(!PVMODES.includes($('mode').value))LASTE={mode:$('mode').value,enemy:$('enemy').value};$('mode').value='mon';SO=[]}}      // 22.8: the Attack monsters view has ONE mode (the fewest losses)
   else if($('mode').value=='mon'){$('mode').value=LASTE.mode;$('enemy').value=LASTE.enemy;SO=[]}
   if(okP.length&&ATK!='monsters'){const pv=PVMODES.includes($('mode').value);      // the mode follows the view
