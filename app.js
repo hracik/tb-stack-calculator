@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='24.0.1';
+const APP_VERSION='24.1.0';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2247,8 +2247,7 @@ function runBest(n){                                     // Max vs. 3 stack / fu
 const PV1=true;                                          // Pv1 modes (CP kill, CP death): on. Set false to switch them off: their buttons are greyed out and a tab that was left in one falls back to the 4-stack mode.
 const PVM=()=>DEV;      // 23.3.30 Max damage, Renegades, Lava, Arena and Attack monsters: only in debug mode (an admin with the debug switch on), everyone else gets the greyed-out button
 const PVM_OLD=()=>typeof SY!=='undefined'&&SY.role=='admin';        // PvMany modes (Max damage): for the admin only (the account role) for now; everyone else gets the greyed-out button. Set to ()=>true to switch Max damage on for everyone.
-const PREVIEW=!/\.github\.io$/.test(location.hostname);      // the preview artifact (any host but github.io): the modes in testing are on for everybody
-const RENEGADES=()=>DEV||PREVIEW;   // also on in the preview artifact for testing;   // Renegades: for the admin only (the account role) for now (off for everyone else since 14.30). Set to ()=>true to switch back on for everyone.
+const RENEGADES=()=>true;   // Renegades is on for everybody. Set to ()=>DEV to make it admin only again.
 function runRen(){                                       // Renegades: fixed rule, nothing is refined
   if(!RENEGADES())return;
   $('mode').value='ren';SO=[];
@@ -2742,7 +2741,7 @@ function calcRun0(){
   document.querySelectorAll('.cm[data-m=cp],.cm[data-m=cpd]').forEach(b=>{b.disabled=!PV1});
   document.querySelectorAll('.cm[data-m=pvpmax]').forEach(b=>{b.disabled=!PVM()});
   document.querySelectorAll('.cm[data-m=lava],.cm[data-m=arena]').forEach(b=>{b.disabled=!DEV});
-  {const mon=DEV||PREVIEW,mb=document.querySelector('.ab[data-a=monsters]');if(mb)mb.disabled=!mon;if(!mon&&ATK=='monsters'){ATK='epics';SO=[]}}      // Attack monsters: debug mode only on the live site, on for everybody in the preview artifact
+  {const mb=document.querySelector('.ab[data-a=monsters]');if(mb)mb.disabled=!DEV;if(!DEV&&ATK=='monsters'){ATK='epics';SO=[]}}      // Attack monsters: debug mode only (the admin), the preview artifact too
   if(ATK=='monsters'){if($('mode').value!='mon'){if(!PVMODES.includes($('mode').value))LASTE={mode:$('mode').value,enemy:$('enemy').value};$('mode').value='mon';SO=[]}}      // 22.8: the Attack monsters view has ONE mode (the fewest losses)
   else if($('mode').value=='mon'){$('mode').value=LASTE.mode;$('enemy').value=LASTE.enemy;SO=[]}
   if(okP.length&&ATK!='monsters'){const pv=PVMODES.includes($('mode').value);      // the mode follows the view
