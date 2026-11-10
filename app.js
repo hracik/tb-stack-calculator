@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='24.1.1';
+const APP_VERSION='24.1.2';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -984,7 +984,7 @@ const rgm=P=>P.max4;    // 3-, 4-, 6- and 8-stack: ONE engine (ratio groups, dam
 // All other modes keep the damage per health.
 const sqb=(t,P)=>{const vs=vsRatio(t,P),dd=(mults(t,P)[2]+vs)*(dhf(t,P)-1);return{vs,dd,tot:vs+dd}};
 function ranker(P){
-  const ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(...t.vs),r9=x=>Math.round(x*1e9),kc={};
+  const ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(0,...t.vs.slice(0,4)),r9=x=>Math.round(x*1e9),kc={};
   const key=t=>kc[t.name]??(kc[t.name]=dIdx(t,P));
   const tie=(a,b)=>nom(a)-nom(b)||ci(a)-ci(b)||a.tier-b.tier;
   const rank=arr=>arr.slice().sort((a,b)=>r9(key(a))-r9(key(b))||tie(a,b));    // weakest first; equal values (to 9 decimals) follow the tie rule
@@ -1044,7 +1044,7 @@ let WEAKFRONT=false;     // 8.6: OFF. Weak troops (army and monsters) as a block
 const FRONTPOOL=5,FRONTLEN=3;      // the block in front is taken from the FRONTPOOL weakest troops, at most FRONTLEN of them
 let WEAKSLOTS=true;     // the weakest groups (lowest ratio first) stand on the places Kn+1, one troop per place; the rest of the army follows on the other places
 function ratioGroups(P,arr,split,tol=GTOL){                                           // split: army and monsters never share a group; tol: troops within this relative SH distance of the lowest of the group join it (default: equal SH only)
-  const q6=x=>Math.round(x*1e6),ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(...t.vs);
+  const q6=x=>Math.round(x*1e6),ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(0,...t.vs.slice(0,4));      // 24.1.2 the listed bonus counts only against melee, ranged, mounted and flying: no fortifications and no siege engines in these fights (the user)
   const byB=(a,b)=>q6(sqb(a,P).tot)-q6(sqb(b,P).tot)||nom(a)-nom(b)||ci(a)-ci(b)||b.tier-a.tier;           // smaller squad bonus first; the same bonus: the higher tier first
   const mk1=list=>{const gs=[];list.slice().sort((a,b)=>ratioOf(a,P)-ratioOf(b,P)||byB(a,b)).forEach(t=>{const r=ratioOf(t,P),g=gs[gs.length-1];if(g&&r<=g.lo*(1+tol))g.u.push(t);else gs.push({lo:r,u:[t]})});return gs};
   const mk=list=>mk1(list).sort((a,b)=>a.lo-b.lo);      // only the SH ratio decides: a troop whose ratio is clearly lower (a Beast unit, for example) is a group of its own, an outlier for the places Kn+1
@@ -2660,7 +2660,7 @@ function allocMerc0(P,ld,so,X){
     const combos=[];(function g(a){if(a.length==w){combos.push(a);return}sh.forEach(f=>g([...a,f]))})([]);
     for(const fw of combos){const r=evalOne(seq,fr,fw);if(r.d>b.d*(1+5e-4))b=r}return b};
   // ORDER: simply by the squad bonus, the smaller one dies first (the strongest bonuses die last and strike the most). The same bonus: nominal bonus, category, higher tier first.
-  const q6=x=>Math.round(x*1e6),ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(...t.vs);
+  const q6=x=>Math.round(x*1e6),ci=t=>DEFCAT.indexOf(t.cat),nom=t=>Math.max(0,...t.vs.slice(0,4));
   // The bonus against epic enemies counts against EVERY enemy stack, a class bonus only against the stacks of that class: at the same size the epic one is the better one and dies later.
   const bk=t=>q6(sqb(t,P).tot+(veOf(t,P)>0?1e-3:0));
   const dh=t=>{const m=by[t.name];return m?q6(dpu(m)/m.hp*1e3):0};      // CP kill / CP death: the damage per health decides (the bonus against the enemy AND the Specialists' double damage against players): the least damage dies first, the best last
