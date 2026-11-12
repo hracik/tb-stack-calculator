@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='24.3.0';
+const APP_VERSION='24.3.1';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -78,7 +78,7 @@ Object.keys(BYG).forEach(g=>{if(g[0]=='M')BYG[g].sort((a,b)=>CO.indexOf(a.cat)-C
 const row=(l,id,val=0)=>`<div class="bi"><span>${l}</span><input id="${id}" type="text" inputmode="decimal" step="0.5" value="${val}"></div>`;
 const card=(n,k,h=0,sv=h)=>`<div class="bc"><b>${n}</b>${row('Health','bh_'+k,h)}${row('Strength','bs_'+k,sv)}</div>`;
 $('bon').innerHTML=[['Guardsmen','G',3466,6304],['Specialists','S',3466,6304],['Monsters','M',3461,6404],['Siege Engines','E',3466,6304]].map(([n,k,h,sv])=>card(n,k,h,sv)).join('');
-$('rare').innerHTML=[['Guardsmen','G'],['Specialists','S'],['Siege Engines','E']].map(([n,k])=>`<div class="bc"><b>${n}</b>${k=='E'?'':`<div class="bi pl"><span>Strength vs. players</span><input id="bs_${k}Pl" type="text" inputmode="decimal" step="0.5" value="0"></div>`}${row('Double damage','dd_'+k,0)}</div>`).join('');      // 19.0.14: the rare bonuses of the classes (Strength against players shows only in the Attack players view; Double damage is a % chance, counted on average)
+$('rare').innerHTML=[['Guardsmen','G'],['Specialists','S'],['Siege Engines','E'],['Monsters','M']].map(([n,k])=>`<div class="bc${k=='M'?' plc':''}"><b>${n}</b>${[['Health','bh'],['Strength','bs']].map(([l,b])=>`<div class="bi pl"><span>${l} vs. players</span><input id="${b}_${k}Pl" type="text" inputmode="decimal" step="0.5" value="0"></div>`).join('')}${k=='M'?'':row('Double damage','dd_'+k,0)}</div>`).join('');      // 19.0.14: the rare bonuses of the classes (24.3: Health and Strength against players for all four classes, shown only in the Attack players view; Double damage is a % chance, counted on average - the monsters have none)
 $('bonx').innerHTML=`<div class="bc"><b>Entire army</b>`+`<div class="bi" id="bcEpic"><span>Strength vs. epics</span><input id="bs_Epic" type="text" inputmode="decimal" step="0.5" value="3747"></div>`+
   `<div id="bcPlayers">${row('Health vs. players','bh_Players',0)}${row('Strength vs. players','bs_Players',0)}</div>`+
   row('Double damage','dd_A',0)+row('Double strike','ds_A',0)+'</div>';      // 19.0.12: the Army bonuses are plain rows, no blocks (the epic / players rows follow the Attack switch; Double strike and Double damage are the chance of the whole army in %, counted on average)
@@ -934,8 +934,8 @@ function getP(){
   p.pvp=p.cp||p.ren;                             // PvP rules (CP kill, CP death, Max damage and, since 14.9, Renegades): no Epic strength, no bonus against epic enemies, the Against players bonuses count, Specialists deal double damage before the squad bonus (damage, never strength)
   if(p.one)p.enemy=1;
   if(p.pvp||p.mon)p.sEpic=0;
-  p.sGPl=v('bs_GPl');p.sSPl=v('bs_SPl');p.ddG=v('dd_G');p.ddS=v('dd_S');p.ddE=v('dd_E');p.ddA=v('dd_A');p.dsA=v('ds_A');      // 19.0.9 rare bonuses
-  if(!p.pvp){p.hPlayers=0;p.sPlayers=0;p.sGPl=0;p.sSPl=0}              // the Against players bonuses count only in the PvP modes (like the Against epic monsters Strength counts only against epic monsters)
+  p.sGPl=v('bs_GPl');p.sSPl=v('bs_SPl');p.sEPl=v('bs_EPl');p.sMPl=v('bs_MPl');p.hGPl=v('bh_GPl');p.hSPl=v('bh_SPl');p.hEPl=v('bh_EPl');p.hMPl=v('bh_MPl');p.ddG=v('dd_G');p.ddS=v('dd_S');p.ddE=v('dd_E');p.ddA=v('dd_A');p.dsA=v('ds_A');      // 19.0.9 rare bonuses
+  if(!p.pvp){p.hPlayers=0;p.sPlayers=0;for(const k of 'GSEM'){p['s'+k+'Pl']=0;p['h'+k+'Pl']=0}}              // the Against players bonuses count only in the PvP modes (like the Against epic monsters Strength counts only against epic monsters)
   p.epic=!p.ren&&!p.pvp&&!p.mon;                         // the enemy stacks are epic in every mode except Renegades and PvP: the bonus against epic enemies counts
   p.max4=$('mode').value=='max'||p.mon;                 // Max vs. 3 stack and Max vs. full stack: whole army ranking
   p.minH=Math.min(p.hGiant,p.hElemental,p.hDragon,p.hBeast);p.minS=Math.min(p.sGiant,p.sElemental,p.sDragon,p.sBeast);
@@ -943,12 +943,12 @@ function getP(){
 }
 // health and strength multipliers of one troop
 function mults(t,P){                                    // [health multiplier, strength multiplier, strength multiplier (the same since 14.9)]
-  if(t.cls=='E'){const ms=1+(P.sE+P.sEpic+P.sPlayers)/100;return[1+(P.hE+P.hPlayers)/100,ms,ms]}
-  if(t.cls=='M'){const ms=1+(P.sM+P.sEpic+P.sPlayers+(P['s'+t.cat]||0)+Math.max(0,(P['s'+t.type]||0)-P.minS))/100;return[1+(P.hM+P.hPlayers+(P['h'+t.cat]||0)+Math.max(0,(P['h'+t.type]||0)-P.minH))/100,ms,ms]}
+  if(t.cls=='E'){const ms=1+(P.sE+P.sEpic+P.sPlayers+(P.sEPl||0))/100;return[1+(P.hE+P.hPlayers+(P.hEPl||0))/100,ms,ms]}
+  if(t.cls=='M'){const ms=1+(P.sM+P.sEpic+P.sPlayers+(P.sMPl||0)+(P['s'+t.cat]||0)+Math.max(0,(P['s'+t.type]||0)-P.minS))/100;return[1+(P.hM+P.hPlayers+(P.hMPl||0)+(P['h'+t.cat]||0)+Math.max(0,(P['h'+t.type]||0)-P.minH))/100,ms,ms]}
   if(t.cat=='Epic Monster Hunter'){const ms=1+(P.sEMH+P.sEpic+P.sPlayers)/100;return[1+(P.hEMH+P.hPlayers)/100,ms,ms]}      // 21.3.2: the mercenary Epic monster hunters are Guardsmen, but the Guardsmen bonuses do not count for them: only their own bonus (Combat type bonuses) plus the army bonuses (vs. epics, vs. players)
   if(t.cat=='Scout'){const ms=1+(P.sScout+P.sEpic+P.sPlayers)/100;return[1+(P.hScout+P.hPlayers)/100,ms,ms]}      // 21.3.3: Scouts (a Specialists unit type) likewise use only their own bonus, not the Specialists one
   const b=t.beast,ms=1+(P['s'+t.cls]+P.sEpic+P.sPlayers+(P['s'+t.cls+'Pl']||0)+(P['s'+t.cat]||0)+(b?P.sBeast:0))/100;
-  return[1+(P['h'+t.cls]+P.hPlayers+(P['h'+t.cat]||0)+(b?P.hBeast:0))/100,ms,ms];   // 14.9: the Specialists' double damage is in the damage (vsFactor, every PvP mode incl. Renegades), the strength - and with it the order - stays the single strength
+  return[1+(P['h'+t.cls]+P.hPlayers+(P['h'+t.cls+'Pl']||0)+(P['h'+t.cat]||0)+(b?P.hBeast:0))/100,ms,ms];   // 14.9: the Specialists' double damage is in the damage (vsFactor, every PvP mode incl. Renegades), the strength - and with it the order - stays the single strength
 }
 // 3-stack and 6-stack (= two 3-stacks): the enemy has no mounted stack. Killshot is a 3-stack too.
 const NOMT=P=>P.enemy==3||P.enemy==6;
@@ -2767,7 +2767,7 @@ function calcRun0(){
   [['mrE',ep],['mrP',pl]].forEach(([id,on])=>{const el=$(id);if(el)el.hidden=!on});      // the settings of the chosen view
   {const o=$('osd');if(o)o.hidden=pvOff}
   [['bcEpic',['bs_Epic'],ep],['bcPlayers',['bh_Players','bs_Players'],pl]].forEach(([c,ids,on])=>{const el=$(c);if(el)el.hidden=!on;ids.forEach(i=>{const x=$(i);if(x)x.disabled=!on})});
-  document.querySelectorAll('#rare .bi.pl').forEach(r=>{r.hidden=!pl;const x=r.querySelector('input');if(x)x.disabled=!pl});      // 19.0.11: Strength against players (Guardsmen, Specialists) shows only in the Attack players view
+  document.querySelectorAll('#rare .bi.pl').forEach(r=>{r.hidden=!pl;const x=r.querySelector('input');if(x)x.disabled=!pl});document.querySelectorAll('#rare .plc').forEach(c=>c.hidden=!pl);      // the Monsters card holds only the bonuses against players      // 19.0.11: Strength against players (Guardsmen, Specialists) shows only in the Attack players view
   //      // the Against box that does not count in the chosen view is hidden and its inputs are disabled
   if(!RENEGADES()&&$('mode').value=='ren'){$('mode').value='max';SO=[]}      // Renegades is off: a tab saved in it falls back to Max damage
   {const rb=document.querySelector('.cm[data-m=ren]');if(rb){rb.disabled=!RENEGADES()}}
