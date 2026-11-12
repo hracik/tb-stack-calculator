@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='24.4.1';
+const APP_VERSION='24.4.2';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2588,10 +2588,10 @@ const MERC_LATER=[
 // unless its card is clicked off. Bonuses: its class (Guardsmen / Specialists / Engineers / Monsters) with its category, a monster also its type; the order of the mercenary
 // stacks is simply by the squad bonus: the smaller one dies first.
 const veOf=(t,P)=>P.epic?(t.ve||0)+((epCur()||{}).tp&&t.vt?t.vt[epCur().tp]||0:0):0;      // + the bonus against the TYPE of the epic's troops (tp: Arachne's stacks are all Swarm)      // the bonus against the chosen epic: the one against every epic + the one against Pumpkin epics
-// Which mercenaries are shown and used depends on the highest ticked Guardsmen tier, together with the ones of the tier below it: G6 or higher - tier 9 (with Ariel and Grace) and tier 7; G5 - tier 7 and tier 6; G4 and lower - tier 6 and 5. The finer rule comes later.
+// Which mercenaries are shown and used: the ones the highest ticked Guardsmen tier sees, together with the ones the Guardsmen tier below it sees: G7 or higher - tier 9 (with Ariel and Grace); G6 - tier 9 and tier 7; G5 - tier 7 and tier 6; G4 and lower - tier 6 and 5. The finer rule comes later.
 const mercG=()=>{for(let i=9;i>=1;i--){const e=$('sG'+i);if(e&&e.checked)return i}return 9};
 const mercTier=()=>{const g=mercG();return g>=6?9:g==5?7:6};
-const mercOK=m=>{const t=mercTier();return t==9?m[1]>=7:t==7?m[1]==7||m[1]==6:m[1]<=6};      // the tier of the highest ticked Guardsmen AND the one below it: G6+ tier 9 and 7, G5 tier 7 and 6, G4 and lower tier 6 (and 5)
+const mercOK=m=>{const g=mercG(),ok=t=>t==9?m[1]>=9:t==7?m[1]==7:m[1]<=6;return ok(mercTier())||(g>=5&&g<=6&&ok(g==6?7:6))};      // the mercenaries of the highest ticked Guardsmen tier AND the ones of the Guardsmen tier below it: G7+ tier 9; G6 tier 9 and 7 (G5 sees 7); G5 tier 7 and 6 (G4 sees 6); G4 and lower tier 6 (and 5)
 const mkMT0=m=>({cls:m[0],tier:m[1],name:m[2],cat:m[3],hp:m[4],str:m[5],cost:m[6],vs:m[7],ve:m[10]||0,jungle:!!m[8],type:m[9]||'Human',beast:m[0]!='M'&&m[9]=='Beast',food:0,gold:m[11],pool:'U'});
 const mkMT=m=>{const t=mkMT0(m),x=BONX[t.name];if(x){t.vt=x.vt||{};if(x.dd)t.dd=x.dd;t.vs=(t.vs.concat([0,0,0,0,0,0])).slice(0,6);if(x.ft!=null)t.vs[4]=x.ft;if(x.sg)t.vs[5]=x.sg;if(t.vt.Swarm)t.vs=[0,0,0,0,0,t.vs[5]||0]}return t};
 const MT_ALL=MERC.map(mkMT),MT=[];
