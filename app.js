@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='24.9.3';
+const APP_VERSION='24.9.4';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2512,7 +2512,7 @@ const mobOrder=list=>{const cr={G:0,S:1,E:2,M:3},mi=n=>{const i=MOBM.indexOf(n);
   return list.map((s,i)=>[s,i]).sort(([a,i],[b,j])=>key(b)-key(a)||mi(a.name)-mi(b.name)||ti(a)-ti(b)||+b.r.slice(1)-+a.r.slice(1)||cr[a.r[0]]-cr[b.r[0]]||ck(a)-ck(b)||i-j).map(x=>x[0])};
 // COMPUTER order: the Mobile order with a few units moved by hand (the Monsters stay as in Mobile). A unit that is not listed keeps its place; the listed ones that are present take the places they have in the
 // Mobile order, in the order of the list.
-const COMPM=['Wyvern','Warden','Eternal Cannoneer','Demonic Salamander','Warregal','Jago','Ariel','Grove Warden','Superior Epic Monster Hunter','Galloper','Quicksand','Scarface','Pounder','Highlander','Slavic Warrior','Grace'];      // 24.9.2 from the game's computer screen: Warregal before Jago, Grove Warden before the Superior Epic Monster Hunter, Galloper before Quicksand; 24.9.3 Scarface, Pounder, Highlander, Slavic Warrior
+const COMPM=['Wyvern','Warden','Eternal Cannoneer','Demonic Salamander','Jago','Warregal','Ariel','Superior Epic Monster Hunter','Quicksand','Galloper','Highlander','Slavic Warrior','Scarface','Pounder','Grace'];
 const COMPA=['Royal Lion II','Corax II','Corax I','Royal Lion I','Josephine II','Josephine I','Smiter II','Whitemane II','Smiter I','Whitemane I','Purifier II','Punisher II','Legitimist II','Duelist II','Legitimist I','Punisher I','Duelist I','Purifier I',
   // 24.7.2 tiers 6 to 3, from the game's computer screen (the same strength order as Mobile, but other ties: Lion Rider V before Rider V, Swordsman IV before Spearman IV ...)
   'Battle Griffin VI','Battle Griffin V','Siege Ballistae VI','Catapult V','Mounted Knight VI','Lion Rider VI','Catapult IV','Lion Rider V','Rider V','Heavy Halberdier VI','Heavy Arbalester VI','Vulture VI','Deadshot VI','Heavy Knight VI',
