@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='24.6.0';
+const APP_VERSION='24.6.1';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2494,10 +2494,12 @@ function mobList(items,heads,rowf){items=offLast(items,heads);      // heads (Pr
   return`<div class="vwl${VIEW=='computer'?' c2':''}">`+items.map(s=>hd(s)+(rowf?rowf(s):`<div class="vwr${s.off?' off':!(s.n>0)?' zero':''}" data-troop="${esc(s.name)}">${ICD[s.name]?`<img class="ic" src="${ICD[s.name]}" alt="">`:'<div class="ic ph"></div>'}<span class="kp">${KP[s.name]?'#'+KP[s.name]:''}</span><div class="vwt"><div class="vwn">${esc(s.name)}</div><div class="vwc">${shown(s,(s.n||0).toLocaleString())}</div></div></div>`)).join('')+'</div>';
 }
 // MOBILE order, inside every section: the single unit's own (original) health, the biggest first. The same health: the order of this list (mercenaries), then the higher tier,
-// Guardsmen before Specialists, then Flying, Mounted, Ranged, Melee (so ranged before melee), then the order of the cards in the Grouped view.
+// Guardsmen before Specialists, then the category: Guardsmen Flying, Mounted, Ranged, Melee (so ranged before melee); Specialists Melee, Flying, Mounted, Ranged (24.6.1, from the game's
+// mobile screen: Swordsman V, Vulture V, Deadshot V; Heavy Knight VI before Deadshot VI; the army only, not the mercenaries) - the Computer view keeps Flying, Mounted, Ranged, Melee for both; then the order of the cards in the Grouped view.
+const MOBS=['Melee','Flying','Mounted','Ranged'];
 const MOBM=['Wyvern','Warden','Eternal Cannoneer','Demonic Salamander','Warregal','Jago','Ariel','Superior Epic Monster Hunter','Quicksand','Galloper','Highlander','Slavic Warrior','Pounder','Scarface','Grace'];
-const mobOrder=list=>{const cr={G:0,S:1,E:2,M:3},mi=n=>{const i=MOBM.indexOf(n);return i<0?999:i};
-  return list.map((s,i)=>[s,i]).sort(([a,i],[b,j])=>TRN[b.name].hp-TRN[a.name].hp||mi(a.name)-mi(b.name)||+b.r.slice(1)-+a.r.slice(1)||cr[a.r[0]]-cr[b.r[0]]||(a.cat=='Scout'?99:DISP.indexOf(a.cat))-(b.cat=='Scout'?99:DISP.indexOf(b.cat))||i-j).map(x=>x[0])};
+const mobOrder=list=>{const cr={G:0,S:1,E:2,M:3},mi=n=>{const i=MOBM.indexOf(n);return i<0?999:i},ck=s=>s.cat=='Scout'?99:(VIEW=='mobile'&&s.r[0]=='S'&&TRN[s.name].pool!='U'?MOBS:DISP).indexOf(s.cat);      // the army's Specialists only (the mercenaries keep their order: not seen in the game yet)
+  return list.map((s,i)=>[s,i]).sort(([a,i],[b,j])=>TRN[b.name].hp-TRN[a.name].hp||mi(a.name)-mi(b.name)||+b.r.slice(1)-+a.r.slice(1)||cr[a.r[0]]-cr[b.r[0]]||ck(a)-ck(b)||i-j).map(x=>x[0])};
 // COMPUTER order: the Mobile order with a few units moved by hand (the Monsters stay as in Mobile). A unit that is not listed keeps its place; the listed ones that are present take the places they have in the
 // Mobile order, in the order of the list.
 const COMPM=['Wyvern','Warden','Eternal Cannoneer','Demonic Salamander','Jago','Warregal','Ariel','Superior Epic Monster Hunter','Quicksand','Galloper','Highlander','Slavic Warrior','Scarface','Pounder','Grace'];
