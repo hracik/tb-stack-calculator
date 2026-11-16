@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='24.9.0';
+const APP_VERSION='24.9.1';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -76,9 +76,10 @@ Object.keys(BYG).forEach(g=>{if(g[0]=='M')BYG[g].sort((a,b)=>CO.indexOf(a.cat)-C
 
 // bonuses
 const row=(l,id,val=0)=>`<div class="bi"><span>${l}</span><input id="${id}" type="text" inputmode="decimal" step="0.5" value="${val}"></div>`;
-const card=(n,k,h=0,sv=h)=>`<div class="bc"><b>${n}</b>${row('Health','bh_'+k,h)}${row('Strength','bs_'+k,sv)}</div>`;
+const plRow=(l,id)=>`<div class="bi pl"><span>${l} vs. players</span><input id="${id}" type="text" inputmode="decimal" step="0.5" value="0"></div>`;      // 24.9.1 the class's bonuses against players: in the Category bonuses card, shown only in the Attack players view
+const card=(n,k,h=0,sv=h)=>`<div class="bc"><b>${n}</b>${row('Health','bh_'+k,h)}${row('Strength','bs_'+k,sv)}${plRow('Health','bh_'+k+'Pl')}${plRow('Strength','bs_'+k+'Pl')}</div>`;
 $('bon').innerHTML=[['Guardsmen','G',3466,6304],['Specialists','S',3466,6304],['Monsters','M',3461,6404],['Siege Engines','E',3466,6304]].map(([n,k,h,sv])=>card(n,k,h,sv)).join('');
-$('rare').innerHTML=[['Guardsmen','G'],['Specialists','S'],['Siege Engines','E'],['Monsters','M']].map(([n,k])=>`<div class="bc${k=='M'?' plc':''}"><b>${n}</b>${[['Health','bh'],['Strength','bs']].map(([l,b])=>`<div class="bi pl"><span>${l} vs. players</span><input id="${b}_${k}Pl" type="text" inputmode="decimal" step="0.5" value="0"></div>`).join('')}${k=='M'?'':row('Double damage','dd_'+k,0)}</div>`).join('');      // 19.0.14: the rare bonuses of the classes (24.3: Health and Strength against players for all four classes, shown only in the Attack players view; Double damage is a % chance, counted on average - the monsters have none)
+$('rare').innerHTML=[['Guardsmen','G'],['Specialists','S'],['Siege Engines','E']].map(([n,k])=>`<div class="bc"><b>${n}</b>${row('Double damage','dd_'+k,0)}</div>`).join('');      // 19.0.14: the rare bonuses of the classes (Double damage is a % chance, counted on average); 24.9.1 the bonuses against players moved to the Category bonuses card
 $('bonx').innerHTML=`<div class="bc"><b>Entire army</b>`+`<div class="bi" id="bcEpic"><span>Strength vs. epics</span><input id="bs_Epic" type="text" inputmode="decimal" step="0.5" value="3747"></div>`+
   `<div id="bcPlayers">${row('Health vs. players','bh_Players',0)}${row('Strength vs. players','bs_Players',0)}</div>`+
   row('Double damage','dd_A',0)+row('Double strike','ds_A',0)+'</div>';      // 19.0.12: the Army bonuses are plain rows, no blocks (the epic / players rows follow the Attack switch; Double strike and Double damage are the chance of the whole army in %, counted on average)
@@ -2787,7 +2788,7 @@ function calcRun0(){
   [['mrE',ep],['mrP',pl]].forEach(([id,on])=>{const el=$(id);if(el)el.hidden=!on});      // the settings of the chosen view
   {const o=$('osd');if(o)o.hidden=pvOff}
   [['bcEpic',['bs_Epic'],ep],['bcPlayers',['bh_Players','bs_Players'],pl]].forEach(([c,ids,on])=>{const el=$(c);if(el)el.hidden=!on;ids.forEach(i=>{const x=$(i);if(x)x.disabled=!on})});
-  document.querySelectorAll('#rare .bi.pl').forEach(r=>{r.hidden=!pl;const x=r.querySelector('input');if(x)x.disabled=!pl});document.querySelectorAll('#rare .plc').forEach(c=>c.hidden=!pl);      // the Monsters card holds only the bonuses against players      // 19.0.11: Strength against players (Guardsmen, Specialists) shows only in the Attack players view
+  document.querySelectorAll('#bon .bi.pl').forEach(r=>{r.hidden=!pl;const x=r.querySelector('input');if(x)x.disabled=!pl});      // 24.9.1 the class's Health / Strength vs. players rows (Category bonuses card): only in the Attack players view      // 19.0.11: Strength against players (Guardsmen, Specialists) shows only in the Attack players view
   //      // the Against box that does not count in the chosen view is hidden and its inputs are disabled
   if(!RENEGADES()&&$('mode').value=='ren'){$('mode').value='max';SO=[]}      // Renegades is off: a tab saved in it falls back to Max damage
   {const rb=document.querySelector('.cm[data-m=ren]');if(rb){rb.disabled=!RENEGADES()}}
