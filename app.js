@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='24.8.1';
+const APP_VERSION='24.8.2';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2715,8 +2715,11 @@ function mercTable(all){
   const by={};all.forEach(s=>by[s.name]=s);
   const cell=m=>{const s=by[m[2]];return`<td class="${s.off?'off':!(s.n>0)?'zero':''}" data-troop="${esc(m[2])}"><img class="ic" src="${ICD[m[2]]}" alt=""><span class="kp">${KP[m[2]]?'#'+KP[m[2]]:''}</span><span class="mu">${esc(m[2])}</span>${cnt(s,s.n.toLocaleString())}</td>`};
   let o='<div class="sc"><table><colgroup><col><col><col><col><col></colgroup>';    // 5 cards per row
-  [['E','Engineer Corps'],['G','Guardsmen'],['S','Specialists'],['M','Monsters']].forEach(([c,label])=>{
-    const list=mercSorted(c).filter(m=>mercVis(by[m[2]]));
+  // 24.8.2 the Guardsmen in three groups: the Guardsmen (the Epic Monster Hunters too), the Swarm Leaders (+ against Swarm) and the special ones (Elder Witch and the Grove Wardens: + against one kind of enemy: Pumpkin, forest forces)
+  const swarm=m=>/^(Chitinous Defender|Combat Anteater|Grim Stalker|Wasp-Man)/.test(m[2]),spec=m=>m[3]=='Epic Monster Hunter'&&!/Epic Monster Hunter/.test(m[2]),
+    GRP=[['E','Engineer Corps'],['G','Guardsmen',m=>!spec(m)&&!swarm(m)],['S','Specialists'],['M','Monsters'],['G','Swarm mercenaries',swarm],['G','Special mercenaries',spec]];
+  GRP.forEach(([c,label,f])=>{
+    const list=mercSorted(c).filter(m=>(!f||f(m))&&mercVis(by[m[2]]));
     if(ATK=='monsters')list.sort((a,b)=>(by[a[2]].off?1:0)-(by[b[2]].off?1:0));      // Attack monsters: the turned-off mercenaries come last (the sort keeps the order of the rest)
     if(list.length)o+=`<tr><th class="gl" colspan="5">${label}</th></tr>`;     // the label is one row above its cards
     for(let i=0;i<list.length;i+=5){
