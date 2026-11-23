@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='24.11.0';
+const APP_VERSION='24.11.1';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -2504,7 +2504,8 @@ const MOBS=['Melee','Flying','Mounted','Ranged'];
 const MOBM=['Wyvern','Warden','Eternal Cannoneer','Demonic Salamander','Warregal','Jago','Ariel','Superior Epic Monster Hunter','Quicksand','Galloper','Highlander','Slavic Warrior','Pounder','Scarface','Grace'];
 // 24.7.1 the ARMY in the Mobile view (the game's march screen, two accounts): the unit's own STRENGTH, the biggest first (= the health for Guardsmen and Specialists, but the engineers have half
 // the strength per health: Catapult IV stands after Lion Rider VI, Catapult III after Deadshot VI ...). The same strength: the order seen in the game (MOBT), then the rules above.
-const MOBT=['Vulture VI','Heavy Arbalester VI','Heavy Halberdier VI','Heavy Knight VI','Deadshot VI','Archer V','Spearman V','Swordsman V','Vulture V','Deadshot V','Archer IV','Spearman IV','Swordsman IV'];
+const MOBT=['Vulture VII','Heavy Arbalester VII','Heavy Halberdier VII','Heavy Knight VII','Deadshot VII',      // 24.11.1 tier 7 from the game's mobile screen (the same pattern as tier 6)
+  'Vulture VI','Heavy Arbalester VI','Heavy Halberdier VI','Heavy Knight VI','Deadshot VI','Archer V','Spearman V','Swordsman V','Vulture V','Deadshot V','Archer IV','Spearman IV','Swordsman IV'];
 const mobOrder=list=>{const cr={G:0,S:1,E:2,M:3},mi=n=>{const i=MOBM.indexOf(n);return i<0?999:i},arm=s=>VIEW!='grouped'&&'GSE'.includes(s.r[0])&&TRN[s.name].pool!='U',      // the army by strength in the Mobile AND the Computer view (24.7.2)
     mob=s=>VIEW=='mobile'&&arm(s),
     ck=s=>s.cat=='Scout'?99:(mob(s)&&s.r[0]=='S'?MOBS:DISP).indexOf(s.cat),      // the army's Specialists only (the mercenaries keep their order: not seen in the game yet)
