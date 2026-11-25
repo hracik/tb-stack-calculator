@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='24.12.2';
+const APP_VERSION='24.12.3';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -1085,6 +1085,7 @@ function fourSearch(P,live,mkOut,CC,quick){     // CC = the number of full monst
   const slots=[];for(let i=0;i<rest.length;i++)if(kn1Place(P,i))slots.push(i);   // the places Kn+1 (K = the number of enemy stacks)
   const seen=new Map();      // the search meets the same order again again: it is solved once (a copy is returned: the caller adds its own bias k)
   const ev=(units,cc)=>{const names=units.map(t=>t.name),key=cc+'|'+names.join('|');
+    if(units[0]&&units[0].pool=='M'&&units.some(t=>t.pool!='M'))return{d:-Infinity,names,cc};      // 24.12.3 (the user): a monster never stands on place 1 in front of the army - place 1 has no stack before it, so it would take a huge monster stack; such an order is not even tried
     if(!seen.has(key)){const r=allocate(P,mkOut(names,cc));
       seen.set(key,{d:dmgAM(P,r,names),names,cc})}
     return{...seen.get(key)}};     // the damage decides, whatever Leadership the order leaves unspent
