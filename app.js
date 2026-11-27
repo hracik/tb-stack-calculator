@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='25.2.1';
+const APP_VERSION='25.2.2';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -383,7 +383,7 @@ function drawSO(st,P){LASTSO=[st,P];const open=OVK==='die';
 // ---- tabs: each tab stores every input, the tier checkboxes and the kill order ----
 const KEY='sc_tabs_v6';      // NEVER change this name: a new name would hide every number the users have saved
 const DEFCAT=['Melee','Ranged','Mounted','Flying'];
-let tabs=null,active=0,IMP=null,ready=false,delPending=false,DEF=null,XS=new Set(),SO=[],CALCT=0,CALCMS=0,SAVET=0;      // CALCT = the timer of the calculation that waits for the typing to stop, CALCMS = how long the last calculation took, SAVET = the timer of the saving
+let LSLAST=null,tabs=null,active=0,IMP=null,ready=false,delPending=false,DEF=null,XS=new Set(),SO=[],CALCT=0,CALCMS=0,SAVET=0;      // CALCT = the timer of the calculation that waits for the typing to stop, CALCMS = how long the last calculation took, SAVET = the timer of the saving
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const clone=o=>JSON.parse(JSON.stringify(o));
 const MODE_IDS=['mode','enemy'],APP_IDS=['lang'];      // APP_IDS = settings of the whole app (the language): never stored in a tab and never changed by opening one
@@ -407,7 +407,7 @@ function save(q){      // q = true: only store, do not schedule the account sync
   if(!ready)return;
   tabs[active].data=snap();
   if(IMP)return;      // an admin is viewing another user's tabs: they live only in memory, nothing is stored and nothing is synced
-  try{localStorage.setItem(KEY,JSON.stringify({tabs,active,ver:3}))}catch(e){}
+  try{const str=JSON.stringify({tabs,active,ver:3});localStorage.setItem(KEY,str);LSLAST=str}catch(e){}
   if(q!==true&&FB.key&&aSes()&&!SY.conf){clearTimeout(SY.t);SY.t=setTimeout(syncNow,2500)}      // signed in: the account is updated 2.5 s after the last change
 }
 const ICOREN='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
@@ -436,6 +436,16 @@ function drawTabs(){
   $('tabtools').innerHTML=tools;tabVis(document.querySelector('#tabs .tab.on'));
 }
 function newName(){let n=tabs.length+1;while(tabs.some(t=>t.name==='Tab '+n))n++;return 'Tab '+n}
+// 25.2.2 the same page open twice in one browser (two browser tabs, a page left in the background): both share the stored tabs, but each holds its own copy in memory. When the other one stores, this one takes the stored tabs at once (and before every sync),
+// so a page left open in the background never writes or sends its old copy over the newer tabs. The open tab stays open (found by its name).
+function lsPull(){
+  if(IMP||!ready)return;let raw=null;try{raw=localStorage.getItem(KEY)}catch(e){return}
+  if(!raw||raw===LSLAST)return;LSLAST=raw;let r=null;try{r=JSON.parse(raw)}catch(e){return}
+  if(!r||!Array.isArray(r.tabs)||!r.tabs.length||JSON.stringify(r.tabs)===JSON.stringify(tabs))return;
+  const cur=tabs[active]&&tabs[active].name,k=tabs?r.tabs.findIndex(t=>t.name===cur):-1;
+  tabs=r.tabs;active=k>=0?k:Math.min(Math.max(0,r.active|0),tabs.length-1);delPending=false;load(tabs[active].data);drawTabs();refresh();
+}
+window.addEventListener('storage',e=>{if(e.key===KEY)lsPull()});
 function switchTab(i){if(i==active)return;save();active=i;delPending=false;load(tabs[i].data);drawTabs();refresh()}
 function addTab(){save();tabs.push({name:newName(),data:clone(BLANK)});active=tabs.length-1;delPending=false;load(tabs[active].data);drawTabs();refresh()}
 function dupTab(){save();const src=tabs[active];tabs.splice(active+1,0,{name:src.name+' copy',data:clone(src.data)});active++;delPending=false;drawTabs();refresh()}
@@ -734,7 +744,7 @@ async function syncNow(){
   try{
     const tok=await aToken();if(!SY.pf){await aProfile(tok);SY.pf=true}
     const r=await fsGet(tok,s.uid);
-    save(true);const lh=aHash();SY.role=r.role||'user';SY.hasRole=!!r.role;      // 25.2.1 the open tab's boxes go into tabs AFTER the account is read: what was typed while waiting counts as a change of this browser, so it is never overwritten
+    lsPull();save(true);const lh=aHash();SY.role=r.role||'user';SY.hasRole=!!r.role;      // 25.2.1 the open tab's boxes go into tabs AFTER the account is read: what was typed while waiting counts as a change of this browser, so it is never overwritten
     if(!r.exists)aDone(await fsPut(tok,s.uid,aPay(),null),lh);
     else if(s.rev&&r.rev===s.rev){if(lh!==s.h)aDone(await fsPut(tok,s.uid,aPay(),r.rev),lh);else if(!aProfOk(r))aDone(await fsPut(tok,s.uid,null,r.rev),lh);else aDone(r.rev,lh,SY.st&&/^Saved/.test(SY.st)?SY.st:'Up to date.')}      // the account did not change since the last sync
     else{      // the account changed (another device), or this browser has not synced yet
@@ -976,8 +986,8 @@ document.addEventListener('keydown',e=>{      // the epic and language windows: 
   let n=k=='ArrowDown'?(i<0?0:i+1):k=='ArrowUp'?(i<0?bs.length-1:i-1):k=='Home'?0:bs.length-1;
   e.preventDefault();bs[Math.max(0,Math.min(bs.length-1,n))].focus()});
 document.addEventListener('keydown',e=>{if(e.key=='Escape'){const md=!!document.querySelector('.amo:not([hidden])');apShut();hpShut();fmShut();epShut();lgShut();if(!md)mmShut()}});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncNow()});
-window.addEventListener('online',()=>syncNow());
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){lsPull();syncNow()}});
+window.addEventListener('online',()=>{lsPull();syncNow()});
 
 
 const DISP=['Flying','Mounted','Ranged','Melee'];
@@ -3630,7 +3640,7 @@ const BLANK=clone(DEF);
 ['capA','capM','foodP','brkL','bh_G','bs_G','bh_S','bs_S','bh_M','bs_M','bh_E','bs_E','bs_Epic','bh_Players','bs_Players',...['Giant','Elemental','Dragon','Beast'].flatMap(k=>['bh_'+k,'bs_'+k,'dh_'+k])].forEach(id=>{if(id in BLANK.vals)BLANK.vals[id]='0'});
 const START_TABS=['1 cap','3 cap','Hero','Hero+3 cap'];    // the tabs a new page starts with; they are ordinary tabs (rename, duplicate, delete)
 try{
-  const r=JSON.parse(localStorage.getItem(KEY)||'null');
+  const raw=localStorage.getItem(KEY);LSLAST=raw;const r=JSON.parse(raw||'null');
   if(r&&Array.isArray(r.tabs)&&r.tabs.length){tabs=r.tabs;
     active=Math.min(Math.max(0,r.active|0),tabs.length-1);
     // an older save with only the single default tab "Main": the four start tabs replace it, all with that tab's settings
