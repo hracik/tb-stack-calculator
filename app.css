@@ -607,3 +607,5 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 .bq .bnn,.bq .beg .bnn{font-size:15px;font-weight:400;color:var(--tlt)}
 .bq .bun{font-size:12px;font-weight:400;opacity:1;color:var(--tlm)}
 .ba .bun{color:var(--mu)}
+.epl .rlv .epn{flex:none;white-space:nowrap}
+.epl .rlv small span{white-space:nowrap}

@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='24.14.6';
+const APP_VERSION='24.14.7';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -222,6 +222,8 @@ const renHP=r=>r.split(',').reduce((q,x)=>{const i=x.lastIndexOf(':'),n=x.slice(
 const renWallHP=r=>r.split(',').reduce((q,x)=>{const i=x.lastIndexOf(':'),w=RENWALL[x.slice(0,i)];return q+(w?w.hp*+x.slice(i+1):0)},0);      // the plain health of the walls of one report
 // the damage of our engineers before the battle: every engineer stack strikes the walls once, with the average of its Double damage and Double strike chances; against a fortification an engineer deals x20 with its bonus against fortifications (the Attack monsters rule, from a real report)
 const renEngDmg=(P,L)=>L.reduce((q,s)=>{const t=TRN[s.name];if(!t||t.cls!='E'||!(s.n>0))return q;const m=mults(t,P);return q+s.n*t.str*20*(m[1]+(t.vs[4]||0))*(1+ddp(t,P))*(1+dst(t,P))},0);
+const renImg=()=>EPIC_IC.grove?'<img class="epi" src="'+EPIC_IC.grove+'" alt="">':'';      // the Exiles' Grove picture (the Renegades camp)
+const renStk=l=>{const c={};(RENREP[l]||[]).forEach(r=>{const n=r.split(',').filter(x=>!RENWALL[x.slice(0,x.lastIndexOf(':'))]).length;c[n]=(c[n]||0)+1});return Object.keys(c).map(Number).sort((a,b)=>a-b).map(n=>[n,c[n]])};      // how many scenarios of the level have how many troop stacks (the walls not counted): [[stacks, scenarios], ...]
 const renWalls=(l,D)=>{const R=RENREP[l]||[];return{k:R.filter(r=>renWallHP(r)<=D).length,n:R.length}};      // in how many scenarios of the level the engineers bring the walls down
 const renRange=l=>{const h=(RENREP[l]||[]).map(renHP);return h.length?{lo:Math.min(...h),hi:Math.max(...h),n:h.length}:null};
 const renTarget=()=>0;      // 23.11.12: the Level box is removed - no target (RENLV is kept for later)      // the target of the chosen Level; 0 = no Level chosen (the box is empty)
@@ -448,7 +450,7 @@ function tabClick(e){
   const a=e.target.closest('[data-act]');
   if(a){
     const k=a.dataset.act;
-    if((k=='lpick'||k=='epick')&&!a.dataset.d){a.parentElement.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b===a));a.dataset.d='1';setTimeout(()=>a.click(),140);return}      // a choice window: the clicked item becomes the highlighted one at once (the old one loses it), then the window closes a moment later
+    if((k=='lpick'||k=='epick'||k=='rpick')&&!a.dataset.d){a.parentElement.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b===a));a.dataset.d='1';setTimeout(()=>a.click(),140);return}      // a choice window: the clicked item becomes the highlighted one at once (the old one loses it), then the window closes a moment later
     if(k=='ren')rename(active);
     else if(k=='dup')dupTab();
     else if(k=='del'){delPending=true;drawTabs()}
@@ -469,6 +471,8 @@ function tabClick(e){
     else if(k=='hclose')hpShut();
     else if(k=='eopen'){EPM=true;drawEP()}
     else if(k=='mopen'){MOM=true;drawEP()}
+    else if(k=='ropen'){RLM=true;drawEP()}
+    else if(k=='rpick'){const s=$('renLv');if(s){s.value=a.dataset.l||'';epShut();s.dispatchEvent(new Event('change',{bubbles:true}))}else epShut()}      // 24.15.0 a Renegades level is chosen
     else if(k=='mpick'){$('monster').value=a.dataset.m||MONSTERS[0].n;SO=[];epShut();$('monster').dispatchEvent(new Event('change',{bubbles:true}))}
     else if(k=='eclose')epShut();
     else if(k=='lopen'){LGM=true;drawLG()}
@@ -895,13 +899,17 @@ async function hCopy(){      // the inputs of the open tab as the Export text, s
   const m=$('hmsg');if(m)m.textContent=ok?'Copied. Paste it into your message.':'Copying did not work here: use Export under the tabs and copy the text from there.';
 }
 const hpShut=()=>{if(HP){HP=false;drawHP()}};
-let EPM=false,MOM=false;      // 19.0.36: the epic chooser (opened by the score tile)
+let EPM=false,MOM=false,RLM=false;      // 19.0.36: the epic chooser (opened by the score tile)
 let MFOCUS=null;      // the button that opened a choice window: the focus goes back to it when the window closes
 const mIn=(sel,was)=>{if(!was)MFOCUS=document.activeElement;const b=document.querySelector(sel+' .epl button.on')||document.querySelector(sel+' .epl button');if(b&&!was)b.focus()};
 const mBack=fb=>{const o=MFOCUS;MFOCUS=null;const t=o&&o!==document.body&&document.contains(o)?o:$(fb);if(t)t.focus()};
 function drawEP(){
-  const p=$('epp'),w=$('epw');if(!p)return;const was=!p.hidden,on=EPM||MOM;p.hidden=!on;if(w)w.hidden=!on;document.documentElement.classList.toggle('mlock',on||FMP||HP||!!(AP&&FB.key));
+  const p=$('epp'),w=$('epw');if(!p)return;const was=!p.hidden,on=EPM||MOM||RLM;p.hidden=!on;if(w)w.hidden=!on;document.documentElement.classList.toggle('mlock',on||FMP||HP||!!(AP&&FB.key));
   if(!on){p.innerHTML='';if(was)mBack('ebtn');return}
+  if(RLM){const cur=$('renLv')?$('renLv').value:'',f=x=>(x/1e9).toFixed(2);      // 24.15.0 the Renegades level chooser: the same window as the epic chooser - the picture, the level, the range of the enemy's total health and how many scenarios have how many troop stacks
+    p.innerHTML='<div class="amh"><div class="amt">Choose the Renegades level</div><button class="amx" data-act="eclose" aria-label="Close">\u00d7</button></div><div class="epl"><button type="button" data-act="rpick" data-l=""'+(cur?'':' class="on"')+'><span>None</span></button>'
+      +Object.keys(RENREP).map(l=>{const r=renRange(l);return '<button type="button" data-act="rpick" data-l="'+l+'" class="rlv'+(l==cur?' on':'')+'">'+renImg()+'<span class="epn">Renegades lvl'+l+'</span><small>'+(r.lo==r.hi?f(r.lo):f(r.lo)+' \u2013 '+f(r.hi))+' B<br>'+renStk(l).map(([n,c])=>'<span>'+c+'\u00d7 '+n+' stacks</span>').join('; ')+'</small></button>'}).join('')+'</div>';
+    mIn('#epp',was);return}
   if(MOM){const cur=$('monster').value||MONSTERS[0].n;      // 22.8 the monster chooser: the same window as the epic chooser
     p.innerHTML='<div class="amh"><div class="amt">Choose the monster</div><button class="amx" data-act="eclose" aria-label="Close">\u00d7</button></div><div class="epl">'+MONSTERS.map(m=>'<button type="button" data-act="mpick" data-m="'+esc(m.n)+'"'+(m.n==cur?' class="on"':'')+'><img class="epi" src="'+MIC[m.ic]+'" alt=""><span class="epn" data-notr>'+esc(m.n)+'</span><small><span>Level</span> <span data-notr>'+m.lv+'</span></small></button>').join('')+'</div>';
     mIn('#epp',was);return}
@@ -915,7 +923,7 @@ function hwOn(d=new Date()){const y=d.getFullYear();return d>=new Date(y,9,15)&&
 function witchOn(d=new Date()){const y=d.getFullYear();return d>=new Date(y,9,15)&&d<new Date(y,10,10)}      // 24.8.3 the Elder Witch (against the Pumpkin epics) is there only in the Halloween time and 7 days after it: 15 October to 9 November; otherwise she is hidden everywhere (not used, not listed)      // 23.3.12 the Halloween epics are listed only around Halloween: from 16 days before 31 October (15 October; 2 weeks + 2 days) until 2 days after it (2 November), every year (outside it the section is hidden, even when one of them is the chosen epic)
 const epImg=(e,c)=>e&&e.ic&&EPIC_IC[e.ic]?'<img class="'+c+'" src="'+EPIC_IC[e.ic]+'" alt="">':'';
 const sh0=x=>{const u=['','K','M','B','T'];let i=0,v=x;while(v>=1e3&&i<4){v/=1e3;i++}return(+v.toPrecision(3)).toString()+' '+u[i]};
-const epShut=()=>{if(EPM||MOM){EPM=false;MOM=false;drawEP()}};
+const epShut=()=>{if(EPM||MOM||RLM){EPM=false;MOM=false;RLM=false;drawEP()}};
 let LGM=false;      // the language chooser (opened by the language row of the menu), a window like the epic chooser
 function drawLG(){
   const p=$('lgp'),w=$('lgw2');if(!p)return;const was=!p.hidden;p.hidden=!LGM;if(w)w.hidden=!LGM;document.documentElement.classList.toggle('mlock',LGM||EPM||FMP||HP||!!(AP&&FB.key));
@@ -952,11 +960,11 @@ let apDn=null,inAmo=false;document.addEventListener('pointerdown',e=>{apDn=e.tar
 document.addEventListener('click',e=>{if(AP&&e.target&&e.target.id=='apw'&&apDn&&apDn.id=='apw')apShut()});
 document.addEventListener('click',e=>{if(HP&&e.target&&e.target.id=='hw'&&apDn&&apDn.id=='hw')hpShut()});
 document.addEventListener('click',e=>{if(LGM&&e.target&&e.target.id=='lgw2'&&apDn&&apDn.id=='lgw2')lgShut()});
-document.addEventListener('click',e=>{if(EPM&&e.target&&e.target.id=='epw'&&apDn&&apDn.id=='epw')epShut()});
+document.addEventListener('click',e=>{if((EPM||MOM||RLM)&&e.target&&e.target.id=='epw'&&apDn&&apDn.id=='epw')epShut()});
 document.addEventListener('click',e=>{if(FMP&&e.target&&e.target.id=='fmw'&&apDn&&apDn.id=='fmw')fmShut()});
 document.addEventListener('keydown',e=>{      // the epic and language windows: arrow keys move through the list, Tab stays inside the window
-  if(!(EPM||LGM))return;const k=e.key;if(!['ArrowDown','ArrowUp','Home','End','Tab'].includes(k))return;
-  const win=document.querySelector(EPM?'#epp':'#lgp');if(!win)return;
+  if(!(EPM||RLM||LGM))return;const k=e.key;if(!['ArrowDown','ArrowUp','Home','End','Tab'].includes(k))return;
+  const win=document.querySelector(EPM||RLM?'#epp':'#lgp');if(!win)return;
   if(k=='Tab'){const f=[...win.querySelectorAll('button')];if(!f.length)return;const i=f.indexOf(document.activeElement);if(e.shiftKey&&i<=0){e.preventDefault();f[f.length-1].focus()}else if(!e.shiftKey&&(i<0||i==f.length-1)){e.preventDefault();f[0].focus()}return}
   const bs=[...win.querySelectorAll('.epl button')];if(!bs.length)return;const i=bs.indexOf(document.activeElement);
   let n=k=='ArrowDown'?(i<0?0:i+1):k=='ArrowUp'?(i<0?bs.length-1:i-1):k=='Home'?0:bs.length-1;
@@ -2851,7 +2859,7 @@ function calcRun0(){
   document.querySelectorAll('.pb').forEach(b=>b.classList.toggle('on',TY.every(t=>v('bh_'+t)==+b.dataset.p&&v('bs_'+t)==+b.dataset.p)));
   document.querySelectorAll('.eb').forEach(b=>b.classList.toggle('on',!P.kill&&!P.ren&&!P.cp&&+b.dataset.e==P.enemy));
   document.querySelectorAll('.cm').forEach(b=>b.classList.toggle('on',(P.kill&&b.dataset.m=='kill')||(P.ren&&b.dataset.m=='ren')||(P.one&&!P.cpd&&b.dataset.m=='cp')||(P.one&&P.cpd&&b.dataset.m=='cpd')||(P.pm&&!P.lava&&b.dataset.m=='pvpmax')||(P.lava&&!P.arena&&b.dataset.m=='lava')||(P.arena&&b.dataset.m=='arena')));
-  {const rl=$('renlv');if(rl)rl.hidden=!P.ren}      // 24.15.0 the Renegades Level box (its options show the range of the enemy's total health of each level)
+  {const rc=$('rcard'),l=$('renLv')?$('renLv').value:'';if(rc)rc.hidden=!P.ren;const rb=$('rbtn');if(rb&&P.ren&&rb.dataset.k!==l){rb.dataset.k=l;rb.innerHTML=l&&RENREP[l]?renImg()+'<span class="epn">Renegades lvl'+l+'</span><span class="epc">\u25be</span>':'<span class="epn">Choose level</span><span class="epc">\u25be</span>'}}      // 24.15.0 the Renegades level chooser (a card below the Attack mode, like the epic chooser)
   {const m=P.mon?null:MODEINFO[P.kill?'kill':P.arena?'arena':P.lava?'lava':P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)],el=$('mdi');if(el){el.hidden=!m&&!pvOff;if(pvOff)el.innerHTML='<b>Attack players</b> - The PvP modes are switched off for now.';else if(m){const ik=({'4':'reg','8':'reg','3':'sn','6':'sn',kill:'sn',kill4:'sn',cp:'pv1',cpd:'pv1'})[P.kill?(P.kill4?'kill4':'kill'):P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)]||'pvm',ic=document.querySelector('#mics [data-i="'+ik+'"] svg');el.innerHTML=(ic?ic.outerHTML:'')+'<span><b>'+m[0].replace(/^(Regular|Sniper|Pv1|PvMany) \u00b7 /,'')+'</b>'+''+' - '+m[1]+'</span>'}}}      // the explanation under the mode buttons (the tier tips under Tiers to use are fixed text, both are always shown)
   const sc=score(P,[...A,...Mo,...U.list],[...st.so,...U.ord]);
   BRD={P,list:[...A,...Mo,...U.list],order:[...st.so,...U.ord],sc,fx};
@@ -2928,7 +2936,7 @@ function calcRun0(){
     const [a,ua]=sh(lo),[b,ub]=sh(hi),rngTxt=(a!=b||ua!=ub)&&(dRange||kk);
     const sub=(dRange||kk?'95 % score range<br>':'')+P.enemy+'-stack avg. '+sh(avg).join(' ')+(ki?' \u00b7 '+(kk?'killshot avg. '+sh(kk.av).join(' '):'Killshot: the army can not kill it'):'');
     return tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span>',rngTxt?(ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub):a+' '+ua,sub).replace('<div class="stt',eoAct).replace('class="stt','data-ksd="1" class="stt')};scoreTile=mkST(!ksD);ksLater=ksD}
-  if(P.ren){const l=$('renLv')?$('renLv').value:'',r=l?renRange(l):null;if(r){const w=renWalls(l,renEngDmg(P,[...A,...U.list]));scoreTile=tile('std','<span class="eph">'+(EPIC_IC.grove?'<img class="epi" src="'+EPIC_IC.grove+'" alt="">':'')+'<span><b>Renegades lvl'+l+'</b></span></span>',r.lo==r.hi?fmt(r.lo):rg(r.lo,r.hi),'Walls killed '+w.k+' / '+w.n)}}      // 24.15.0 Renegades with a Level: the tile of the level (the Exiles' Grove picture): the range of the enemy's total health and in how many of its scenarios the engineers kill the walls before the battle
+  if(P.ren){const l=$('renLv')?$('renLv').value:'',r=l?renRange(l):null;if(r){const w=renWalls(l,renEngDmg(P,[...A,...U.list]));scoreTile=tile('std','<span class="eph">'+renImg()+'<span><b>Renegades lvl'+l+'</b></span></span>',r.lo==r.hi?fmt(r.lo):rg(r.lo,r.hi),'Walls killed '+w.k+' / '+w.n)}}      // 24.15.0 Renegades with a Level: the tile of the level (the Exiles' Grove picture): the range of the enemy's total health and in how many of its scenarios the engineers kill the walls before the battle
   $('rsm').innerHTML=`<div class="stl stch">Summary</div><div class="stg">${scoreTile}${tile('','Revive cost',scost==rcost?kmb(scost):`${kmb(scost)} <span class="stu">/</span> ${kmb(rcost)}`,'')}${tile(ATK=='epics'?'':'std','Estimated damage',dRange?rg(dRange[0],dRange[1]):fmt(sc.dmg),dRange?'95 % range \u00b7 average '+fmt(sc.dmg):tgt?`level ${lvN} ${sc.dmg>=tgt?'reached':'short by '+((1-sc.dmg/tgt)*100).toFixed(1)+' %'}`:'')}${tile('','Strikes',hRange?Math.round(hRange[0])+'\u2013'+Math.round(hRange[1]):Math.round(sc.hits),hRange?'95 % range \u00b7 average '+Math.round(sc.hits):'')}</div>${hitsRow?`<div class="stl stch">Hits per revive mode</div><div class="stc">${REVCASES.map(([k,l])=>`<div class="stt${k==REVM?' stm':''}"><div class="stv">${HIT[k].toFixed(2)}</div><div class="sts">${l}</div></div>`).join('')}</div>`:''}`;      // 19.0.2: the summary as tiles (damage, strikes, stacks, revive cost); the army / monster / engineer count is gone
   $('res').innerHTML=secs;
   if(!PICSOK&&!PICSP)setTimeout(()=>picsLoad(),1500);      // 23.9.38 the pictures come in the background after the first result
