@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='25.3.2';
+const APP_VERSION='25.3.3';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -178,7 +178,19 @@ const TEMPLE=[1.04,1.06,1.08,1.11,1.13,1.16,1.19,1.22,1.27,1.33,1.36,1.40,1.44,1
 const RENLV=[100000000,120000000,144000000,173000000,207000000,249000000,299000000,358000000,430000000,516000000,619000000,743000000,892000000,1070000000,1280000000,1540000000,1850000000,2220000000,2660000000,3190000000,3830000000,4600000000,5520000000,6620000000,7950000000,9540000000,11400000000,13700000000,16500000000,19800000000,23700000000,28500000000,34200000000,41000000000,49200000000,59100000000,70900000000,85100000000,102000000000,122000000000,147000000000,176000000000,212000000000,254000000000,305000000000];
 // 24.15.0 Renegades: the enemy of each level, from the in-game battle reports (Mode - Renegades.md): one string per report, "troop:units". The total health is the plain base health of the troops (no bonuses);
 // the walls (Fortress Walls, the last stack of every report) are not in the total: our engineers strike them before the battle (RENWALL, renWalls). The Level box shows the range of the reports of that level.
-const RENREP={34:[
+const RENREP={31:[
+  'Swift Jaeger VII:13310,Wind Lord:375,Quicksand:3272,Warregal:213,Demonic Salamander:415,City Walls VII:13605',
+  'Battle Griffin VII:1169,Heavy Halberdier VII:57836,Mounted Knight VII:30131,Swift Jaeger VII:12079,Deadshot VII:25084,Destructive Colossus:145,Slavic Warrior:4748,City Walls VII:15631',
+  'Heavy Halberdier VII:90375,Swift Jaeger VII:12575,Black Dragon:992,Battle Elephant:186,City Walls VII:14847',
+  'Vulture VII:20310,Heavy Arbalester VII:22825,Mounted Knight VII:15071,Swift Jaeger VII:10146,Battle Elephant:125,Slavic Warrior:3580,Quicksand:2040,Pounder:3296,Galloper:2406,Demonic Salamander:95,City Walls VII:12330',
+  'Vulture VII:25054,Heavy Arbalester VII:24620,Heavy Knight VII:22201,Swift Jaeger VII:11022,Black Dragon:140,Wind Lord:120,Battle Elephant:141,Warregal:192,Pounder:4014,Scarface:3711,Eternal Cannoneer:85,City Walls VII:15091',
+  'Swift Jaeger VII:13918,Ancient Terror:145,Slavic Warrior:22605,Warregal:370,City Walls VII:15451',
+  'Battle Griffin VII:3582,Heavy Arbalester VII:132621,Swift Jaeger VII:12289,Ancient Terror:203,City Walls VII:11459',
+  'Heavy Knight VII:79236,Swift Jaeger VII:9936,Deadshot VII:26454,Warregal:263,Scarface:3787,Eternal Cannoneer:101,Wyvern:191,City Walls VII:11801',
+  'Swift Jaeger VII:9762,Black Dragon:179,Battle Elephant:225,Slavic Warrior:6110,Scarface:5111,Galloper:8719,Wyvern:76,City Walls VII:14701',
+  'Heavy Halberdier VII:75791,Mounted Knight VII:27860,Swift Jaeger VII:9642,Lion Rider VII:14918,Deadshot VII:31755,Ancient Terror:222,Wyvern:70,Warden:110,City Walls VII:11464',
+  'Battle Griffin VII:1300,Mounted Knight VII:13206,Heavy Knight VII:24567,Swift Jaeger VII:13328,Lion Rider VII:12707,Deadshot VII:25639,Pounder:4930,Eternal Cannoneer:141,Wyvern:54,Demonic Salamander:102,City Walls VII:12771'],
+34:[
   'Heavy Halberdier VII:55234,Heavy Knight VII:103220,Swift Jaeger VII:21246,Destructive Colossus:329,Ancient Terror:330,Highlander:8940,Pounder:8841,Galloper:4282,Eternal Cannoneer:209,Warden:202,City Walls VII:25760',
   'Battle Griffin VII:2783,Swift Jaeger VII:26703,Deadshot VII:135583,Black Dragon:325,Wind Lord:535,Highlander:8907,Scarface:8389,Eternal Cannoneer:215,Wyvern:129,City Walls VII:31022',
   'Battle Griffin VII:2430,Heavy Arbalester VII:61980,Mounted Knight VII:63694,Swift Jaeger VII:29665,Ancient Terror:402,Highlander:8570,Quicksand:4075,Pounder:15132,City Walls VII:32911',
@@ -257,7 +269,7 @@ const renBeat=l=>(RENREP[l]||[]).filter(r=>REND&&renHP(r)<=renLow(r)).length;   
 const RENDONE=[];      // 25.0.6 the levels the user says are complete although fewer than 11 scenarios are known
 const renDone=l=>((RENREP[l]||[]).length>=11||RENDONE.includes(+l))&&renKnown(l);      // 25.3.1 and every unit of it is known      // a level is complete with 11 or more scenarios (or when the user says so); only a complete level can be recommended, the others are a work in progress
 const renRec=()=>{if(!REND)return '';let b='';Object.keys(RENREP).forEach(l=>{if(renDone(l)&&renBeat(l)==RENREP[l].length)b=l});return b};      // the recommended level: the highest one whose every scenario our lowest damage beats (the strongest one included)
-const RENIC={34:'grove34'};      // 25.3.1 the Exiles' Grove picture changes with the level: level 34 has its own (red), 41 and higher the green one
+const RENIC={31:'grove34',34:'grove34'};      // 25.3.1 the Exiles' Grove picture changes with the level: levels 31 and 34 the red one (from a level 34 report), 35 and higher the green one
 const renImg=l=>{const k=RENIC[l]||'grove';return EPIC_IC[k]?'<img class="epi" src="'+EPIC_IC[k]+'" alt="">':''};      // the Exiles' Grove picture (the Renegades camp)
 const renStk=l=>{const c={};(RENREP[l]||[]).forEach(r=>{const n=r.split(',').filter(x=>!renWallName(renUnit(x))).length;c[n]=(c[n]||0)+1});return Object.keys(c).map(Number).sort((a,b)=>a-b).map(n=>[n,c[n]])};      // how many scenarios of the level have how many troop stacks (the walls not counted): [[stacks, scenarios], ...]
 const renWalls=(l,D)=>{const R=RENREP[l]||[];return{k:R.some(renWallUnk)?'?':R.filter(r=>renWallHP(r)<=D).length,n:R.length}};      // '?' when a wall of the level has no card      // in how many scenarios of the level the engineers bring the walls down
