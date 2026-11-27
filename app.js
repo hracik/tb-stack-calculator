@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='24.14.2';
+const APP_VERSION='24.14.3';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -177,7 +177,7 @@ const TEMPLE=[1.04,1.06,1.08,1.11,1.13,1.16,1.19,1.22,1.27,1.33,1.36,1.40,1.44,1
 // 14.19 Renegades: the damage the stacks must reach at each Level (1-45) - the total health of the enemy. TEMPORARY numbers (level 1 = 100 million, +20 % per level, rounded to 3 digits): replace them with the real ones, one per level, in this list.
 const RENLV=[100000000,120000000,144000000,173000000,207000000,249000000,299000000,358000000,430000000,516000000,619000000,743000000,892000000,1070000000,1280000000,1540000000,1850000000,2220000000,2660000000,3190000000,3830000000,4600000000,5520000000,6620000000,7950000000,9540000000,11400000000,13700000000,16500000000,19800000000,23700000000,28500000000,34200000000,41000000000,49200000000,59100000000,70900000000,85100000000,102000000000,122000000000,147000000000,176000000000,212000000000,254000000000,305000000000];
 // 24.15.0 Renegades: the enemy of each level, from the in-game battle reports (Mode - Renegades.md): one string per report, "troop:units". The total health is the plain base health of the troops (no bonuses);
-// a troop with no data (the Building: its health is not known yet) is not counted, and the note says so. The Level box shows the range of the reports of that level.
+// a troop with no data (the Building: its health is not known yet) is not counted. The Level box shows the range of the reports of that level.
 const RENREP={41:[
   'Devastator II:856,Purifier II:170319,Smiter II:81874,Whitemane II:84548,Royal Lion II:8892,Highlander:78831,Quicksand:44486,Warregal:3789,Eternal Cannoneer:1984,Warden:2066,Panoptic II:58714,Building:73756',
   'Devastator II:713,Purifier II:142700,Punisher II:156027,Corax II:10504,Whitemane II:78557,Jago:3933,Eternal Cannoneer:6190,Panoptic II:68930,Building:67743',
@@ -217,7 +217,6 @@ const RENREP={41:[
   'Whitemane II:1263351,Royal Lion II:29533,Pounder:219762,Panoptic II:170596,Building:181662',
   'Punisher II:502493,Whitemane II:469849,Wyvern:10444,Panoptic II:144381,Building:206045']};
 const renHP=r=>r.split(',').reduce((q,x)=>{const i=x.lastIndexOf(':'),t=TRN[x.slice(0,i)];return q+(t?t.hp*+x.slice(i+1):0)},0);
-const renUnk=l=>(RENREP[l]||[]).some(r=>r.split(',').some(x=>!TRN[x.slice(0,x.lastIndexOf(':'))]));
 const renRange=l=>{const h=(RENREP[l]||[]).map(renHP);return h.length?{lo:Math.min(...h),hi:Math.max(...h),n:h.length}:null};
 const renTarget=()=>0;      // 23.11.12: the Level box is removed - no target (RENLV is kept for later)      // the target of the chosen Level; 0 = no Level chosen (the box is empty)
 const tempNorm=x=>{const n=parseFloat(String(x).replace(/,/g,''));return String(isFinite(n)&&n>0?Math.min(45,Math.floor(n+1e-9)):0)};      // 14.20: the Temple is a select 0-45 now; a value saved or imported by an older version (a typed number: 30.9, 100, empty) becomes what the box used to count: cut to a whole number, 45 at most, empty / 0 / not a number = 0
@@ -2846,7 +2845,7 @@ function calcRun0(){
   document.querySelectorAll('.pb').forEach(b=>b.classList.toggle('on',TY.every(t=>v('bh_'+t)==+b.dataset.p&&v('bs_'+t)==+b.dataset.p)));
   document.querySelectorAll('.eb').forEach(b=>b.classList.toggle('on',!P.kill&&!P.ren&&!P.cp&&+b.dataset.e==P.enemy));
   document.querySelectorAll('.cm').forEach(b=>b.classList.toggle('on',(P.kill&&b.dataset.m=='kill')||(P.ren&&b.dataset.m=='ren')||(P.one&&!P.cpd&&b.dataset.m=='cp')||(P.one&&P.cpd&&b.dataset.m=='cpd')||(P.pm&&!P.lava&&b.dataset.m=='pvpmax')||(P.lava&&!P.arena&&b.dataset.m=='lava')||(P.arena&&b.dataset.m=='arena')));
-  {const rl=$('renlv'),nt=$('renlt'),l=$('renLv')?$('renLv').value:'',r=P.ren&&l?renRange(l):null,f=x=>(x/1e9).toFixed(2);if(rl)rl.hidden=!P.ren;if(nt)nt.innerHTML=r?'<div>'+(r.n>1?'Enemy total health (no bonuses): '+f(r.lo)+' \u2013 '+f(r.hi)+' B \u00b7 '+r.n+' battle reports':'Enemy total health (no bonuses): '+f(r.lo)+' B \u00b7 1 battle report')+'</div>'+(renUnk(l)?'<div>The building is not counted: its health is not known yet.</div>':''):''}      // 24.15.0 the Renegades Level box: the range of the enemy's total health at that level
+  {const rl=$('renlv');if(rl)rl.hidden=!P.ren}      // 24.15.0 the Renegades Level box (its options show the range of the enemy's total health of each level)
   {const m=P.mon?null:MODEINFO[P.kill?'kill':P.arena?'arena':P.lava?'lava':P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)],el=$('mdi');if(el){el.hidden=!m&&!pvOff;if(pvOff)el.innerHTML='<b>Attack players</b> - The PvP modes are switched off for now.';else if(m){const ik=({'4':'reg','8':'reg','3':'sn','6':'sn',kill:'sn',kill4:'sn',cp:'pv1',cpd:'pv1'})[P.kill?(P.kill4?'kill4':'kill'):P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)]||'pvm',ic=document.querySelector('#mics [data-i="'+ik+'"] svg');el.innerHTML=(ic?ic.outerHTML:'')+'<span><b>'+m[0].replace(/^(Regular|Sniper|Pv1|PvMany) \u00b7 /,'')+'</b>'+''+' - '+m[1]+'</span>'}}}      // the explanation under the mode buttons (the tier tips under Tiers to use are fixed text, both are always shown)
   const sc=score(P,[...A,...Mo,...U.list],[...st.so,...U.ord]);
   BRD={P,list:[...A,...Mo,...U.list],order:[...st.so,...U.ord],sc,fx};
