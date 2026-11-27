@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='24.14.0';
+const APP_VERSION='24.14.1';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -176,6 +176,35 @@ const REV=90;      // % of a revived stack that comes back after a hit (rounded 
 const TEMPLE=[1.04,1.06,1.08,1.11,1.13,1.16,1.19,1.22,1.27,1.33,1.36,1.40,1.44,1.48,1.53,1.58,1.63,1.68,1.74,1.81,1.91,2.02,2.15,2.31,2.51,2.68,2.88,3.13,3.44,3.84,3.93,4.03,4.13,4.23,4.34,4.46,4.59,4.72,4.87,5.02,5.17,5.34,5.52,5.71,5.91];      // 13.1: Temple level 1..45 -> "Troop revival cost is decreased by" (times), from the in-game Temple table. The revival gold of a troop is divided by it.
 // 14.19 Renegades: the damage the stacks must reach at each Level (1-45) - the total health of the enemy. TEMPORARY numbers (level 1 = 100 million, +20 % per level, rounded to 3 digits): replace them with the real ones, one per level, in this list.
 const RENLV=[100000000,120000000,144000000,173000000,207000000,249000000,299000000,358000000,430000000,516000000,619000000,743000000,892000000,1070000000,1280000000,1540000000,1850000000,2220000000,2660000000,3190000000,3830000000,4600000000,5520000000,6620000000,7950000000,9540000000,11400000000,13700000000,16500000000,19800000000,23700000000,28500000000,34200000000,41000000000,49200000000,59100000000,70900000000,85100000000,102000000000,122000000000,147000000000,176000000000,212000000000,254000000000,305000000000];
+// 24.15.0 Renegades: the enemy of each level, from the in-game battle reports (Mode - Renegades.md): one string per report, "troop:units". The total health is the plain base health of the troops (no bonuses);
+// a troop with no data (the Building: its health is not known yet) is not counted, and the note says so. The Level box shows the range of the reports of that level.
+const RENREP={41:[
+  'Devastator II:856,Purifier II:170319,Smiter II:81874,Whitemane II:84548,Royal Lion II:8892,Highlander:78831,Quicksand:44486,Warregal:3789,Eternal Cannoneer:1984,Warden:2066,Panoptic II:58714,Building:73756',
+  'Devastator II:713,Purifier II:142700,Punisher II:156027,Corax II:10504,Whitemane II:78557,Jago:3933,Eternal Cannoneer:6190,Panoptic II:68930,Building:67743',
+  'Kraken II:1708,Punisher II:142629,Smiter II:96676,Legitimist II:141447,Duelist II:309555,Jago:4639,Panoptic II:61876,Building:71579',
+  'Kraken II:1404,Fire Phoenix II:765,Punisher II:254747,Duelist II:212836,Royal Lion II:37661,Slavic Warrior:88033,Panoptic II:51421,Building:70452',
+  'Smiter II:216437,Duelist II:246230,Royal Lion II:9433,Highlander:65784,Galloper:47920,Warden:1582,Panoptic II:79422,Building:70075',
+  'Purifier II:194513,Punisher II:404238,Smiter II:89798,Legitimist II:261489,Whitemane II:380743,Panoptic II:85688,Building:67983',
+  'Corax II:11138,Whitemane II:654634,Royal Lion II:11241,Warden:2271,Panoptic II:82580,Building:90878',
+  'Purifier II:183421,Royal Lion II:27385,Scarface:327193,Jago:4060,Panoptic II:59933,Building:87270',
+  'Kraken II:625,Duelist II:677685,Quicksand:132339,Panoptic II:88235,Building:75907',
+  'Kraken II:1108,Smiter II:80892,Warregal:3628,Pounder:344888,Panoptic II:46493,Building:87976',
+  'Fire Phoenix II:1786,Smiter II:225378,Galloper:58830,Eternal Cannoneer:3359,Warden:4789,Panoptic II:72288,Building:90455'],
+42:[
+  'Trickster II:978,Punisher II:182270,Smiter II:103037,Legitimist II:189585,Duelist II:218750,Whitemane II:99635,Slavic Warrior:92460,Scarface:98600,Jago:5514,Demonic Salamander:2800,Panoptic II:91154,Building:121230',
+  'Fire Phoenix II:1024,Purifier II:209317,Smiter II:112968,Corax II:9562,Duelist II:198293,Whitemane II:96099,Quicksand:53720,Scarface:96780,Wyvern:1629,Demonic Salamander:2612,Panoptic II:112379,Building:123500',
+  'Kraken II:1158,Fire Phoenix II:1300,Corax II:12665,Royal Lion II:12316,Highlander:118056,Slavic Warrior:122380,Quicksand:76408,Galloper:91586,Jago:6599,Panoptic II:87538,Building:93464',
+  'Fire Phoenix II:1010,Purifier II:212902,Smiter II:201490,Whitemane II:103242,Royal Lion II:11296,Eternal Cannoneer:8025,Demonic Salamander:3273,Panoptic II:60163,Building:119209',
+  'Kraken II:1033,Trickster II:1164,Purifier II:608844,Punisher II:522775,Smiter II:119864,Quicksand:57684,Eternal Cannoneer:4216,Panoptic II:93052,Building:108686',
+  'Purifier II:319133,Whitemane II:96211,Highlander:250329,Slavic Warrior:91020,Quicksand:41790,Warregal:5634,Demonic Salamander:2568,Panoptic II:108371,Building:90320',
+  'Legitimist II:214557,Duelist II:234163,Whitemane II:117268,Royal Lion II:50554,Slavic Warrior:110254,Demonic Salamander:5049,Panoptic II:118727,Building:119544',
+  'Fire Phoenix II:1371,Punisher II:296600,Corax II:12758,Whitemane II:125098,Scarface:167859,Eternal Cannoneer:8240,Panoptic II:112238,Building:123218',
+  'Legitimist II:200647,Duelist II:190454,Whitemane II:125406,Slavic Warrior:399906,Jago:12265,Panoptic II:94907,Building:89676',
+  'Trickster II:1237,Smiter II:148440,Whitemane II:83512,Royal Lion II:56296,Panoptic II:83671,Building:113788',
+  'Punisher II:520447,Legitimist II:1162397,Galloper:171264,Panoptic II:85217,Building:118175']};
+const renHP=r=>r.split(',').reduce((q,x)=>{const i=x.lastIndexOf(':'),t=TRN[x.slice(0,i)];return q+(t?t.hp*+x.slice(i+1):0)},0);
+const renUnk=l=>(RENREP[l]||[]).some(r=>r.split(',').some(x=>!TRN[x.slice(0,x.lastIndexOf(':'))]));
+const renRange=l=>{const h=(RENREP[l]||[]).map(renHP);return h.length?{lo:Math.min(...h),hi:Math.max(...h),n:h.length}:null};
 const renTarget=()=>0;      // 23.11.12: the Level box is removed - no target (RENLV is kept for later)      // the target of the chosen Level; 0 = no Level chosen (the box is empty)
 const tempNorm=x=>{const n=parseFloat(String(x).replace(/,/g,''));return String(isFinite(n)&&n>0?Math.min(45,Math.floor(n+1e-9)):0)};      // 14.20: the Temple is a select 0-45 now; a value saved or imported by an older version (a typed number: 30.9, 100, empty) becomes what the box used to count: cut to a whole number, 45 at most, empty / 0 / not a number = 0
 const templeLv=()=>Math.min(45,Math.floor(v('temple')+1e-9));      // the level in the Temple box: 45 at most, 0 (or empty) = no Temple, no reduction
@@ -2618,6 +2647,7 @@ const mkMT=m=>{const t=mkMT0(m),x=BONX[t.name];if(x){t.vt=x.vt||{};if(x.dd)t.dd=
 const MT_ALL=MERC.map(mkMT),MT=[];
 const mercSync=()=>{MT.length=0;MERC.forEach((m,i)=>{if(mercOK(m))MT.push(MT_ALL[i])})};
 MT_ALL.forEach(t=>TRN[t.name]=t);mercSync();
+{const s=$('renLv'),f=x=>(x/1e9).toFixed(1);if(s)Object.keys(RENREP).forEach(l=>{const r=renRange(l),o=document.createElement('option');o.value=l;o.textContent=l+' \u00b7 '+f(r.lo)+' \u2013 '+f(r.hi)+' B';s.appendChild(o)})}      // 24.15.0 the Renegades Level box: the levels with battle reports, each with the range of the enemy's total health
 
 const mkM=(t,P,X)=>{const[mh,ms]=mults(t,P);return{r:t.cls+t.tier,p:'U',c:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i:0,dh:dhf(t,P),n:0}};
 // the counts of a row of stacks: H and T = health and total strength of the stack before (Infinity = none), idx = its place, X = the health level no stack goes above
@@ -2802,6 +2832,7 @@ function calcRun0(){
   document.querySelectorAll('.pb').forEach(b=>b.classList.toggle('on',TY.every(t=>v('bh_'+t)==+b.dataset.p&&v('bs_'+t)==+b.dataset.p)));
   document.querySelectorAll('.eb').forEach(b=>b.classList.toggle('on',!P.kill&&!P.ren&&!P.cp&&+b.dataset.e==P.enemy));
   document.querySelectorAll('.cm').forEach(b=>b.classList.toggle('on',(P.kill&&b.dataset.m=='kill')||(P.ren&&b.dataset.m=='ren')||(P.one&&!P.cpd&&b.dataset.m=='cp')||(P.one&&P.cpd&&b.dataset.m=='cpd')||(P.pm&&!P.lava&&b.dataset.m=='pvpmax')||(P.lava&&!P.arena&&b.dataset.m=='lava')||(P.arena&&b.dataset.m=='arena')));
+  {const rl=$('renlv'),nt=$('renlt'),l=$('renLv')?$('renLv').value:'',r=P.ren&&l?renRange(l):null,f=x=>(x/1e9).toFixed(2);if(rl)rl.hidden=!P.ren;if(nt)nt.innerHTML=r?'<div>Enemy total health (no bonuses): '+f(r.lo)+' \u2013 '+f(r.hi)+' B \u00b7 '+r.n+' battle reports</div>'+(renUnk(l)?'<div>The building is not counted: its health is not known yet.</div>':''):''}      // 24.15.0 the Renegades Level box: the range of the enemy's total health at that level
   {const m=P.mon?null:MODEINFO[P.kill?'kill':P.arena?'arena':P.lava?'lava':P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)],el=$('mdi');if(el){el.hidden=!m&&!pvOff;if(pvOff)el.innerHTML='<b>Attack players</b> - The PvP modes are switched off for now.';else if(m){const ik=({'4':'reg','8':'reg','3':'sn','6':'sn',kill:'sn',kill4:'sn',cp:'pv1',cpd:'pv1'})[P.kill?(P.kill4?'kill4':'kill'):P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)]||'pvm',ic=document.querySelector('#mics [data-i="'+ik+'"] svg');el.innerHTML=(ic?ic.outerHTML:'')+'<span><b>'+m[0].replace(/^(Regular|Sniper|Pv1|PvMany) \u00b7 /,'')+'</b>'+''+' - '+m[1]+'</span>'}}}      // the explanation under the mode buttons (the tier tips under Tiers to use are fixed text, both are always shown)
   const sc=score(P,[...A,...Mo,...U.list],[...st.so,...U.ord]);
   BRD={P,list:[...A,...Mo,...U.list],order:[...st.so,...U.ord],sc,fx};
