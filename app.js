@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='24.13.0';
+const APP_VERSION='24.13.1';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -937,8 +937,8 @@ function getP(){
   p.pvp=p.cp||p.ren;                             // PvP rules (CP kill, CP death, Max damage and, since 14.9, Renegades): no Epic strength, no bonus against epic enemies, the Against players bonuses count, Specialists deal double damage before the squad bonus (damage, never strength)
   if(p.one)p.enemy=1;
   if(p.pvp||p.mon)p.sEpic=0;
-  p.sGPl=v('bs_GPl');p.sSPl=v('bs_SPl');p.sEPl=v('bs_EPl');p.sMPl=v('bs_MPl');p.hGPl=v('bh_GPl');p.hSPl=v('bh_SPl');p.hEPl=v('bh_EPl');p.hMPl=v('bh_MPl');p.ddG=v('dd_G');p.ddS=v('dd_S');p.ddE=v('dd_E');p.ddA=v('dd_A');p.dsA=v('ds_A');      // 19.0.9 rare bonuses
-  if(!p.pvp){p.hPlayers=0;p.sPlayers=0;for(const k of 'GSEM'){p['s'+k+'Pl']=0;p['h'+k+'Pl']=0}}              // the Against players bonuses count only in the PvP modes (like the Against epic monsters Strength counts only against epic monsters)
+  p.sGPl=v('bs_GPl');p.sSPl=v('bs_SPl');p.sEPl=v('bs_EPl');p.sMPl=v('bs_MPl');p.hGPl=v('bh_GPl');p.hSPl=v('bh_SPl');p.hEPl=v('bh_EPl');p.hMPl=v('bh_MPl');p.hEMHPl=v('bh_EMHPl');p.sEMHPl=v('bs_EMHPl');p.hScoutPl=v('bh_ScoutPl');p.sScoutPl=v('bs_ScoutPl');p.ddG=v('dd_G');p.ddS=v('dd_S');p.ddE=v('dd_E');p.ddA=v('dd_A');p.dsA=v('ds_A');      // 19.0.9 rare bonuses
+  if(!p.pvp){p.hPlayers=0;p.sPlayers=0;for(const k of ['G','S','E','M','EMH','Scout']){p['s'+k+'Pl']=0;p['h'+k+'Pl']=0}}              // the Against players bonuses count only in the PvP modes (like the Against epic monsters Strength counts only against epic monsters)
   p.epic=!p.ren&&!p.pvp&&!p.mon;                         // the enemy stacks are epic in every mode except Renegades and PvP: the bonus against epic enemies counts
   p.max4=$('mode').value=='max'||p.mon;                 // Max vs. 3 stack and Max vs. full stack: whole army ranking
   p.minH=Math.min(p.hGiant,p.hElemental,p.hDragon,p.hBeast);p.minS=Math.min(p.sGiant,p.sElemental,p.sDragon,p.sBeast);
@@ -948,8 +948,8 @@ function getP(){
 function mults(t,P){                                    // [health multiplier, strength multiplier, strength multiplier (the same since 14.9)]
   if(t.cls=='E'){const ms=1+(P.sE+P.sEpic+P.sPlayers+(P.sEPl||0))/100;return[1+(P.hE+P.hPlayers+(P.hEPl||0))/100,ms,ms]}
   if(t.cls=='M'){const ms=1+(P.sM+P.sEpic+P.sPlayers+(P.sMPl||0)+(P['s'+t.cat]||0)+Math.max(0,(P['s'+t.type]||0)-P.minS))/100;return[1+(P.hM+P.hPlayers+(P.hMPl||0)+(P['h'+t.cat]||0)+Math.max(0,(P['h'+t.type]||0)-P.minH))/100,ms,ms]}
-  if(t.cat=='Epic Monster Hunter'){const ms=1+(P.sEMH+P.sEpic+P.sPlayers)/100;return[1+(P.hEMH+P.hPlayers)/100,ms,ms]}      // 21.3.2: the mercenary Epic monster hunters are Guardsmen, but the Guardsmen bonuses do not count for them: only their own bonus (Combat type bonuses) plus the army bonuses (vs. epics, vs. players)
-  if(t.cat=='Scout'){const ms=1+(P.sScout+P.sEpic+P.sPlayers)/100;return[1+(P.hScout+P.hPlayers)/100,ms,ms]}      // 21.3.3: Scouts (a Specialists unit type) likewise use only their own bonus, not the Specialists one
+  if(t.cat=='Epic Monster Hunter'){const ms=1+(P.sEMH+P.sEpic+P.sPlayers+(P.sEMHPl||0))/100;return[1+(P.hEMH+P.hPlayers+(P.hEMHPl||0))/100,ms,ms]}      // 24.13.1: + their own Health / Strength vs. players (Category bonuses card)      // 21.3.2: the mercenary Epic monster hunters are Guardsmen, but the Guardsmen bonuses do not count for them: only their own bonus (Combat type bonuses) plus the army bonuses (vs. epics, vs. players)
+  if(t.cat=='Scout'){const ms=1+(P.sScout+P.sEpic+P.sPlayers+(P.sScoutPl||0))/100;return[1+(P.hScout+P.hPlayers+(P.hScoutPl||0))/100,ms,ms]}      // 21.3.3: Scouts (a Specialists unit type) likewise use only their own bonus, not the Specialists one
   const b=t.beast,ms=1+(P['s'+t.cls]+P.sEpic+P.sPlayers+(P['s'+t.cls+'Pl']||0)+(P['s'+t.cat]||0)+(b?P.sBeast:0))/100;
   return[1+(P['h'+t.cls]+P.hPlayers+(P['h'+t.cls+'Pl']||0)+(P['h'+t.cat]||0)+(b?P.hBeast:0))/100,ms,ms];   // 14.9: the Specialists' double damage is in the damage (vsFactor, every PvP mode incl. Renegades), the strength - and with it the order - stays the single strength
 }
@@ -2652,7 +2652,7 @@ function allocMerc0(P,ld,so,X){
   if(P.ren){      // 14.14, 14.16 Renegades: the mercenaries are in the block with the rest of the Leadership and the monsters: the same health level, no step between them. Below the buffer zone in health, below the last of the first 16 in strength
     const hd=L.filter(s=>s.p=='A'&&s.grp&&s.grp!='REST'&&!s.buf),bf=L.filter(s=>s.p=='A'&&s.buf),rs=L.filter(s=>s.p=='A'&&s.grp=='REST'),l16=hd.length?hd[hd.length-1]:null;
     const lowBuf=bf.length?Math.min(...bf.map(s=>tot(s.n,s.hp))):l16?tot(l16.n,l16.hp):Infinity;
-    if(rs.length)H=Math.min(...rs.map(s=>tot(s.n,s.hp)))+1;else if(isFinite(lowBuf))H=lowBuf;      // sizeChain keeps a stack at most (H-1): the level of the block (the smallest rest-of-Leadership stack; one below the buffer zone when there is none)
+    if(isFinite(lowBuf))H=lowBuf;else if(rs.length)H=Math.min(...rs.map(s=>tot(s.n,s.hp)))+1;      // sizeChain keeps a stack at most (H-1): 24.13.1 just below the smallest stack of the buffer zone (the last of the head when there is no buffer), no longer the smallest rest-of-Leadership stack
     if(l16)T=tot(l16.n,l16.str);
   }
   if(P.cp&&L.length){const lg=L[L.length-1].grp;if(lg)H=Math.min(...L.filter(s=>s.grp===lg).map(s=>tot(s.n,s.hp)))}      // CP kill: the mercenaries stay below the SMALLEST stack of the last group
