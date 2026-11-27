@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='24.14.3';
+const APP_VERSION='24.14.4';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -177,46 +177,52 @@ const TEMPLE=[1.04,1.06,1.08,1.11,1.13,1.16,1.19,1.22,1.27,1.33,1.36,1.40,1.44,1
 // 14.19 Renegades: the damage the stacks must reach at each Level (1-45) - the total health of the enemy. TEMPORARY numbers (level 1 = 100 million, +20 % per level, rounded to 3 digits): replace them with the real ones, one per level, in this list.
 const RENLV=[100000000,120000000,144000000,173000000,207000000,249000000,299000000,358000000,430000000,516000000,619000000,743000000,892000000,1070000000,1280000000,1540000000,1850000000,2220000000,2660000000,3190000000,3830000000,4600000000,5520000000,6620000000,7950000000,9540000000,11400000000,13700000000,16500000000,19800000000,23700000000,28500000000,34200000000,41000000000,49200000000,59100000000,70900000000,85100000000,102000000000,122000000000,147000000000,176000000000,212000000000,254000000000,305000000000];
 // 24.15.0 Renegades: the enemy of each level, from the in-game battle reports (Mode - Renegades.md): one string per report, "troop:units". The total health is the plain base health of the troops (no bonuses);
-// a troop with no data (the Building: its health is not known yet) is not counted. The Level box shows the range of the reports of that level.
+// the walls (Fortress Walls, the last stack of every report) are not in the total: our engineers strike them before the battle (RENWALL, renWalls). The Level box shows the range of the reports of that level.
 const RENREP={41:[
-  'Devastator II:856,Purifier II:170319,Smiter II:81874,Whitemane II:84548,Royal Lion II:8892,Highlander:78831,Quicksand:44486,Warregal:3789,Eternal Cannoneer:1984,Warden:2066,Panoptic II:58714,Building:73756',
-  'Devastator II:713,Purifier II:142700,Punisher II:156027,Corax II:10504,Whitemane II:78557,Jago:3933,Eternal Cannoneer:6190,Panoptic II:68930,Building:67743',
-  'Kraken II:1708,Punisher II:142629,Smiter II:96676,Legitimist II:141447,Duelist II:309555,Jago:4639,Panoptic II:61876,Building:71579',
-  'Kraken II:1404,Fire Phoenix II:765,Punisher II:254747,Duelist II:212836,Royal Lion II:37661,Slavic Warrior:88033,Panoptic II:51421,Building:70452',
-  'Smiter II:216437,Duelist II:246230,Royal Lion II:9433,Highlander:65784,Galloper:47920,Warden:1582,Panoptic II:79422,Building:70075',
-  'Purifier II:194513,Punisher II:404238,Smiter II:89798,Legitimist II:261489,Whitemane II:380743,Panoptic II:85688,Building:67983',
-  'Corax II:11138,Whitemane II:654634,Royal Lion II:11241,Warden:2271,Panoptic II:82580,Building:90878',
-  'Purifier II:183421,Royal Lion II:27385,Scarface:327193,Jago:4060,Panoptic II:59933,Building:87270',
-  'Kraken II:625,Duelist II:677685,Quicksand:132339,Panoptic II:88235,Building:75907',
-  'Kraken II:1108,Smiter II:80892,Warregal:3628,Pounder:344888,Panoptic II:46493,Building:87976',
-  'Fire Phoenix II:1786,Smiter II:225378,Galloper:58830,Eternal Cannoneer:3359,Warden:4789,Panoptic II:72288,Building:90455'],
+  'Devastator II:856,Purifier II:170319,Smiter II:81874,Whitemane II:84548,Royal Lion II:8892,Highlander:78831,Quicksand:44486,Warregal:3789,Eternal Cannoneer:1984,Warden:2066,Panoptic II:58714,Fortress Walls II:73756',
+  'Devastator II:713,Purifier II:142700,Punisher II:156027,Corax II:10504,Whitemane II:78557,Jago:3933,Eternal Cannoneer:6190,Panoptic II:68930,Fortress Walls II:67743',
+  'Kraken II:1708,Punisher II:142629,Smiter II:96676,Legitimist II:141447,Duelist II:309555,Jago:4639,Panoptic II:61876,Fortress Walls II:71579',
+  'Kraken II:1404,Fire Phoenix II:765,Punisher II:254747,Duelist II:212836,Royal Lion II:37661,Slavic Warrior:88033,Panoptic II:51421,Fortress Walls II:70452',
+  'Smiter II:216437,Duelist II:246230,Royal Lion II:9433,Highlander:65784,Galloper:47920,Warden:1582,Panoptic II:79422,Fortress Walls II:70075',
+  'Purifier II:194513,Punisher II:404238,Smiter II:89798,Legitimist II:261489,Whitemane II:380743,Panoptic II:85688,Fortress Walls II:67983',
+  'Corax II:11138,Whitemane II:654634,Royal Lion II:11241,Warden:2271,Panoptic II:82580,Fortress Walls II:90878',
+  'Purifier II:183421,Royal Lion II:27385,Scarface:327193,Jago:4060,Panoptic II:59933,Fortress Walls II:87270',
+  'Kraken II:625,Duelist II:677685,Quicksand:132339,Panoptic II:88235,Fortress Walls II:75907',
+  'Kraken II:1108,Smiter II:80892,Warregal:3628,Pounder:344888,Panoptic II:46493,Fortress Walls II:87976',
+  'Fire Phoenix II:1786,Smiter II:225378,Galloper:58830,Eternal Cannoneer:3359,Warden:4789,Panoptic II:72288,Fortress Walls II:90455'],
 42:[
-  'Trickster II:978,Punisher II:182270,Smiter II:103037,Legitimist II:189585,Duelist II:218750,Whitemane II:99635,Slavic Warrior:92460,Scarface:98600,Jago:5514,Demonic Salamander:2800,Panoptic II:91154,Building:121230',
-  'Fire Phoenix II:1024,Purifier II:209317,Smiter II:112968,Corax II:9562,Duelist II:198293,Whitemane II:96099,Quicksand:53720,Scarface:96780,Wyvern:1629,Demonic Salamander:2612,Panoptic II:112379,Building:123500',
-  'Kraken II:1158,Fire Phoenix II:1300,Corax II:12665,Royal Lion II:12316,Highlander:118056,Slavic Warrior:122380,Quicksand:76408,Galloper:91586,Jago:6599,Panoptic II:87538,Building:93464',
-  'Fire Phoenix II:1010,Purifier II:212902,Smiter II:201490,Whitemane II:103242,Royal Lion II:11296,Eternal Cannoneer:8025,Demonic Salamander:3273,Panoptic II:60163,Building:119209',
-  'Kraken II:1033,Trickster II:1164,Purifier II:608844,Punisher II:522775,Smiter II:119864,Quicksand:57684,Eternal Cannoneer:4216,Panoptic II:93052,Building:108686',
-  'Purifier II:319133,Whitemane II:96211,Highlander:250329,Slavic Warrior:91020,Quicksand:41790,Warregal:5634,Demonic Salamander:2568,Panoptic II:108371,Building:90320',
-  'Legitimist II:214557,Duelist II:234163,Whitemane II:117268,Royal Lion II:50554,Slavic Warrior:110254,Demonic Salamander:5049,Panoptic II:118727,Building:119544',
-  'Fire Phoenix II:1371,Punisher II:296600,Corax II:12758,Whitemane II:125098,Scarface:167859,Eternal Cannoneer:8240,Panoptic II:112238,Building:123218',
-  'Legitimist II:200647,Duelist II:190454,Whitemane II:125406,Slavic Warrior:399906,Jago:12265,Panoptic II:94907,Building:89676',
-  'Trickster II:1237,Smiter II:148440,Whitemane II:83512,Royal Lion II:56296,Panoptic II:83671,Building:113788',
-  'Punisher II:520447,Legitimist II:1162397,Galloper:171264,Panoptic II:85217,Building:118175'],
+  'Trickster II:978,Punisher II:182270,Smiter II:103037,Legitimist II:189585,Duelist II:218750,Whitemane II:99635,Slavic Warrior:92460,Scarface:98600,Jago:5514,Demonic Salamander:2800,Panoptic II:91154,Fortress Walls II:121230',
+  'Fire Phoenix II:1024,Purifier II:209317,Smiter II:112968,Corax II:9562,Duelist II:198293,Whitemane II:96099,Quicksand:53720,Scarface:96780,Wyvern:1629,Demonic Salamander:2612,Panoptic II:112379,Fortress Walls II:123500',
+  'Kraken II:1158,Fire Phoenix II:1300,Corax II:12665,Royal Lion II:12316,Highlander:118056,Slavic Warrior:122380,Quicksand:76408,Galloper:91586,Jago:6599,Panoptic II:87538,Fortress Walls II:93464',
+  'Fire Phoenix II:1010,Purifier II:212902,Smiter II:201490,Whitemane II:103242,Royal Lion II:11296,Eternal Cannoneer:8025,Demonic Salamander:3273,Panoptic II:60163,Fortress Walls II:119209',
+  'Kraken II:1033,Trickster II:1164,Purifier II:608844,Punisher II:522775,Smiter II:119864,Quicksand:57684,Eternal Cannoneer:4216,Panoptic II:93052,Fortress Walls II:108686',
+  'Purifier II:319133,Whitemane II:96211,Highlander:250329,Slavic Warrior:91020,Quicksand:41790,Warregal:5634,Demonic Salamander:2568,Panoptic II:108371,Fortress Walls II:90320',
+  'Legitimist II:214557,Duelist II:234163,Whitemane II:117268,Royal Lion II:50554,Slavic Warrior:110254,Demonic Salamander:5049,Panoptic II:118727,Fortress Walls II:119544',
+  'Fire Phoenix II:1371,Punisher II:296600,Corax II:12758,Whitemane II:125098,Scarface:167859,Eternal Cannoneer:8240,Panoptic II:112238,Fortress Walls II:123218',
+  'Legitimist II:200647,Duelist II:190454,Whitemane II:125406,Slavic Warrior:399906,Jago:12265,Panoptic II:94907,Fortress Walls II:89676',
+  'Trickster II:1237,Smiter II:148440,Whitemane II:83512,Royal Lion II:56296,Panoptic II:83671,Fortress Walls II:113788',
+  'Punisher II:520447,Legitimist II:1162397,Galloper:171264,Panoptic II:85217,Fortress Walls II:118175'],
 43:[
-  'Fire Phoenix II:1054,Smiter II:111805,Whitemane II:123987,Slavic Warrior:111157,Quicksand:61881,Warregal:6192,Pounder:111214,Scarface:128283,Eternal Cannoneer:3045,Warden:2919,Panoptic II:151027,Building:166040'],
+  'Fire Phoenix II:1054,Smiter II:111805,Whitemane II:123987,Slavic Warrior:111157,Quicksand:61881,Warregal:6192,Pounder:111214,Scarface:128283,Eternal Cannoneer:3045,Warden:2919,Panoptic II:151027,Fortress Walls II:166040'],
 44:[
-  'Devastator II:1613,Fire Phoenix II:1737,Trickster II:1518,Purifier II:320704,Duelist II:365400,Slavic Warrior:168492,Warregal:8873,Pounder:179116,Wyvern:2745,Warden:4415,Panoptic II:184096,Building:184902',
-  'Devastator II:2118,Trickster II:1416,Smiter II:169144,Whitemane II:159834,Pounder:156282,Scarface:147218,Galloper:143672,Eternal Cannoneer:3818,Warden:3711,Panoptic II:169672,Building:190289',
-  'Devastator II:1413,Duelist II:316500,Royal Lion II:14336,Highlander:154964,Quicksand:74961,Warregal:7625,Scarface:180641,Jago:10922,Wyvern:2943,Panoptic II:162793,Building:175479',
-  'Devastator II:1391,Kraken II:1444,Purifier II:263392,Punisher II:260244,Smiter II:138993,Duelist II:538444,Quicksand:73170,Galloper:64542,Wyvern:2309,Panoptic II:167388,Building:138147',
-  'Devastator II:1913,Kraken II:2637,Punisher II:351580,Corax II:19040,Legitimist II:1036265,Highlander:304272,Galloper:112302,Panoptic II:167118,Building:205401',
-  'Trickster II:3091,Punisher II:283618,Slavic Warrior:154386,Quicksand:84334,Eternal Cannoneer:4137,Wyvern:2789,Warden:9629,Panoptic II:154382,Building:153514',
-  'Trickster II:1566,Punisher II:744481,Whitemane II:148255,Quicksand:79446,Pounder:147586,Warden:5741,Demonic Salamander:8278,Panoptic II:179683,Building:169802',
-  'Punisher II:401689,Warregal:20283,Pounder:540000,Jago:21547,Warden:8290,Panoptic II:99978,Building:153962',
-  'Legitimist II:561900,Royal Lion II:54453,Quicksand:494553,Wyvern:4119,Panoptic II:115959,Building:152547',
-  'Whitemane II:1263351,Royal Lion II:29533,Pounder:219762,Panoptic II:170596,Building:181662',
-  'Punisher II:502493,Whitemane II:469849,Wyvern:10444,Panoptic II:144381,Building:206045']};
-const renHP=r=>r.split(',').reduce((q,x)=>{const i=x.lastIndexOf(':'),t=TRN[x.slice(0,i)];return q+(t?t.hp*+x.slice(i+1):0)},0);
+  'Devastator II:1613,Fire Phoenix II:1737,Trickster II:1518,Purifier II:320704,Duelist II:365400,Slavic Warrior:168492,Warregal:8873,Pounder:179116,Wyvern:2745,Warden:4415,Panoptic II:184096,Fortress Walls II:184902',
+  'Devastator II:2118,Trickster II:1416,Smiter II:169144,Whitemane II:159834,Pounder:156282,Scarface:147218,Galloper:143672,Eternal Cannoneer:3818,Warden:3711,Panoptic II:169672,Fortress Walls II:190289',
+  'Devastator II:1413,Duelist II:316500,Royal Lion II:14336,Highlander:154964,Quicksand:74961,Warregal:7625,Scarface:180641,Jago:10922,Wyvern:2943,Panoptic II:162793,Fortress Walls II:175479',
+  'Devastator II:1391,Kraken II:1444,Purifier II:263392,Punisher II:260244,Smiter II:138993,Duelist II:538444,Quicksand:73170,Galloper:64542,Wyvern:2309,Panoptic II:167388,Fortress Walls II:138147',
+  'Devastator II:1913,Kraken II:2637,Punisher II:351580,Corax II:19040,Legitimist II:1036265,Highlander:304272,Galloper:112302,Panoptic II:167118,Fortress Walls II:205401',
+  'Trickster II:3091,Punisher II:283618,Slavic Warrior:154386,Quicksand:84334,Eternal Cannoneer:4137,Wyvern:2789,Warden:9629,Panoptic II:154382,Fortress Walls II:153514',
+  'Trickster II:1566,Punisher II:744481,Whitemane II:148255,Quicksand:79446,Pounder:147586,Warden:5741,Demonic Salamander:8278,Panoptic II:179683,Fortress Walls II:169802',
+  'Punisher II:401689,Warregal:20283,Pounder:540000,Jago:21547,Warden:8290,Panoptic II:99978,Fortress Walls II:153962',
+  'Legitimist II:561900,Royal Lion II:54453,Quicksand:494553,Wyvern:4119,Panoptic II:115959,Fortress Walls II:152547',
+  'Whitemane II:1263351,Royal Lion II:29533,Pounder:219762,Panoptic II:170596,Fortress Walls II:181662',
+  'Punisher II:502493,Whitemane II:469849,Wyvern:10444,Panoptic II:144381,Fortress Walls II:206045']};
+// 24.15.0 the Renegades fortifications, from the game cards (Fortification, Engineer corps; Initiative 11): health and strength of one unit, the bonus against melee, ranged, mounted, flying
+const RENWALL={'Fortress Walls I':{hp:183600,str:61200,vs:[11.11,10.76,11.45,9.74]},'Fortress Walls II':{hp:330600,str:110200,vs:[16.67,16.15,17.17,14.61]}};
+const renHP=r=>r.split(',').reduce((q,x)=>{const i=x.lastIndexOf(':'),n=x.slice(0,i),t=TRN[n];return q+(t&&!RENWALL[n]?t.hp*+x.slice(i+1):0)},0);
+const renWallHP=r=>r.split(',').reduce((q,x)=>{const i=x.lastIndexOf(':'),w=RENWALL[x.slice(0,i)];return q+(w?w.hp*+x.slice(i+1):0)},0);      // the plain health of the walls of one report
+// the damage of our engineers before the battle: every engineer stack strikes the walls once, with the average of its Double damage and Double strike chances; against a fortification an engineer deals x20 with its bonus against fortifications (the Attack monsters rule, from a real report)
+const renEngDmg=(P,L)=>L.reduce((q,s)=>{const t=TRN[s.name];if(!t||t.cls!='E'||!(s.n>0))return q;const m=mults(t,P);return q+s.n*t.str*20*(m[1]+(t.vs[4]||0))*(1+ddp(t,P))*(1+dst(t,P))},0);
+const renWalls=(l,D)=>{const R=RENREP[l]||[];return{k:R.filter(r=>renWallHP(r)<=D).length,n:R.length}};      // in how many scenarios of the level the engineers bring the walls down
 const renRange=l=>{const h=(RENREP[l]||[]).map(renHP);return h.length?{lo:Math.min(...h),hi:Math.max(...h),n:h.length}:null};
 const renTarget=()=>0;      // 23.11.12: the Level box is removed - no target (RENLV is kept for later)      // the target of the chosen Level; 0 = no Level chosen (the box is empty)
 const tempNorm=x=>{const n=parseFloat(String(x).replace(/,/g,''));return String(isFinite(n)&&n>0?Math.min(45,Math.floor(n+1e-9)):0)};      // 14.20: the Temple is a select 0-45 now; a value saved or imported by an older version (a typed number: 30.9, 100, empty) becomes what the box used to count: cut to a whole number, 45 at most, empty / 0 / not a number = 0
@@ -2922,6 +2928,7 @@ function calcRun0(){
     const [a,ua]=sh(lo),[b,ub]=sh(hi),rngTxt=(a!=b||ua!=ub)&&(dRange||kk);
     const sub=(dRange||kk?'95 % score range<br>':'')+P.enemy+'-stack avg. '+sh(avg).join(' ')+(ki?' \u00b7 '+(kk?'killshot avg. '+sh(kk.av).join(' '):'Killshot: the army can not kill it'):'');
     return tile('std','<span class="eph">'+epImg(EP,'epi')+'<span><b>'+esc(EP.n).replace('/','/<wbr>')+'</b>'+eoCar+'</span></span>',rngTxt?(ua==ub?a+'\u2013'+b+' '+ub:a+ua+' \u2013 '+b+ub):a+' '+ua,sub).replace('<div class="stt',eoAct).replace('class="stt','data-ksd="1" class="stt')};scoreTile=mkST(!ksD);ksLater=ksD}
+  if(P.ren){const l=$('renLv')?$('renLv').value:'';if(l&&RENREP[l]){const w=renWalls(l,renEngDmg(P,[...A,...U.list]));scoreTile=tile('','Walls killed',w.k+' / '+w.n,'by the engineers before the battle \u00b7 level '+l)}}      // 24.15.0 Renegades with a Level: in how many of its scenarios the engineers kill the walls before the battle
   $('rsm').innerHTML=`<div class="stl stch">Summary</div><div class="stg">${scoreTile}${tile('','Revive cost',scost==rcost?kmb(scost):`${kmb(scost)} <span class="stu">/</span> ${kmb(rcost)}`,'')}${tile(ATK=='epics'?'':'std','Estimated damage',dRange?rg(dRange[0],dRange[1]):fmt(sc.dmg),dRange?'95 % range \u00b7 average '+fmt(sc.dmg):tgt?`level ${lvN} ${sc.dmg>=tgt?'reached':'short by '+((1-sc.dmg/tgt)*100).toFixed(1)+' %'}`:'')}${tile('','Strikes',hRange?Math.round(hRange[0])+'\u2013'+Math.round(hRange[1]):Math.round(sc.hits),hRange?'95 % range \u00b7 average '+Math.round(sc.hits):'')}</div>${hitsRow?`<div class="stl stch">Hits per revive mode</div><div class="stc">${REVCASES.map(([k,l])=>`<div class="stt${k==REVM?' stm':''}"><div class="stv">${HIT[k].toFixed(2)}</div><div class="sts">${l}</div></div>`).join('')}</div>`:''}`;      // 19.0.2: the summary as tiles (damage, strikes, stacks, revive cost); the army / monster / engineer count is gone
   $('res').innerHTML=secs;
   if(!PICSOK&&!PICSP)setTimeout(()=>picsLoad(),1500);      // 23.9.38 the pictures come in the background after the first result
