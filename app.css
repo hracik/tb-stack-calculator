@@ -614,5 +614,6 @@ html[data-theme=light]{--bub:#fff3d6;--bg:#f4eddb;--card:#fffaf0;--tx:#2a2012;--
 .epl .rlv .rln small,.epl .rlv .rls{margin:0;text-align:left;align-self:auto}
 .rlv .rlh{border:0;border-top:1px solid var(--bd);margin:0;width:100%}
 .rlv .rlr{flex:none;padding:2px 8px;border:1px solid var(--ac);border-radius:6px;font-size:12px;color:var(--ac)}
-.rld{margin:8px 2px 0;font-size:13px;color:var(--mu)}
+.rld{display:grid;grid-template-columns:auto auto;justify-content:start;gap:2px 14px;margin:10px 2px 0;font-size:13px;color:var(--mu)}
+.rld b{font-weight:normal;color:var(--tx)}
 .rlv .rlb{border-color:var(--bd);color:var(--mu)}
