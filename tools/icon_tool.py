@@ -17,6 +17,9 @@
   python3 tools/icon_tool.py epic SHOT.png --box x0,y0,x1,y1 --key candle
         the epic monster: the box is the golden frame of the epic picture (with its level badge). Writes the framed picture (120 px, the battle report)
         and the plain art (72 px, the picker and the summary).
+  python3 tools/icon_tool.py epic SHOT.png --box x0,y0,x1,y1 --key grove35 --style camp
+        a camp of a battle report (the Renegades' Exiles' Grove, top left of the report): the box is the picture with its frame and its level badge;
+        both pictures are the whole box (the badge sits on the art).
 
 All results go straight into app.js (ICD for mercenaries, EPIC_FR / EPIC_IC for epics) or pics.js (IC for troops, EPIC_UN for the epic troops) - nothing to paste. Needs Pillow (with AVIF), numpy, opencv.
 """
@@ -142,7 +145,8 @@ def cmd_epic(a):
     im = Image.open(a.shot).convert('RGB'); x0, y0, x1, y1 = [int(v) for v in a.box.split(',')]
     box = im.crop((x0, y0, x1, y1)); w, h = box.size
     fr = box.resize((120, 120), Image.LANCZOS)
-    ic = box.crop((int(w * .17), int(h * .21), int(w * .79), int(h * .83))).resize((72, 72), Image.LANCZOS)      # the plain art inside the frame, no badge
+    if a.style == 'camp': ic = box.resize((72, 72), Image.LANCZOS)      # a camp picture of a battle report (e.g. the Renegades' Exiles' Grove): the whole picture with its frame and its level badge, as the game shows it (the badge sits on the art, so it can not be left out)
+    else: ic = box.crop((int(w * .17), int(h * .21), int(w * .79), int(h * .83))).resize((72, 72), Image.LANCZOS)      # the plain art inside the frame, no badge
     js = open(APP, encoding='utf-8').read()
     for var, im2, fmt, mime in (('EPIC_FR', fr, 'AVIF', 'avif'), ('EPIC_IC', ic, 'JPEG', 'jpeg')):
         d = 'data:image/%s;base64,%s' % (mime, b64(im2, fmt, quality=80))
@@ -158,5 +162,5 @@ if __name__ == '__main__':
     f = sp.add_parser('find'); f.add_argument('shot'); f.set_defaults(fn=cmd_find)
     u = sp.add_parser('unit'); u.add_argument('shot'); u.add_argument('--badge', required=True); u.add_argument('--style', choices=list(STYLES), default='army')
     u.add_argument('--to', required=True); u.add_argument('--crop'); u.set_defaults(fn=cmd_unit)
-    e = sp.add_parser('epic'); e.add_argument('shot'); e.add_argument('--box', required=True); e.add_argument('--key', required=True); e.set_defaults(fn=cmd_epic)
+    e = sp.add_parser('epic'); e.add_argument('shot'); e.add_argument('--box', required=True); e.add_argument('--key', required=True); e.add_argument('--style', choices=['popup', 'camp'], default='popup'); e.set_defaults(fn=cmd_epic)
     a = ap.parse_args(); a.fn(a)
