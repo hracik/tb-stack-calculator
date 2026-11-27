@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='25.3.1';
+const APP_VERSION='25.3.2';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -180,24 +180,24 @@ const RENLV=[100000000,120000000,144000000,173000000,207000000,249000000,2990000
 // the walls (Fortress Walls, the last stack of every report) are not in the total: our engineers strike them before the battle (RENWALL, renWalls). The Level box shows the range of the reports of that level.
 const RENREP={34:[
   'Heavy Halberdier VII:55234,Heavy Knight VII:103220,Swift Jaeger VII:21246,Destructive Colossus:329,Ancient Terror:330,Highlander:8940,Pounder:8841,Galloper:4282,Eternal Cannoneer:209,Warden:202,City Walls VII:25760',
-  'Unknown griffin VII:2783,Swift Jaeger VII:26703,Deadshot VII:135583,Black Dragon:325,Wind Lord:535,Highlander:8907,Scarface:8389,Eternal Cannoneer:215,Wyvern:129,City Walls VII:31022',
-  'Unknown griffin VII:2430,Heavy Arbalester VII:61980,Mounted Knight VII:63694,Swift Jaeger VII:29665,Ancient Terror:402,Highlander:8570,Quicksand:4075,Pounder:15132,City Walls VII:32911',
+  'Battle Griffin VII:2783,Swift Jaeger VII:26703,Deadshot VII:135583,Black Dragon:325,Wind Lord:535,Highlander:8907,Scarface:8389,Eternal Cannoneer:215,Wyvern:129,City Walls VII:31022',
+  'Battle Griffin VII:2430,Heavy Arbalester VII:61980,Mounted Knight VII:63694,Swift Jaeger VII:29665,Ancient Terror:402,Highlander:8570,Quicksand:4075,Pounder:15132,City Walls VII:32911',
   'Heavy Arbalester VII:136797,Swift Jaeger VII:21394,Lion Rider VII:25857,Wind Lord:350,Ancient Terror:319,Pounder:11329,Galloper:4197,Jago:484,City Walls VII:25286',
   'Heavy Knight VII:43596,Swift Jaeger VII:23976,Ancient Terror:458,Warregal:816,Jago:340,Eternal Cannoneer:193,Warden:312,Demonic Salamander:236,City Walls VII:26706',
-  'Heavy Knight VII:47740,Swift Jaeger VII:30099,Deadshot VII:78479,Destructive Colossus:768,Unknown beast VII:416,Highlander:7724,Wyvern:109,Warden:189,City Walls VII:29553',
+  'Heavy Knight VII:47740,Swift Jaeger VII:30099,Deadshot VII:78479,Destructive Colossus:768,Battle Elephant:416,Highlander:7724,Wyvern:109,Warden:189,City Walls VII:29553',
   'Vulture VII:57307,Swift Jaeger VII:25443,Deadshot VII:68945,Destructive Colossus:299,Highlander:19798,Galloper:11271,Wyvern:209,City Walls VII:29897',
   'Heavy Halberdier VII:438634,Heavy Knight VII:97623,Swift Jaeger VII:16513,Lion Rider VII:38866,Scarface:11542,City Walls VII:30326',
   'Swift Jaeger VII:21377,Lion Rider VII:153337,Destructive Colossus:733,Scarface:16617,Demonic Salamander:417,City Walls VII:25634',
-  'Unknown griffin VII:5772,Swift Jaeger VII:16662,Destructive Colossus:1378,Quicksand:11357,City Walls VII:29864',
+  'Battle Griffin VII:5772,Swift Jaeger VII:16662,Destructive Colossus:1378,Quicksand:11357,City Walls VII:29864',
   'Mounted Knight VII:216867,Swift Jaeger VII:21416,Ancient Terror:385,Pounder:9849,City Walls VII:32153'],
 35:[
   'Heavy Knight VII:79166,Swift Jaeger VII:36889,Lion Rider VII:38822,Destructive Colossus:481,Ancient Terror:490,Highlander:12995,Galloper:6095,Jago:666,Wyvern:201,Warden:323,Demonic Salamander:348,City Walls VII:31189',
-  'Vulture VII:94962,Mounted Knight VII:38427,Swift Jaeger VII:29254,Deadshot VII:74178,Destructive Colossus:387,Unknown beast VII:495,Highlander:15891,Jago:593,Eternal Cannoneer:255,Warden:260,City Walls VII:32856',
-  'Unknown griffin VII:3295,Vulture VII:77946,Heavy Arbalester VII:132971,Heavy Halberdier VII:70556,Swift Jaeger VII:38855,Lion Rider VII:33317,Unknown beast VII:467,Highlander:11189,Pounder:11956,Warden:250,City Walls VII:40420',
+  'Vulture VII:94962,Mounted Knight VII:38427,Swift Jaeger VII:29254,Deadshot VII:74178,Destructive Colossus:387,Battle Elephant:495,Highlander:15891,Jago:593,Eternal Cannoneer:255,Warden:260,City Walls VII:32856',
+  'Battle Griffin VII:3295,Vulture VII:77946,Heavy Arbalester VII:132971,Heavy Halberdier VII:70556,Swift Jaeger VII:38855,Lion Rider VII:33317,Battle Elephant:467,Highlander:11189,Pounder:11956,Warden:250,City Walls VII:40420',
   'Heavy Arbalester VII:82575,Heavy Knight VII:79974,Swift Jaeger VII:38090,Black Dragon:474,Destructive Colossus:458,Wind Lord:440,Highlander:12342,Slavic Warrior:12350,Quicksand:6453,Wyvern:179,Demonic Salamander:328,City Walls VII:43122',
-  'Vulture VII:192224,Swift Jaeger VII:40250,Deadshot VII:69391,Unknown beast VII:408,Ancient Terror:393,Highlander:13993,Jago:547,Eternal Cannoneer:285,Wyvern:159,City Walls VII:32668',
-  'Unknown griffin VII:5245,Vulture VII:76852,Mounted Knight VII:46336,Swift Jaeger VII:22323,Black Dragon:1588,Pounder:13168,Galloper:8459,Eternal Cannoneer:302,City Walls VII:40623',
-  'Unknown griffin VII:5477,Heavy Knight VII:266605,Swift Jaeger VII:40212,Lion Rider VII:37595,Black Dragon:454,Highlander:11393,Eternal Cannoneer:297,Warden:292,City Walls VII:42477',
+  'Vulture VII:192224,Swift Jaeger VII:40250,Deadshot VII:69391,Battle Elephant:408,Ancient Terror:393,Highlander:13993,Jago:547,Eternal Cannoneer:285,Wyvern:159,City Walls VII:32668',
+  'Battle Griffin VII:5245,Vulture VII:76852,Mounted Knight VII:46336,Swift Jaeger VII:22323,Black Dragon:1588,Pounder:13168,Galloper:8459,Eternal Cannoneer:302,City Walls VII:40623',
+  'Battle Griffin VII:5477,Heavy Knight VII:266605,Swift Jaeger VII:40212,Lion Rider VII:37595,Black Dragon:454,Highlander:11393,Eternal Cannoneer:297,Warden:292,City Walls VII:42477',
   'Mounted Knight VII:40984,Swift Jaeger VII:22158,Ancient Terror:469,Slavic Warrior:20474,Galloper:19064,Jago:1601,Demonic Salamander:301,City Walls VII:42534',
   'Vulture VII:96343,Swift Jaeger VII:25761,Highlander:14210,Warregal:2072,Scarface:13896,Wyvern:191,Demonic Salamander:802,City Walls VII:44174',
   'Swift Jaeger VII:40794,Lion Rider VII:70465,Deadshot VII:174100,Slavic Warrior:63128,City Walls VII:44207',
@@ -241,11 +241,13 @@ const RENREP={34:[
   'Whitemane II:1263351,Royal Lion II:29533,Pounder:219762,Panoptic II:170596,Fortress Walls II:181662',
   'Punisher II:502493,Whitemane II:469849,Wyvern:10444,Panoptic II:144381,Fortress Walls II:206045']};
 // 24.15.0 the Renegades fortifications, from the game cards (Fortification, Engineer corps; Initiative 11): health and strength of one unit, the bonus against melee, ranged, mounted, flying
+// 25.3.2 enemy troops of the Renegades that the page has no card for (not our troops: never in the army lists): health and strength of one unit, the bonus against melee, ranged, mounted, flying, fortifications. From the game cards.
+const RENX={'Battle Elephant':{hp:840000,str:280000,cat:'Mounted',type:'Beast',vs:[0,7.52,0,0,5.47]}};      // monster VII, Dominance 41
 const RENWALL={'City Walls VII':{hp:102000,str:34000,vs:[7.77,7.40,8.14,6.66]},'Fortress Walls I':{hp:183600,str:61200,vs:[11.11,10.76,11.45,9.74]},'Fortress Walls II':{hp:330600,str:110200,vs:[16.67,16.15,17.17,14.61]}};
-const renHP=r=>r.split(',').reduce((q,x)=>{const i=x.lastIndexOf(':'),n=x.slice(0,i),t=TRN[n];return q+(t&&!RENWALL[n]?t.hp*+x.slice(i+1):0)},0);
+const renHP=r=>r.split(',').reduce((q,x)=>{const i=x.lastIndexOf(':'),n=x.slice(0,i),t=TRN[n]||RENX[n];return q+(t&&!RENWALL[n]?t.hp*+x.slice(i+1):0)},0);
 const renUnit=x=>x.slice(0,x.lastIndexOf(':')),renWallName=n=>/ Walls [IVX]+$/.test(n);      // 25.3.1 a unit of a report is known when the page has its card (TRN) or the walls card (RENWALL)
 const renWallUnk=r=>r.split(',').some(x=>{const n=renUnit(x);return renWallName(n)&&!RENWALL[n]});      // a report whose walls have no card yet
-const renKnown=l=>(RENREP[l]||[]).every(r=>r.split(',').every(x=>{const n=renUnit(x);return TRN[n]||RENWALL[n]}));      // every unit of the level is known
+const renKnown=l=>(RENREP[l]||[]).every(r=>r.split(',').every(x=>{const n=renUnit(x);return TRN[n]||RENWALL[n]||RENX[n]}));      // every unit of the level is known
 const renWallHP=r=>r.split(',').reduce((q,x)=>{const i=x.lastIndexOf(':'),w=RENWALL[x.slice(0,i)];return q+(w?w.hp*+x.slice(i+1):0)},0);      // the plain health of the walls of one report
 // the damage of our engineers before the battle: every engineer stack strikes the walls once, with the average of its Double damage and Double strike chances; against a fortification an engineer deals x20 with its bonus against fortifications (the Attack monsters rule, from a real report)
 const renEngDmg=(P,L)=>L.reduce((q,s)=>{const t=TRN[s.name];if(!t||t.cls!='E'||!(s.n>0))return q;const m=mults(t,P);return q+s.n*t.str*20*(m[1]+(t.vs[4]||0))*(1+ddp(t,P))*(1+dst(t,P))},0);
