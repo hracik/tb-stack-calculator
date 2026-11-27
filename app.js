@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='24.14.1';
+const APP_VERSION='24.14.2';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -201,7 +201,21 @@ const RENREP={41:[
   'Fire Phoenix II:1371,Punisher II:296600,Corax II:12758,Whitemane II:125098,Scarface:167859,Eternal Cannoneer:8240,Panoptic II:112238,Building:123218',
   'Legitimist II:200647,Duelist II:190454,Whitemane II:125406,Slavic Warrior:399906,Jago:12265,Panoptic II:94907,Building:89676',
   'Trickster II:1237,Smiter II:148440,Whitemane II:83512,Royal Lion II:56296,Panoptic II:83671,Building:113788',
-  'Punisher II:520447,Legitimist II:1162397,Galloper:171264,Panoptic II:85217,Building:118175']};
+  'Punisher II:520447,Legitimist II:1162397,Galloper:171264,Panoptic II:85217,Building:118175'],
+43:[
+  'Fire Phoenix II:1054,Smiter II:111805,Whitemane II:123987,Slavic Warrior:111157,Quicksand:61881,Warregal:6192,Pounder:111214,Scarface:128283,Eternal Cannoneer:3045,Warden:2919,Panoptic II:151027,Building:166040'],
+44:[
+  'Devastator II:1613,Fire Phoenix II:1737,Trickster II:1518,Purifier II:320704,Duelist II:365400,Slavic Warrior:168492,Warregal:8873,Pounder:179116,Wyvern:2745,Warden:4415,Panoptic II:184096,Building:184902',
+  'Devastator II:2118,Trickster II:1416,Smiter II:169144,Whitemane II:159834,Pounder:156282,Scarface:147218,Galloper:143672,Eternal Cannoneer:3818,Warden:3711,Panoptic II:169672,Building:190289',
+  'Devastator II:1413,Duelist II:316500,Royal Lion II:14336,Highlander:154964,Quicksand:74961,Warregal:7625,Scarface:180641,Jago:10922,Wyvern:2943,Panoptic II:162793,Building:175479',
+  'Devastator II:1391,Kraken II:1444,Purifier II:263392,Punisher II:260244,Smiter II:138993,Duelist II:538444,Quicksand:73170,Galloper:64542,Wyvern:2309,Panoptic II:167388,Building:138147',
+  'Devastator II:1913,Kraken II:2637,Punisher II:351580,Corax II:19040,Legitimist II:1036265,Highlander:304272,Galloper:112302,Panoptic II:167118,Building:205401',
+  'Trickster II:3091,Punisher II:283618,Slavic Warrior:154386,Quicksand:84334,Eternal Cannoneer:4137,Wyvern:2789,Warden:9629,Panoptic II:154382,Building:153514',
+  'Trickster II:1566,Punisher II:744481,Whitemane II:148255,Quicksand:79446,Pounder:147586,Warden:5741,Demonic Salamander:8278,Panoptic II:179683,Building:169802',
+  'Punisher II:401689,Warregal:20283,Pounder:540000,Jago:21547,Warden:8290,Panoptic II:99978,Building:153962',
+  'Legitimist II:561900,Royal Lion II:54453,Quicksand:494553,Wyvern:4119,Panoptic II:115959,Building:152547',
+  'Whitemane II:1263351,Royal Lion II:29533,Pounder:219762,Panoptic II:170596,Building:181662',
+  'Punisher II:502493,Whitemane II:469849,Wyvern:10444,Panoptic II:144381,Building:206045']};
 const renHP=r=>r.split(',').reduce((q,x)=>{const i=x.lastIndexOf(':'),t=TRN[x.slice(0,i)];return q+(t?t.hp*+x.slice(i+1):0)},0);
 const renUnk=l=>(RENREP[l]||[]).some(r=>r.split(',').some(x=>!TRN[x.slice(0,x.lastIndexOf(':'))]));
 const renRange=l=>{const h=(RENREP[l]||[]).map(renHP);return h.length?{lo:Math.min(...h),hi:Math.max(...h),n:h.length}:null};
@@ -2647,7 +2661,7 @@ const mkMT=m=>{const t=mkMT0(m),x=BONX[t.name];if(x){t.vt=x.vt||{};if(x.dd)t.dd=
 const MT_ALL=MERC.map(mkMT),MT=[];
 const mercSync=()=>{MT.length=0;MERC.forEach((m,i)=>{if(mercOK(m))MT.push(MT_ALL[i])})};
 MT_ALL.forEach(t=>TRN[t.name]=t);mercSync();
-{const s=$('renLv'),f=x=>(x/1e9).toFixed(1);if(s)Object.keys(RENREP).forEach(l=>{const r=renRange(l),o=document.createElement('option');o.value=l;o.textContent=l+' \u00b7 '+f(r.lo)+' \u2013 '+f(r.hi)+' B';s.appendChild(o)})}      // 24.15.0 the Renegades Level box: the levels with battle reports, each with the range of the enemy's total health
+{const s=$('renLv'),f=x=>(x/1e9).toFixed(1);if(s)Object.keys(RENREP).forEach(l=>{const r=renRange(l),o=document.createElement('option');o.value=l;o.textContent=l+' \u00b7 '+(f(r.lo)==f(r.hi)?f(r.lo):f(r.lo)+' \u2013 '+f(r.hi))+' B';s.appendChild(o)})}      // 24.15.0 the Renegades Level box: the levels with battle reports, each with the range of the enemy's total health
 
 const mkM=(t,P,X)=>{const[mh,ms]=mults(t,P);return{r:t.cls+t.tier,p:'U',c:t.cat,cat:t.cat,name:t.name,hp:t.hp*mh,str:t.str*ms,cost:t.cost,f:vsFactor(t,P),off:X.has(t.name),i:0,dh:dhf(t,P),n:0}};
 // the counts of a row of stacks: H and T = health and total strength of the stack before (Infinity = none), idx = its place, X = the health level no stack goes above
@@ -2832,7 +2846,7 @@ function calcRun0(){
   document.querySelectorAll('.pb').forEach(b=>b.classList.toggle('on',TY.every(t=>v('bh_'+t)==+b.dataset.p&&v('bs_'+t)==+b.dataset.p)));
   document.querySelectorAll('.eb').forEach(b=>b.classList.toggle('on',!P.kill&&!P.ren&&!P.cp&&+b.dataset.e==P.enemy));
   document.querySelectorAll('.cm').forEach(b=>b.classList.toggle('on',(P.kill&&b.dataset.m=='kill')||(P.ren&&b.dataset.m=='ren')||(P.one&&!P.cpd&&b.dataset.m=='cp')||(P.one&&P.cpd&&b.dataset.m=='cpd')||(P.pm&&!P.lava&&b.dataset.m=='pvpmax')||(P.lava&&!P.arena&&b.dataset.m=='lava')||(P.arena&&b.dataset.m=='arena')));
-  {const rl=$('renlv'),nt=$('renlt'),l=$('renLv')?$('renLv').value:'',r=P.ren&&l?renRange(l):null,f=x=>(x/1e9).toFixed(2);if(rl)rl.hidden=!P.ren;if(nt)nt.innerHTML=r?'<div>Enemy total health (no bonuses): '+f(r.lo)+' \u2013 '+f(r.hi)+' B \u00b7 '+r.n+' battle reports</div>'+(renUnk(l)?'<div>The building is not counted: its health is not known yet.</div>':''):''}      // 24.15.0 the Renegades Level box: the range of the enemy's total health at that level
+  {const rl=$('renlv'),nt=$('renlt'),l=$('renLv')?$('renLv').value:'',r=P.ren&&l?renRange(l):null,f=x=>(x/1e9).toFixed(2);if(rl)rl.hidden=!P.ren;if(nt)nt.innerHTML=r?'<div>'+(r.n>1?'Enemy total health (no bonuses): '+f(r.lo)+' \u2013 '+f(r.hi)+' B \u00b7 '+r.n+' battle reports':'Enemy total health (no bonuses): '+f(r.lo)+' B \u00b7 1 battle report')+'</div>'+(renUnk(l)?'<div>The building is not counted: its health is not known yet.</div>':''):''}      // 24.15.0 the Renegades Level box: the range of the enemy's total health at that level
   {const m=P.mon?null:MODEINFO[P.kill?'kill':P.arena?'arena':P.lava?'lava':P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)],el=$('mdi');if(el){el.hidden=!m&&!pvOff;if(pvOff)el.innerHTML='<b>Attack players</b> - The PvP modes are switched off for now.';else if(m){const ik=({'4':'reg','8':'reg','3':'sn','6':'sn',kill:'sn',kill4:'sn',cp:'pv1',cpd:'pv1'})[P.kill?(P.kill4?'kill4':'kill'):P.pm?'pm':P.cpd?'cpd':P.cp?'cp':P.ren?'ren':String(P.enemy)]||'pvm',ic=document.querySelector('#mics [data-i="'+ik+'"] svg');el.innerHTML=(ic?ic.outerHTML:'')+'<span><b>'+m[0].replace(/^(Regular|Sniper|Pv1|PvMany) \u00b7 /,'')+'</b>'+''+' - '+m[1]+'</span>'}}}      // the explanation under the mode buttons (the tier tips under Tiers to use are fixed text, both are always shown)
   const sc=score(P,[...A,...Mo,...U.list],[...st.so,...U.ord]);
   BRD={P,list:[...A,...Mo,...U.list],order:[...st.so,...U.ord],sc,fx};
