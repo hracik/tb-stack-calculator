@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='25.2.0';
+const APP_VERSION='25.2.1';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -708,7 +708,7 @@ function aParse(str){      // the account's text -> {tabs, active}, only well-fo
 }
 const tabsBlank=()=>tabs.every(t=>JSON.stringify(t.data&&t.data.vals)===JSON.stringify(BLANK.vals)&&JSON.stringify(t.data&&t.data.chk)===JSON.stringify(BLANK.chk));      // every tab of this browser still holds the blank values: nothing of its own to lose
 const aBak=()=>{try{localStorage.setItem('sc_tabs_bak',localStorage.getItem(KEY)||'')}catch(e){}};      // the tabs of this browser, once, before the account's tabs replace them
-function aApply(rem){aBak();tabs=rem.tabs.map(t=>({name:t.name,data:t.data}));active=rem.active;delPending=false;load(tabs[active].data);drawTabs();refresh();save(true)}
+function aApply(rem){const cur=tabs[active]&&tabs[active].name;aBak();tabs=rem.tabs.map(t=>({name:t.name,data:t.data}));const k=cur==null?-1:tabs.findIndex(t=>t.name===cur);active=k>=0?k:rem.active;delPending=false;load(tabs[active].data);drawTabs();refresh();save(true)}      // 25.2.1 the open tab stays open (found by its name); the other device's open tab is taken only when this one is gone
 function aMerge(rem){      // the account's tabs that this browser lacks are added (a tab with the same name and the same numbers is not added twice; the same name with other numbers gets "2", "3" ...)
   const have=new Set(tabs.map(t=>t.name+'\n'+JSON.stringify(t.data)));let n=0;
   for(const t of rem.tabs){if(have.has(t.name+'\n'+JSON.stringify(t.data)))continue;let nm=t.name,b=nm,k=2;while(tabs.some(x=>x.name===nm))nm=b.slice(0,20)+' '+k++;tabs.push({name:nm,data:t.data});n++}
@@ -732,9 +732,9 @@ async function syncNow(){
   const s=aSes();if(!FB.key||!s||SY.busy||SY.conf||IMP)return;
   SY.busy=true;clearTimeout(SY.t);aState('Syncing…');
   try{
-    save(true);      // the open tab's boxes go into tabs first
     const tok=await aToken();if(!SY.pf){await aProfile(tok);SY.pf=true}
-    const r=await fsGet(tok,s.uid),lh=aHash();SY.role=r.role||'user';SY.hasRole=!!r.role;
+    const r=await fsGet(tok,s.uid);
+    save(true);const lh=aHash();SY.role=r.role||'user';SY.hasRole=!!r.role;      // 25.2.1 the open tab's boxes go into tabs AFTER the account is read: what was typed while waiting counts as a change of this browser, so it is never overwritten
     if(!r.exists)aDone(await fsPut(tok,s.uid,aPay(),null),lh);
     else if(s.rev&&r.rev===s.rev){if(lh!==s.h)aDone(await fsPut(tok,s.uid,aPay(),r.rev),lh);else if(!aProfOk(r))aDone(await fsPut(tok,s.uid,null,r.rev),lh);else aDone(r.rev,lh,SY.st&&/^Saved/.test(SY.st)?SY.st:'Up to date.')}      // the account did not change since the last sync
     else{      // the account changed (another device), or this browser has not synced yet
