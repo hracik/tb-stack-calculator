@@ -645,8 +645,10 @@ html[data-pg] main>:not(.imp):not(.hd):not(.menu):not(.mdv):not(.amo):not(#pgx):
 .evt{font-variant-numeric:tabular-nums;white-space:nowrap}
 .evft{margin-top:14px;font-size:13px}
 @media(max-width:600px){.evr{grid-template-columns:96px 28px 1fr 28px;gap:6px;padding:6px 2px}.evdl{min-width:0;flex:1}}
-.evp .evx{margin-top:4px}
-.evpt{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:0 0 4px 18px}
+.evpt{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;padding:2px 0 0 40px}
+.evit{padding:8px 0}
+.evit+.evit{border-top:1px solid var(--bd)}
+.evit .evx{margin-top:0}
 .evpc{font-size:15px}
 .evpc b{color:var(--ac)}
 .evpc.on{color:var(--ac);font-weight:600}
