@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='25.5.4';
+const APP_VERSION='25.5.5';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -939,19 +939,25 @@ function evMini(k,a,b){      // the mini events of a kingdom that overlap [a, b)
   for(;;){const m=ev(EVCYC[i%190]),e=t+m[1]*3600;if(e>a){if(t>=b)break;out.push({n:m[0],s:t,e,c:m[2]})}t=e;i++}
   return out}
 function evForest(a,b){const out=[];for(let k=Math.max(0,Math.floor((a-EVF0-7200)/14400)+1);k<EVF.length;k++){const s=EVF0+k*14400;if(s>=b)break;if(s+7200>a)out.push({n:EVFN[EVF.charCodeAt(k)-97],s,e:s+7200})}return out}
-const EVPREP=['The Quest for Chests','Gold Rush'],EVPREPS=20*3600;      // 25.5.4 the mini events a player prepares for 20 hours ahead
-let EVK='regular',EVD=null,EVT=null;try{const x=localStorage.getItem('tb_evk');if(x=='seasonal')EVK=x}catch(e){}
+const EVPREP=['The Quest for Chests','Gold Rush'],EVPREPS=20*3600;let EVCHO=false;      // 25.5.4 the mini events a player prepares for 20 hours ahead
+let EVK='regular',EVD=null,EVT=null,EVSTAR=new Set();try{const x=JSON.parse(localStorage.getItem('tb_evstar')||'[]');if(Array.isArray(x))EVSTAR=new Set(x)}catch(e){};try{const x=localStorage.getItem('tb_evk');if(x=='seasonal')EVK=x}catch(e){}      // 25.5.5 EVSTAR: the events the viewer follows (a star): highlighted in the list, with a countdown to the next one; remembered in this browser
 function evDraw(){      // the Events page (in #pgx)
   const x=$('pgx');if(!x)return;const now=Date.now()/1000,lg=document.documentElement.lang||undefined;
   const d0=EVD==null?new Date(new Date().setHours(0,0,0,0)):new Date(EVD),a=d0.getTime()/1000,b=new Date(d0.getFullYear(),d0.getMonth(),d0.getDate()+1).getTime()/1000;
   const hm=s=>new Date(s*1000).toLocaleTimeString(lg,{hour:'2-digit',minute:'2-digit',hour12:false}),dur=s=>{s=Math.max(0,Math.round(s/60));const d=Math.floor(s/1440),h=Math.floor(s%1440/60),m=s%60;return (d?d+'d ':'')+(d||h?h+'h ':'')+m+'m'};
   const dot=c=>'<i class="evd" style="background:rgb('+(c||'90,140,60')+')"></i>';
-  const row=(e,f)=>'<div class="evr'+(e.e<=now?' past':e.s<=now?' now':'')+'"><span class="evt">'+hm(e.s)+' \u2013 '+hm(e.e)+'</span>'+dot(e.c)+'<span class="evn" data-notr>'+esc(e.n)+'</span><span class="evh">'+((e.e-e.s)/3600)+' h</span></div>';
+  const star=n=>'<button type="button" class="evs'+(EVSTAR.has(n)?' on':'')+'" data-act="evs" data-n="'+esc(n)+'" aria-pressed="'+EVSTAR.has(n)+'" aria-label="Follow">'+(EVSTAR.has(n)?'\u2605':'\u2606')+'</button>';
+  const row=(e,f)=>'<div class="evr'+(e.e<=now?' past':e.s<=now?' now':'')+(EVSTAR.has(e.n)?' star':'')+'"><span class="evt">'+hm(e.s)+' \u2013 '+hm(e.e)+'</span>'+dot(e.c)+'<span class="evn" data-notr>'+esc(e.n)+'</span><span class="evh">'+((e.e-e.s)/3600)+' h</span>'+star(e.n)+'</div>';
   const cur=evMini(EVK,now,now+1)[0],nx=evMini(EVK,cur.e,cur.e+1)[0];
   let top='<div class="evb"><div class="mu">Mini event now</div><div class="evx">'+dot(cur.c)+'<b data-notr>'+esc(cur.n)+'</b><span class="mu">ends in '+dur(cur.e-now)+'</span></div><div class="mu">Next: <span data-notr>'+esc(nx.n)+'</span> at '+hm(nx.s)+'</div></div>';
   if(EVK=='seasonal'){const fe=evForest(now,now+4*86400),f1=fe[0];top+='<div class="evb"><div class="mu">Forest event</div>'+(f1?'<div class="evx">'+dot()+'<b data-notr>'+esc(f1.n)+'</b><span class="mu">'+(f1.s<=now?'ends in '+dur(f1.e-now):'starts in '+dur(f1.s-now)+' at '+hm(f1.s))+'</span></div>':'<div class="mu">Not known yet.</div>')+'</div>'}
   {const wd=t=>new Date(t*1000).toLocaleDateString(lg,{weekday:'short'})+' '+hm(t),nxt=n=>evMini(EVK,now,now+40*86400).find(e=>e.n==n&&e.s>now);      // 25.5.4 the events to prepare for 20 hours ahead: the next one of each and the time to the start of its preparation
     top+='<div class="evb evp"><div class="mu">Prepare 20 h ahead</div>'+EVPREP.map(n=>{const e=nxt(n),p=e.s-EVPREPS;return '<div class="evx">'+dot(e.c)+'<b data-notr>'+esc(n)+'</b></div><div class="evpt">'+(p>now?'<span class="evpc">Start preparing in <b>'+dur(p-now)+'</b></span><span class="mu">at '+wd(p)+'</span>':'<span class="evpc on">Prepare now</span><span class="mu">starts in '+dur(e.s-now)+'</span>')+'<span class="mu">event '+wd(e.s)+'</span></div>'}).join('')+'</div>'}
+  {const wd=t=>new Date(t*1000).toLocaleDateString(lg,{weekday:'short'})+' '+hm(t),fn=EVK=='seasonal'?EVFN:[];      // 25.5.5 the followed events: the next one of each (of the chosen kingdom), the soonest first
+    const nx=[...EVSTAR].map(n=>EVFN.includes(n)?(fn.includes(n)?evForest(now,now+70*86400).find(e=>e.n==n):null):evMini(EVK,now,now+40*86400).find(e=>e.n==n)).filter(Boolean).sort((a,b)=>a.s-b.s);
+    const chips=EVM.map(m=>m[0]).concat(fn).map(n=>'<button type="button" class="tg vb'+(EVSTAR.has(n)?' on':'')+'" data-act="evs" data-n="'+esc(n)+'" data-notr>'+esc(n)+'</button>').join('');
+    top+='<div class="evb evf"><div class="mu">Followed events</div>'+(nx.length?nx.map(e=>'<div class="evx">'+dot(e.c)+'<b data-notr>'+esc(e.n)+'</b><span class="mu">'+(e.s<=now?'now, ends in '+dur(e.e-now):'in <b class="evin">'+dur(e.s-now)+'</b> \u00b7 '+wd(e.s))+'</span></div>').join(''):'<div class="mu">Tap \u2606 at an event to follow it.</div>')
+      +'<details class="evch"'+(EVCHO?' open':'')+'><summary>Choose events</summary><div class="evcl">'+chips+'</div></details></div>'}
   const dl=d0.toLocaleDateString(lg,{weekday:'short',day:'numeric',month:'short',year:'numeric'}),today=EVD==null||new Date(EVD).toDateString()==new Date().toDateString();
   const ml=evMini(EVK,a,b),fl=EVK=='seasonal'?evForest(a,b):[];
   const tz=-new Date().getTimezoneOffset(),tzs='UTC'+(tz<0?'\u2212':'+')+String(Math.floor(Math.abs(tz)/60)).padStart(2,'0')+':'+String(Math.abs(tz)%60).padStart(2,'0');
@@ -963,7 +969,9 @@ function evDraw(){      // the Events page (in #pgx)
     +'<div class="mu evft">Times in your time zone ('+tzs+').</div>';
   clearTimeout(EVT);EVT=setTimeout(()=>{if(document.documentElement.dataset.pg=='events')evDraw()},30000);      // the countdowns
 }
-document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-act=evk],[data-act=evd]');if(!a)return;
+document.addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('.evch'))EVCHO=e.target.open},true);
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-act=evk],[data-act=evd],[data-act=evs]');if(!a)return;
+  if(a.dataset.act=='evs'){const n=a.dataset.n;if(EVSTAR.has(n))EVSTAR.delete(n);else EVSTAR.add(n);try{localStorage.setItem('tb_evstar',JSON.stringify([...EVSTAR]))}catch(e){}evDraw();return}
   if(a.dataset.act=='evk'){EVK=a.dataset.k;try{localStorage.setItem('tb_evk',EVK)}catch(e){}}
   else{const d=+a.dataset.d;if(!d)EVD=null;else{const c=EVD==null?new Date(new Date().setHours(0,0,0,0)):new Date(EVD);EVD=new Date(c.getFullYear(),c.getMonth(),c.getDate()+d).getTime()}}
   evDraw()});
