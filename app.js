@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='25.5.5';
+const APP_VERSION='25.5.6';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -961,7 +961,7 @@ function evDraw(){      // the Events page (in #pgx)
   const dl=d0.toLocaleDateString(lg,{weekday:'short',day:'numeric',month:'short',year:'numeric'}),today=EVD==null||new Date(EVD).toDateString()==new Date().toDateString();
   const ml=evMini(EVK,a,b),fl=EVK=='seasonal'?evForest(a,b):[];
   const tz=-new Date().getTimezoneOffset(),tzs='UTC'+(tz<0?'\u2212':'+')+String(Math.floor(Math.abs(tz)/60)).padStart(2,'0')+':'+String(Math.abs(tz)%60).padStart(2,'0');
-  x.innerHTML='<h2>Events</h2><div class="pbrow evk"><button type="button" class="tg vb'+(EVK=='regular'?' on':'')+'" data-act="evk" data-k="regular">Regular kingdom</button><button type="button" class="tg vb'+(EVK=='seasonal'?' on':'')+'" data-act="evk" data-k="seasonal">Seasonal kingdom</button></div>'
+  x.innerHTML='<h2>Events</h2><div class="atk evk" data-v="'+EVK+'"><button type="button" class="ab'+(EVK=='regular'?' on':'')+'" data-act="evk" data-k="regular" aria-pressed="'+(EVK=='regular')+'">Regular kingdom</button><button type="button" class="ab'+(EVK=='seasonal'?' on':'')+'" data-act="evk" data-k="seasonal" aria-pressed="'+(EVK=='seasonal')+'">Seasonal kingdom</button></div>'
     +'<div class="evtop">'+top+'</div>'
     +'<div class="evnav"><button type="button" class="tl" data-act="evd" data-d="-1" aria-label="Previous day">\u2039</button><b class="evdl">'+esc(dl)+'</b><button type="button" class="tl" data-act="evd" data-d="1" aria-label="Next day">\u203a</button>'+(today?'':'<button type="button" class="tl evtd" data-act="evd" data-d="0">Today</button>')+'</div>'
     +'<h3 class="evh3">Mini events</h3><div class="evl">'+ml.map(e=>row(e)).join('')+'</div>'
