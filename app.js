@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='25.5.13';
+const APP_VERSION='25.5.14';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -941,7 +941,8 @@ function evMini(k,a,b){      // the mini events of a kingdom that overlap [a, b)
   const [A,o]=EVA[k],q=Math.floor((a-A)/EVCL);let t=A+q*EVCL,i=o;const ev=c=>EVM[c.charCodeAt(0)-97],out=[];
   for(;;){const m=ev(EVCYC[i%190]),e=t+m[1]*3600;if(e>a){if(t>=b)break;out.push({n:m[0],s:t,e,c:m[2]})}t=e;i++}
   return out}
-function evForest(a,b){const out=[];for(let k=Math.max(0,Math.floor((a-EVF0-7200)/14400)+1);k<EVF.length;k++){const s=EVF0+k*14400;if(s>=b)break;if(s+7200>a)out.push({n:EVFN[EVF.charCodeAt(k)-97],s,e:s+7200})}return out}
+const EVFEND=new Date(2027,0,1).getTime()/1000;      // 25.5.14 the forest events are shown only up to 31 December 2026 (the last day; the viewer's own day): from 1 January nothing is shown
+function evForest(a,b){const out=[];b=Math.min(b,EVFEND);for(let k=Math.max(0,Math.floor((a-EVF0-7200)/14400)+1);k<EVF.length;k++){const s=EVF0+k*14400;if(s>=b)break;if(s+7200>a)out.push({n:EVFN[EVF.charCodeAt(k)-97],s,e:s+7200})}return out}
 const EVPREP=['The Quest for Chests','Gold Rush'],EVPREPS=20*3600;      // 25.5.4 the mini events a player prepares for 20 hours ahead
 let EVK='regular',EVD=null,EVT=null,EVSTAR=new Set();try{const x=JSON.parse(localStorage.getItem('tb_evstar')||'[]');if(Array.isArray(x))EVSTAR=new Set(x)}catch(e){};try{const x=localStorage.getItem('tb_evk');if(x=='seasonal')EVK=x}catch(e){}      // 25.5.5 EVSTAR: the events the viewer follows (a star): highlighted in the list, with a countdown to the next one; remembered in this browser
 function evDraw(){      // the Events page (in #pgx)
