@@ -629,9 +629,9 @@ html[data-pg] main>:not(.imp):not(.hd):not(.menu):not(.mdv):not(.amo):not(#pgx):
 .evb{padding:10px 12px;border:1px solid var(--bd);border-radius:10px;display:flex;flex-direction:column;gap:4px}
 .evx{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:17px}
 .evd{display:inline-block;flex:none;width:10px;height:10px;border-radius:50%;border:1px solid rgba(0,0,0,.35)}
-.evnav{display:flex;align-items:center;gap:10px;margin:6px 0 10px}
+.evnav{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:6px 0 10px}.evnav .evtd{flex:1 0 100%;justify-content:center;min-height:36px}.evnav .evar{justify-content:center;width:52px;min-height:36px;padding:0}.evnav .evar svg{width:22px;height:22px;display:block}
 .evnav .tl{min-width:40px;padding:4px 10px;margin:0}
-.evdl{min-width:150px;text-align:center}
+.evdl{flex:1;min-width:150px;text-align:center}
 .evh3{margin:14px 0 6px;font-size:15px;color:var(--ac)}
 .evl{display:flex;flex-direction:column}
 .evr{display:grid;grid-template-columns:104px 30px 1fr 30px;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--bd)}
