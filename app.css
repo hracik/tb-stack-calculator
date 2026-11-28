@@ -639,13 +639,13 @@ html[data-pg] main>:not(.imp):not(.hd):not(.menu):not(.mdv):not(.amo):not(#pgx):
 .evdl{min-width:150px;text-align:center}
 .evh3{margin:14px 0 6px;font-size:15px;color:var(--ac)}
 .evl{display:flex;flex-direction:column}
-.evr{display:grid;grid-template-columns:104px 14px 1fr auto 30px;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--bd)}
+.evr{display:grid;grid-template-columns:104px 30px 1fr auto 30px;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--bd)}
 .evr.past{opacity:.5}
 .evr.now{background:rgba(217,164,65,.12);border-radius:6px}
 .evt{font-variant-numeric:tabular-nums;white-space:nowrap}
 .evh{color:var(--mu);font-size:13px;white-space:nowrap}
 .evft{margin-top:14px;font-size:13px}
-@media(max-width:600px){.evr{grid-template-columns:96px 12px 1fr auto 28px;gap:6px;padding:6px 2px}.evdl{min-width:0;flex:1}}
+@media(max-width:600px){.evr{grid-template-columns:96px 28px 1fr auto 28px;gap:6px;padding:6px 2px}.evdl{min-width:0;flex:1}}
 .evp .evx{margin-top:4px}
 .evpt{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:0 0 4px 18px}
 .evpc{font-size:15px}
@@ -660,3 +660,6 @@ html[data-pg] main>:not(.imp):not(.hd):not(.menu):not(.mdv):not(.amo):not(#pgx):
 .evch summary{cursor:pointer;color:var(--ac);font-size:14px}
 .evcl{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .evcl .vb{margin:0;min-width:0;padding:4px 10px;font-size:13px}
+.evi{display:block;flex:none;width:28px;height:28px;border-radius:5px;object-fit:cover}
+.evx .evi{width:32px;height:32px}
+.evr .evd{justify-self:center}

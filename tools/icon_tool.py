@@ -18,6 +18,10 @@
         the epic monster: the box is the golden frame of the epic picture (with its level badge). Writes the framed picture (120 px, the battle report)
         and the plain art (72 px, the picker and the summary).
 
+  python3 tools/icon_tool.py event SHOT.png --box x0,y0,x1,y1 --name "Gold Rush"
+        an event picture (a square picture in a thin gold frame, no badge: e.g. the title of a tournament in the game's Titles list, or a forest event):
+        the box is the outer edge of the frame. Writes the plain art (the frame cut off, 72 px) into EVIC[name] of app.js.
+
 All results go straight into app.js (ICD for mercenaries, EPIC_FR / EPIC_IC for epics) or pics.js (IC for troops, EPIC_UN for the epic troops) - nothing to paste. Needs Pillow (with AVIF), numpy, opencv.
 """
 import sys, re, io, os, base64, argparse
@@ -153,10 +157,25 @@ def cmd_epic(a):
     c = Image.new('RGB', (260, 130), (40, 40, 40)); c.paste(fr, (0, 5)); c.paste(ic.resize((120, 120)), (135, 5)); c.save(p); print('put into app.js: epic', a.key, '| preview', p)
 
 
+def cmd_event(a):
+    im = Image.open(a.shot).convert('RGB'); x0, y0, x1, y1 = [int(v) for v in a.box.split(',')]
+    box = im.crop((x0, y0, x1, y1)); w, h = box.size; k = 0.05      # the frame: about 5 % of the picture on every side
+    ic = box.crop((round(w * k), round(h * k), round(w * (1 - k)), round(h * (1 - k)))).resize((72, 72), Image.LANCZOS)
+    d = 'data:image/jpeg;base64,' + b64(ic, 'JPEG', quality=82)
+    js = open(APP, encoding='utf-8').read(); n = a.name
+    if re.search(r'const EVIC=\{(?:.*?,)?"%s":"' % re.escape(n), js): js = re.sub(r'(const EVIC=\{(?:.*?,)?"%s":")[^"]+' % re.escape(n), lambda m: m.group(1) + d, js, 1)
+    elif 'const EVIC={' in js: js = js.replace('const EVIC={', 'const EVIC={"%s":"%s",' % (n, d), 1)
+    else: raise SystemExit('const EVIC={...} not found in app.js')
+    open(APP, 'w', encoding='utf-8').write(js)
+    p = os.path.splitext(a.shot)[0] + '_event_' + re.sub(r'\W+', '_', n) + '.png'
+    c = Image.new('RGB', (260, 130), (40, 40, 40)); c.paste(box.resize((120, 120), Image.LANCZOS), (0, 5)); c.paste(ic.resize((120, 120)), (135, 5)); c.save(p); print('put into app.js: event', n, '| preview', p)
+
+
 if __name__ == '__main__':
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter); sp = ap.add_subparsers(dest='c', required=True)
     f = sp.add_parser('find'); f.add_argument('shot'); f.set_defaults(fn=cmd_find)
     u = sp.add_parser('unit'); u.add_argument('shot'); u.add_argument('--badge', required=True); u.add_argument('--style', choices=list(STYLES), default='army')
     u.add_argument('--to', required=True); u.add_argument('--crop'); u.set_defaults(fn=cmd_unit)
     e = sp.add_parser('epic'); e.add_argument('shot'); e.add_argument('--box', required=True); e.add_argument('--key', required=True); e.set_defaults(fn=cmd_epic)
+    v = sp.add_parser('event'); v.add_argument('shot'); v.add_argument('--box', required=True); v.add_argument('--name', required=True); v.set_defaults(fn=cmd_event)
     a = ap.parse_args(); a.fn(a)
