@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='25.5.1';
+const APP_VERSION='25.5.3';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -927,12 +927,49 @@ async function aGoogle(){
   }catch(e){const c=e&&e.code;aMsg(c in GERR?GERR[c]:'Google sign-in failed ('+(c||(e&&e.message)||'error')+').')}
 }
 const aShort=e=>e.length>22?e.slice(0,19)+'…':e;
+// 25.6.0 the Events page: the mini events (Regular and Seasonal kingdoms) and the forest events (Seasonal only).
+// The mini events run back to back in one fixed loop of 190 events (about 28.8 days), the same loop for both kingdoms, each kingdom at its own place in it (checked: 980 events of each, 14 Aug 2026 - 11 Jan 2027, no exception): so every past and future mini event is computed.
+// The forest events have no loop: a 2-hour event every 4 hours (14:00, 18:00, 22:00, 02:00, 06:00, 10:00 UTC), the known list runs 11 Nov 2026 - 11 Jan 2027 (EVF); outside it the forest events are not known.
+const EVM=[["Battle Training", 3.5, "240,50,230"], ["Beastslayer", 5, "128,0,0"], ["Blessing of the Gods", 5, "210,245,60"], ["Call of Duty", 3.5, "255,250,200"], ["Capital Challenge", 2, "230,25,75"], ["Castle Development", 3.5, "170,255,195"], ["Crypt Raiders", 5, "255,215,180"], ["Gold Rush", 5, "0,128,128"], ["Hammer and Anvil", 2, "255,99,71"], ["Officer Academy", 5, "128,128,128"], ["Power Points", 3.5, "245,130,48"], ["Regular Decrees", 3.5, "72,61,139"], ["Scientific Progress", 2, "128,128,0"], ["Silver Rush", 3.5, "60,180,75"], ["Tar Mastery", 5, "145,30,180"], ["The King's Mercy", 2, "46,139,87"], ["The Quest for Chests", 2, "0,130,200"], ["War Tools", 3.5, "255,225,25"], ["Wargames", 5, "0,0,128"]];      // [name, hours, colour]
+const EVCYC='fsrbnldikhdejlsrnbmagqfopcbrqsghpdfmecjiolaknisomhdabrlgcqkfjepnlrfksompbnajqicgdehmbopakifcedgrljnshqfmrinckpboqdagjselhncjpolmerfkdsbqighaqdcrgmnfehipljobskailbedgchfqpmjakonsrqaimhkgpjoce',EVA={regular:[1786761000,0],seasonal:[1786782600,178]};      // the loop (a letter per event: EVM[letter-a]); the anchor of each kingdom: [the start of an event (UTC seconds), its place in the loop]
+const EVFN=["Bloomfang's Rage", "Doomtree Invasion", "Echo of Corruption", "Forest Blade", "Forest Fury", "Forest Renegades", "Verdant Rebirth", "Vineweaver's Wrath"],EVF='degabcfhbdfgaecbghfadceghabdefchfcbgaedhfadcgebfhadcebgecdagbfhdfcbgaehgadcbefhgcdbeafhfhcdebgahfbcdegaedbfcghafcgbdhaecadhcbfecbdaefhgahdbcgfedgahcfbedbfgehcahadfbgecfcbgahdecgedahfbadcgehbfghefacbdeahfbdcgcdabfhegbefhagdcagefbdhghaebfdcacfeghdbdchaefgcehfdcbagfghbacdecbdehfagcbhedfgagebfcdhdhcgfbaecgafbhfbhdecbfdeahgbcadfghebchgedfahgabcdfebfhdcaeghadfebcgafhbgde',EVF0=1794405600;      // the forest events in order (a letter per slot), the first slot (UTC seconds); a slot every 4 hours, 2 hours long
+const EVCL=EVCYC.split('').reduce((q,c)=>q+EVM[c.charCodeAt(0)-97][1]*3600,0);      // the length of the loop in seconds
+function evMini(k,a,b){      // the mini events of a kingdom that overlap [a, b) (UTC seconds): [{n, s, e, c}]
+  const [A,o]=EVA[k],q=Math.floor((a-A)/EVCL);let t=A+q*EVCL,i=o;const ev=c=>EVM[c.charCodeAt(0)-97],out=[];
+  for(;;){const m=ev(EVCYC[i%190]),e=t+m[1]*3600;if(e>a){if(t>=b)break;out.push({n:m[0],s:t,e,c:m[2]})}t=e;i++}
+  return out}
+function evForest(a,b){const out=[];for(let k=Math.max(0,Math.floor((a-EVF0-7200)/14400)+1);k<EVF.length;k++){const s=EVF0+k*14400;if(s>=b)break;if(s+7200>a)out.push({n:EVFN[EVF.charCodeAt(k)-97],s,e:s+7200})}return out}
+let EVK='regular',EVD=null,EVT=null;try{const x=localStorage.getItem('tb_evk');if(x=='seasonal')EVK=x}catch(e){}
+function evDraw(){      // the Events page (in #pgx)
+  const x=$('pgx');if(!x)return;const now=Date.now()/1000,lg=document.documentElement.lang||undefined;
+  const d0=EVD==null?new Date(new Date().setHours(0,0,0,0)):new Date(EVD),a=d0.getTime()/1000,b=new Date(d0.getFullYear(),d0.getMonth(),d0.getDate()+1).getTime()/1000;
+  const hm=s=>new Date(s*1000).toLocaleTimeString(lg,{hour:'2-digit',minute:'2-digit',hour12:false}),dur=s=>{s=Math.max(0,Math.round(s/60));const h=Math.floor(s/60),m=s%60;return (h?h+'h ':'')+m+'m'};
+  const dot=c=>'<i class="evd" style="background:rgb('+(c||'90,140,60')+')"></i>';
+  const row=(e,f)=>'<div class="evr'+(e.e<=now?' past':e.s<=now?' now':'')+'"><span class="evt">'+hm(e.s)+' \u2013 '+hm(e.e)+'</span>'+dot(e.c)+'<span class="evn" data-notr>'+esc(e.n)+'</span><span class="evh">'+((e.e-e.s)/3600)+' h</span></div>';
+  const cur=evMini(EVK,now,now+1)[0],nx=evMini(EVK,cur.e,cur.e+1)[0];
+  let top='<div class="evb"><div class="mu">Mini event now</div><div class="evx">'+dot(cur.c)+'<b data-notr>'+esc(cur.n)+'</b><span class="mu">ends in '+dur(cur.e-now)+'</span></div><div class="mu">Next: <span data-notr>'+esc(nx.n)+'</span> at '+hm(nx.s)+'</div></div>';
+  if(EVK=='seasonal'){const fe=evForest(now,now+4*86400),f1=fe[0];top+='<div class="evb"><div class="mu">Forest event</div>'+(f1?'<div class="evx">'+dot()+'<b data-notr>'+esc(f1.n)+'</b><span class="mu">'+(f1.s<=now?'ends in '+dur(f1.e-now):'starts in '+dur(f1.s-now)+' at '+hm(f1.s))+'</span></div>':'<div class="mu">Not known yet.</div>')+'</div>'}
+  const dl=d0.toLocaleDateString(lg,{weekday:'short',day:'numeric',month:'short',year:'numeric'}),today=EVD==null||new Date(EVD).toDateString()==new Date().toDateString();
+  const ml=evMini(EVK,a,b),fl=EVK=='seasonal'?evForest(a,b):[];
+  const tz=-new Date().getTimezoneOffset(),tzs='UTC'+(tz<0?'\u2212':'+')+String(Math.floor(Math.abs(tz)/60)).padStart(2,'0')+':'+String(Math.abs(tz)%60).padStart(2,'0');
+  x.innerHTML='<h2>Events</h2><div class="pbrow evk"><button type="button" class="tg vb'+(EVK=='regular'?' on':'')+'" data-act="evk" data-k="regular">Regular kingdom</button><button type="button" class="tg vb'+(EVK=='seasonal'?' on':'')+'" data-act="evk" data-k="seasonal">Seasonal kingdom</button></div>'
+    +'<div class="evtop">'+top+'</div>'
+    +'<div class="evnav"><button type="button" class="tl" data-act="evd" data-d="-1" aria-label="Previous day">\u2039</button><b class="evdl">'+esc(dl)+'</b><button type="button" class="tl" data-act="evd" data-d="1" aria-label="Next day">\u203a</button>'+(today?'':'<button type="button" class="tl evtd" data-act="evd" data-d="0">Today</button>')+'</div>'
+    +'<h3 class="evh3">Mini events</h3><div class="evl">'+ml.map(e=>row(e)).join('')+'</div>'
+    +(EVK=='seasonal'?'<h3 class="evh3">Forest events</h3><div class="evl">'+(fl.length?fl.map(e=>row(e)).join(''):'<div class="mu">Not known for this day yet.</div>')+'</div>':'')
+    +'<div class="mu evft">Times in your time zone ('+tzs+').</div>';
+  clearTimeout(EVT);EVT=setTimeout(()=>{if(document.documentElement.dataset.pg=='events')evDraw()},30000);      // the countdowns
+}
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-act=evk],[data-act=evd]');if(!a)return;
+  if(a.dataset.act=='evk'){EVK=a.dataset.k;try{localStorage.setItem('tb_evk',EVK)}catch(e){}}
+  else{const d=+a.dataset.d;if(!d)EVD=null;else{const c=EVD==null?new Date(new Date().setHours(0,0,0,0)):new Date(EVD);EVD=new Date(c.getFullYear(),c.getMonth(),c.getDate()+d).getTime()}}
+  evDraw()});
 // 25.5.1 the pages of the site, in the main menu: Stack calculator (this page) and Events, Academy, Forest camp (being built). A page has its own address (#events, #academy, #forest-camp); on another page the calculator is hidden.
 const PAGES={events:'Events',academy:'Academy','forest-camp':'Forest camp'};
 function pgApply(){
   const k=location.hash.slice(1),on=PAGES[k]?k:'',r=document.documentElement;if(on)r.dataset.pg=on;else delete r.dataset.pg;
   document.querySelectorAll('.pgl').forEach(a=>{if((a.dataset.pg||'')===on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
-  const x=$('pgx');if(x){x.hidden=!on;x.innerHTML=on?'<h2>'+esc(PAGES[on])+'</h2><p class="mu">This page is being built.</p>':''}
+  const x=$('pgx');if(x){x.hidden=!on;if(on=='events')evDraw();else x.innerHTML=on?'<h2>'+esc(PAGES[on])+'</h2><p class="mu">This page is being built.</p>':''}
 }
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('.pgl');if(!a)return;e.preventDefault();const k=a.dataset.pg||'';
   if(k!==location.hash.slice(1)){if(k)location.hash=k;else history.pushState(null,'',location.pathname+location.search)}
