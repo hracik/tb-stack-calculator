@@ -658,5 +658,5 @@ html[data-pg] main>:not(.imp):not(.hd):not(.menu):not(.mdv):not(.amo):not(#pgx):
 .evi{display:block;flex:none;width:28px;height:28px;border-radius:5px;object-fit:cover}
 .evx .evi{width:32px;height:32px}
 .evr .evd{justify-self:center}
-.evcb{align-self:flex-start;margin:6px 0 0;padding:6px 12px;border:1px solid var(--ac);border-radius:8px;background:transparent;color:var(--ac);font:inherit;font-size:14px;cursor:pointer}
+.evcb{align-self:stretch;width:100%;box-sizing:border-box;margin:6px 0 0;padding:6px 12px;border:1px solid var(--ac);border-radius:8px;background:transparent;color:var(--ac);font:inherit;font-size:14px;cursor:pointer}
 .epl .evst{color:var(--ac);font-size:18px;line-height:1}
