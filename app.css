@@ -644,3 +644,8 @@ html[data-pg] main>:not(.imp):not(.hd):not(.menu):not(.mdv):not(.amo):not(#pgx):
 .evh{color:var(--mu);font-size:13px;white-space:nowrap}
 .evft{margin-top:14px;font-size:13px}
 @media(max-width:600px){.evr{grid-template-columns:96px 12px 1fr auto;gap:6px;padding:6px 2px}.evdl{min-width:0;flex:1}}
+.evp .evx{margin-top:4px}
+.evpt{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:0 0 4px 18px}
+.evpc{font-size:15px}
+.evpc b{color:var(--ac)}
+.evpc.on{color:var(--ac);font-weight:600}
