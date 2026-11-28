@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='25.5.17';
+const APP_VERSION='25.5.18';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -980,7 +980,7 @@ document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest
   if(a.dataset.act=='evk'){EVK=a.dataset.k;try{localStorage.setItem('tb_evk',EVK)}catch(e){}}
   else{const d=+a.dataset.d;if(!d)EVD=null;else{const c=EVD==null?new Date(new Date().setHours(0,0,0,0)):new Date(EVD);EVD=new Date(c.getFullYear(),c.getMonth(),c.getDate()+d).getTime()}}
   evDraw()});
-// 25.5.1 the pages of the site, in the main menu: Stack calculator (this page) and Events, Academy, Forest camp (being built). A page has its own address (#events, #academy, #forest-camp); on another page the calculator is hidden.
+// 25.5.1 the pages of the site, in the main menu: Stacks (this page) and Events, Academy, Forest camp (being built). A page has its own address (#events, #academy, #forest-camp); on another page the calculator is hidden.
 const PAGES={events:'Events',academy:'Academy','forest-camp':'Forest camp'};
 function pgApply(){
   const k=location.hash.slice(1),on=PAGES[k]?k:'',r=document.documentElement;if(on)r.dataset.pg=on;else delete r.dataset.pg;
