@@ -1,5 +1,5 @@
 // Version of this page: ONE number, MAJOR.MINOR.PATCH (the pill shows it, the update check compares it with version.json). PATCH counts the commits since the last push, MINOR counts the pushes to the live site since the last major (a push: 19.0.4 -> 19.1.0), MAJOR is raised only when the owner says so (19.3.2 -> 20.0.0). Every commit: raise it and write the same value into version.json ({"version":"MAJOR.MINOR.PATCH"}).
-const APP_VERSION='25.5.9';
+const APP_VERSION='25.5.10';
 // Debug mode (admin only): shows details for debugging (the SH ratio, the full / taken / squad bonus damage of a strike ...); everyone else sees the result only. The admin switches it in the account panel; the choice is kept in this browser (DBGWANT) and counts only while the account is an admin (DEV)
 let DEV=false,DBGWANT=false;try{DBGWANT=localStorage.getItem('krappy_debug')=='1'}catch(e){}
 // ---- Traffic statistics (GoatCounter: no cookies, no personal data, no consent notice needed). OFF until GC_CODE holds the code of your GoatCounter site (the part before .goatcounter.com).
@@ -949,7 +949,7 @@ function evDraw(){      // the Events page (in #pgx)
   const hm=s=>new Date(s*1000).toLocaleTimeString(lg,{hour:'2-digit',minute:'2-digit',hour12:false}),dur=s=>{s=Math.max(0,Math.round(s/60));const d=Math.floor(s/1440),h=Math.floor(s%1440/60),m=s%60;return (d?d+'d ':'')+(d||h?h+'h ':'')+m+'m'};
   const dot=(c,n)=>{const k=n&&(EVIC[n]||EPIC_IC[EVICK[n]]);return k?'<img class="evi" src="'+k+'" alt="">':'<i class="evd" style="background:rgb('+(c||'90,140,60')+')"></i>'};      // 25.5.7 the event's picture (EVIC; a Season epic's forest event: the epic's picture), else its colour
   const star=n=>'<button type="button" class="evs'+(EVSTAR.has(n)?' on':'')+'" data-act="evs" data-n="'+esc(n)+'" aria-pressed="'+EVSTAR.has(n)+'" aria-label="Follow">'+(EVSTAR.has(n)?'\u2605':'\u2606')+'</button>';
-  const row=(e,f)=>'<div class="evr'+(e.e<=now?' past':e.s<=now?' now':'')+(EVSTAR.has(e.n)?' star':'')+'"><span class="evt">'+hm(e.s)+' \u2013 '+hm(e.e)+'</span>'+dot(e.c,e.n)+'<span class="evn" data-notr>'+esc(e.n)+'</span><span class="evh">'+((e.e-e.s)/3600)+' h</span>'+star(e.n)+'</div>';
+  const row=(e,f)=>'<div class="evr'+(e.e<=now?' past':e.s<=now?' now':'')+(EVSTAR.has(e.n)?' star':'')+'"><span class="evt">'+hm(e.s)+' \u2013 '+hm(e.e)+'</span>'+dot(e.c,e.n)+'<span class="evn" data-notr>'+esc(e.n)+'</span>'+star(e.n)+'</div>';
   const cur=evMini(EVK,now,now+1)[0],nx=evMini(EVK,cur.e,cur.e+1)[0];
   let top='<div class="evb"><div class="mu">Mini event now</div><div class="evx">'+dot(cur.c,cur.n)+'<b data-notr>'+esc(cur.n)+'</b><span class="mu">ends in '+dur(cur.e-now)+'</span></div><div class="mu">Next: <span data-notr>'+esc(nx.n)+'</span> at '+hm(nx.s)+'</div></div>';
   if(EVK=='seasonal'){const fe=evForest(now,now+4*86400),f1=fe[0];top+='<div class="evb"><div class="mu">Forest event</div>'+(f1?'<div class="evx">'+dot(0,f1.n)+'<b data-notr>'+esc(f1.n)+'</b><span class="mu">'+(f1.s<=now?'ends in '+dur(f1.e-now):'starts in '+dur(f1.s-now)+' at '+hm(f1.s))+'</span></div>':'<div class="mu">Not known yet.</div>')+'</div>'}
